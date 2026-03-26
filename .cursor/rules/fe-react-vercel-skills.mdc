@@ -1,0 +1,26 @@
+---
+description: Apply Vercel React skills to the frontend app (fe)
+globs: fe/**
+alwaysApply: false
+---
+
+# Frontend (`fe`): Vercel React & composition skills
+
+When editing, reviewing, or writing code under `fe/`, **read and follow** the skills below. Canonical copy in the repo: **`.agents/skills/`** (duplicated under `.claude/skills/`).
+
+## Required for React / component architecture
+
+1. **`/.agents/skills/vercel-react-best-practices/SKILL.md`** — start here; full detail in **`AGENTS.md`** in the same folder and files under `rules/`.
+2. **`/.agents/skills/vercel-composition-patterns/SKILL.md`** — compound components, context, avoid boolean-prop sprawl; detail in **`AGENTS.md`** and `rules/`.
+3. **`/.agents/skills/shadcn-tailwind/SKILL.md`** — shadcn/ui, Tailwind v4, CVA, `fe/components.json` aliases, CLI adds, tokens in `index.css`; use with the React and composition skills above.
+
+The `fe` stack is **Vite + React** (not Next.js): apply **client**, **bundle**, **rerender**, **rendering**, **js**, and **composition** guidance where it fits; skip or adapt **Next.js/RSC-only** rules (e.g. `server-*`, App Router–style `async-api-routes`) when they do not apply.
+
+## UI / accessibility / UX (when the task is relevant)
+
+4. **`/.agents/skills/web-design-guidelines/SKILL.md`** — follow the file’s workflow (fetch guidelines when auditing UI).
+
+## How to work
+
+- Prefer **SKILL.md** first for categories; open **AGENTS.md** or individual **`rules/*.md`** files when you need concrete examples.
+- Do not paste long skill text into this rule; always reference the paths above.

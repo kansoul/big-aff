@@ -1,0 +1,110 @@
+# Conventions & Style (API-focused)
+
+## Follow Laravel Naming Conventions
+
+| What | Convention | Good | Bad |
+|------|-----------|------|-----|
+| Controller | singular | `ArticleController` | `ArticlesController` |
+| Model | singular | `User` | `Users` |
+| Table | plural, snake_case | `article_comments` | `articleComments` |
+| Pivot table | singular alphabetical | `article_user` | `user_article` |
+| Column | snake_case, no model name | `meta_title` | `article_meta_title` |
+| Foreign key | singular model + `_id` | `article_id` | `articles_id` |
+| Route | plural | `articles/1` | `article/1` |
+| Route name | snake_case with dots | `users.show_active` | `users.show-active` |
+| Method | camelCase | `getAll` | `get_all` |
+| Variable | camelCase | `$articlesWithAuthor` | `$articles_with_author` |
+| Collection | descriptive, plural | `$activeUsers` | `$data` |
+| Object | descriptive, singular | `$activeUser` | `$users` |
+| Config | snake_case | `google_calendar.php` | `googleCalendar.php` |
+| Enum | singular | `UserType` | `UserTypes` |
+
+## Prefer Shorter Readable Syntax
+
+| Verbose | Shorter |
+|---------|---------|
+| `Session::get('cart')` | `session('cart')` |
+| `$request->session()->get('cart')` | `session('cart')` |
+| `$request->input('name')` | `$request->name` |
+| `return Redirect::back()` | `return back()` |
+| `Carbon::now()` | `now()` |
+| `App::make('Class')` | `app('Class')` |
+| `->where('column', '=', 1)` | `->where('column', 1)` |
+| `->orderBy('created_at', 'desc')` | `->latest()` |
+| `->orderBy('created_at', 'asc')` | `->oldest()` |
+| `->first()->name` | `->value('name')` |
+
+## Use Laravel String & Array Helpers
+
+Laravel provides `Str`, `Arr`, `Number`, and `Uri` helper classes that are more readable, chainable, and UTF-8 safe than raw PHP functions. Always prefer them.
+
+Strings — use `Str` and fluent `Str::of()` over raw PHP:
+
+```php
+// Incorrect
+$slug = strtolower(str_replace(' ', '-', $title));
+$short = substr($text, 0, 100) . '...';
+
+// Correct
+$slug = Str::slug($title);
+$short = Str::limit($text, 100);
+```
+
+Fluent strings — chain operations for complex transformations:
+
+```php
+// Incorrect
+$result = strtolower(trim(str_replace('_', '-', $input)));
+
+// Correct
+$result = Str::of($input)->trim()->replace('_', '-')->lower();
+```
+
+Arrays — use `Arr` over raw PHP:
+
+```php
+// Incorrect
+$name = isset($array['user']['name']) ? $array['user']['name'] : 'default';
+
+// Correct
+$name = Arr::get($array, 'user.name', 'default');
+```
+
+Numbers — use `Number` for display formatting:
+
+```php
+Number::format(1000000);
+Number::currency(1500, 'USD');
+```
+
+URIs — use `Uri` for URL manipulation:
+
+```php
+$uri = Uri::of('https://example.com/search')->withQuery(['q' => 'laravel', 'page' => 1]);
+```
+
+Use `$request->string('name')` to get a fluent `Stringable` directly from request input for immediate chaining.
+
+Use `search-docs` for the full list of available methods — these helpers are extensive.
+
+## No HTML in PHP Classes
+
+API backend code should not embed HTML markup in PHP classes. Return structured data (JSON) and keep presentation in the frontend.
+
+## No Unnecessary Comments
+
+Code should be readable on its own. Use descriptive method and variable names instead of comments. The only exception is config files, where descriptive comments are expected.
+
+Incorrect:
+
+```php
+// Check if there are any joins
+if (count((array) $builder->getQuery()->joins) > 0)
+```
+
+Correct:
+
+```php
+if ($this->hasJoins())
+```
+
