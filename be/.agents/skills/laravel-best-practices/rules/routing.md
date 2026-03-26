@@ -16,7 +16,7 @@ Correct:
 ```php
 public function show(Post $post)
 {
-    return view('posts.show', ['post' => $post]);
+    return PostResource::make($post);
 }
 ```
 

@@ -87,8 +87,9 @@ protected function casts(): array
 Always cast date columns. Use Carbon instances in templates instead of formatting strings manually.
 
 Incorrect:
-```blade
-{{ Carbon::createFromFormat('Y-d-m H-i', $order->ordered_at)->toDateString() }}
+```php
+// Avoid re-parsing date strings in transformers/resources.
+$date = Carbon::createFromFormat('Y-d-m H-i', $order->ordered_at)->toDateString();
 ```
 
 Correct:
@@ -101,9 +102,10 @@ protected function casts(): array
 }
 ```
 
-```blade
-{{ $order->ordered_at->toDateString() }}
-{{ $order->ordered_at->format('m-d') }}
+Then in an API Resource/DTO:
+
+```php
+'ordered_at' => $this->ordered_at?->toIso8601String(),
 ```
 
 ## Use `whereBelongsTo()` for Relationship Queries

@@ -13,7 +13,11 @@ class InvalidOrderException extends Exception
 
     public function render(Request $request): Response
     {
-        return response()->view('errors.invalid-order', status: 422);
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid order.',
+            'data' => null,
+        ], 422);
     }
 }
 ```
@@ -24,7 +28,11 @@ class InvalidOrderException extends Exception
 ->withExceptions(function (Exceptions $exceptions) {
     $exceptions->report(function (InvalidOrderException $e) { /* ... */ });
     $exceptions->render(function (InvalidOrderException $e, Request $request) {
-        return response()->view('errors.invalid-order', status: 422);
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid order.',
+            'data' => null,
+        ], 422);
     });
 })
 ```

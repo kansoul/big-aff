@@ -167,26 +167,27 @@ foreach (User::where('active', true)->cursor() as $user) {
 
 Use `cursor()` for read-only iteration. Use `chunk()` / `chunkById()` when modifying records.
 
-## No Queries in Blade Templates
+## No Queries in Response Builders (API)
 
-Never execute queries in Blade templates. Pass data from controllers.
+Never execute queries inside API resources/serializers/transformers. Query at the controller/service layer, eager-load relationships, then transform.
 
 Incorrect:
-```blade
-@foreach (User::all() as $user)
-    {{ $user->profile->name }}
-@endforeach
+```php
+final class UserResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'profile' => ProfileResource::make($this->profile()->first()),
+        ];
+    }
+}
 ```
 
 Correct:
 ```php
-// Controller
-$users = User::with('profile')->get();
-return view('users.index', compact('users'));
-```
+$users = User::query()->with('profile')->get();
 
-```blade
-@foreach ($users as $user)
-    {{ $user->profile->name }}
-@endforeach
+return UserResource::collection($users);
 ```

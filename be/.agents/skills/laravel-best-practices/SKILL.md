@@ -27,7 +27,6 @@ Check sibling files, related controllers, models, or tests for established patte
 - Index columns used in `WHERE`, `ORDER BY`, `JOIN`
 - `withCount()` instead of loading relations to count
 - `cursor()` for memory-efficient read-only iteration
-- Never query in Blade templates
 
 ### 2. Advanced Query Patterns → `rules/advanced-queries.md`
 
@@ -44,7 +43,7 @@ Check sibling files, related controllers, models, or tests for established patte
 
 - Define `$fillable` or `$guarded` on every model, authorize every action via policies or gates
 - No raw SQL with user input — use Eloquent or query builder
-- `{{ }}` for output escaping, `@csrf` on all POST/PUT/DELETE forms, `throttle` on auth and API routes
+- Apply `throttle` on auth and API routes
 - Validate MIME type, extension, and size for file uploads
 - Never commit `.env`, use `config()` for secrets, `encrypted` cast for sensitive DB fields
 
@@ -167,18 +166,11 @@ Check sibling files, related controllers, models, or tests for established patte
 - `lazyById()` when updating records while iterating
 - `toQuery()` for bulk operations on collections
 
-### 18. Blade & Views → `rules/blade-views.md`
-
-- `$attributes->merge()` in component templates
-- Blade components over `@include`; `@pushOnce` for per-component scripts
-- View Composers for shared view data
-- `@aware` for deeply nested component props
-
-### 19. Conventions & Style → `rules/style.md`
+### 18. Conventions & Style → `rules/style.md`
 
 - Follow Laravel naming conventions for all entities
 - Prefer Laravel helpers (`Str`, `Arr`, `Number`, `Uri`, `Str::of()`, `$request->string()`) over raw PHP functions
-- No JS/CSS in Blade, no HTML in PHP classes
+- No HTML in PHP classes
 - Code should be readable; comments only for config files
 
 ## How to Apply

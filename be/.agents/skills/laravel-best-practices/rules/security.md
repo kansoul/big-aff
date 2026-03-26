@@ -74,38 +74,12 @@ User::where('name', $request->name)->get();
 User::whereRaw('LOWER(name) = ?', [strtolower($request->name)])->get();
 ```
 
-## Escape Output to Prevent XSS
+## Output Encoding / XSS (API)
 
-Use `{{ }}` for HTML escaping. Only use `{!! !!}` for trusted, pre-sanitized content.
+For JSON APIs, you typically return plain strings (not HTML). Still treat user-generated content as untrusted:
 
-Incorrect:
-```blade
-{!! $user->bio !!}
-```
-
-Correct:
-```blade
-{{ $user->bio }}
-```
-
-## CSRF Protection
-
-Include `@csrf` in all POST/PUT/DELETE Blade forms. Not needed in Inertia.
-
-Incorrect:
-```blade
-<form method="POST" action="/posts">
-    <input type="text" name="title">
-</form>
-```
-
-Correct:
-```blade
-<form method="POST" action="/posts">
-    @csrf
-    <input type="text" name="title">
-</form>
-```
+- Never concatenate untrusted strings into HTML emails or server-rendered views.
+- If you must return HTML fragments, sanitize them explicitly and document the allowed subset.
 
 ## Rate Limit Auth and API Routes
 
