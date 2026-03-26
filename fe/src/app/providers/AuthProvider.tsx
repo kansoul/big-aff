@@ -1,36 +1,37 @@
-import { useEffect } from "react";
-import type { ReactNode } from "react";
-import { dashboardApi } from "@/features/dashboard/api";
-import { useAuthStore } from "@/hooks/useAuthStore";
+import { useEffect } from 'react'
+import type { ReactNode } from 'react'
+
+import { dashboardApi } from '@/features/dashboard/api'
+import { useAuthStore } from '@/hooks/useAuthStore'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { setUser, setLoading, logout } = useAuthStore();
+  const { setUser, setLoading, logout } = useAuthStore()
 
   useEffect(() => {
     const initAuth = async () => {
       try {
-        setLoading(true);
-        const user = await dashboardApi.getMe();
-        setUser(user);
+        setLoading(true)
+        const user = await dashboardApi.getMe()
+        setUser(user)
       } catch {
-        logout();
+        logout()
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    initAuth();
+    void initAuth()
 
     const handleUnauthorized = () => {
-      logout();
-    };
+      logout()
+    }
 
-    window.addEventListener("unauthorized", handleUnauthorized);
+    window.addEventListener('unauthorized', handleUnauthorized)
 
     return () => {
-      window.removeEventListener("unauthorized", handleUnauthorized);
-    };
-  }, [setUser, setLoading, logout]);
+      window.removeEventListener('unauthorized', handleUnauthorized)
+    }
+  }, [setUser, setLoading, logout])
 
-  return <>{children}</>;
+  return <>{children}</>
 }

@@ -13,67 +13,67 @@ metadata:
 
 # Laravel BE CRUD (project conventions)
 
-Skill này chuẩn hoá cách làm CRUD cho BE Laravel trong repo này. Ưu tiên **consistency**: luôn nhìn các file hiện có (ví dụ `AuthController`, `BaseController`, `routes/api.php`) và làm giống.
+This skill standardizes how to implement CRUD for the Laravel backend in this repo. **Consistency** comes first: always mirror existing files (for example `AuthController`, `BaseController`, `routes/api.php`) and match their patterns.
 
 ## Project conventions you MUST follow here
 
-- **Standard API responses**: Controller nên extend `App\Http\Controllers\API\BaseController` và dùng:
+- **Standard API responses**: Controllers should extend `App\Http\Controllers\API\BaseController` and use:
   - `sendResponse($data, $message = 'Success', $code = 200)`
   - `sendError($error, $errorMessages = [], $code = 404)`
-- **Validation**: dùng `FormRequest` và luôn gọi `$request->validated()` (không dùng `$request->all()`).
-- **Transform output**: dùng `App\Http\Resources\*Resource` (`JsonResource`) cho `show`/`index` payload.
+- **Validation**: use `FormRequest` and always call `$request->validated()` (do not use `$request->all()`).
+- **Transform output**: use `App\Http\Resources\*Resource` (`JsonResource`) for `show`/`index` payloads.
 - **Business logic placement**:
-  - Mặc định: `App\Services\<Domain>\<Entity>Service`
-  - Nếu logic lớn/đa bước: tách `App\Actions\<Domain>\*Action` và inject vào Service (như `AuthService`).
-- **Routes**: API routes nằm ở `be/routes/api.php`. Dùng `Route::middleware('auth:sanctum')` cho endpoints cần auth.
-- **Testing**: viết **PHPUnit** feature tests (repo dùng PHPUnit v12). Không tạo Pest mới.
-- **Best practices (required)**: khi tạo CRUD, bắt buộc tuân thủ skill `be/.agents/skills/laravel-best-practices` (performance, security, validation, routing, testing, architecture). Nếu có xung đột nhỏ giữa “template CRUD” và best-practices thì ưu tiên **best-practices + conventions đang tồn tại trong codebase**.
+  - Default: `App\Services\<Domain>\<Entity>Service`
+  - For large or multi-step logic: split into `App\Actions\<Domain>\*Action` and inject into the Service (as with `AuthService`).
+- **Routes**: API routes live in `be/routes/api.php`. Use `Route::middleware('auth:sanctum')` for endpoints that require authentication.
+- **Testing**: write **PHPUnit** feature tests (this repo uses PHPUnit v12). Do not add new Pest tests.
+- **Best practices (required)**: when building CRUD, you must follow the `be/.agents/skills/laravel-best-practices` skill (performance, security, validation, routing, testing, architecture). If there is a minor conflict between a “CRUD template” and best practices, prefer **best practices + conventions already present in the codebase**.
 
 ## CRUD blueprint (no new table by default)
 
-Mặc định skill này **KHÔNG tạo bảng/migration mới**. Giả định bảng + model đã tồn tại; ta chỉ bổ sung API CRUD theo conventions dự án.
+By default this skill **does NOT create new tables/migrations**. It assumes the table and model already exist; you only add CRUD APIs following project conventions.
 
 ### 1) Requests (Create/Update)
 
-Tạo request riêng (follow conventions của repo; nếu project chưa dùng `GetList...Request` thì đừng tự ý introduce):
+Create dedicated request classes (follow repo conventions; if the project does not use `GetList...Request`, do not introduce it on your own):
 
 - `Store<Entity>Request`
 - `Update<Entity>Request`
-- (Optional) `GetList<Entity>Request` (khi filter/sort/paginate phức tạp)
+- (Optional) `GetList<Entity>Request` (when filter/sort/pagination is complex)
 
-Rules nên tối ưu cho CRUD:
+Rules that work well for CRUD:
 
-- Dùng `sometimes`/`filled` cho update.
-- Dùng `Rule::unique()->ignore($modelId)` khi update unique fields.
-- Với FK/relations: validate tồn tại bằng `exists:*` (tránh lỗi integrity + tăng clarity).
+- Use `sometimes`/`filled` for updates.
+- Use `Rule::unique()->ignore($modelId)` when updating unique fields.
+- For foreign keys/relations: validate existence with `exists:*` (avoids integrity issues and clarifies intent).
 
 ### 2) Resource
 
-Tạo `<Entity>Resource`:
+Create `<Entity>Resource`:
 
-- `toArray()` chỉ trả các fields cần thiết.
-- Với relations: dùng `whenLoaded()` để không gây query ngầm.
+- `toArray()` returns only the fields you need.
+- For relations: use `whenLoaded()` to avoid implicit queries.
 
 ### 3) Service (+ optional Actions)
 
-Tạo `App\Services\<Domain>\<Entity>Service` cung cấp các methods:
+Create `App\Services\<Domain>\<Entity>Service` with methods:
 
 - `list(array $filters): LengthAwarePaginator|Collection`
 - `create(array $data): <Entity>`
 - `update(<Entity> $entity, array $data): <Entity>`
 - `delete(<Entity> $entity): void`
 
-Nếu cần transactions/side effects (events/jobs/files):
+When you need transactions or side effects (events/jobs/files):
 
-- Tổ chức bằng Actions hoặc methods private trong Service.
-- Bao bằng `DB::transaction()` khi multi-write.
+- Structure with Actions or private methods on the Service.
+- Wrap multi-writes in `DB::transaction()`.
 
 ### 4) Controller (API)
 
-Tạo controller ở `App\Http\Controllers\Api\<Domain>` (hoặc `Api` cùng pattern hiện có), extends `BaseController`, methods:
+Create the controller under `App\Http\Controllers\Api\<Domain>` (or `Api` following the existing pattern), extending `BaseController`, with methods:
 
 - `index()`:
-  - accept filter params (tối thiểu: `per_page`, `page`, optional `q`).
+  - accept filter params (at minimum: `per_page`, `page`, optional `q`).
   - return `sendResponse(Resource::collection($paginator), '...')`
 - `store(StoreRequest $request)`:
   - `$entity = $service->create($request->validated())`
@@ -84,19 +84,19 @@ Tạo controller ở `App\Http\Controllers\Api\<Domain>` (hoặc `Api` cùng pat
 - `update(UpdateRequest $request, <Entity> $entity)`:
   - return `sendResponse(new Resource($updated), 'Updated')`
 - `destroy(<Entity> $entity)`:
-  - delete + return `sendResponse(null, 'Deleted')`
+  - delete and return `sendResponse(null, 'Deleted')`
 
 Error handling:
 
-- Validation errors: để Laravel trả 422 (mặc định). Không bọc try/catch trừ khi convert domain exceptions.
-- Domain errors: trả `sendError()` với HTTP code phù hợp.
+- Validation errors: let Laravel return 422 (default). Avoid try/catch unless you are converting domain exceptions.
+- Domain errors: return `sendError()` with an appropriate HTTP status code.
 
 ### 5) Routes
 
-Trong `be/routes/api.php`:
+In `be/routes/api.php`:
 
-- Với resource public: `Route::apiResource('entities', EntityController::class);`
-- Với resource cần auth:
+- For a public resource: `Route::apiResource('entities', EntityController::class);`
+- For an authenticated resource:
 
 ```php
 Route::middleware('auth:sanctum')->group(function () {
@@ -104,39 +104,39 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 ```
 
-Nếu chỉ cần subset methods: dùng `->only([...])` hoặc `->except([...])`.
+If you only need a subset of actions: use `->only([...])` or `->except([...])`.
 
 ### 6) PHPUnit feature tests
 
-Tối thiểu test:
+Minimum coverage:
 
-- **index**: trả đúng shape JSON, pagination ok (nếu dùng paginate)
+- **index**: correct JSON shape, pagination OK (if you paginate)
 - **store**: 201 + record created
-- **show**: 200 + đúng data
+- **show**: 200 + correct data
 - **update**: 200 + record updated
 - **destroy**: 200 + record deleted
-- **authorization**: endpoints dưới sanctum phải 401 nếu unauth
+- **authorization**: Sanctum-protected endpoints must return 401 when unauthenticated
 
-Assertions ưu tiên:
+Prefer assertions such as:
 
 - `assertOk()/assertCreated()`
 - `assertJsonPath('success', true)`
-- `assertDatabaseHas()/assertDatabaseMissing()` (hoặc helpers nếu project có)
+- `assertDatabaseHas()/assertDatabaseMissing()` (or project helpers if any)
 
 ### (Optional) Database artifacts (ONLY when explicitly needed)
 
-Chỉ tạo các phần này khi user yêu cầu hoặc bảng/model chưa tồn tại:
+Create these only when the user asks or the table/model does not exist yet:
 
-- **Migration**: tạo bảng + indexes + foreign keys.
+- **Migration**: table + indexes + foreign keys.
 - **Model**:
-  - Khai báo `$fillable` hoặc `$guarded`.
-  - Khai báo `$casts`.
-  - Define relationships; eager-load ở query call site để tránh N+1.
-- **Factory**: tạo factory để phục vụ tests.
+  - Declare `$fillable` or `$guarded`.
+  - Declare `$casts`.
+  - Define relationships; eager-load at the query call site to avoid N+1.
+- **Factory**: add a factory to support tests.
 
 ## Response shape (must match BaseController)
 
-Tất cả endpoint “happy path” dùng `sendResponse()` sẽ có shape:
+All “happy path” endpoints using `sendResponse()` share this shape:
 
 ```json
 {
@@ -146,7 +146,7 @@ Tất cả endpoint “happy path” dùng `sendResponse()` sẽ có shape:
 }
 ```
 
-Error dùng `sendError()`:
+Errors use `sendError()`:
 
 ```json
 {
@@ -159,11 +159,10 @@ Error dùng `sendError()`:
 
 ## Quick checklist before you finish
 
-- Controller extends đúng `App\Http\Controllers\API\BaseController` và return `sendResponse/sendError`.
-- Index có paginate hoặc limit hợp lý (không trả toàn bộ nếu bảng lớn).
-- Không N+1 (eager-load relations ở query nếu resource cần).
-- Requests dùng `$request->validated()`.
-- Resource dùng `whenLoaded()` cho relations.
-- Có PHPUnit feature tests cho CRUD chính + auth (nếu có).
-- Theo `laravel-best-practices`: authorize (policies/gates nếu có), không expose fields nhạy cảm trong Resource, tránh query builder/raw SQL với input user, và chạy `vendor/bin/pint --dirty --format agent` sau khi sửa PHP files.
-
+- Controller correctly extends `App\Http\Controllers\API\BaseController` and returns `sendResponse`/`sendError`.
+- `index` uses pagination or a sensible limit (do not return the full table for large datasets).
+- No N+1 (eager-load relations in the query when the resource needs them).
+- Requests use `$request->validated()`.
+- Resource uses `whenLoaded()` for relations.
+- PHPUnit feature tests cover the main CRUD flows + auth (if applicable).
+- Follow `laravel-best-practices`: authorize (policies/gates when applicable), do not expose sensitive fields in Resources, avoid query builder/raw SQL with raw user input, and run `vendor/bin/pint --dirty --format agent` after editing PHP files.
