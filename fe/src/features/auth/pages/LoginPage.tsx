@@ -5,6 +5,7 @@ import * as z from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle } from 'lucide-react'
 
+import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { loginApi } from '@/features/auth/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -65,19 +66,23 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md shadow-lg border-0">
-        <CardHeader className="space-y-1 text-center bg-white rounded-t-lg border-b border-gray-100 pb-6 pt-8">
-          <CardTitle className="text-2xl font-bold tracking-tight text-gray-900">
+    <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
+      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+        <ThemeToggle />
+      </div>
+
+      <Card className="w-full max-w-md border shadow-lg">
+        <CardHeader className="space-y-1 text-center rounded-t-lg border-b pb-6 pt-8">
+          <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
             Sign in to your account
           </CardTitle>
-          <CardDescription className="text-gray-500">
+          <CardDescription className="text-muted-foreground">
             Enter your email and password to access the dashboard
           </CardDescription>
         </CardHeader>
-        <CardContent className="pt-6 bg-white rounded-b-lg">
+        <CardContent className="rounded-b-lg pt-6">
           {error && (
-            <div className="mb-6 flex items-center gap-2 rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-100">
+            <div className="text-destructive mb-6 flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm">
               <AlertCircle className="h-4 w-4" />
               <p>{error}</p>
             </div>
@@ -95,17 +100,16 @@ export function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700">Email</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="name@example.com"
                         type="email"
                         autoComplete="email"
-                        className="transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage className="text-red-500" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -115,26 +119,21 @@ export function LoginPage() {
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between">
-                      <FormLabel className="text-gray-700">Password</FormLabel>
+                      <FormLabel>Password</FormLabel>
                     </div>
                     <FormControl>
                       <Input
                         type="password"
                         placeholder="••••••••"
                         autoComplete="current-password"
-                        className="transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage className="text-red-500" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button
-                type="submit"
-                className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-md transition-colors"
-                disabled={isSubmitting}
-              >
+              <Button type="submit" className="mt-6 w-full font-medium" disabled={isSubmitting}>
                 {isSubmitting ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
