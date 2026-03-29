@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\RoleEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,14 +12,30 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::create('roles', function (Blueprint $table) {
+            $table->id();
+            $table->enum('name', RoleEnum::values())->unique();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
+            $table->string('avatar_url')->nullable();
+            $table->foreignId('role_id')->nullable()->constrained('roles')->nullOnDelete();
+            $table->json('access')->nullable();
+            $table->timestamp('sync_at')->nullable();
+            $table->timestamp('sync_adsense_at')->nullable();
+            $table->timestamp('sync_facebook_at')->nullable();
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
+
+            $table->foreignId('parent_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

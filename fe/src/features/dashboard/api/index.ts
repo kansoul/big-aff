@@ -8,6 +8,11 @@ export const dashboardApi = {
 
   async getMe(): Promise<User> {
     const response = await axiosInstance.get<ApiResponse<User>>('/auth/me')
-    return response.data.data
+    const u = response.data.data
+    return {
+      ...u,
+      permission_mask: u.permission_mask ?? 0,
+      permissions: u.permissions ?? [],
+    }
   },
 }

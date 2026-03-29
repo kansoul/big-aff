@@ -31,7 +31,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
-  const { setUser } = useAuthStore()
+  const setUser = useAuthStore((s) => s.setUser)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

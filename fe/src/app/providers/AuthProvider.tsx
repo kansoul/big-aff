@@ -5,7 +5,9 @@ import { dashboardApi } from '@/features/dashboard/api'
 import { useAuthStore } from '@/hooks/useAuthStore'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { setUser, setLoading, logout } = useAuthStore()
+  const setUser = useAuthStore((s) => s.setUser)
+  const setLoading = useAuthStore((s) => s.setLoading)
+  const logout = useAuthStore((s) => s.logout)
 
   useEffect(() => {
     const initAuth = async () => {

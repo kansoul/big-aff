@@ -29,6 +29,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 - You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
 - Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
 - Check for existing components to reuse before writing a new one.
+- For Eloquent models, keep the model class thin and compose behavior via traits in `app/Models/Traits/*`. Any model logic updates (for example relationships, scopes, accessors/mutators, methods, observers) must be created or edited in the corresponding trait, then wired in the model via `use`.
 
 ## Verification Scripts
 

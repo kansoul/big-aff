@@ -1,0 +1,29 @@
+---
+description: Agent rules for be/ — activate be/.agents Laravel skills and project conventions
+globs:
+  - be/**
+alwaysApply: false
+---
+
+# Backend (`be/`): skills và convention
+
+Khi làm việc trong **`be/`** (Laravel API), kích hoạt skill phù hợp **trước khi** viết hoặc refactor code.
+
+## Skills (canonical trong repo)
+
+| Skill | Đường dẫn | Khi nào dùng |
+|-------|-----------|----------------|
+| **laravel-best-practices** | **`be/.agents/skills/laravel-best-practices/SKILL.md`** | Mọi thay đổi PHP Laravel: controller, model, migration, Form Request, policy, job, query Eloquent, bảo mật, cache, v.v. |
+| **laravel-crud** | **`be/.agents/skills/laravel-crud/SKILL.md`** | CRUD API: FormRequest, Resource, service/controller pattern, `routes/api.php`, Sanctum, PHPUnit. |
+
+Chi tiết rule bổ sung nằm trong **`be/.agents/skills/laravel-best-practices/rules/`**.
+
+## Convention đặc thù dự án (tóm tắt)
+
+- **Model:** giữ model gọn; logic/relationship/scope/observer đặt trong trait **`app/Models/Traits/*`**, gắn vào model qua `use`.
+- **Permissions:** bitmask trên **`roles.permission_mask`**; định nghĩa bằng **`App\Enums\Permission`** (không có bảng `permissions`). Middleware **`permission.scope:`** + checklist khi thêm API/scope mới — xem **`be/.agents/skills/laravel-best-practices/SKILL.md`** (mục Permissions).
+- **API:** bám **`AuthController`**, **`BaseController`** (`sendResponse` / `sendError`), và pattern hiện có trong **`routes/api.php`**.
+- **Sau khi sửa PHP:** chạy **`vendor/bin/pint --dirty --format agent`** (theo `be/AGENTS.md`).
+- **Tài liệu Laravel:** ưu tiên công cụ **`search-docs`** (Laravel Boost) khi cần API chính xác theo phiên bản đã cài.
+
+Đừng nhân đôi toàn bộ nội dung skill trong rule này; mở đúng file **`SKILL.md`** ở bảng trên.

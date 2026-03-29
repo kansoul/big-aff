@@ -15,6 +15,8 @@ metadata:
 
 This skill standardizes how to implement CRUD for the Laravel backend in this repo. **Consistency** comes first: always mirror existing files (for example `AuthController`, `BaseController`, `routes/api.php`) and match their patterns.
 
+For folder locations (`routes/`, `app/Http/Controllers/Api/`, `app/Models/Traits/`, …), align with **Repository layout** in **`be/.agents/skills/laravel-best-practices/SKILL.md`**.
+
 ## Project conventions you MUST follow here
 
 - **Standard API responses**: Controllers should extend `App\Http\Controllers\API\BaseController` and use:
@@ -25,6 +27,10 @@ This skill standardizes how to implement CRUD for the Laravel backend in this re
 - **Business logic placement**:
   - Default: `App\Services\<Domain>\<Entity>Service`
   - For large or multi-step logic: split into `App\Actions\<Domain>\*Action` and inject into the Service (as with `AuthService`).
+- **Model composition rule (project-specific)**:
+  - Keep Eloquent model classes thin.
+  - Put model behavior in traits under `App\Models\Traits\...` (for example relationship/scope/attribute/method/observer traits).
+  - When adding or changing model functionality, create or edit the corresponding trait and only wire it in the model via `use`.
 - **Routes**: API routes live in `be/routes/api.php`. Use `Route::middleware('auth:sanctum')` for endpoints that require authentication.
 - **Testing**: write **PHPUnit** feature tests (this repo uses PHPUnit v12). Do not add new Pest tests.
 - **Best practices (required)**: when building CRUD, you must follow the `be/.agents/skills/laravel-best-practices` skill (performance, security, validation, routing, testing, architecture). If there is a minor conflict between a “CRUD template” and best practices, prefer **best practices + conventions already present in the codebase**.
@@ -70,7 +76,7 @@ When you need transactions or side effects (events/jobs/files):
 
 ### 4) Controller (API)
 
-Create the controller under `App\Http\Controllers\Api\<Domain>` (or `Api` following the existing pattern), extending `BaseController`, with methods:
+Create the controller under `app/Http/Controllers/Api/` (namespace **`App\Http\Controllers\Api\...`** or nested such as **`App\Http\Controllers\Api\Auth`** — **match sibling controllers** in the same folder). Extend **`App\Http\Controllers\API\BaseController`** (see `app/Http/Controllers/Api/BaseController.php`), with methods:
 
 - `index()`:
   - accept filter params (at minimum: `per_page`, `page`, optional `q`).
@@ -105,6 +111,8 @@ Route::middleware('auth:sanctum')->group(function () {
 ```
 
 If you only need a subset of actions: use `->only([...])` or `->except([...])`.
+
+**Authorization beyond Sanctum (this repo):** when an endpoint must require a specific **permission bit**, chain middleware `permission.scope:{scope}` where `{scope}` is `Permission::YourCase->scopeString()`, or pipe-separated alternatives. Do **not** invent scopes that are not on `App\Enums\Permission`. For Form Request `authorize()`, use `$user->hasPermissionScope(...)` or `hasPermissionFlag(Permission::...)`. See **`laravel-best-practices`** → Permissions (bitmask).
 
 ### 6) PHPUnit feature tests
 

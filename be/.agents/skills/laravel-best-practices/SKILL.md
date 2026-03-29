@@ -16,6 +16,32 @@ Before applying any rule, check what the application already does. Laravel offer
 
 Check sibling files, related controllers, models, or tests for established patterns. If one exists, follow it — don't introduce a second way. These rules are defaults for when no pattern exists yet, not overrides.
 
+### Repository layout (`big-ticollab/be`)
+
+- **`routes/api.php`** — API routes; Sanctum-protected groups use `auth:sanctum` where the app already does.
+- **`app/Http/Controllers/Api/`** — API controllers (extend **`App\Http\Controllers\API\BaseController`** for `sendResponse` / `sendError` when that pattern applies).
+- **`app/Http/Requests/`** — Form requests (often grouped by domain, e.g. `Permission/`).
+- **`app/Http/Resources/`** — API Resources for JSON output.
+- **`app/Actions/`** — Single-purpose actions when the codebase uses them (e.g. auth).
+- **`app/Models/`** — Eloquent models; behavior split into **`app/Models/Traits/*`** (see below).
+- **`database/migrations/`**, **`database/seeders/`** — schema and seed data.
+
+Do not add new top-level folders under `app/` without matching an existing convention. The SPA lives in **`fe/`** at the repo root — not inside `be/`.
+
+### Permissions (bitmask; `App\Enums\Permission`)
+
+- **Storage:** `roles.permission_mask` (integer bitfield). One **`App\Enums\Permission`** case = one bit (`1 << n`). There is **no** `permissions` table or role–permission pivot—definitions are code-only.
+- **Scope strings:** each case implements `scopeString()` using `{cluster}.{screen}.{action}` (lowercase segments). These strings must match **`fe/src/constants/permissions.ts`** (`PermissionBits`, nested `PermissionScope`, and `PERMISSION_CATALOG` for the role UI).
+- **Routes:** protect endpoints with `->middleware('permission.scope:'.Permission::SomeCase->scopeString())`. Use `|` between scopes for OR (see **`routes/api.php`**). Alias registered in **`bootstrap/app.php`**; implementation **`EnsurePermissionScope`**.
+- **User checks:** `User::hasPermissionScope(string)` (supports concrete scopes and `*` when the role mask is full) and `hasPermissionFlag(Permission)` via **`UserMethod`** trait; ensure `role` is loaded where needed.
+- **Adding a new gated page/API:** (1) add enum case + `scopeString()` + `match` branch; (2) apply middleware / `authorize()` using that scope; (3) update frontend constants in lockstep (see **`.agents/skills/fe-project-conventions/SKILL.md`** → Permissions).
+
+### Model Trait Composition (project-specific)
+
+- In this project, keep Eloquent model classes thin and compose model behavior using traits under `app/Models/Traits/*`.
+- When changing model behavior (for example relationships, scopes, accessors/mutators, custom methods, observers), create or update the corresponding trait file instead of putting logic directly into the model class.
+- The model class should mainly import and `use` these traits.
+
 ## Quick Reference
 
 ### 1. Database Performance → `rules/db-performance.md`

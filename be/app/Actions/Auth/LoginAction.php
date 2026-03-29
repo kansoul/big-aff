@@ -9,19 +9,23 @@ use Illuminate\Support\Facades\Auth;
 class LoginAction
 {
     /**
-     * @param array{email: string, password: string} $credentials
+     * @param  array{email: string, password: string}  $credentials
+     *
      * @throws AuthenticationException
      */
     public function execute(array $credentials): User
     {
-        if (!Auth::attempt($credentials)) {
+        if (! Auth::attempt($credentials)) {
             throw new AuthenticationException('Invalid credentials provided.');
         }
 
         /** @var User $user */
         $user = Auth::user();
+        $user->load('role');
 
-        request()->session()->regenerate();
+        if (request()->hasSession()) {
+            request()->session()->regenerate();
+        }
 
         return $user;
     }

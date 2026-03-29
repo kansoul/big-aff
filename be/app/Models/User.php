@@ -2,20 +2,39 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
+use App\Models\Traits\Attribute\UserAttribute;
+use App\Models\Traits\Method\UserMethod;
+use App\Models\Traits\Observers\UserObserver;
+use App\Models\Traits\Relationship\UserRelationship;
+use App\Models\Traits\Scope\UserScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, UserAttribute, UserMethod, UserObserver, UserRelationship, UserScope;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'email_verified_at',
+        'avatar_url',
+        'role_id',
+        'parent_id',
+        'updated_by',
+        'access',
+        'sync_at',
+        'sync_adsense_at',
+        'sync_facebook_at',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
     /**
      * Get the attributes that should be cast.

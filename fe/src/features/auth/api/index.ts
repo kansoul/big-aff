@@ -13,6 +13,11 @@ export const loginApi = {
   async login(credentials: LoginCredentials): Promise<User> {
     await this.getCsrfCookie()
     const response = await axiosInstance.post<ApiResponse<User>>('/auth/login', credentials)
-    return response.data.data
+    const u = response.data.data
+    return {
+      ...u,
+      permission_mask: u.permission_mask ?? 0,
+      permissions: u.permissions ?? [],
+    }
   },
 }
