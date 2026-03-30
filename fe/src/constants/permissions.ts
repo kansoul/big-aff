@@ -1,34 +1,7 @@
 /**
- * Bit flags mirror `App\Enums\Permission` (Laravel). One scope = one bit in `roles.permission_mask`.
- * `PermissionScope` strings and `PermissionBits` keys stay aligned with the backend enum names (`key`).
+ * Bit flags mirror `App\Enums\Permission` (Laravel). One permission = one bit in `roles.permission_mask`.
+ * Route guards and UI checks use `permission_mask` with `PermissionBits` values.
  */
-
-export const PermissionScope = {
-  ALL: '*',
-  report: {
-    overview: {
-      view: 'report.overview.view',
-    },
-    export: {
-      run: 'report.export',
-    },
-  },
-  settings: {
-    users: {
-      view: 'settings.users.view',
-      create: 'settings.users.create',
-      update: 'settings.users.update',
-      delete: 'settings.users.delete',
-    },
-    roles: {
-      view: 'settings.roles.view',
-      create: 'settings.roles.create',
-      update: 'settings.roles.update',
-      delete: 'settings.roles.delete',
-      assign: 'settings.roles.assign',
-    },
-  },
-} as const
 
 /** Integer values must match `App\Enums\Permission` cases (same bit positions). */
 export const PermissionBits = {
@@ -44,21 +17,6 @@ export const PermissionBits = {
   SettingsRolesDelete: 1 << 9,
   SettingsRolesAssign: 1 << 10,
 } as const
-
-/** Maps UI/route scope strings → bitmask keys returned on `user.permissions` from the API. */
-export const PERMISSION_SCOPE_TO_KEY: Record<string, keyof typeof PermissionBits> = {
-  [PermissionScope.report.overview.view]: 'ReportOverviewView',
-  [PermissionScope.report.export.run]: 'ReportExport',
-  [PermissionScope.settings.users.view]: 'SettingsUsersView',
-  [PermissionScope.settings.users.create]: 'SettingsUsersCreate',
-  [PermissionScope.settings.users.update]: 'SettingsUsersUpdate',
-  [PermissionScope.settings.users.delete]: 'SettingsUsersDelete',
-  [PermissionScope.settings.roles.view]: 'SettingsRolesView',
-  [PermissionScope.settings.roles.create]: 'SettingsRolesCreate',
-  [PermissionScope.settings.roles.update]: 'SettingsRolesUpdate',
-  [PermissionScope.settings.roles.delete]: 'SettingsRolesDelete',
-  [PermissionScope.settings.roles.assign]: 'SettingsRolesAssign',
-}
 
 export function fullPermissionMask(): number {
   let m = 0
@@ -90,6 +48,32 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
     id: 'settings',
     label: 'Settings',
     screens: [
+      {
+        id: 'users',
+        label: 'Users',
+        permissions: [
+          {
+            key: 'SettingsUsersView',
+            bit: PermissionBits.SettingsUsersView,
+            label: 'View',
+          },
+          {
+            key: 'SettingsUsersCreate',
+            bit: PermissionBits.SettingsUsersCreate,
+            label: 'Create',
+          },
+          {
+            key: 'SettingsUsersUpdate',
+            bit: PermissionBits.SettingsUsersUpdate,
+            label: 'Update',
+          },
+          {
+            key: 'SettingsUsersDelete',
+            bit: PermissionBits.SettingsUsersDelete,
+            label: 'Delete',
+          },
+        ],
+      },
       {
         id: 'roles',
         label: 'Roles',
@@ -125,26 +109,12 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
   },
 ]
 
-export const PERMISSION_SCOPES: readonly string[] = [
-  PermissionScope.ALL,
-  ...Object.keys(PERMISSION_SCOPE_TO_KEY),
-]
-
-export type PermissionScopeValue = (typeof PERMISSION_SCOPES)[number]
-
-export function hasPermission(scopes: string[] | undefined | null, required: string): boolean {
-  console.log('scopes', scopes)
-  if (!scopes?.length) {
-    return false
-  }
-  if (scopes.includes(PermissionScope.ALL)) {
-    return true
-  }
-  if (scopes.includes(required)) {
-    return true
-  }
-  const key = PERMISSION_SCOPE_TO_KEY[required]
-  return key != null && scopes.includes(key)
+/** Whether the current user’s mask includes the required permission bit (or full mask). */
+export function hasPermission(
+  permissionMask: number | undefined | null,
+  requiredBit: number,
+): boolean {
+  return maskHasPermission(permissionMask, requiredBit)
 }
 
 export function maskHasPermission(mask: number | undefined | null, requiredBit: number): boolean {

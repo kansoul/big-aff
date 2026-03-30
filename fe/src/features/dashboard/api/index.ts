@@ -12,7 +12,6 @@ export const dashboardApi = {
     return {
       ...u,
       permission_mask: u.permission_mask ?? 0,
-      permissions: u.permissions ?? [],
     }
   },
 }

@@ -5,7 +5,7 @@ Use this file with **Cursor** / **Claude** when working in the Vite + React app.
 ## Skills (read in order for structure and stack)
 
 1. **`fe-project-conventions`** — **`/.agents/skills/fe-project-conventions/SKILL.md`** (canonical; mirrored at **`.claude/skills/fe-project-conventions/SKILL.md`**).  
-   Covers **`features/<domain>/pages`**, **`features/<domain>/components`**, routing, API client, permissions (bitmask / `PermissionScope`), aliases, and **Re-render optimization** (Zustand selectors, `memo`, `useCallback`, `useMemo`).
+   Covers **`features/<domain>/pages`**, **`features/<domain>/components`**, routing, API client, permissions (bitmask / `PermissionBits`), aliases, and **Re-render optimization** (Zustand selectors, `memo`, `useCallback`, `useMemo`).
 
 2. **`shadcn-tailwind`** — **`/.agents/skills/shadcn-tailwind/SKILL.md`**.
 

@@ -112,7 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 If you only need a subset of actions: use `->only([...])` or `->except([...])`.
 
-**Authorization beyond Sanctum (this repo):** when an endpoint must require a specific **permission bit**, chain middleware `permission.scope:{scope}` where `{scope}` is `Permission::YourCase->scopeString()`, or pipe-separated alternatives. Do **not** invent scopes that are not on `App\Enums\Permission`. For Form Request `authorize()`, use `$user->hasPermissionScope(...)` or `hasPermissionFlag(Permission::...)`. See **`laravel-best-practices`** → Permissions (bitmask).
+**Authorization beyond Sanctum (this repo):** when an endpoint must require a specific **permission bit**, chain middleware `permission.scope:{value}` where `{value}` is `Permission::YourCase->value` (integer), or pipe-separated alternatives (**digits only**; full-access users are handled via an all-bits-set role mask, not a wildcard token). Do **not** invent bits that are not on `App\Enums\Permission`. For Form Request `authorize()` and policies, use `hasPermissionFlag(Permission::...)`. See **`laravel-best-practices`** → Permissions (bitmask).
 
 ### 6) PHPUnit feature tests
 

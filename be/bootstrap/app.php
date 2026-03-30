@@ -32,7 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($e->getStatusCode() === 419) {
                 return response()->json([
                     'message' => 'CSRF token mismatch.',
-                ], Response::HTTP_INTERNAL_SERVER_ERROR);
+                ], 419);
             }
         });
     })->create();

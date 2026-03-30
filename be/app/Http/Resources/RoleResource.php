@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Enums\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Carbon;
@@ -27,7 +26,6 @@ class RoleResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'permission_mask' => $mask,
-            'permissions' => Permission::expandMaskToNames($mask),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

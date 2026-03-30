@@ -4,6 +4,7 @@ namespace App\Actions\Auth;
 
 use App\Exceptions\AuthenticationException;
 use App\Models\User;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 
 class LoginAction
@@ -13,8 +14,10 @@ class LoginAction
      *
      * @throws AuthenticationException
      */
-    public function execute(array $credentials): User
+    public function execute(array $credentials, bool $remember = false): User
     {
+        unset($credentials['remember']);
+        info($credentials);
         if (! Auth::attempt($credentials)) {
             throw new AuthenticationException('Invalid credentials provided.');
         }

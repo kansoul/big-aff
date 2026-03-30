@@ -5,9 +5,12 @@ import * as z from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle } from 'lucide-react'
 
+import logoRed from '@/assets/logo-s-red.png'
+import logoWhite from '@/assets/logo-s-white.png'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { loginApi } from '@/features/auth/api'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -18,11 +21,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { PATHS } from '@/constants/paths'
 import { useAuthStore } from '@/hooks/useAuthStore'
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
   password: z.string().min(1, { message: 'Password is required' }),
+  remember: z.boolean().optional(),
 })
 
 type LoginFormValues = z.infer<typeof loginSchema>
@@ -38,6 +43,7 @@ export function LoginPage() {
     defaultValues: {
       email: '',
       password: '',
+      remember: false,
     },
   })
 
@@ -48,7 +54,7 @@ export function LoginPage() {
 
       const user = await loginApi.login(data)
       setUser(user)
-      await navigate('/dashboard')
+      await navigate(PATHS.dashboard)
     } catch (err: unknown) {
       const error = err as {
         response?: { status?: number; data?: { message?: string } }
@@ -71,16 +77,31 @@ export function LoginPage() {
         <ThemeToggle />
       </div>
 
-      <Card className="w-full max-w-md border shadow-lg">
-        <CardHeader className="space-y-1 text-center rounded-t-lg border-b pb-6 pt-8">
+      <Card className="w-full max-w-md border shadow-lg p-2">
+        <CardHeader className="space-y-1 text-center rounded-t-lg pb-2 pt-8">
           <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
-            Sign in to your account
+            <span className="flex justify-center">
+              <img
+                src={logoRed}
+                alt="TICOLLAB"
+                className="h-10 w-auto dark:hidden"
+                loading="eager"
+                decoding="async"
+              />
+              <img
+                src={logoWhite}
+                alt="TICOLLAB"
+                className="hidden h-10 w-auto dark:block"
+                loading="eager"
+                decoding="async"
+              />
+            </span>
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Enter your email and password to access the dashboard
+          <CardDescription className="text-muted-foreground text-sm">
+            Login to your account
           </CardDescription>
         </CardHeader>
-        <CardContent className="rounded-b-lg pt-6">
+        <CardContent className="rounded-b-lg py-6">
           {error && (
             <div className="text-destructive mb-6 flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm">
               <AlertCircle className="h-4 w-4" />
@@ -130,6 +151,24 @@ export function LoginPage() {
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="remember"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row justify-end items-center gap-2 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={!!field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked === true)
+                        }}
+                        aria-label="Remember me"
+                      />
+                    </FormControl>
+                    <FormLabel className="cursor-pointer leading-none">Remember me</FormLabel>
                   </FormItem>
                 )}
               />

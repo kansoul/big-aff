@@ -17,7 +17,6 @@ export const loginApi = {
     return {
       ...u,
       permission_mask: u.permission_mask ?? 0,
-      permissions: u.permissions ?? [],
     }
   },
 }

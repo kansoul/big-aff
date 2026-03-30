@@ -17,13 +17,14 @@ class AuthService
     ) {}
 
     /**
-     * @param array{email: string, password: string} $credentials
+     * @param  array{email: string, password: string, remember?: bool}  $credentials
      * @return array{status: AuthStatus, user: User|null, message: string|null}
      */
     public function login(array $credentials): array
     {
         try {
-            $user = $this->loginAction->execute($credentials);
+            $remember = (bool) ($credentials['remember'] ?? false);
+            $user = $this->loginAction->execute($credentials, $remember);
 
             return [
                 'status' => AuthStatus::SUCCESS,
@@ -37,7 +38,8 @@ class AuthService
                 'message' => $e->getMessage(),
             ];
         } catch (\Exception $e) {
-            Log::error('Unexpected error during login: ' . $e->getMessage());
+            Log::error('Unexpected error during login: '.$e->getMessage());
+
             return [
                 'status' => AuthStatus::FAILED,
                 'user' => null,
@@ -56,7 +58,8 @@ class AuthService
                 'message' => 'Logged out successfully.',
             ];
         } catch (\Exception $e) {
-            Log::error('Unexpected error during logout: ' . $e->getMessage());
+            Log::error('Unexpected error during logout: '.$e->getMessage());
+
             return [
                 'status' => AuthStatus::FAILED,
                 'message' => 'An unexpected error occurred during logout.',

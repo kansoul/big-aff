@@ -58,7 +58,7 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }), 'rounded p-2')}
+      className={cn(buttonVariants({ variant, size, className }), 'rounded p-2 cursor-pointer')}
       {...props}
     />
   )

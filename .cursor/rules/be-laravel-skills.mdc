@@ -13,10 +13,27 @@ Khi làm việc trong **`be/`** (Laravel API), kích hoạt skill phù hợp **t
 
 | Skill | Đường dẫn | Khi nào dùng |
 |-------|-----------|----------------|
-| **laravel-best-practices** | **`be/.agents/skills/laravel-best-practices/SKILL.md`** | Mọi thay đổi PHP Laravel: controller, model, migration, Form Request, policy, job, query Eloquent, bảo mật, cache, v.v. |
+| **laravel-best-practices** | **`be/.agents/skills/laravel-best-practices/SKILL.md`** (và bản symlink **`/.agents/skills/laravel-best-practices/SKILL.md`**) | Mọi thay đổi PHP Laravel: controller, model, migration, Form Request, policy, job, query Eloquent, bảo mật, cache, v.v. |
 | **laravel-crud** | **`be/.agents/skills/laravel-crud/SKILL.md`** | CRUD API: FormRequest, Resource, service/controller pattern, `routes/api.php`, Sanctum, PHPUnit. |
 
 Chi tiết rule bổ sung nằm trong **`be/.agents/skills/laravel-best-practices/rules/`**.
+
+## 1. Bắt buộc: cấu trúc & vị trí file (đọc trước khi tạo file mới)
+
+**Đọc trước:** **`be/.agents/skills/laravel-best-practices/SKILL.md`** — mục **Repository layout (`big-ticollab/be`)** và **Model Trait Composition**.
+
+- **`routes/api.php`** — đăng ký route API; nhóm Sanctum theo pattern hiện có.
+- **`app/Http/Controllers/Api/`** — controller API (ưu tiên extend **`App\Http\Controllers\API\BaseController`** khi app đã dùng `sendResponse` / `sendError`).
+- **`app/Http/Requests/`** — Form Request (có thể nhóm theo domain, ví dụ `User/`).
+- **`app/Http/Resources/`** — API Resource cho JSON.
+- **`app/Models/`** + **`app/Models/Traits/*`** — model gọn; logic model đặt trong trait tương ứng rồi `use` trong model.
+- **`app/Policies/`**, **`database/migrations/`**, **`database/seeders/`** — theo convention Laravel và file sibling.
+
+**Không** tự thêm thư mục cấp cao mới dưới `app/` nếu chưa có trong codebase. **Không** nhét SPA vào trong `be/` (frontend nằm ở **`fe/`** ở root repo).
+
+### Task full-stack (`fe/` + `be/`)
+
+Nếu một prompt yêu cầu **cả** giao diện và API: vẫn phải đọc **`laravel-best-practices`** (mục layout + Permissions nếu có gate) **trước khi** tạo/sửa file PHP — không chỉ làm `fe/` rồi viết `be/` theo thói quen chung. Đồng bộ permission với **`fe/src/constants/permissions.ts`** khi thêm scope (xem skill).
 
 ## Convention đặc thù dự án (tóm tắt)
 

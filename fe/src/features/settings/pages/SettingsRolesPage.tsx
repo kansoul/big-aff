@@ -12,29 +12,17 @@ import {
   roleNameSchema,
   type RoleNameFormValues,
 } from '@/features/settings/components'
-import { PermissionScope, hasPermission } from '@/constants/permissions'
+import { PermissionBits, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import type { Role } from '@/shared/types'
 
 export function SettingsRolesPage() {
   const user = useAuthStore((s) => s.user)
-  const scopes = user?.permissions
-  const canCreate = useMemo(
-    () => hasPermission(scopes, PermissionScope.settings.roles.create),
-    [scopes],
-  )
-  const canUpdate = useMemo(
-    () => hasPermission(scopes, PermissionScope.settings.roles.update),
-    [scopes],
-  )
-  const canDelete = useMemo(
-    () => hasPermission(scopes, PermissionScope.settings.roles.delete),
-    [scopes],
-  )
-  const canAssign = useMemo(
-    () => hasPermission(scopes, PermissionScope.settings.roles.assign),
-    [scopes],
-  )
+  const mask = user?.permission_mask ?? 0
+  const canCreate = useMemo(() => hasPermission(mask, PermissionBits.SettingsRolesCreate), [mask])
+  const canUpdate = useMemo(() => hasPermission(mask, PermissionBits.SettingsRolesUpdate), [mask])
+  const canDelete = useMemo(() => hasPermission(mask, PermissionBits.SettingsRolesDelete), [mask])
+  const canAssign = useMemo(() => hasPermission(mask, PermissionBits.SettingsRolesAssign), [mask])
 
   const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState(true)

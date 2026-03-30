@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsurePermissionScope
 {
     /**
-     * Grant access if the user has any of the permission cases (pipe-separated enum names) or full access (`*`).
+     * Grant access if the user has any of the required permission bits (pipe-separated integers matching `Permission` case values), or full access (all bits set on the role mask).
      *
      * @param  Closure(Request): Response  $next
      */
@@ -25,20 +25,10 @@ class EnsurePermissionScope
         $user->loadMissing('role');
         $mask = (int) ($user->role?->permission_mask ?? 0);
 
-        $candidates = array_map('trim', explode('|', $permissions));
-        $candidates = array_values(array_filter($candidates, fn (string $s): bool => $s !== ''));
-
-        foreach ($candidates as $token) {
-            if ($token === '*' && Permission::maskHasFullAccess($mask)) {
-                return $next($request);
-            }
-
-            $perm = Permission::tryFromName($token);
-            if ($perm !== null && $user->hasPermissionFlag($perm)) {
-                return $next($request);
-            }
+        if (! Permission::maskAllowsAnyOf($mask, $permissions)) {
+            abort(Response::HTTP_FORBIDDEN, 'Forbidden.');
         }
 
-        abort(Response::HTTP_FORBIDDEN, 'Forbidden.');
+        return $next($request);
     }
 }

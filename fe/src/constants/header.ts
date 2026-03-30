@@ -1,13 +1,15 @@
 import type { LucideIcon } from 'lucide-react'
 
-import { PermissionScope } from '@/constants/permissions'
-import { LayoutDashboard, Settings, UserCog } from 'lucide-react'
+import { NAV_SECTIONS, PATHS, type NavSectionId } from '@/constants/paths'
+import { PermissionBits } from '@/constants/permissions'
+import { GitBranch, LayoutDashboard, Settings, UserCog, Users } from 'lucide-react'
 
 export type NavSubItem = {
   name: string
   href: string
   icon: LucideIcon
-  requiredPermission?: string
+  /** Permission bit (`PermissionBits.*`) required to show this link. */
+  requiredPermission?: number
 }
 
 export type NavItem = {
@@ -15,19 +17,34 @@ export type NavItem = {
   href?: string
   icon: LucideIcon
   items?: NavSubItem[]
+  /** When set, parent row matches `handle.navSection` on the active route (see `routes/index.tsx`). */
+  navSection?: NavSectionId
 }
 
 export const NAVIGATION_ITEMS: NavItem[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Dashboard', href: PATHS.dashboard, icon: LayoutDashboard },
   {
     name: 'Settings',
     icon: Settings,
+    navSection: NAV_SECTIONS.settings,
     items: [
       {
+        name: 'Users',
+        href: PATHS.settingsUsers,
+        icon: Users,
+        requiredPermission: PermissionBits.SettingsUsersView,
+      },
+      {
+        name: 'Users & children',
+        href: PATHS.settingsUsersAssign,
+        icon: GitBranch,
+        requiredPermission: PermissionBits.SettingsUsersView,
+      },
+      {
         name: 'Roles',
-        href: '/settings/roles',
+        href: PATHS.settingsRoles,
         icon: UserCog,
-        requiredPermission: PermissionScope.settings.roles.view,
+        requiredPermission: PermissionBits.SettingsRolesView,
       },
     ],
   },

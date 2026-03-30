@@ -4,7 +4,7 @@ namespace App\Enums;
 
 /**
  * Bit flags stored in `roles.permission_mask`. One case = one bit.
- * Middleware and API `permissions` use each case's name (e.g. `SettingsRolesView`); full access is `['*']`.
+ * Route middleware `permission.scope:` uses pipe-separated integer bit values (same as case values).
  */
 enum Permission: int
 {
@@ -33,33 +33,19 @@ enum Permission: int
 
     case SettingsRolesAssign = 1 << 10;
 
-    public static function tryFromName(string $name): ?self
-    {
-        foreach (self::cases() as $case) {
-            if ($case->name === $name) {
-                return $case;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @return array<string>
-     */
-    public static function names(): array
-    {
-        return array_map(fn (self $c) => $c->name, self::cases());
-    }
-
     public static function fullMask(): int
     {
-        $m = 0;
-        foreach (self::cases() as $case) {
-            $m |= $case->value;
+        static $cached = null;
+
+        if ($cached === null) {
+            $m = 0;
+            foreach (self::cases() as $case) {
+                $m |= $case->value;
+            }
+            $cached = $m;
         }
 
-        return $m;
+        return $cached;
     }
 
     public static function maskHasFullAccess(int $mask): bool
@@ -68,21 +54,44 @@ enum Permission: int
     }
 
     /**
-     * @return array<string>
+     * Bitmask check shared by {@see User::hasPermissionFlag()} and route middleware (avoids repeated role loads).
      */
-    public static function expandMaskToNames(int $mask): array
+    public static function maskHasPermission(int $mask, self $permission): bool
     {
         if (self::maskHasFullAccess($mask)) {
-            return ['*'];
+            return true;
         }
 
-        $out = [];
-        foreach (self::cases() as $case) {
-            if (($mask & $case->value) === $case->value) {
-                $out[] = $case->name;
+        return ($mask & $permission->value) === $permission->value;
+    }
+
+    /**
+     * Route middleware argument: pipe-separated permission bit integers (each must match a case value).
+     * Full access is represented only by the bitmask (all bits set), not by a magic token.
+     */
+    public static function maskAllowsAnyOf(int $mask, string $pipeSeparated): bool
+    {
+        foreach (self::parseRoutePermissionTokens($pipeSeparated) as $token) {
+            if (! ctype_digit($token)) {
+                continue;
+            }
+
+            $perm = self::tryFrom((int) $token);
+            if ($perm !== null && self::maskHasPermission($mask, $perm)) {
+                return true;
             }
         }
 
-        return $out;
+        return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function parseRoutePermissionTokens(string $pipeSeparated): array
+    {
+        $parts = array_map('trim', explode('|', $pipeSeparated));
+
+        return array_values(array_filter($parts, fn (string $s): bool => $s !== ''));
     }
 }

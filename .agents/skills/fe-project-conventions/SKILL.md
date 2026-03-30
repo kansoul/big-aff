@@ -33,7 +33,7 @@ description: >-
 | `fe/src/hooks/` | Reusable hooks and **Zustand** stores (e.g. `useAuthStore.ts`). |
 | `fe/src/shared/` | Cross-feature **`api/`** (`axios` instance), **`types/`** (`User`, `ApiResponse`, forms). |
 | `fe/src/lib/` | Utilities (**`utils.ts`** — `cn`, etc.). |
-| `fe/src/constants/` | App-wide constants (`permissions.ts`, `header.ts` / nav). |
+| `fe/src/constants/` | App-wide constants (`paths.ts` — **`PATHS`**, **`routeSegment`**; `permissions.ts`; `header.ts` / nav). |
 | `fe/src/config/` | Env-driven config (`apiURL`, `strictMode`). |
 | `fe/src/assets/` | Static assets (logos, images). |
 
@@ -98,9 +98,11 @@ shadcn **`components.json`** aliases: `@/components`, `@/components/ui`, `@/lib/
 
 ## Routing
 
+- **Path strings:** define every user-facing pathname once in **`fe/src/constants/paths.ts`** as **`PATHS`** (values with a leading `/`, e.g. `PATHS.dashboard`). Use **`PATHS`** for `<Link to>`, `navigate()`, `<Navigate to>`, and **`href`** in **`@/constants/header.ts`**. Do **not** scatter duplicate string literals like `'/settings/users'`.
+- **`routeSegment()`** — for **`createBrowserRouter`** child routes under a parent with **`path: '/'`**, pass **`path: routeSegment(PATHS.somePage)`** so segments stay derived from the same **`PATHS`** entry (supports nested segments such as `settings/users`).
 - Define routes in **`fe/src/routes/index.tsx`**.
 - Use **`lazy()`** for page and layout components; export named components from feature pages (e.g. `export function DashboardPage`) and map with `{ default: m.DashboardPage }` when needed.
-- Wrap authenticated areas with **`ProtectedRoute`**; wrap permission-gated UI with **`RequirePermission`** and **`PermissionScope`** / **`@/constants/permissions`**.
+- Wrap authenticated areas with **`ProtectedRoute`**; wrap permission-gated UI with **`RequirePermission`** and **`PermissionBits`** / **`@/constants/permissions`**.
 - Add nav items and titles in **`@/constants/header.ts`** (and keep permission fields consistent with the backend).
 
 ## Permissions (bitmask on roles; keep FE/ BE in sync)
@@ -109,19 +111,20 @@ There is **no** `permissions` table or dynamic permission CRUD. Access comes fro
 
 | Location | Role |
 |----------|------|
-| **`be/app/Enums/Permission.php`** | One `enum` case = one bit (`1 << n`), plus `scopeString()` as `{cluster}.{screen}.{action}` (lowercase segments). |
-| **`fe/src/constants/permissions.ts`** | **`PermissionBits`** (same integers as PHP), nested **`PermissionScope`**, **`PERMISSION_CATALOG`** (cluster → screen → rows for the role editor UI). |
+| **`be/app/Enums/Permission.php`** | One `enum` case = one bit (`1 << n`). Routes use `Permission::SomeCase->value` in `permission.scope:` (pipe `|` for OR); policies use `hasPermissionFlag(Permission::...)`. Middleware accepts **numeric bits only**; full access is an all-bits-set `permission_mask`, not a `*` wildcard in the route string. |
+| **`fe/src/constants/permissions.ts`** | **`PermissionBits`** (same integers as PHP), **`PERMISSION_CATALOG`** (cluster → screen → rows for the role editor UI). |
 
-The logged-in user receives **`permission_mask`** and **`permissions`** (scope strings, or `['*']` when the role has every defined bit) from the API—see **`fe/src/shared/types`** (`User`).
+The logged-in user receives **`permission_mask`** from the API—see **`fe/src/shared/types`** (`User`). Use **`hasPermission(mask, PermissionBits.SomeCase)`** (or **`maskHasPermission`**) for checks.
 
 ### Checklist: new page / screen / API
 
-1. **Backend first** — add the new `Permission` case, `scopeString()`, and protect routes with `->middleware('permission.scope:'.Permission::YourCase->scopeString())` (pipe `|` for alternatives). Use `$user->hasPermissionScope(...)` in Form requests or policies when needed. See **`be/routes/api.php`** and **`EnsurePermissionScope`**.
-2. **Frontend constants** — add the same bit to **`PermissionBits`**, extend **`PermissionScope`**, add an entry under the right cluster/screen in **`PERMISSION_CATALOG`**.
-3. **Route** — in **`fe/src/routes/index.tsx`**, wrap the page with **`RequirePermission`** using the same scope string (e.g. `PermissionScope.settings.roles.view`).
-4. **Nav** — if the page is linked from the header, set **`requiredPermission`** on the item in **`fe/src/constants/header.ts`** to that scope (or `PermissionScope.ALL` only when the product truly requires full mask / `*`).
+1. **Backend first** — add the new `Permission` case; protect routes with `->middleware('permission.scope:'.Permission::YourCase->value)` (pipe `|` for alternatives). Use `hasPermissionFlag(Permission::...)` in Form requests or policies. See **`be/routes/api.php`** and **`EnsurePermissionScope`**.
+2. **Frontend constants** — add the same bit to **`PermissionBits`**, add an entry under the right cluster/screen in **`PERMISSION_CATALOG`**.
+3. **Paths** — add the pathname to **`PATHS`** in **`fe/src/constants/paths.ts`**; wire **`fe/src/routes/index.tsx`** with **`routeSegment(PATHS....)`** and use **`PATHS`** in redirects / links / nav **`href`**.
+4. **Route** — in **`fe/src/routes/index.tsx`**, wrap the page with **`RequirePermission`** using the matching **`PermissionBits`** value (e.g. `PermissionBits.SettingsRolesView`).
+5. **Nav** — if the page is linked from the header, set **`requiredPermission`** on the item in **`fe/src/constants/header.ts`** to that bit (use **`PATHS`** for **`href`**).
 
-**Do not** introduce scope strings that are not implemented on the PHP enum, or bits that disagree between TS and PHP.
+**Do not** introduce permission bits that are not on the PHP enum, or values that disagree between TS and PHP.
 
 ## API & errors
 

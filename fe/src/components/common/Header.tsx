@@ -18,6 +18,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { NAVIGATION_ITEMS, type NavItem, type NavSubItem } from '@/constants/header'
+import { PATHS, type NavSectionId } from '@/constants/paths'
 import { hasPermission } from '@/constants/permissions'
 import { dashboardApi } from '@/features/dashboard/api'
 import { useAuthStore } from '@/hooks/useAuthStore'
@@ -28,46 +29,96 @@ import logoHeaderLight from '@/assets/logo-s-red.png'
 import { cn } from '@/lib/utils'
 import { ChevronDown, LogOut, Menu } from 'lucide-react'
 import * as React from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useLocation, useMatch, useMatches, useNavigate } from 'react-router-dom'
 
-/** Brand red: active page / tab in main nav */
 const navTabActive = 'text-red-600 border-b-2 border-red-600 dark:text-red-400 dark:border-red-400'
 const navTabInactive =
   'text-muted-foreground border-b-2 border-transparent hover:text-red-600 dark:hover:text-red-400'
 const navTabBase =
-  'inline-flex items-center gap-1.5 border-b-2 border-transparent py-2 text-xs font-semibold tracking-wider transition-colors'
+  'outline-none inline-flex items-center gap-1.5 border-b-2 border-transparent py-2 text-xs font-semibold tracking-wider transition-colors'
 const navSubActive = 'bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400'
 
-function navItemActive(pathname: string, item: NavItem): boolean {
-  if (item.items?.length) {
-    const parentPrefix = item.href ?? ''
-    return (
-      (item.href ? pathname.startsWith(item.href) : false) ||
-      item.items.some((sub) => subPathActive(pathname, sub, parentPrefix))
-    )
-  }
-  return item.href ? pathname.startsWith(item.href) : false
+type AppRouteHandle = { title: string; navSection?: NavSectionId }
+
+function useActiveNavSection(): NavSectionId | undefined {
+  const matches = useMatches()
+  const handle = matches.at(-1)?.handle as AppRouteHandle | undefined
+  return handle?.navSection
 }
 
-function subPathActive(pathname: string, sub: NavSubItem, parentHref: string): boolean {
-  if (sub.href === parentHref) {
-    return pathname === sub.href || pathname === `${sub.href}/`
+function navGroupIsActive(item: NavItem, activeNavSection: NavSectionId | undefined): boolean {
+  return item.navSection != null && item.navSection === activeNavSection
+}
+
+function useNavSubActive(href: string): boolean {
+  return Boolean(useMatch({ path: href, end: true }))
+}
+
+const NavDropdownLink = React.forwardRef<
+  HTMLAnchorElement,
+  Omit<React.ComponentPropsWithoutRef<typeof NavLink>, 'className'> & {
+    to: string
+    className?: string
   }
-  return pathname === sub.href || pathname.startsWith(`${sub.href}/`)
+>(function NavDropdownLink({ to, className, children, ...props }, ref) {
+  const isActive = useNavSubActive(to)
+  return (
+    <NavLink ref={ref} to={to} end className={cn(className, isActive && navSubActive)} {...props}>
+      {children}
+    </NavLink>
+  )
+})
+
+function MobileNavSubLink({ sub, onNavigate }: { sub: NavSubItem; onNavigate: () => void }) {
+  const isActive = useNavSubActive(sub.href)
+  const MobileSubIcon = sub.icon
+  return (
+    <NavLink
+      to={sub.href}
+      end
+      onClick={onNavigate}
+      className={cn(
+        'flex min-h-11 w-full items-center gap-2.5 px-3 py-2.5 text-sm font-medium tracking-wide',
+        isActive ? navSubActive : 'text-foreground hover:bg-accent/40',
+      )}
+    >
+      <MobileSubIcon className="size-4 shrink-0 opacity-80" aria-hidden />
+      <span className="min-w-0 flex-1 text-left">{sub.name}</span>
+    </NavLink>
+  )
+}
+
+function HoverNavSubLink({ sub }: { sub: NavSubItem }) {
+  const isActive = useNavSubActive(sub.href)
+  const HoverSubIcon = sub.icon
+  return (
+    <NavLink
+      role="menuitem"
+      to={sub.href}
+      end
+      className={cn(
+        'flex min-h-9 w-full items-center gap-2 px-3 py-2 text-sm font-medium tracking-wide transition-colors hover:bg-red-50 dark:hover:bg-red-950/30',
+        isActive ? navSubActive : 'text-foreground',
+      )}
+    >
+      <HoverSubIcon className="size-4 shrink-0 opacity-70" aria-hidden />
+      <span className="min-w-0 flex-1 text-left">{sub.name}</span>
+    </NavLink>
+  )
 }
 
 function hasNavigableParentHref(item: NavItem): item is NavItem & { href: string } {
   return Boolean(item.href)
 }
 
-function filterNavItemsForUser(items: NavItem[], scopes: string[] | undefined): NavItem[] {
+function filterNavItemsForUser(items: NavItem[], permissionMask: number | undefined): NavItem[] {
   return items
     .map((item) => {
       if (!item.items?.length) {
         return item
       }
       const filteredItems = item.items.filter(
-        (sub) => !sub.requiredPermission || hasPermission(scopes, sub.requiredPermission),
+        (sub) => !sub.requiredPermission || hasPermission(permissionMask, sub.requiredPermission),
       )
       return { ...item, items: filteredItems }
     })
@@ -80,22 +131,22 @@ function filterNavItemsForUser(items: NavItem[], scopes: string[] | undefined): 
 }
 
 const MobileNav = React.memo(function MobileNav({
-  pathname,
+  activeNavSection,
   onNavigate,
   items,
 }: {
-  pathname: string
+  activeNavSection: NavSectionId | undefined
   onNavigate: () => void
   items: NavItem[]
 }) {
   return (
     <nav className="flex flex-col gap-1 px-2 pb-6" aria-label="Main navigation">
       {items.map((item) => {
-        const isActive = navItemActive(pathname, item)
-        const linkClass = (active: boolean) =>
+        const groupActive = navGroupIsActive(item, activeNavSection)
+        const linkClass = ({ isActive }: { isActive: boolean }) =>
           cn(
             'flex items-center gap-2.5 rounded-md px-3 py-3 text-sm font-semibold tracking-wide transition-colors',
-            active ? navSubActive : 'text-foreground hover:bg-accent/50',
+            isActive ? navSubActive : 'text-foreground hover:bg-accent/50',
           )
 
         if (!item.items?.length) {
@@ -104,15 +155,10 @@ const MobileNav = React.memo(function MobileNav({
           }
           const MobileLeafIcon = item.icon
           return (
-            <Link
-              key={item.name}
-              to={item.href}
-              onClick={onNavigate}
-              className={linkClass(isActive)}
-            >
+            <NavLink key={item.name} to={item.href} end onClick={onNavigate} className={linkClass}>
               <MobileLeafIcon className="size-4 shrink-0 opacity-80" aria-hidden />
               {item.name}
-            </Link>
+            </NavLink>
           )
         }
 
@@ -122,25 +168,28 @@ const MobileNav = React.memo(function MobileNav({
         return (
           <Collapsible
             key={item.name}
-            defaultOpen={isActive}
+            defaultOpen={groupActive}
             className="group/collapsible overflow-hidden rounded-md border border-border/60 bg-background"
           >
             <div className="flex items-stretch border-b border-border/40">
               {parentNavigable ? (
                 <>
-                  <Link
+                  <NavLink
                     to={item.href}
+                    end
                     onClick={onNavigate}
-                    className={cn(
-                      'flex min-h-12 flex-1 items-center gap-2.5 px-3 text-sm font-semibold tracking-wide',
-                      navItemActive(pathname, item)
-                        ? 'text-red-600 dark:text-red-400'
-                        : 'text-foreground',
-                    )}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex min-h-12 flex-1 items-center gap-2.5 px-3 text-sm font-semibold tracking-wide',
+                        isActive || groupActive
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-foreground',
+                      )
+                    }
                   >
                     <MobileParentIcon className="size-4 shrink-0 opacity-80" aria-hidden />
                     {item.name}
-                  </Link>
+                  </NavLink>
                   <CollapsibleTrigger asChild>
                     <Button
                       type="button"
@@ -159,9 +208,7 @@ const MobileNav = React.memo(function MobileNav({
                     type="button"
                     className={cn(
                       'flex min-h-12 w-full items-center justify-between gap-2 px-3 text-left text-sm font-semibold tracking-wide',
-                      navItemActive(pathname, item)
-                        ? 'text-red-600 dark:text-red-400'
-                        : 'text-foreground',
+                      groupActive ? 'text-red-600 dark:text-red-400' : 'text-foreground',
                     )}
                   >
                     <span className="flex min-w-0 items-center gap-2.5">
@@ -175,25 +222,11 @@ const MobileNav = React.memo(function MobileNav({
             </div>
             <CollapsibleContent>
               <ul className="flex flex-col divide-y divide-border/50 bg-muted/30">
-                {item.items.map((sub) => {
-                  const subActive = subPathActive(pathname, sub, item.href ?? '')
-                  const MobileSubIcon = sub.icon
-                  return (
-                    <li key={sub.href} className="min-w-0">
-                      <Link
-                        to={sub.href}
-                        onClick={onNavigate}
-                        className={cn(
-                          'flex min-h-11 w-full items-center gap-2.5 px-3 py-2.5 text-sm font-medium tracking-wide',
-                          subActive ? navSubActive : 'text-foreground hover:bg-accent/40',
-                        )}
-                      >
-                        <MobileSubIcon className="size-4 shrink-0 opacity-80" aria-hidden />
-                        <span className="min-w-0 flex-1 text-left">{sub.name}</span>
-                      </Link>
-                    </li>
-                  )
-                })}
+                {item.items.map((sub) => (
+                  <li key={sub.href} className="min-w-0">
+                    <MobileNavSubLink sub={sub} onNavigate={onNavigate} />
+                  </li>
+                ))}
               </ul>
             </CollapsibleContent>
           </Collapsible>
@@ -205,6 +238,7 @@ const MobileNav = React.memo(function MobileNav({
 
 export const Header = React.memo(function Header() {
   const location = useLocation()
+  const activeNavSection = useActiveNavSection()
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
@@ -212,8 +246,8 @@ export const Header = React.memo(function Header() {
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false)
 
   const navItemsForUser = React.useMemo(
-    () => filterNavItemsForUser(NAVIGATION_ITEMS, user?.permissions),
-    [user?.permissions],
+    () => filterNavItemsForUser(NAVIGATION_ITEMS, user?.permission_mask),
+    [user?.permission_mask],
   )
 
   React.useEffect(() => {
@@ -229,7 +263,7 @@ export const Header = React.memo(function Header() {
       console.error('Logout failed', err)
     } finally {
       logout()
-      void navigate('/login')
+      void navigate(PATHS.login)
     }
   }, [logout, navigate])
 
@@ -252,7 +286,7 @@ export const Header = React.memo(function Header() {
             <Menu className="size-5" />
           </Button>
 
-          <Link to="/dashboard" className="flex min-w-0 items-center">
+          <Link to={PATHS.dashboard} className="flex min-w-0 items-center">
             <img
               src={theme === 'dark' ? logoHeaderDark : logoHeaderLight}
               alt="TiCOLLAB"
@@ -262,8 +296,7 @@ export const Header = React.memo(function Header() {
 
           <nav className="hidden md:flex items-center gap-6">
             {navItemsForUser.map((item) => {
-              const isActive = navItemActive(location.pathname, item)
-              const activeClass = isActive ? navTabActive : navTabInactive
+              const groupActive = navGroupIsActive(item, activeNavSection)
 
               if (!item.items?.length) {
                 if (!item.href) {
@@ -271,10 +304,17 @@ export const Header = React.memo(function Header() {
                 }
                 const ItemIcon = item.icon
                 return (
-                  <Link key={item.name} to={item.href} className={cn(navTabBase, activeClass)}>
+                  <NavLink
+                    key={item.name}
+                    to={item.href}
+                    end
+                    className={({ isActive }) =>
+                      cn(navTabBase, isActive ? navTabActive : navTabInactive)
+                    }
+                  >
                     <ItemIcon className="size-3.5 shrink-0" aria-hidden />
                     {item.name}
-                  </Link>
+                  </NavLink>
                 )
               }
 
@@ -287,7 +327,7 @@ export const Header = React.memo(function Header() {
                         type="button"
                         className={cn(
                           navTabBase,
-                          activeClass,
+                          groupActive ? navTabActive : navTabInactive,
                           'cursor-pointer border-none bg-transparent font-inherit',
                         )}
                         aria-haspopup="menu"
@@ -302,20 +342,16 @@ export const Header = React.memo(function Header() {
                       className="flex min-w-48 w-auto flex-col gap-0 p-1"
                     >
                       {item.items.map((sub) => {
-                        const subActive = subPathActive(location.pathname, sub, item.href ?? '')
                         const SubIcon = sub.icon
                         return (
                           <DropdownMenuItem key={sub.href} asChild className="w-full">
-                            <Link
+                            <NavDropdownLink
                               to={sub.href}
-                              className={cn(
-                                'flex min-h-9 w-full cursor-pointer items-center gap-2 px-2 py-1.5',
-                                subActive && navSubActive,
-                              )}
+                              className="flex min-h-9 w-full cursor-pointer items-center gap-2 px-2 py-1.5"
                             >
                               <SubIcon className="size-4 shrink-0 opacity-70" aria-hidden />
                               <span className="min-w-0 flex-1 text-left">{sub.name}</span>
-                            </Link>
+                            </NavDropdownLink>
                           </DropdownMenuItem>
                         )
                       })}
@@ -327,14 +363,21 @@ export const Header = React.memo(function Header() {
               const HoverParentIcon = item.icon
               return (
                 <div key={item.name} className="group relative">
-                  <Link to={item.href} className={cn(navTabBase, activeClass)} aria-haspopup="menu">
+                  <NavLink
+                    to={item.href}
+                    end
+                    aria-haspopup="menu"
+                    className={({ isActive }) =>
+                      cn(navTabBase, isActive || groupActive ? navTabActive : navTabInactive)
+                    }
+                  >
                     <HoverParentIcon className="size-3.5 shrink-0" aria-hidden />
                     {item.name}
                     <ChevronDown
                       className="size-3.5 opacity-60 transition-transform group-hover:rotate-180"
                       aria-hidden
                     />
-                  </Link>
+                  </NavLink>
                   <div
                     className="pointer-events-none invisible absolute left-0 top-full z-50 pt-1 opacity-0 transition-[opacity,visibility] duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100"
                     role="menu"
@@ -344,25 +387,11 @@ export const Header = React.memo(function Header() {
                       className="flex min-w-48 flex-col divide-y divide-border/60 rounded-md border bg-popover p-0 text-popover-foreground shadow-md ring-1 ring-foreground/10"
                       role="none"
                     >
-                      {item.items.map((sub) => {
-                        const subActive = subPathActive(location.pathname, sub, item.href)
-                        const HoverSubIcon = sub.icon
-                        return (
-                          <li key={sub.href} className="min-w-0" role="none">
-                            <Link
-                              role="menuitem"
-                              to={sub.href}
-                              className={cn(
-                                'flex min-h-9 w-full items-center gap-2 px-3 py-2 text-sm font-medium tracking-wide transition-colors hover:bg-red-50 dark:hover:bg-red-950/30',
-                                subActive ? navSubActive : 'text-foreground',
-                              )}
-                            >
-                              <HoverSubIcon className="size-4 shrink-0 opacity-70" aria-hidden />
-                              <span className="min-w-0 flex-1 text-left">{sub.name}</span>
-                            </Link>
-                          </li>
-                        )
-                      })}
+                      {item.items.map((sub) => (
+                        <li key={sub.href} className="min-w-0" role="none">
+                          <HoverNavSubLink sub={sub} />
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 </div>
@@ -384,7 +413,7 @@ export const Header = React.memo(function Header() {
               </SheetDescription>
             </SheetHeader>
             <MobileNav
-              pathname={location.pathname}
+              activeNavSection={activeNavSection}
               onNavigate={closeMobileNav}
               items={navItemsForUser}
             />

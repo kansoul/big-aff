@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Enums\Permission;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -29,7 +28,6 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'permission_mask' => $mask,
-            'permissions' => Permission::expandMaskToNames($mask),
         ];
     }
 }
