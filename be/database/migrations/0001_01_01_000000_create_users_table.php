@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\RoleEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,8 +13,11 @@ return new class extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
-            $table->enum('name', RoleEnum::values())->unique();
+            $table->string('name', 100);
+            $table->unsignedBigInteger('permission_mask')->default(0);
             $table->timestamps();
+            $table->unique(['name', 'deleted_at']);
+
             $table->softDeletes();
         });
 
@@ -62,5 +64,6 @@ return new class extends Migration
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('roles');
     }
 };

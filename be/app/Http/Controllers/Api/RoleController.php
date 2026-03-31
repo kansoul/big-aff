@@ -7,14 +7,19 @@ use App\Http\Requests\Role\StoreRoleRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Http\Resources\RoleResource;
 use App\Models\Role;
+use App\Services\Role\RoleService;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class RoleController extends BaseController
 {
+    public function __construct(
+        private readonly RoleService $roleService
+    ) {}
+
     public function index(): JsonResponse
     {
-        $roles = Role::query()->orderBy('name')->get();
+        $roles = $this->roleService->list();
 
         return $this->sendResponse(
             RoleResource::collection($roles),
@@ -24,7 +29,7 @@ class RoleController extends BaseController
 
     public function store(StoreRoleRequest $request): JsonResponse
     {
-        $role = Role::query()->create($request->validated());
+        $role = $this->roleService->create($request->validated());
 
         return $this->sendResponse(
             new RoleResource($role),
@@ -35,28 +40,17 @@ class RoleController extends BaseController
 
     public function update(UpdateRoleRequest $request, Role $role): JsonResponse
     {
-        $data = $request->validated();
-        if ($data !== []) {
-            $role->update($data);
-        }
+        $updated = $this->roleService->update($role, $request->validated());
 
         return $this->sendResponse(
-            new RoleResource($role->fresh()),
+            new RoleResource($updated),
             'Role updated successfully.'
         );
     }
 
     public function destroy(Role $role): JsonResponse
     {
-        if ($role->users()->exists()) {
-            return $this->sendError(
-                'Cannot delete a role that is still assigned to users.',
-                [],
-                Response::HTTP_UNPROCESSABLE_ENTITY
-            );
-        }
-
-        $role->delete();
+        $this->roleService->delete($role);
 
         return $this->sendResponse(null, 'Role deleted successfully.');
     }

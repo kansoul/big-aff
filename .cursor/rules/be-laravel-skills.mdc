@@ -26,6 +26,8 @@ Chi tiết rule bổ sung nằm trong **`be/.agents/skills/laravel-best-practice
 - **`app/Http/Controllers/Api/`** — controller API (ưu tiên extend **`App\Http\Controllers\API\BaseController`** khi app đã dùng `sendResponse` / `sendError`).
 - **`app/Http/Requests/`** — Form Request (có thể nhóm theo domain, ví dụ `User/`).
 - **`app/Http/Resources/`** — API Resource cho JSON.
+- **`app/Actions/`** — bắt buộc đặt business logic đơn nhiệm ở đây. Mỗi action chỉ xử lý một use case nhỏ, có thể tái sử dụng.
+- **`app/Services/`** — chỉ dùng để orchestration/tổng hợp nhiều action hoặc phối hợp transaction, không đặt business logic cốt lõi trực tiếp trong service.
 - **`app/Models/`** + **`app/Models/Traits/*`** — model gọn; logic model đặt trong trait tương ứng rồi `use` trong model.
 - **`app/Policies/`**, **`database/migrations/`**, **`database/seeders/`** — theo convention Laravel và file sibling.
 
@@ -38,6 +40,7 @@ Nếu một prompt yêu cầu **cả** giao diện và API: vẫn phải đọc 
 ## Convention đặc thù dự án (tóm tắt)
 
 - **Model:** giữ model gọn; logic/relationship/scope/observer đặt trong trait **`app/Models/Traits/*`**, gắn vào model qua `use`.
+- **Action/Service:** business logic bắt buộc nằm trong **`app/Actions/*`**. **`app/Services/*`** chỉ được phép điều phối nhiều action, gom workflow, hoặc làm orchestration giữa action/repository/transaction.
 - **Permissions:** bitmask trên **`roles.permission_mask`**; định nghĩa bằng **`App\Enums\Permission`** (không có bảng `permissions`). Middleware **`permission.scope:`** + checklist khi thêm API/scope mới — xem **`be/.agents/skills/laravel-best-practices/SKILL.md`** (mục Permissions).
 - **API:** bám **`AuthController`**, **`BaseController`** (`sendResponse` / `sendError`), và pattern hiện có trong **`routes/api.php`**.
 - **Sau khi sửa PHP:** chạy **`vendor/bin/pint --dirty --format agent`** (theo `be/AGENTS.md`).

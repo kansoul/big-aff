@@ -22,7 +22,8 @@ Check sibling files, related controllers, models, or tests for established patte
 - **`app/Http/Controllers/Api/`** — API controllers (extend **`App\Http\Controllers\API\BaseController`** for `sendResponse` / `sendError` when that pattern applies).
 - **`app/Http/Requests/`** — Form requests (often grouped by domain, e.g. `Permission/`).
 - **`app/Http/Resources/`** — API Resources for JSON output.
-- **`app/Actions/`** — Single-purpose actions when the codebase uses them (e.g. auth).
+- **`app/Actions/`** — Single-purpose actions. In this repo, business logic should live here by default; each action handles one small use case.
+- **`app/Services/`** — Orchestration only. Services may coordinate multiple actions, transactions, or workflow steps, but should not own core business logic directly.
 - **`app/Models/`** — Eloquent models; behavior split into **`app/Models/Traits/*`** (see below).
 - **`database/migrations/`**, **`database/seeders/`** — schema and seed data.
 
@@ -130,7 +131,8 @@ Do not add new top-level folders under `app/` without matching an existing conve
 - Implicit route model binding
 - Scoped bindings for nested resources
 - `Route::resource()` or `apiResource()`
-- Methods under 10 lines — extract to actions/services
+- Methods under 10 lines — controllers should stay as thin coordinators
+- Extract business logic to `app/Actions/*`; use services only to orchestrate multiple actions
 - Type-hint Form Requests for auto-validation
 
 ### 11. HTTP Client → `rules/http-client.md`
@@ -171,7 +173,8 @@ Do not add new top-level folders under `app/` without matching an existing conve
 
 ### 15. Architecture → `rules/architecture.md`
 
-- Single-purpose Action classes; dependency injection over `app()` helper
+- Single-purpose Action classes for business logic; dependency injection over `app()` helper
+- Service classes should aggregate actions and workflow, not replace them as the home for domain rules
 - Prefer official Laravel packages and follow conventions, don't override defaults
 - Default to `ORDER BY id DESC` or `created_at DESC`; `mb_*` for UTF-8 safety
 - `defer()` for post-response work; `Context` for request-scoped data; `Concurrency::run()` for parallel execution
