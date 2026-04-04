@@ -19,9 +19,10 @@ function ScreenTitleInner({ className }: ScreenTitleProps) {
   }
 
   return (
-    <p className={cn('text-xl font-semibold tracking-tight text-foreground mb-6', className)}>
-      {title}
-    </p>
+    <div className={cn('mb-4 flex items-center gap-2 border-b pb-4', className)}>
+      <span className="h-4 w-0.5 shrink-0 rounded-full bg-red-600 dark:bg-red-400" aria-hidden />
+      <h1 className="text-3xl! font-semibold tracking-tight m-0! text-foreground">{title}</h1>
+    </div>
   )
 }
 
