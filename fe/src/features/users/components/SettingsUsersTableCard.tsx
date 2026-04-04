@@ -62,11 +62,14 @@ function getUsersColumns(meta: ActionMeta): MRT_ColumnDef<ManagedUser>[] {
       ? [
           {
             id: 'actions',
-            header: '',
+            header: 'Actions',
             size: 80,
             enableSorting: false,
             enableGlobalFilter: false,
-            mantineTableHeadCellProps: { style: { width: 80 } },
+            enableHiding: false,
+            mantineTableHeadCellProps: {
+              sx: { width: 80, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+            },
             mantineTableBodyCellProps: { style: { width: 80 } },
             Cell: ({ row }: { row: { original: ManagedUser } }) => {
               const user = row.original

@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import { Form } from '@/components/ui/form'
-import { MediaPickerField } from '@/components/common/MediaPickerDialog'
 import { rolesApi } from '@/features/settings/api/roles'
 import { formatApiError } from '@/features/settings/components'
 import { usersApi } from '@/features/users/api/users'
@@ -23,7 +21,6 @@ import {
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import type { ManagedUser, Role } from '@/shared/types'
-import type { Media } from '@/features/media/types'
 
 export function SettingsUsersPage() {
   const user = useAuthStore((s) => s.user)
@@ -53,9 +50,6 @@ export function SettingsUsersPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
-
-  const testForm = useForm<{ avatar: Media | null }>({ defaultValues: { avatar: null } })
-  const avatar = testForm.watch('avatar')
 
   const createForm = useForm<UserCreateFormValues>({
     resolver: zodResolver(userCreateSchema),
@@ -254,12 +248,6 @@ export function SettingsUsersPage() {
         deleting={deleting}
         onConfirmDelete={onConfirmDelete}
       />
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
-        {avatar ? <p className="text-xs text-muted-foreground">Selected: {avatar.name}</p> : null}
-        <Form {...testForm}>
-          <MediaPickerField control={testForm.control} name="avatar" label="Avatar" />
-        </Form>
-      </div>
     </div>
   )
 }

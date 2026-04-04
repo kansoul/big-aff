@@ -45,11 +45,14 @@ function getRolesColumns(meta: ActionMeta): MRT_ColumnDef<Role>[] {
       ? [
           {
             id: 'actions',
-            header: '',
+            header: 'Actions',
             size: 80,
             enableSorting: false,
             enableGlobalFilter: false,
-            mantineTableHeadCellProps: { style: { width: 80 } },
+            enableHiding: false,
+            mantineTableHeadCellProps: {
+              sx: { width: 80, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+            },
             mantineTableBodyCellProps: { style: { width: 80 } },
             Cell: ({ row }: { row: { original: Role } }) => {
               const role = row.original
