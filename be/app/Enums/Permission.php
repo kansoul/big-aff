@@ -13,7 +13,7 @@ enum Permission: int
 
     case ReportExport = 1 << 1;
 
-    // —— Settings → Users ——
+        // —— Settings → Users ——
     case SettingsUsersView = 1 << 2;
 
     case SettingsUsersCreate = 1 << 3;
@@ -22,7 +22,7 @@ enum Permission: int
 
     case SettingsUsersDelete = 1 << 5;
 
-    // —— Settings → Roles ——
+        // —— Settings → Roles ——
     case SettingsRolesView = 1 << 6;
 
     case SettingsRolesCreate = 1 << 7;
@@ -92,6 +92,6 @@ enum Permission: int
     {
         $parts = array_map('trim', explode('|', $pipeSeparated));
 
-        return array_values(array_filter($parts, fn (string $s): bool => $s !== ''));
+        return array_values(array_filter($parts, fn(string $s): bool => $s !== ''));
     }
 }

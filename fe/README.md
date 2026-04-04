@@ -1,73 +1,146 @@
-# React + TypeScript + Vite
+# Frontend — big-ticollab
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SPA frontend cho hệ thống **big-ticollab**, giao tiếp với backend Laravel (`be/`) thông qua Sanctum cookie auth.
 
-Currently, two official plugins are available:
+## Tech stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Lĩnh vực | Package |
+|----------|---------|
+| Build | Vite 8, TypeScript 5.9 |
+| UI core | React 19, React Router 7 |
+| Styling | Tailwind CSS 4, shadcn/ui (radix-nova), CVA, tailwind-merge |
+| UI bổ sung | Mantine 6, mantine-react-table, @tabler/icons-react |
+| Charts | recharts |
+| Forms | react-hook-form, zod, @hookform/resolvers |
+| HTTP | axios (qua `axiosInstance` ở `@/shared/api/axios`) |
+| Auth | Laravel Sanctum (CSRF cookie + `withCredentials`) |
+| Global state | Zustand |
+| Dates | dayjs |
+| Icons | lucide-react (chính), @tabler/icons-react |
 
-## React Compiler
+## Yêu cầu
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Node.js >= 20
+- pnpm >= 9
 
-## Expanding the ESLint configuration
+## Cài đặt & chạy dev
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# Cài dependencies
+pnpm install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# Chạy dev server (Vite proxy /api → localhost:8000)
+pnpm dev
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Build production
+pnpm build
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Preview build
+pnpm preview
+
+# Lint
+pnpm lint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Biến môi trường
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Tạo file `.env.local` tại thư mục `fe/`:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+# URL của Laravel API (mặc định dev: /api qua Vite proxy)
+VITE_API_URL=
+
+# Tiêu đề app hiển thị trên tab trình duyệt
+VITE_APP_TITLE=big-ticollab
+
+# Bật React StrictMode (mặc định: false)
+VITE_STRICT_MODE=false
 ```
+
+Khi `VITE_API_URL` để trống, dev dùng Vite proxy `/api → http://localhost:8000` để Sanctum session cookie hoạt động cùng origin.
+
+## Cấu trúc thư mục
+
+```
+fe/src/
+├── app/
+│   ├── providers/        # ThemeProvider, AuthProvider
+│   └── router/           # ProtectedRoute, RequirePermission
+├── routes/
+│   └── index.tsx         # createBrowserRouter, lazy routes
+├── layouts/              # AuthLayout, DashboardLayout
+├── features/             # Feature modules (domain-driven)
+│   ├── auth/
+│   │   ├── api/          # getCsrfCookie, login, logout...
+│   │   ├── components/   # LoginForm, ...
+│   │   ├── pages/        # LoginPage, ...
+│   │   └── types/        # Payload & form types
+│   ├── dashboard/
+│   ├── settings/
+│   └── <domain>/         # Thêm feature mới theo pattern này
+├── components/
+│   ├── ui/               # shadcn/Radix primitives
+│   └── common/           # Header, PageTitle, ThemeToggle, loaders
+├── hooks/                # Reusable hooks, Zustand stores (useAuthStore)
+├── shared/
+│   ├── api/              # axiosInstance
+│   └── types/            # User, ApiResponse, form types dùng chung
+├── constants/
+│   ├── paths.ts          # PATHS, routeSegment()
+│   ├── permissions.ts    # PermissionBits, PERMISSION_CATALOG
+│   └── header.ts         # Nav items
+├── config/               # apiURL, strictMode, appTitle
+├── lib/
+│   └── utils.ts          # cn(), tiện ích
+└── assets/               # Logo, ảnh tĩnh
+```
+
+## Path aliases
+
+| Alias | Trỏ tới |
+|-------|---------|
+| `@/` | `fe/src/` |
+| `@components` | `fe/src/components` |
+| `@hooks` | `fe/src/hooks` |
+| `@lib` | `fe/src/lib` |
+| `@assets` | `fe/src/assets` |
+
+## Quy ước quan trọng
+
+### Routing & paths
+
+- Định nghĩa **tất cả** pathname một lần tại `@/constants/paths.ts` dưới key `PATHS`.
+- Dùng `routeSegment(PATHS.xxx)` cho child routes trong `createBrowserRouter`.
+- Bọc route cần xác thực với `ProtectedRoute`; bọc route cần quyền với `RequirePermission` + `PermissionBits`.
+
+### Permissions (bitmask)
+
+- Quyền được lưu trong `roles.permission_mask` (số nguyên, bitwise).
+- `PermissionBits` ở `@/constants/permissions.ts` phải đồng bộ với `be/app/Enums/Permission.php`.
+- Dùng `hasPermission(mask, PermissionBits.XxxYyy)` để kiểm tra quyền.
+
+### API calls
+
+- Luôn dùng `axiosInstance` từ `@/shared/api/axios`, **không** import `axios` trực tiếp.
+- Đặt tất cả API call trong `features/<domain>/api/`.
+
+### Forms
+
+- Pattern: `react-hook-form` + `zod` schema + `zodResolver` + shadcn `Form`/`FormField`.
+
+### Re-render (Zustand)
+
+- **Luôn** dùng selector khi gọi Zustand hook, ví dụ `useAuthStore((s) => s.user)`.
+- Không gọi `useAuthStore()` không có argument (subscribe toàn bộ store).
+
+## Thêm feature mới
+
+1. Tạo thư mục `features/<domain>/` với `api/`, `components/`, `pages/`, `types/`.
+2. Thêm bit quyền vào `PermissionBits` (đồng bộ với PHP enum).
+3. Thêm pathname vào `PATHS` trong `constants/paths.ts`.
+4. Đăng ký route trong `routes/index.tsx` với `RequirePermission`.
+5. Thêm nav item vào `constants/header.ts` nếu cần.
+
+## Quan hệ với backend
+
+Backend Laravel nằm ở `../be/`. Xem `be/README.md` để setup API server.
