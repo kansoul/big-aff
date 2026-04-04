@@ -118,6 +118,118 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ===== Mantine React Table — sync with shadcn semantic tokens ===== */
+/* Uses CSS custom properties so light/dark switch automatically.     */
+
+/* Outer Paper container */
+.mantine-Paper-root {
+  background-color: var(--card) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+
+/* Top toolbar (search + action buttons row) */
+.mantine-Paper-root > div:first-child {
+  background-color: var(--card) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+/* Table element */
+.mantine-Table-root {
+  background-color: var(--card) !important;
+  color: var(--foreground) !important;
+}
+
+/* Header cells */
+.mantine-Table-root thead tr th {
+  background-color: var(--muted) !important;
+  color: var(--muted-foreground) !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-top: none !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* Body rows */
+.mantine-Table-root tbody tr td {
+  background-color: var(--card) !important;
+  color: var(--foreground) !important;
+  border-bottom: 1px solid var(--border) !important;
+  font-size: 0.875rem !important;
+}
+
+/* Row hover */
+.mantine-Table-root tbody tr:hover td {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+/* Bottom toolbar (pagination row) */
+.mantine-Paper-root > div:last-child {
+  background-color: var(--card) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+/* Pagination active page */
+.mantine-Pagination-control[data-active] {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border-color: var(--primary) !important;
+}
+
+/* Pagination controls */
+.mantine-Pagination-control {
+  background-color: var(--card) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+.mantine-Pagination-control:hover {
+  background-color: var(--accent) !important;
+}
+
+/* Search / text input */
+.mantine-TextInput-input {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+.mantine-TextInput-input::placeholder {
+  color: var(--muted-foreground) !important;
+}
+
+/* Select (rows-per-page dropdown) */
+.mantine-Select-input,
+.mantine-NativeSelect-input {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+
+/* Dropdown list */
+.mantine-Select-dropdown,
+.mantine-Popover-dropdown {
+  background-color: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  border-color: var(--border) !important;
+}
+.mantine-Select-item[data-selected],
+.mantine-Select-item:hover {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+/* Toolbar action icons (column visibility, density, etc.) */
+.mantine-ActionIcon-root {
+  color: var(--muted-foreground) !important;
+}
+.mantine-ActionIcon-root:hover {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+/* ================================================================= */
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

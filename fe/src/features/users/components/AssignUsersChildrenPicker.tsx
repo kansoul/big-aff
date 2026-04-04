@@ -88,7 +88,7 @@ function AssignUsersChildrenPickerInner({
               return (
                 <span
                   key={id}
-                  className="inline-flex max-w-full items-center gap-1 rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-800 shadow-sm dark:bg-red-950/40 dark:text-red-400"
+                  className="inline-flex max-w-full items-center gap-1 rounded-md bg-red-100 px-2 py-1.5 text-xs font-medium text-red-800 shadow-sm dark:bg-red-950/40 dark:text-red-400"
                 >
                   <span
                     className="min-w-0 truncate"
@@ -100,7 +100,7 @@ function AssignUsersChildrenPickerInner({
                     <button
                       type="button"
                       data-tag-remove
-                      className="shrink-0 rounded p-0.5 opacity-80 hover:bg-red-200/60 hover:opacity-100 dark:hover:bg-red-900/40"
+                      className="shrink-0 rounded p-1 opacity-80 hover:bg-red-200/60 hover:opacity-100 dark:hover:bg-red-900/40"
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.preventDefault()
@@ -130,6 +130,7 @@ function AssignUsersChildrenPickerInner({
       <DropdownMenuContent
         className="w-[min(100vw-2rem,22rem)] p-0"
         align="end"
+        collisionPadding={16}
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="border-b p-2">
