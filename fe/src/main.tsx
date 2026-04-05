@@ -7,6 +7,7 @@ import { router } from './routes'
 import { AuthProvider } from '@/app/providers/AuthProvider'
 import { ThemeProvider } from '@/app/providers/ThemeProvider'
 import { PageLoader } from '@/components/common/PageLoader'
+import { Toaster } from '@/components/ui/sonner'
 
 import './index.css'
 import { strictMode } from './config'
@@ -28,6 +29,7 @@ createRoot(document.getElementById('root')!).render(
             <RouterProvider router={router} />
           </Suspense>
         </AuthProvider>
+        <Toaster position="bottom-right" richColors />
       </ThemeProvider>
     </StrictMode>
   ) : (
@@ -37,6 +39,7 @@ createRoot(document.getElementById('root')!).render(
           <RouterProvider router={router} />
         </Suspense>
       </AuthProvider>
+      <Toaster position="bottom-right" richColors />
     </ThemeProvider>
   ),
 )

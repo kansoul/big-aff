@@ -50,7 +50,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { MediaPickerDialog } from '@/components/common/MediaPickerDialog'
-import type { Media } from '@/features/media/types'
+import type { MediaFile } from '@/features/media/types'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -244,9 +244,9 @@ export const TextEditor = memo(function TextEditor({
   }, [editor])
 
   const handleMediaSelect = useCallback(
-    (media: Media) => {
+    (media: MediaFile) => {
       if (!editor) return
-      editor.chain().focus().setImage({ src: media.url, alt: media.name }).run()
+      editor.chain().focus().setImage({ src: media.url, alt: media.original_name }).run()
     },
     [editor],
   )

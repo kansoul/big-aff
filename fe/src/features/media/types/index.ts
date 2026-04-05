@@ -1,18 +1,38 @@
-export interface Media {
+export interface MediaFile {
   id: number
-  name: string
-  url: string
+  user_id: number
+  disk: string
+  file_name: string
+  original_name: string
   mime_type: string
   size: number
+  path: string
+  url: string
+  alt_text: string
   created_at: string
+  updated_at: string
+}
+
+export interface MediaPagination {
+  current_page: number
+  from: number
+  to: number
+  last_page: number
+  last_page_url: string
+  next_page_url: string | null
+  path: string
+  per_page: number
+  prev_page_url: string | null
+  total: number
 }
 
 export interface MediaListResponse {
-  data: Media[]
-  meta: {
-    current_page: number
-    last_page: number
-    per_page: number
-    total: number
-  }
+  data: MediaFile[]
+  pagination: MediaPagination
+}
+
+export interface MediaFilterParams {
+  created_from: string | null
+  created_to: string | null
+  user_id: number | null
 }

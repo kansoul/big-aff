@@ -6,6 +6,7 @@ export const PATHS = {
   root: '/',
   login: '/login',
   dashboard: '/dashboard',
+  media: '/media',
   settingsUsers: '/settings/users',
   settingsUsersAssign: '/settings/users-assign',
   settingsRoles: '/settings/roles',

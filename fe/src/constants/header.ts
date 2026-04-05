@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 
 import { NAV_SECTIONS, PATHS, type NavSectionId } from '@/constants/paths'
 import { PermissionSlugs } from '@/constants/permissions'
-import { GitBranch, LayoutDashboard, Settings, UserCog, Users } from 'lucide-react'
+import { GitBranch, Images, LayoutDashboard, Settings, UserCog, Users } from 'lucide-react'
 
 export type NavSubItem = {
   name: string
@@ -23,6 +23,7 @@ export type NavItem = {
 
 export const NAVIGATION_ITEMS: NavItem[] = [
   { name: 'Dashboard', href: PATHS.dashboard, icon: LayoutDashboard },
+  { name: 'Media', href: PATHS.media, icon: Images },
   {
     name: 'Settings',
     icon: Settings,
