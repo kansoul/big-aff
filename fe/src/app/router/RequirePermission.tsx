@@ -9,11 +9,11 @@ export function RequirePermission({
   permission,
   children,
 }: {
-  permission: number
+  permission: string
   children: ReactNode
 }) {
   const user = useAuthStore((s) => s.user)
-  if (!hasPermission(user?.permission_mask, permission)) {
+  if (!hasPermission(user?.permissions, permission)) {
     return <Navigate to={PATHS.dashboard} replace />
   }
   return <>{children}</>

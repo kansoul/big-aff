@@ -11,7 +11,7 @@ export const dashboardApi = {
     const u = response.data.data
     return {
       ...u,
-      permission_mask: u.permission_mask ?? 0,
+      permissions: Array.isArray(u.permissions) ? u.permissions : [],
     }
   },
 }

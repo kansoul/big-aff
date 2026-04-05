@@ -5,7 +5,7 @@ import { AssignUsersTableCard } from '@/features/users/components/AssignUsersTab
 import { usersApi } from '@/features/users/api/users'
 import type { UserOptionForAssign, UserParentAssignmentRow } from '@/features/users/types'
 import { formatApiError } from '@/features/settings/components'
-import { PermissionBits, hasPermission } from '@/constants/permissions'
+import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 
 function draftsFromRows(rows: UserParentAssignmentRow[]): Record<number, number[]> {
@@ -14,8 +14,8 @@ function draftsFromRows(rows: UserParentAssignmentRow[]): Record<number, number[
 
 export function AssignUsersPage() {
   const user = useAuthStore((s) => s.user)
-  const mask = user?.permission_mask ?? 0
-  const canUpdate = hasPermission(mask, PermissionBits.SettingsUsersUpdate)
+  const perms = user?.permissions ?? []
+  const canUpdate = hasPermission(perms, PermissionSlugs.SettingsUsersUpdate)
 
   const [assignments, setAssignments] = useState<UserParentAssignmentRow[]>([])
   const [userOptions, setUserOptions] = useState<UserOptionForAssign[]>([])

@@ -3,6 +3,7 @@
 namespace App\Services\User;
 
 use App\Models\User;
+use App\Models\UserParentChild;
 use Illuminate\Database\Eloquent\Collection;
 
 class UserService
@@ -14,7 +15,9 @@ class UserService
      */
     public function listForActor(User $auth): Collection
     {
-        $query = User::query()->with(['role', 'parent:id,name'])->orderBy('name');
+        $query = User::query()
+            ->with(['role.rolePermissions', 'assignedParentLink.parentUser'])
+            ->orderBy('name');
 
         if (! $auth->managesAllUsers()) {
             $query->whereIn('id', $auth->manageableUserIds());
@@ -31,12 +34,22 @@ class UserService
         $password = $data['password'];
         unset($data['password']);
 
+        $parentId = $data['parent_id'] ?? null;
+        unset($data['parent_id']);
+
         $user = User::query()->create([
             ...$data,
             'password' => $password,
         ]);
 
-        $user->load(['role', 'parent:id,name']);
+        if ($parentId !== null && $parentId !== '') {
+            UserParentChild::query()->create([
+                'parent_user_id' => (int) $parentId,
+                'child_user_id' => $user->id,
+            ]);
+        }
+
+        $user->load(['role.rolePermissions', 'assignedParentLink.parentUser']);
 
         return $user;
     }
@@ -50,11 +63,25 @@ class UserService
             unset($data['password']);
         }
 
+        if (array_key_exists('parent_id', $data)) {
+            $parentId = $data['parent_id'];
+            unset($data['parent_id']);
+
+            UserParentChild::query()->where('child_user_id', $user->id)->delete();
+
+            if ($parentId !== null && $parentId !== '') {
+                UserParentChild::query()->create([
+                    'parent_user_id' => (int) $parentId,
+                    'child_user_id' => $user->id,
+                ]);
+            }
+        }
+
         if ($data !== []) {
             $user->update($data);
         }
 
-        $user->load(['role', 'parent:id,name']);
+        $user->load(['role.rolePermissions', 'assignedParentLink.parentUser']);
 
         return $user->fresh();
     }

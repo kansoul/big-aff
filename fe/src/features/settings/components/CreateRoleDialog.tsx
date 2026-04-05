@@ -30,8 +30,8 @@ type CreateRoleDialogProps = {
   canAssign: boolean
   formError: string | null
   createForm: UseFormReturn<RoleNameFormValues>
-  createPermissionMask: number
-  setCreatePermissionMask: Dispatch<SetStateAction<number>>
+  createPermissions: string[]
+  setCreatePermissions: Dispatch<SetStateAction<string[]>>
   submitting: boolean
   onSubmit: (values: RoleNameFormValues) => void | Promise<void>
 }
@@ -42,8 +42,8 @@ export function CreateRoleDialog({
   canAssign,
   formError,
   createForm,
-  createPermissionMask,
-  setCreatePermissionMask,
+  createPermissions,
+  setCreatePermissions,
   submitting,
   onSubmit,
 }: CreateRoleDialogProps) {
@@ -92,29 +92,22 @@ export function CreateRoleDialog({
                 <FormLabel className="text-foreground">Permissions</FormLabel>
                 <div className="min-h-[min(40vh,320px)] max-h-[min(52vh,400px)] flex-1 overflow-y-auto rounded-md border border-border px-3 py-2">
                   <PermissionCollapsibleTree
-                    mask={createPermissionMask}
-                    setMask={setCreatePermissionMask}
+                    selected={createPermissions}
+                    setSelected={setCreatePermissions}
                   />
                 </div>
               </div>
             ) : null}
             <DialogFooter
               className={
-                canAssign
-                  ? 'mt-2 shrink-0 gap-2 border-0 bg-transparent sm:justify-end'
-                  : 'border-0 bg-transparent p-0 sm:justify-end gap-2'
+                canAssign ? 'mt-2 shrink-0 gap-2 border-0 bg-transparent sm:justify-end' : ''
               }
             >
-              <Button
-                type="button"
-                variant="outline"
-                className=""
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={submitting}>
-                {submitting ? 'Saving…' : 'Create'}
+                {submitting ? 'Saving…' : 'Create role'}
               </Button>
             </DialogFooter>
           </form>

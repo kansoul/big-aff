@@ -31,8 +31,8 @@ type EditRoleDialogProps = {
   canAssign: boolean
   formError: string | null
   editForm: UseFormReturn<RoleNameFormValues>
-  selectedPermissionMask: number
-  setSelectedPermissionMask: Dispatch<SetStateAction<number>>
+  selectedPermissions: string[]
+  setSelectedPermissions: Dispatch<SetStateAction<string[]>>
   submitting: boolean
   onSubmit: (values: RoleNameFormValues) => void | Promise<void>
 }
@@ -44,8 +44,8 @@ export function EditRoleDialog({
   canAssign,
   formError,
   editForm,
-  selectedPermissionMask,
-  setSelectedPermissionMask,
+  selectedPermissions,
+  setSelectedPermissions,
   submitting,
   onSubmit,
 }: EditRoleDialogProps) {
@@ -83,8 +83,8 @@ export function EditRoleDialog({
                 <FormLabel className="text-foreground">Permissions</FormLabel>
                 <div className="min-h-[min(50vh,380px)] max-h-[min(58vh,440px)] flex-1 overflow-y-auto rounded-md border border-border px-3 py-2">
                   <PermissionCollapsibleTree
-                    mask={selectedPermissionMask}
-                    setMask={setSelectedPermissionMask}
+                    selected={selectedPermissions}
+                    setSelected={setSelectedPermissions}
                   />
                 </div>
               </div>
@@ -98,8 +98,8 @@ export function EditRoleDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting || (!canUpdate && !canAssign)}>
-                {submitting ? 'Saving…' : 'Save'}
+              <Button type="submit" disabled={submitting}>
+                {submitting ? 'Saving…' : 'Save changes'}
               </Button>
             </DialogFooter>
           </form>

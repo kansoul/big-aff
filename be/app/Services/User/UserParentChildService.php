@@ -37,7 +37,7 @@ class UserParentChildService
         }
 
         /** @var list<int> $childIdsSet */
-        $childIdsSet = $rows->pluck('child_user_id')->map(fn ($id) => (int) $id)->all();
+        $childIdsSet = $rows->pluck('child_user_id')->map(fn($id) => (int) $id)->all();
 
         $userOptions = $users->map(function (User $user) use ($childIdsSet): array {
             return [
@@ -49,7 +49,7 @@ class UserParentChildService
         })->values()->all();
 
         $assignments = $users
-            ->filter(fn (User $user) => ! in_array($user->id, $childIdsSet, true))
+            ->filter(fn(User $user) => ! in_array($user->id, $childIdsSet, true))
             ->map(function (User $user) use ($byParent): array {
                 return [
                     'id' => $user->id,

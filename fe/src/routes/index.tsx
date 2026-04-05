@@ -4,7 +4,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { RequirePermission } from '@/app/router/RequirePermission'
 import { ProtectedRoute } from '@/app/router/ProtectedRoute'
 import { NAV_SECTIONS, PATHS, routeSegment } from '@/constants/paths'
-import { PermissionBits } from '@/constants/permissions'
+import { PermissionSlugs } from '@/constants/permissions'
 
 const AuthLayout = lazy(() => import('@/layouts/AuthLayout'))
 const DashboardLayout = lazy(() =>
@@ -64,7 +64,7 @@ export const router = createBrowserRouter([
           {
             path: routeSegment(PATHS.settingsUsers),
             element: (
-              <RequirePermission permission={PermissionBits.SettingsUsersView}>
+              <RequirePermission permission={PermissionSlugs.SettingsUsersView}>
                 <SettingsUsersPage />
               </RequirePermission>
             ),
@@ -73,7 +73,7 @@ export const router = createBrowserRouter([
           {
             path: routeSegment(PATHS.settingsUsersAssign),
             element: (
-              <RequirePermission permission={PermissionBits.SettingsUsersView}>
+              <RequirePermission permission={PermissionSlugs.SettingsUsersView}>
                 <AssignUsersPage />
               </RequirePermission>
             ),
@@ -82,7 +82,7 @@ export const router = createBrowserRouter([
           {
             path: routeSegment(PATHS.settingsRoles),
             element: (
-              <RequirePermission permission={PermissionBits.SettingsRolesView}>
+              <RequirePermission permission={PermissionSlugs.SettingsRolesView}>
                 <SettingsRolesPage />
               </RequirePermission>
             ),

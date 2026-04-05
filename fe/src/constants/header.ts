@@ -1,15 +1,15 @@
 import type { LucideIcon } from 'lucide-react'
 
 import { NAV_SECTIONS, PATHS, type NavSectionId } from '@/constants/paths'
-import { PermissionBits } from '@/constants/permissions'
+import { PermissionSlugs } from '@/constants/permissions'
 import { GitBranch, LayoutDashboard, Settings, UserCog, Users } from 'lucide-react'
 
 export type NavSubItem = {
   name: string
   href: string
   icon: LucideIcon
-  /** Permission bit (`PermissionBits.*`) required to show this link. */
-  requiredPermission?: number
+  /** Permission slug (`PermissionSlugs.*`) required to show this link. */
+  requiredPermission?: string
 }
 
 export type NavItem = {
@@ -32,19 +32,19 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         name: 'Users',
         href: PATHS.settingsUsers,
         icon: Users,
-        requiredPermission: PermissionBits.SettingsUsersView,
+        requiredPermission: PermissionSlugs.SettingsUsersView,
       },
       {
         name: 'Users & children',
         href: PATHS.settingsUsersAssign,
         icon: GitBranch,
-        requiredPermission: PermissionBits.SettingsUsersView,
+        requiredPermission: PermissionSlugs.SettingsUsersView,
       },
       {
         name: 'Roles',
         href: PATHS.settingsRoles,
         icon: UserCog,
-        requiredPermission: PermissionBits.SettingsRolesView,
+        requiredPermission: PermissionSlugs.SettingsRolesView,
       },
     ],
   },

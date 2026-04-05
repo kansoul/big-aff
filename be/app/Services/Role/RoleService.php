@@ -27,7 +27,7 @@ class RoleService
     }
 
     /**
-     * @param  array{name: string, permission_mask?: int}  $data
+     * @param  array{name: string, permissions?: list<string>}  $data
      */
     public function create(array $data): Role
     {

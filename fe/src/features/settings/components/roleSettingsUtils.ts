@@ -1,4 +1,4 @@
-import { countActivePermissionBits, isFullPermissionMask } from '@/constants/permissions'
+import { countActivePermissions, hasFullAccess } from '@/constants/permissions'
 
 export function formatApiError(err: unknown): string {
   const ax = err as {
@@ -14,13 +14,13 @@ export function formatApiError(err: unknown): string {
   return ax.response?.data?.message ?? 'Something went wrong. Please try again.'
 }
 
-export function describeRoleMask(mask: number): string {
-  if (mask === 0) {
+export function describeRolePermissions(perms: string[]): string {
+  if (perms.length === 0) {
     return '—'
   }
-  if (isFullPermissionMask(mask)) {
+  if (hasFullAccess(perms)) {
     return 'Full access'
   }
-  const n = countActivePermissionBits(mask)
+  const n = countActivePermissions(perms)
   return `${n} permission${n === 1 ? '' : 's'}`
 }

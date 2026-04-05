@@ -4,6 +4,7 @@ namespace App\Models\Traits\Method;
 
 use App\Enums\Permission;
 use App\Models\User;
+use App\Models\UserParentChild;
 
 /**
  * Trait UserMethod.
@@ -12,21 +13,21 @@ trait UserMethod
 {
     public function hasPermissionFlag(Permission $permission): bool
     {
-        $this->loadMissing('role');
-        $mask = (int) ($this->role?->permission_mask ?? 0);
+        $this->loadMissing('role.rolePermissions');
+        $perms = $this->role?->getPermissionSlugs() ?? [];
 
-        return Permission::maskHasPermission($mask, $permission);
+        return Permission::collectionHasPermission($perms, $permission);
     }
 
     /**
-     * Full role mask → can manage any user (not restricted to own subtree).
+     * Full role permissions → can manage any user (not restricted to own subtree).
      */
     public function managesAllUsers(): bool
     {
-        $this->loadMissing('role');
-        $mask = (int) ($this->role?->permission_mask ?? 0);
+        $this->loadMissing('role.rolePermissions');
+        $perms = $this->role?->getPermissionSlugs() ?? [];
 
-        return Permission::maskHasFullAccess($mask);
+        return Permission::hasFullAccessCollection($perms);
     }
 
     /**
@@ -42,7 +43,7 @@ trait UserMethod
         while ($queue !== []) {
             $id = array_shift($queue);
             $ids[] = $id;
-            $childIds = User::query()->where('parent_id', $id)->pluck('id')->all();
+            $childIds = UserParentChild::query()->where('parent_user_id', $id)->pluck('child_user_id')->all();
             foreach ($childIds as $cid) {
                 $queue[] = (int) $cid;
             }
@@ -61,7 +62,7 @@ trait UserMethod
     }
 
     /**
-     * Whether $descendantId sits strictly under $ancestorId in the parent chain.
+     * Whether $descendantId sits strictly under $ancestorId in the `user_parent_child` chain.
      */
     public static function isDescendantOf(int $descendantId, int $ancestorId): bool
     {
@@ -69,14 +70,14 @@ trait UserMethod
             return false;
         }
 
-        $current = User::query()->whereKey($descendantId)->value('parent_id');
+        $current = UserParentChild::query()->where('child_user_id', $descendantId)->value('parent_user_id');
         $guard = 0;
 
         while ($current !== null && $guard < 1000) {
             if ((int) $current === $ancestorId) {
                 return true;
             }
-            $current = User::query()->whereKey($current)->value('parent_id');
+            $current = UserParentChild::query()->where('child_user_id', $current)->value('parent_user_id');
             $guard++;
         }
 
@@ -84,7 +85,7 @@ trait UserMethod
     }
 
     /**
-     * Setting $user->parent_id to $newParentId would create a cycle (including self-parent).
+     * Assigning $newParentId as parent via `user_parent_child` would create a cycle (including self-parent).
      */
     public static function assigningParentWouldCycle(User $user, ?int $newParentId): bool
     {

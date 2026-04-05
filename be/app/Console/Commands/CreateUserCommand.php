@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\User;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 
 class CreateUserCommand extends Command
@@ -25,12 +25,12 @@ class CreateUserCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): int
     {
         $name = $this->option('name') ?? $this->ask('Enter user name');
         $email = $this->option('email') ?? $this->ask('Enter user email');
 
-        while (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        while (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->error('Invalid email format. Please try again.');
             $email = $this->ask('Enter user email');
         }
@@ -39,6 +39,7 @@ class CreateUserCommand extends Command
 
         if (User::where('email', $email)->exists()) {
             $this->error("User with email {$email} already exists.");
+
             return Command::FAILURE;
         }
 

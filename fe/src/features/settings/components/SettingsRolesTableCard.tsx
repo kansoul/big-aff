@@ -27,7 +27,7 @@ import {
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import type { Role } from '@/shared/types'
 
-import { describeRoleMask } from './roleSettingsUtils'
+import { describeRolePermissions } from './roleSettingsUtils'
 
 type ActionMeta = {
   canUpdate: boolean
@@ -44,11 +44,11 @@ function getRolesColumns(meta: ActionMeta): ColumnDef<Role>[] {
       header: 'Role',
     },
     {
-      accessorKey: 'permission_mask',
+      accessorKey: 'permissions',
       header: 'Permissions',
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {describeRoleMask(row.original.permission_mask)}
+          {describeRolePermissions(row.original.permissions)}
         </span>
       ),
     },

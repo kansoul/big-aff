@@ -22,7 +22,7 @@ class LoginAction
 
         /** @var User $user */
         $user = Auth::user();
-        $user->load('role');
+        $user->load('role.rolePermissions');
 
         if (request()->hasSession()) {
             request()->session()->regenerate();

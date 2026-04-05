@@ -2,14 +2,16 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Carbon;
 
 /**
+ * @mixin Role
+ *
  * @property int $id
  * @property string $name
- * @property int $permission_mask
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -20,12 +22,14 @@ class RoleResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $mask = (int) $this->permission_mask;
+        /** @var Role $role */
+        $role = $this->resource;
+        $role->loadMissing('rolePermissions');
 
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'permission_mask' => $mask,
+            'permissions' => $role->getPermissionSlugs(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

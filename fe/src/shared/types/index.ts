@@ -2,7 +2,7 @@ export interface User {
   id: number
   name: string
   email: string
-  permission_mask: number
+  permissions: string[]
 }
 
 /** User row from `GET/POST/PUT /api/users` (admin UI). */
@@ -14,7 +14,7 @@ export interface ManagedUser {
   role: {
     id: number
     name: string
-    permission_mask: number
+    permissions: string[]
   } | null
   parent_id: number | null
   parent: {
@@ -28,7 +28,7 @@ export interface ManagedUser {
 export interface Role {
   id: number
   name: string
-  permission_mask: number
+  permissions: string[]
   created_at: string | null
   updated_at: string | null
 }

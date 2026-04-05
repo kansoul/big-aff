@@ -16,23 +16,18 @@ class UserParentChildTest extends TestCase
 
     private function fullAccessRole(): Role
     {
-        return Role::query()->create([
-            'name' => 'admin',
-            'permission_mask' => Permission::fullMask(),
-        ]);
+        $role = Role::query()->create(['name' => 'admin']);
+        $role->syncPermissionSlugs(Permission::values());
+
+        return $role->fresh(['rolePermissions']);
     }
 
-    private function roleWithBits(int ...$bits): Role
+    private function roleWithPermissions(Permission ...$permissions): Role
     {
-        $mask = 0;
-        foreach ($bits as $b) {
-            $mask |= $b;
-        }
+        $role = Role::query()->create(['name' => 'manage']);
+        $role->syncPermissionSlugs(array_map(static fn (Permission $p) => $p->value, $permissions));
 
-        return Role::query()->create([
-            'name' => 'manage',
-            'permission_mask' => $mask,
-        ]);
+        return $role->fresh(['rolePermissions']);
     }
 
     public function test_guest_cannot_list_parent_child_assignments(): void
@@ -143,13 +138,17 @@ class UserParentChildTest extends TestCase
 
     public function test_subtree_actor_cannot_assign_outside_scope(): void
     {
-        $role = $this->roleWithBits(
-            Permission::SettingsUsersView->value,
-            Permission::SettingsUsersUpdate->value,
+        $role = $this->roleWithPermissions(
+            Permission::SettingsUsersView,
+            Permission::SettingsUsersUpdate,
         );
 
         $manager = User::factory()->create(['role_id' => $role->id]);
-        $sub = User::factory()->create(['role_id' => $role->id, 'parent_id' => $manager->id]);
+        $sub = User::factory()->create(['role_id' => $role->id]);
+        UserParentChild::query()->create([
+            'parent_user_id' => $manager->id,
+            'child_user_id' => $sub->id,
+        ]);
         $stranger = User::factory()->create(['role_id' => $role->id]);
 
         Sanctum::actingAs($manager);

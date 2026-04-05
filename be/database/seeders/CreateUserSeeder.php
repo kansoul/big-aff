@@ -20,12 +20,10 @@ class CreateUserSeeder extends Seeder
     {
         $adminRole = Role::query()->firstOrCreate(
             ['name' => 'admin'],
-            ['permission_mask' => Permission::fullMask()]
+            ['name' => 'admin'],
         );
 
-        if ($adminRole->permission_mask !== Permission::fullMask()) {
-            $adminRole->update(['permission_mask' => Permission::fullMask()]);
-        }
+        $adminRole->syncPermissionSlugs(Permission::values());
 
         User::create([
             'name' => 'Test User',

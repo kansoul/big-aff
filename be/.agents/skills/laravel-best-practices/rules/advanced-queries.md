@@ -83,11 +83,11 @@ Running a small, targeted secondary query and passing its results via `whereIn` 
 When ordering by multiple columns, create a single compound index in the same column order as the `ORDER BY` clause. Individual single-column indexes cannot combine for multi-column sorts — the database will filesort without a compound index.
 
 ```php
-// Migration
-$table->index(['last_name', 'first_name']);
+// Migration — same column order as ORDER BY
+$table->index(['name', 'created_at']);
 
 // Query — column order must match the index
-User::query()->orderBy('last_name')->orderBy('first_name')->paginate();
+User::query()->orderBy('name')->orderBy('created_at')->paginate();
 ```
 
 ## Use Correlated Subqueries for Has-Many Ordering

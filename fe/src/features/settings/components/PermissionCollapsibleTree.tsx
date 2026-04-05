@@ -6,57 +6,65 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { PERMISSION_CATALOG, type PermissionCluster } from '@/constants/permissions'
 
-function toggleBit(mask: number, bit: number, on: boolean): number {
+function toggleSlug(selected: string[], slug: string, on: boolean): string[] {
   if (on) {
-    return mask | bit
+    return [...new Set([...selected, slug])]
   }
-  return mask & ~bit
+  return selected.filter((s) => s !== slug)
 }
 
-function screenBitsMask(screen: PermissionCluster['screens'][number]): number {
-  return screen.permissions.reduce((acc, p) => acc | p.bit, 0)
+function screenSlugsMask(screen: PermissionCluster['screens'][number]): string[] {
+  return screen.permissions.map((p) => p.slug)
 }
 
-function clusterBitsMask(cluster: PermissionCluster): number {
-  return cluster.screens.reduce((acc, s) => acc | screenBitsMask(s), 0)
+function clusterSlugsMask(cluster: PermissionCluster): string[] {
+  return cluster.screens.flatMap((s) => screenSlugsMask(s))
 }
 
-/** Radix: `indeterminate` when some but not all bits in `groupMask` are set. */
-function groupCheckboxState(mask: number, groupMask: number): boolean | 'indeterminate' {
-  if (groupMask === 0) {
+function groupCheckboxState(selected: string[], groupSlugs: string[]): boolean | 'indeterminate' {
+  if (groupSlugs.length === 0) {
     return false
   }
-  const on = mask & groupMask
-  if (on === 0) {
+  const set = new Set(selected)
+  const onCount = groupSlugs.filter((s) => set.has(s)).length
+  if (onCount === 0) {
     return false
   }
-  if (on === groupMask) {
+  if (onCount === groupSlugs.length) {
     return true
   }
   return 'indeterminate'
 }
 
-function applyGroupToMask(mask: number, groupMask: number, checked: boolean): number {
+function applyGroupToSelected(
+  selected: string[],
+  groupSlugs: string[],
+  checked: boolean,
+): string[] {
   if (checked) {
-    return mask | groupMask
+    return [...new Set([...selected, ...groupSlugs])]
   }
-  return mask & ~groupMask
+  const drop = new Set(groupSlugs)
+  return selected.filter((s) => !drop.has(s))
 }
 
 type PermissionCollapsibleTreeProps = {
-  mask: number
-  setMask: Dispatch<SetStateAction<number>>
+  selected: string[]
+  setSelected: Dispatch<SetStateAction<string[]>>
 }
 
-export function PermissionCollapsibleTree({ mask, setMask }: PermissionCollapsibleTreeProps) {
-  const toggleLeaf = (bit: number, checked: boolean) => {
-    setMask((prev) => toggleBit(prev, bit, checked))
+export function PermissionCollapsibleTree({
+  selected,
+  setSelected,
+}: PermissionCollapsibleTreeProps) {
+  const toggleLeaf = (slug: string, checked: boolean) => {
+    setSelected((prev) => toggleSlug(prev, slug, checked))
   }
 
   return (
     <div className="space-y-2">
       {PERMISSION_CATALOG.map((cluster) => {
-        const clusterMask = clusterBitsMask(cluster)
+        const clusterSlugs = clusterSlugsMask(cluster)
         return (
           <Collapsible
             key={cluster.id}
@@ -77,10 +85,10 @@ export function PermissionCollapsibleTree({ mask, setMask }: PermissionCollapsib
               </CollapsibleTrigger>
               <Checkbox
                 className="shrink-0 rounded-[4px]"
-                checked={groupCheckboxState(mask, clusterMask)}
+                checked={groupCheckboxState(selected, clusterSlugs)}
                 onCheckedChange={(state) => {
                   const on = state === true
-                  setMask((m) => applyGroupToMask(m, clusterMask, on))
+                  setSelected((prev) => applyGroupToSelected(prev, clusterSlugs, on))
                 }}
               />
               <CollapsibleTrigger asChild>
@@ -95,7 +103,7 @@ export function PermissionCollapsibleTree({ mask, setMask }: PermissionCollapsib
             <CollapsibleContent className="overflow-hidden border-t border-border/50 bg-background/60">
               <div className="space-y-1.5 px-1.5 pb-2 pt-1.5 pl-2">
                 {cluster.screens.map((screen) => {
-                  const screenMask = screenBitsMask(screen)
+                  const screenSlugs = screenSlugsMask(screen)
                   return (
                     <Collapsible
                       key={screen.id}
@@ -116,10 +124,10 @@ export function PermissionCollapsibleTree({ mask, setMask }: PermissionCollapsib
                         </CollapsibleTrigger>
                         <Checkbox
                           className="mt-1.5 shrink-0 rounded-[4px] mr-1 ml-2"
-                          checked={groupCheckboxState(mask, screenMask)}
+                          checked={groupCheckboxState(selected, screenSlugs)}
                           onCheckedChange={(state) => {
                             const on = state === true
-                            setMask((m) => applyGroupToMask(m, screenMask, on))
+                            setSelected((prev) => applyGroupToSelected(prev, screenSlugs, on))
                           }}
                         />
                         <CollapsibleTrigger asChild>
@@ -140,9 +148,9 @@ export function PermissionCollapsibleTree({ mask, setMask }: PermissionCollapsib
                             >
                               <Checkbox
                                 className="shrink-0 rounded-[4px]"
-                                checked={(mask & p.bit) === p.bit}
+                                checked={selected.includes(p.slug)}
                                 onCheckedChange={(state) => {
-                                  toggleLeaf(p.bit, state === true)
+                                  toggleLeaf(p.slug, state === true)
                                 }}
                               />
                               <div className="min-w-0 text-xs leading-tight">

@@ -3,81 +3,86 @@
 namespace App\Enums;
 
 /**
- * Bit flags stored in `roles.permission_mask`. One case = one bit.
- * Route middleware `permission.scope:` uses pipe-separated integer bit values (same as case values).
+ * Permission slugs stored in `role_permissions.permission` (many rows per role — no fixed count limit).
+ * Route middleware `permission.scope:` uses pipe-separated slugs (same as case values).
  */
-enum Permission: int
+enum Permission: string
 {
     // —— Report ——
-    case ReportOverviewView = 1 << 0;
+    case ReportOverviewView = 'report.overview.view';
 
-    case ReportExport = 1 << 1;
+    case ReportExport = 'report.export';
 
-        // —— Settings → Users ——
-    case SettingsUsersView = 1 << 2;
+    // —— Settings → Users ——
+    case SettingsUsersView = 'settings.users.view';
 
-    case SettingsUsersCreate = 1 << 3;
+    case SettingsUsersCreate = 'settings.users.create';
 
-    case SettingsUsersUpdate = 1 << 4;
+    case SettingsUsersUpdate = 'settings.users.update';
 
-    case SettingsUsersDelete = 1 << 5;
+    case SettingsUsersDelete = 'settings.users.delete';
 
-        // —— Settings → Roles ——
-    case SettingsRolesView = 1 << 6;
+    // —— Settings → Roles ——
+    case SettingsRolesView = 'settings.roles.view';
 
-    case SettingsRolesCreate = 1 << 7;
+    case SettingsRolesCreate = 'settings.roles.create';
 
-    case SettingsRolesUpdate = 1 << 8;
+    case SettingsRolesUpdate = 'settings.roles.update';
 
-    case SettingsRolesDelete = 1 << 9;
+    case SettingsRolesDelete = 'settings.roles.delete';
 
-    case SettingsRolesAssign = 1 << 10;
+    case SettingsRolesAssign = 'settings.roles.assign';
 
-    public static function fullMask(): int
+    /**
+     * @return list<string>
+     */
+    public static function values(): array
     {
-        static $cached = null;
-
-        if ($cached === null) {
-            $m = 0;
-            foreach (self::cases() as $case) {
-                $m |= $case->value;
-            }
-            $cached = $m;
-        }
-
-        return $cached;
-    }
-
-    public static function maskHasFullAccess(int $mask): bool
-    {
-        return $mask !== 0 && ($mask & self::fullMask()) === self::fullMask();
+        return array_map(static fn (self $p) => $p->value, self::cases());
     }
 
     /**
-     * Bitmask check shared by {@see User::hasPermissionFlag()} and route middleware (avoids repeated role loads).
+     * Role has every defined permission (equivalent to former “full mask”).
+     *
+     * @param  list<string>  $rolePermissionStrings
      */
-    public static function maskHasPermission(int $mask, self $permission): bool
+    public static function hasFullAccessCollection(array $rolePermissionStrings): bool
     {
-        if (self::maskHasFullAccess($mask)) {
+        if ($rolePermissionStrings === []) {
+            return false;
+        }
+
+        $set = array_fill_keys($rolePermissionStrings, true);
+
+        foreach (self::cases() as $case) {
+            if (! isset($set[$case->value])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  list<string>  $rolePermissionStrings
+     */
+    public static function collectionHasPermission(array $rolePermissionStrings, self $permission): bool
+    {
+        if (self::hasFullAccessCollection($rolePermissionStrings)) {
             return true;
         }
 
-        return ($mask & $permission->value) === $permission->value;
+        return in_array($permission->value, $rolePermissionStrings, true);
     }
 
     /**
-     * Route middleware argument: pipe-separated permission bit integers (each must match a case value).
-     * Full access is represented only by the bitmask (all bits set), not by a magic token.
+     * Route middleware: pipe-separated permission slugs (each must match a case value).
      */
-    public static function maskAllowsAnyOf(int $mask, string $pipeSeparated): bool
+    public static function collectionAllowsAnyOf(array $rolePermissionStrings, string $pipeSeparated): bool
     {
         foreach (self::parseRoutePermissionTokens($pipeSeparated) as $token) {
-            if (! ctype_digit($token)) {
-                continue;
-            }
-
-            $perm = self::tryFrom((int) $token);
-            if ($perm !== null && self::maskHasPermission($mask, $perm)) {
+            $perm = self::tryFrom($token);
+            if ($perm !== null && self::collectionHasPermission($rolePermissionStrings, $perm)) {
                 return true;
             }
         }
@@ -92,6 +97,6 @@ enum Permission: int
     {
         $parts = array_map('trim', explode('|', $pipeSeparated));
 
-        return array_values(array_filter($parts, fn(string $s): bool => $s !== ''));
+        return array_values(array_filter($parts, fn (string $s): bool => $s !== ''));
     }
 }

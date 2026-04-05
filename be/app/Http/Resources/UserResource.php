@@ -3,10 +3,13 @@
 namespace App\Http\Resources;
 
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
+ * @mixin User
+ *
  * @property int $id
  * @property string $name
  * @property string $email
@@ -21,13 +24,19 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $mask = (int) ($this->role?->permission_mask ?? 0);
+        /** @var User $user */
+        $user = $this->resource;
+        $user->loadMissing('role.rolePermissions');
+
+        $permissions = $user->role !== null
+            ? $user->role->getPermissionSlugs()
+            : [];
 
         return [
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'permission_mask' => $mask,
+            'permissions' => $permissions,
         ];
     }
 }

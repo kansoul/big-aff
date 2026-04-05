@@ -2,10 +2,13 @@
 
 namespace App\Models\Traits\Relationship;
 
+use App\Models\File;
 use App\Models\Role;
+use App\Models\Style;
 use App\Models\User;
 use App\Models\UserParentChild;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -19,14 +22,34 @@ trait UserRelationship
         return $this->belongsTo(Role::class);
     }
 
-    public function parent(): BelongsTo
+    public function style(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'parent_id');
+        return $this->belongsTo(Style::class);
     }
 
-    public function children(): HasMany
+    public function avatar(): BelongsTo
     {
-        return $this->hasMany(User::class, 'parent_id');
+        return $this->belongsTo(File::class, 'avatar_id');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * Child users linked via `user_parent_child` (this user is the parent).
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function children(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_parent_child', 'parent_user_id', 'child_user_id');
     }
 
     /** Rows in `user_parent_child` where this user is the parent. */

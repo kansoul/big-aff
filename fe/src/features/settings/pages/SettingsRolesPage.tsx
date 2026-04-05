@@ -12,27 +12,39 @@ import {
   roleNameSchema,
   type RoleNameFormValues,
 } from '@/features/settings/components'
-import { PermissionBits, hasPermission } from '@/constants/permissions'
+import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import type { Role } from '@/shared/types'
 
 export function SettingsRolesPage() {
   const user = useAuthStore((s) => s.user)
-  const mask = user?.permission_mask ?? 0
-  const canCreate = useMemo(() => hasPermission(mask, PermissionBits.SettingsRolesCreate), [mask])
-  const canUpdate = useMemo(() => hasPermission(mask, PermissionBits.SettingsRolesUpdate), [mask])
-  const canDelete = useMemo(() => hasPermission(mask, PermissionBits.SettingsRolesDelete), [mask])
-  const canAssign = useMemo(() => hasPermission(mask, PermissionBits.SettingsRolesAssign), [mask])
+  const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
+  const canCreate = useMemo(
+    () => hasPermission(perms, PermissionSlugs.SettingsRolesCreate),
+    [perms],
+  )
+  const canUpdate = useMemo(
+    () => hasPermission(perms, PermissionSlugs.SettingsRolesUpdate),
+    [perms],
+  )
+  const canDelete = useMemo(
+    () => hasPermission(perms, PermissionSlugs.SettingsRolesDelete),
+    [perms],
+  )
+  const canAssign = useMemo(
+    () => hasPermission(perms, PermissionSlugs.SettingsRolesAssign),
+    [perms],
+  )
 
   const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
 
   const [createOpen, setCreateOpen] = useState(false)
-  const [createPermissionMask, setCreatePermissionMask] = useState(0)
+  const [createPermissions, setCreatePermissions] = useState<string[]>([])
   const [editRole, setEditRole] = useState<Role | null>(null)
   const [deleteRole, setDeleteRole] = useState<Role | null>(null)
-  const [selectedPermissionMask, setSelectedPermissionMask] = useState(0)
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
 
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -68,7 +80,7 @@ export function SettingsRolesPage() {
   useEffect(() => {
     if (editRole) {
       editForm.reset({ name: editRole.name })
-      setSelectedPermissionMask(editRole.permission_mask)
+      setSelectedPermissions([...editRole.permissions])
     }
   }, [editRole, editForm])
 
@@ -76,10 +88,10 @@ export function SettingsRolesPage() {
     (open: boolean) => {
       setCreateOpen(open)
       if (open) {
-        setCreatePermissionMask(0)
+        setCreatePermissions([])
       } else {
         createForm.reset({ name: '' })
-        setCreatePermissionMask(0)
+        setCreatePermissions([])
         setFormError(null)
       }
     },
@@ -99,7 +111,7 @@ export function SettingsRolesPage() {
       setSubmitting(true)
       await rolesApi.create({
         name: values.name,
-        permission_mask: canAssign ? createPermissionMask : 0,
+        ...(canAssign ? { permissions: createPermissions } : {}),
       })
       setCreateOpen(false)
       createForm.reset({ name: '' })
@@ -121,12 +133,12 @@ export function SettingsRolesPage() {
     try {
       setFormError(null)
       setSubmitting(true)
-      const payload: { name?: string; permission_mask?: number } = {}
+      const payload: { name?: string; permissions?: string[] } = {}
       if (canUpdate) {
         payload.name = values.name
       }
       if (canAssign) {
-        payload.permission_mask = selectedPermissionMask
+        payload.permissions = selectedPermissions
       }
       await rolesApi.update(editRole.id, payload)
       setEditRole(null)
@@ -198,8 +210,8 @@ export function SettingsRolesPage() {
         canAssign={canAssign}
         formError={formError}
         createForm={createForm}
-        createPermissionMask={createPermissionMask}
-        setCreatePermissionMask={setCreatePermissionMask}
+        createPermissions={createPermissions}
+        setCreatePermissions={setCreatePermissions}
         submitting={submitting}
         onSubmit={onCreateSubmit}
       />
@@ -211,8 +223,8 @@ export function SettingsRolesPage() {
         canAssign={canAssign}
         formError={formError}
         editForm={editForm}
-        selectedPermissionMask={selectedPermissionMask}
-        setSelectedPermissionMask={setSelectedPermissionMask}
+        selectedPermissions={selectedPermissions}
+        setSelectedPermissions={setSelectedPermissions}
         submitting={submitting}
         onSubmit={onEditSubmit}
       />

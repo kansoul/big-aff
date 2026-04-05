@@ -18,17 +18,26 @@ import {
   type UserUpdateFormValues,
   type UserUpdatePayload,
 } from '@/features/users/types'
-import { PermissionBits, hasPermission } from '@/constants/permissions'
+import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import type { ManagedUser, Role } from '@/shared/types'
 
 export function SettingsUsersPage() {
   const user = useAuthStore((s) => s.user)
-  const mask = user?.permission_mask ?? 0
+  const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
 
-  const canCreate = useMemo(() => hasPermission(mask, PermissionBits.SettingsUsersCreate), [mask])
-  const canUpdate = useMemo(() => hasPermission(mask, PermissionBits.SettingsUsersUpdate), [mask])
-  const canDelete = useMemo(() => hasPermission(mask, PermissionBits.SettingsUsersDelete), [mask])
+  const canCreate = useMemo(
+    () => hasPermission(perms, PermissionSlugs.SettingsUsersCreate),
+    [perms],
+  )
+  const canUpdate = useMemo(
+    () => hasPermission(perms, PermissionSlugs.SettingsUsersUpdate),
+    [perms],
+  )
+  const canDelete = useMemo(
+    () => hasPermission(perms, PermissionSlugs.SettingsUsersDelete),
+    [perms],
+  )
 
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [roles, setRoles] = useState<Role[]>([])

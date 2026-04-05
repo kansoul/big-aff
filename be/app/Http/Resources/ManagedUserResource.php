@@ -12,7 +12,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property string $name
  * @property string $email
  * @property int|null $role_id
- * @property int|null $parent_id
  */
 class ManagedUserResource extends JsonResource
 {
@@ -31,23 +30,29 @@ class ManagedUserResource extends JsonResource
                     return null;
                 }
 
+                $this->role->loadMissing('rolePermissions');
+
                 return [
                     'id' => $this->role->id,
                     'name' => $this->role->name,
-                    'permission_mask' => (int) $this->role->permission_mask,
+                    'permissions' => $this->role->getPermissionSlugs(),
                 ];
             }),
-            'parent_id' => $this->parent_id,
-            'parent' => $this->whenLoaded('parent', function () {
-                if ($this->parent === null) {
-                    return null;
-                }
+            'parent_id' => $this->assignedParentLink?->parent_user_id,
+            'parent' => $this->when(
+                $this->relationLoaded('assignedParentLink'),
+                function () {
+                    $parentUser = $this->assignedParentLink?->parentUser;
+                    if ($parentUser === null) {
+                        return null;
+                    }
 
-                return [
-                    'id' => $this->parent->id,
-                    'name' => $this->parent->name,
-                ];
-            }),
+                    return [
+                        'id' => $parentUser->id,
+                        'name' => $parentUser->name,
+                    ];
+                }
+            ),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

@@ -111,14 +111,14 @@ function hasNavigableParentHref(item: NavItem): item is NavItem & { href: string
   return Boolean(item.href)
 }
 
-function filterNavItemsForUser(items: NavItem[], permissionMask: number | undefined): NavItem[] {
+function filterNavItemsForUser(items: NavItem[], userPermissions: string[] | undefined): NavItem[] {
   return items
     .map((item) => {
       if (!item.items?.length) {
         return item
       }
       const filteredItems = item.items.filter(
-        (sub) => !sub.requiredPermission || hasPermission(permissionMask, sub.requiredPermission),
+        (sub) => !sub.requiredPermission || hasPermission(userPermissions, sub.requiredPermission),
       )
       return { ...item, items: filteredItems }
     })
@@ -246,8 +246,8 @@ export const Header = React.memo(function Header() {
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false)
 
   const navItemsForUser = React.useMemo(
-    () => filterNavItemsForUser(NAVIGATION_ITEMS, user?.permission_mask),
-    [user?.permission_mask],
+    () => filterNavItemsForUser(NAVIGATION_ITEMS, user?.permissions),
+    [user?.permissions],
   )
 
   React.useEffect(() => {

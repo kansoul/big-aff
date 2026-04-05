@@ -1,9 +1,9 @@
 export type RoleCreatePayload = {
   name: string
-  permission_mask?: number
+  permissions?: string[]
 }
 
 export type RoleUpdatePayload = {
   name?: string
-  permission_mask?: number
+  permissions?: string[]
 }

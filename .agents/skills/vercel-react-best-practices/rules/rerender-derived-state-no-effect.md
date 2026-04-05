@@ -13,15 +13,14 @@ If a value can be computed from current props/state, do not store it in state or
 
 ```tsx
 function Form() {
-  const [firstName, setFirstName] = useState('First')
-  const [lastName, setLastName] = useState('Last')
-  const [fullName, setFullName] = useState('')
+  const [name, setName] = useState('')
+  const [greeting, setGreeting] = useState('')
 
   useEffect(() => {
-    setFullName(firstName + ' ' + lastName)
-  }, [firstName, lastName])
+    setGreeting(`Hello, ${name.trim()}`)
+  }, [name])
 
-  return <p>{fullName}</p>
+  return <p>{greeting}</p>
 }
 ```
 
@@ -29,11 +28,10 @@ function Form() {
 
 ```tsx
 function Form() {
-  const [firstName, setFirstName] = useState('First')
-  const [lastName, setLastName] = useState('Last')
-  const fullName = firstName + ' ' + lastName
+  const [name, setName] = useState('')
+  const greeting = `Hello, ${name.trim()}`
 
-  return <p>{fullName}</p>
+  return <p>{greeting}</p>
 }
 ```
 

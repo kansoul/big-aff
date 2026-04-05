@@ -1,34 +1,62 @@
 /**
- * Bit flags mirror `App\Enums\Permission` (Laravel). One permission = one bit in `roles.permission_mask`.
- * Route guards and UI checks use `permission_mask` with `PermissionBits` values.
+ * Permission slugs mirror `App\Enums\Permission` (Laravel). Roles store any subset in `role_permissions` (unlimited rows).
+ * API exposes `permissions: string[]` on user and role resources.
  */
 
-/** Integer values must match `App\Enums\Permission` cases (same bit positions). */
-export const PermissionBits = {
-  ReportOverviewView: 1 << 0,
-  ReportExport: 1 << 1,
-  SettingsUsersView: 1 << 2,
-  SettingsUsersCreate: 1 << 3,
-  SettingsUsersUpdate: 1 << 4,
-  SettingsUsersDelete: 1 << 5,
-  SettingsRolesView: 1 << 6,
-  SettingsRolesCreate: 1 << 7,
-  SettingsRolesUpdate: 1 << 8,
-  SettingsRolesDelete: 1 << 9,
-  SettingsRolesAssign: 1 << 10,
+export const PermissionSlugs = {
+  ReportOverviewView: 'report.overview.view',
+  ReportExport: 'report.export',
+  SettingsUsersView: 'settings.users.view',
+  SettingsUsersCreate: 'settings.users.create',
+  SettingsUsersUpdate: 'settings.users.update',
+  SettingsUsersDelete: 'settings.users.delete',
+  SettingsRolesView: 'settings.roles.view',
+  SettingsRolesCreate: 'settings.roles.create',
+  SettingsRolesUpdate: 'settings.roles.update',
+  SettingsRolesDelete: 'settings.roles.delete',
+  SettingsRolesAssign: 'settings.roles.assign',
 } as const
 
-export function fullPermissionMask(): number {
-  let m = 0
-  for (const v of Object.values(PermissionBits)) {
-    m |= v
+export function allPermissionSlugs(): string[] {
+  return Object.values(PermissionSlugs)
+}
+
+export function hasFullAccess(perms: string[]): boolean {
+  const all = allPermissionSlugs()
+  if (all.length === 0) {
+    return false
   }
-  return m
+  const set = new Set(perms)
+  return all.every((s) => set.has(s))
+}
+
+export function hasPermission(perms: string[] | null | undefined, slug: string): boolean {
+  if (!perms?.length) {
+    return false
+  }
+  if (hasFullAccess(perms)) {
+    return true
+  }
+  return perms.includes(slug)
+}
+
+function catalogSlugsFlat(): string[] {
+  return PERMISSION_CATALOG.flatMap((cluster) =>
+    cluster.screens.flatMap((screen) => screen.permissions.map((p) => p.slug)),
+  )
+}
+
+export function countActivePermissions(perms: string[]): number {
+  if (hasFullAccess(perms)) {
+    return catalogSlugsFlat().length
+  }
+  const set = new Set(perms)
+  return catalogSlugsFlat().filter((s) => set.has(s)).length
 }
 
 export type PermissionDefinition = {
-  key: keyof typeof PermissionBits
-  bit: number
+  key: keyof typeof PermissionSlugs
+  slug: string
   label: string
 }
 
@@ -42,7 +70,7 @@ export type PermissionCluster = {
   }[]
 }
 
-/** Role UI: only groups/screens that exist in the app today (Settings → Roles). */
+/** Role UI: groups/screens that exist in the app today (Settings → Roles). */
 export const PERMISSION_CATALOG: PermissionCluster[] = [
   {
     id: 'settings',
@@ -54,22 +82,22 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
         permissions: [
           {
             key: 'SettingsUsersView',
-            bit: PermissionBits.SettingsUsersView,
+            slug: PermissionSlugs.SettingsUsersView,
             label: 'View',
           },
           {
             key: 'SettingsUsersCreate',
-            bit: PermissionBits.SettingsUsersCreate,
+            slug: PermissionSlugs.SettingsUsersCreate,
             label: 'Create',
           },
           {
             key: 'SettingsUsersUpdate',
-            bit: PermissionBits.SettingsUsersUpdate,
+            slug: PermissionSlugs.SettingsUsersUpdate,
             label: 'Update',
           },
           {
             key: 'SettingsUsersDelete',
-            bit: PermissionBits.SettingsUsersDelete,
+            slug: PermissionSlugs.SettingsUsersDelete,
             label: 'Delete',
           },
         ],
@@ -80,27 +108,27 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
         permissions: [
           {
             key: 'SettingsRolesView',
-            bit: PermissionBits.SettingsRolesView,
+            slug: PermissionSlugs.SettingsRolesView,
             label: 'View',
           },
           {
             key: 'SettingsRolesCreate',
-            bit: PermissionBits.SettingsRolesCreate,
+            slug: PermissionSlugs.SettingsRolesCreate,
             label: 'Create',
           },
           {
             key: 'SettingsRolesUpdate',
-            bit: PermissionBits.SettingsRolesUpdate,
+            slug: PermissionSlugs.SettingsRolesUpdate,
             label: 'Update',
           },
           {
             key: 'SettingsRolesDelete',
-            bit: PermissionBits.SettingsRolesDelete,
+            slug: PermissionSlugs.SettingsRolesDelete,
             label: 'Delete',
           },
           {
             key: 'SettingsRolesAssign',
-            bit: PermissionBits.SettingsRolesAssign,
+            slug: PermissionSlugs.SettingsRolesAssign,
             label: 'Assign permissions',
           },
         ],
@@ -108,40 +136,3 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
     ],
   },
 ]
-
-/** Whether the current user’s mask includes the required permission bit (or full mask). */
-export function hasPermission(
-  permissionMask: number | undefined | null,
-  requiredBit: number,
-): boolean {
-  return maskHasPermission(permissionMask, requiredBit)
-}
-
-export function maskHasPermission(mask: number | undefined | null, requiredBit: number): boolean {
-  if (mask == null) {
-    return false
-  }
-  const full = fullPermissionMask()
-  if (mask !== 0 && (mask & full) === full) {
-    return true
-  }
-  return (mask & requiredBit) === requiredBit
-}
-
-export function isFullPermissionMask(mask: number): boolean {
-  const full = fullPermissionMask()
-  return mask !== 0 && (mask & full) === full
-}
-
-export function countActivePermissionBits(mask: number): number {
-  if (isFullPermissionMask(mask)) {
-    return Object.values(PermissionBits).length
-  }
-  let c = 0
-  for (const v of Object.values(PermissionBits)) {
-    if ((mask & v) === v) {
-      c++
-    }
-  }
-  return c
-}

@@ -23,24 +23,8 @@ class StoreRoleRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:100', Rule::unique('roles', 'name')->whereNull('deleted_at')],
-            'permission_mask' => ['sometimes', 'integer', 'min:0', $this->permissionMaskRule()],
+            'permissions' => ['sometimes', 'array', 'max:500'],
+            'permissions.*' => ['string', 'max:191', Rule::in(Permission::values())],
         ];
-    }
-
-    /**
-     * @return \Closure(string, mixed, \Closure(string): void): void
-     */
-    private function permissionMaskRule(): \Closure
-    {
-        return function (string $attribute, mixed $value, \Closure $fail): void {
-            if (! is_int($value) && ! is_numeric($value)) {
-                return;
-            }
-            $mask = (int) $value;
-            $allowed = Permission::fullMask();
-            if (($mask & ~$allowed) !== 0) {
-                $fail(__('validation.in', ['attribute' => $attribute]));
-            }
-        };
     }
 }

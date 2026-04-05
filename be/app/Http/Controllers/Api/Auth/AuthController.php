@@ -45,7 +45,7 @@ class AuthController extends BaseController
             return $this->sendError('Unauthenticated.', [], Response::HTTP_UNAUTHORIZED);
         }
 
-        $user->load('role');
+        $user->load('role.rolePermissions');
 
         return $this->sendResponse(
             data: new UserResource($user),

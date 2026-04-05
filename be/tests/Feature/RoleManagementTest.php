@@ -15,10 +15,10 @@ class RoleManagementTest extends TestCase
 
     private function fullAccessRole(): Role
     {
-        return Role::query()->create([
-            'name' => 'admin',
-            'permission_mask' => Permission::fullMask(),
-        ]);
+        $role = Role::query()->create(['name' => 'admin']);
+        $role->syncPermissionSlugs(Permission::values());
+
+        return $role->fresh(['rolePermissions']);
     }
 
     public function test_guest_cannot_list_roles(): void
@@ -34,32 +34,29 @@ class RoleManagementTest extends TestCase
 
         $createResponse = $this->postJson('/api/roles', [
             'name' => 'editor',
-            'permission_mask' => Permission::SettingsUsersView->value,
+            'permissions' => [Permission::SettingsUsersView->value],
         ]);
 
         $createResponse
             ->assertCreated()
             ->assertJsonPath('data.name', 'editor')
-            ->assertJsonPath('data.permission_mask', Permission::SettingsUsersView->value);
+            ->assertJsonPath('data.permissions', [Permission::SettingsUsersView->value]);
 
         $roleId = (int) $createResponse->json('data.id');
 
         $this->patchJson('/api/roles/'.$roleId, [
             'name' => 'editor-updated',
-            'permission_mask' => Permission::SettingsUsersUpdate->value,
+            'permissions' => [Permission::SettingsUsersUpdate->value],
         ])
             ->assertOk()
             ->assertJsonPath('data.name', 'editor-updated')
-            ->assertJsonPath('data.permission_mask', Permission::SettingsUsersUpdate->value);
+            ->assertJsonPath('data.permissions', [Permission::SettingsUsersUpdate->value]);
     }
 
     public function test_cannot_delete_role_that_is_still_assigned_to_users(): void
     {
         $admin = User::factory()->create(['role_id' => $this->fullAccessRole()->id]);
-        $role = Role::query()->create([
-            'name' => 'staff',
-            'permission_mask' => 0,
-        ]);
+        $role = Role::query()->create(['name' => 'staff']);
         User::factory()->create(['role_id' => $role->id]);
 
         Sanctum::actingAs($admin);
@@ -74,10 +71,7 @@ class RoleManagementTest extends TestCase
     public function test_can_delete_unassigned_role(): void
     {
         $admin = User::factory()->create(['role_id' => $this->fullAccessRole()->id]);
-        $role = Role::query()->create([
-            'name' => 'temporary-role',
-            'permission_mask' => 0,
-        ]);
+        $role = Role::query()->create(['name' => 'temporary-role']);
 
         Sanctum::actingAs($admin);
 
