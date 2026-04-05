@@ -13,6 +13,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @tags Users
+ */
 class UserController extends BaseController
 {
     use AuthorizesRequests;
@@ -21,6 +24,13 @@ class UserController extends BaseController
         private readonly UserService $userService
     ) {}
 
+    /**
+     * List users
+     *
+     * Return all users the authenticated actor is allowed to manage.
+     *
+     * @response 200 {"data": [{"id": 1, "name": "User", "email": "user@example.com", "role_id": 1, "role": {"id": 1, "name": "Admin", "permissions": []}, "parent_id": null, "parent": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}]}
+     */
     public function index(Request $request): JsonResponse
     {
         $auth = $request->user();
@@ -39,6 +49,11 @@ class UserController extends BaseController
         );
     }
 
+    /**
+     * Create user
+     *
+     * Create a new user with the given payload.
+     */
     public function store(StoreUserRequest $request): JsonResponse
     {
         $user = $this->userService->create($request->validated());
@@ -50,6 +65,11 @@ class UserController extends BaseController
         );
     }
 
+    /**
+     * Update user
+     *
+     * Update an existing user's attributes (partial update supported).
+     */
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
         $updated = $this->userService->update($user, $request->validated());
@@ -61,6 +81,11 @@ class UserController extends BaseController
         );
     }
 
+    /**
+     * Delete user
+     *
+     * Remove a user from the system.
+     */
     public function destroy(User $user): JsonResponse
     {
         $this->authorize('delete', $user);

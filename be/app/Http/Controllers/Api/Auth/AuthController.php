@@ -11,12 +11,25 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @tags Auth
+ */
 class AuthController extends BaseController
 {
     public function __construct(
         private readonly AuthService $authService
     ) {}
 
+    /**
+     * Login
+     *
+     * Authenticate a user with email and password. Returns a Sanctum token on success.
+     *
+     * @unauthenticated
+     *
+     * @response 200 {"data": {"id": 1, "name": "Admin", "email": "admin@example.com", "permissions": ["settings.users.view"]}}
+     * @response 401 {"success": false, "message": "Invalid credentials", "data": null}
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         $result = $this->authService->login($request->validated());
@@ -38,6 +51,13 @@ class AuthController extends BaseController
         };
     }
 
+    /**
+     * Current user
+     *
+     * Return the authenticated user's profile and permissions.
+     *
+     * @response 200 {"data": {"id": 1, "name": "Admin", "email": "admin@example.com", "permissions": ["settings.users.view"]}}
+     */
     public function me(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -55,6 +75,13 @@ class AuthController extends BaseController
         );
     }
 
+    /**
+     * Logout
+     *
+     * Revoke the current user's token and end the session.
+     *
+     * @response 204
+     */
     public function logout(): JsonResponse
     {
         $result = $this->authService->logout();

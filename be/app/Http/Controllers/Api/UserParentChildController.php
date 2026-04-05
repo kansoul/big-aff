@@ -11,6 +11,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @tags Users
+ */
 class UserParentChildController extends BaseController
 {
     use AuthorizesRequests;
@@ -19,6 +22,11 @@ class UserParentChildController extends BaseController
         private readonly UserParentChildService $userParentChildService
     ) {}
 
+    /**
+     * List parent-child assignments
+     *
+     * Return the parent-child user hierarchy visible to the authenticated actor.
+     */
     public function index(Request $request): JsonResponse
     {
         $auth = $request->user();
@@ -37,6 +45,11 @@ class UserParentChildController extends BaseController
         );
     }
 
+    /**
+     * Sync parent's children
+     *
+     * Replace the list of child users assigned to the given parent user.
+     */
     public function update(SyncUserParentChildrenRequest $request, User $user): JsonResponse
     {
         $auth = $request->user();

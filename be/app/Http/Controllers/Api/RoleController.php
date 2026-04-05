@@ -11,12 +11,22 @@ use App\Services\Role\RoleService;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @tags Roles
+ */
 class RoleController extends BaseController
 {
     public function __construct(
         private readonly RoleService $roleService
     ) {}
 
+    /**
+     * List roles
+     *
+     * Return all roles with their decoded permission slugs.
+     *
+     * @response 200 {"data": [{"id": 1, "name": "Admin", "permissions": ["settings.users.view"], "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}]}
+     */
     public function index(): JsonResponse
     {
         $roles = $this->roleService->list();
@@ -28,6 +38,11 @@ class RoleController extends BaseController
         );
     }
 
+    /**
+     * Create role
+     *
+     * Create a new role with optional permission slugs.
+     */
     public function store(StoreRoleRequest $request): JsonResponse
     {
         $role = $this->roleService->create($request->validated());
@@ -39,6 +54,11 @@ class RoleController extends BaseController
         );
     }
 
+    /**
+     * Update role
+     *
+     * Update a role's name and/or permissions.
+     */
     public function update(UpdateRoleRequest $request, Role $role): JsonResponse
     {
         $updated = $this->roleService->update($role, $request->validated());
@@ -50,6 +70,11 @@ class RoleController extends BaseController
         );
     }
 
+    /**
+     * Delete role
+     *
+     * Remove a role from the system.
+     */
     public function destroy(Role $role): JsonResponse
     {
         $this->roleService->delete($role);

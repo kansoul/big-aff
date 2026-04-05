@@ -28,7 +28,7 @@ class StoreFileAction
         $disk = $this->resolveDisk($data['disk'] ?? null);
         $directory = $this->resolveDirectory($data['directory'] ?? null);
         $extension = $uploadedFile->getClientOriginalExtension();
-        $fileName = Str::uuid().'.'.$extension;
+        $fileName = Str::uuid() . '.' . $extension;
 
         $path = $this->storageService->store($uploadedFile, $directory, $fileName, $disk);
 
@@ -59,6 +59,6 @@ class StoreFileAction
             return trim($requested, '/');
         }
 
-        return 'uploads/'.now()->format('Y/m');
+        return 'uploads/' . now()->format('Y/m');
     }
 }

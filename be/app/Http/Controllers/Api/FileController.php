@@ -11,6 +11,9 @@ use App\Services\File\FileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
+/**
+ * @tags Files
+ */
 class FileController extends BaseController
 {
     public function __construct(
@@ -18,7 +21,9 @@ class FileController extends BaseController
     ) {}
 
     /**
-     * List file records; filters are limited to user_id and created_at range only.
+     * List files
+     *
+     * Return paginated file records. Filters: user_id, created_from, created_to.
      */
     public function index(ListFilesRequest $request): JsonResponse
     {
@@ -32,7 +37,9 @@ class FileController extends BaseController
     }
 
     /**
-     * Upload a new file.
+     * Upload file
+     *
+     * Upload a new file to the specified disk and directory.
      */
     public function store(StoreFileRequest $request): JsonResponse
     {
@@ -46,7 +53,9 @@ class FileController extends BaseController
     }
 
     /**
-     * Show a single file.
+     * Show file
+     *
+     * Return a single file record by ID.
      */
     public function show(File $file): JsonResponse
     {
@@ -58,7 +67,9 @@ class FileController extends BaseController
     }
 
     /**
-     * Delete a file.
+     * Delete file
+     *
+     * Remove a file record and its storage object.
      */
     public function destroy(File $file): JsonResponse
     {
