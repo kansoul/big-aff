@@ -14,7 +14,7 @@
 |-----------|-------|
 | **Laravel Sanctum** | Xác thực session-based (stateful) cho SPA |
 | **Laravel Policies** | Phân quyền ở cấp model/controller |
-| **Bitwise Permission Enum** | Hệ thống quyền tùy chỉnh dựa trên bitmask |
+| **String Permission Enum** | Hệ thống quyền tùy chỉnh dựa trên string slugs + role_permissions pivot |
 
 ## Database & ORM
 

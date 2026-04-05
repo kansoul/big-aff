@@ -13,7 +13,6 @@ class ListRolesAction
     public function execute(): Collection
     {
         return Role::query()
-            ->with('rolePermissions')
             ->orderBy('name')
             ->get();
     }

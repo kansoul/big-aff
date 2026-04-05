@@ -17,8 +17,8 @@ Khi chỉnh sửa, review hoặc viết code trong **`fe/`**, luôn áp dụng t
 - **Type / interface export** và **Zod schema dùng chung trong feature** đặt trong **`fe/src/features/<domain>/types/`** (barrel `types/index.ts` khi cần); không để payload API hay form types lẫn trong `api/*.ts` / `components/` trừ khi chỉ dùng nội bộ một file. **Props** chỉ dùng trong một component có thể giữ private trong file `.tsx`.
 - **Component thuộc một feature** (dialog, bảng, util chỉ dùng trong domain đó) đặt trong **`fe/src/features/<domain>/components/`**; page giữ mỏng, chỉ state/API handlers và compose. UI dùng chung toàn app → **`components/common/`** hoặc **`components/ui/`** (xem *Feature types* và *Feature-scoped components* trong skill).
 - Alias import (`@/`, `components.json`).
-- Gói đang dùng (Vite, React 19, RR7, Tailwind 4, shadcn, Mantine, Zustand, axios + Sanctum, RHF + Zod).
-- Quy ước route, API client, form, permission — kể cả **bitmask + `App\Enums\Permission`** (đồng bộ `fe/src/constants/permissions.ts` khi thêm trang/scope mới; xem mục **Permissions** trong skill trên).
+- Gói đang dùng (Vite 8, React 19, RR7, Tailwind 4, shadcn, Mantine 6, Zustand, axios + Sanctum, RHF + Zod).
+- Quy ước route, API client, form, permission — **string slug + `role_permissions` pivot** (đồng bộ `fe/src/constants/permissions.ts` — `PermissionSlugs` khi thêm trang/scope mới; xem mục **Permissions** trong skill trên).
 - Mục **Re-render optimization (React + Zustand)** trong cùng skill — bắt buộc tham chiếu khi thêm trang, layout, hoặc đăng ký Zustand (selector, `memo`, `useCallback`, `useMemo`; xem thêm mục **Re-render** bên dưới).
 
 Agent **không** tự tạo layout thư mục mới trái với file này nếu không có yêu cầu rõ ràng.
@@ -36,7 +36,7 @@ Agent **không** tự tạo layout thư mục mới trái với file này nếu 
 - **Zustand:** luôn dùng selector, ví dụ `useAuthStore((s) => s.user)`; **không** gọi `useAuthStore()` không có đối số (toàn bộ store đổi là mọi subscriber re-render).
 - **`React.memo`:** layout route, chrome chung (`Header`, `ScreenTitle`, `ThemeToggle`), bảng/card feature nặng khi parent có nhiều state.
 - **`useCallback`:** handler truyền xuống component đã `memo`, `onOpenChange` dialog, action từng dòng bảng.
-- **`useMemo`:** cờ quyền suy ra từ `permissions`, danh sách lọc, giá trị suy ra tốn chi phí — dependency đúng và gọn.
+- **`useMemo`:** cờ quyền suy ra từ `permissions` (string array), danh sách lọc, giá trị suy ra tốn chi phí — dependency đúng và gọn.
 - **Tránh:** khai báo component mới **bên trong** render của component khác; ưu tiên sửa subscription store trước khi phủ `memo` khắp nơi.
 
 ## 3. UI / accessibility (khi liên quan)

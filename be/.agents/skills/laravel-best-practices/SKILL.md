@@ -29,14 +29,15 @@ Check sibling files, related controllers, models, or tests for established patte
 
 Do not add new top-level folders under `app/` without matching an existing convention. The SPA lives in **`fe/`** at the repo root — not inside `be/`.
 
-### Permissions (bitmask; `App\Enums\Permission`)
+### Permissions (bitwise string on `roles.permissions`; `App\Enums\Permission`)
 
-- **Storage:** `roles.permission_mask` (integer bitfield). One **`App\Enums\Permission`** case = one bit (`1 << n`). There is **no** `permissions` table or role–permission pivot—definitions are code-only.
-- **SPA:** **`fe/src/constants/permissions.ts`** — `PermissionBits` and **`PERMISSION_CATALOG`** mirror PHP enum values; UI checks use **`permission_mask`** with those bit integers.
-- **Routes:** protect endpoints with `->middleware('permission.scope:'.Permission::SomeCase->value)`. Use `|` between bit values for OR (see **`routes/api.php`**). Alias registered in **`bootstrap/app.php`**; implementation **`EnsurePermissionScope`**. The middleware string must be **pipe-separated permission integers only** (`Permission::...->value`). **Full access** is expressed **only** by `roles.permission_mask` having every bit set (`Permission::fullMask()` / `maskHasFullAccess`); there is **no** magic `*` (or other non-numeric) token in `permission.scope:` — **`Permission::maskAllowsAnyOf()`** ignores non-digit tokens.
-- **JSON:** expose **`permission_mask`** only (no separate `permissions` name list on user/role resources).
-- **User checks:** `hasPermissionFlag(Permission)` via **`UserMethod`** trait; ensure `role` is loaded where needed.
-- **Adding a new gated page/API:** (1) add enum case; (2) apply middleware with `->value` / `authorize()` with `hasPermissionFlag`; (3) update **`fe/src/constants/permissions.ts`** (`PermissionBits` + catalog) in lockstep (see **`.agents/skills/fe-project-conventions/SKILL.md`** → Permissions).
+- **Storage:** `roles.permissions` column (string, decimal bitmask, e.g. `"2047"`). Each **`App\Enums\Permission`** case maps to a bit via `->bit()` (1 << declaration index). Bit positions are stable — **never reorder** existing cases; append new ones at the end. No separate `role_permissions` table.
+- **Enum helpers:** `Permission::slugsToMask(array $slugs): string` / `Permission::maskToSlugs(string $mask): array` convert between slug arrays and bitmask strings. `Permission::fullMask(): int` returns the mask with all bits set. `Permission::hasFullAccess(string $mask): bool` / `Permission::maskHasPermission(string $mask, Permission): bool` / `Permission::maskAllowsAnyOf(string $mask, string $pipeSeparated): bool` perform bitwise checks.
+- **SPA:** **`fe/src/constants/permissions.ts`** — `PermissionSlugs` and **`PERMISSION_CATALOG`** mirror PHP enum string values; UI checks use **`permissions: string[]`** with `hasPermission(perms, slug)`.
+- **Routes:** protect endpoints with `->middleware('permission.scope:'.Permission::SomeCase->value)`. Use `|` between slug values for OR (see **`routes/api.php`**). Alias registered in **`bootstrap/app.php`**; implementation **`EnsurePermissionScope`**. The middleware string is **pipe-separated permission slugs** — **`Permission::maskAllowsAnyOf()`** resolves each token via `tryFrom()` and checks the bitmask.
+- **JSON:** API resources expose **`permissions: string[]`** (decoded from bitmask via `role->getPermissionSlugs()`), not a numeric mask.
+- **User checks:** `hasPermissionFlag(Permission)` via **`UserMethod`** trait; loads `role` and calls `Permission::maskHasPermission()`.
+- **Adding a new gated page/API:** (1) **append** new enum case to `App\Enums\Permission` (never insert in the middle — bit positions must be stable); (2) apply middleware with `->value` / `authorize()` with `hasPermissionFlag`; (3) update **`fe/src/constants/permissions.ts`** (`PermissionSlugs` + catalog) in lockstep (see **`.agents/skills/fe-project-conventions/SKILL.md`** → Permissions).
 
 ### Model Trait Composition (project-specific)
 

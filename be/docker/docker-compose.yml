@@ -1,0 +1,14 @@
+services:
+  localstack:
+    container_name: localstack
+    image: localstack/localstack:3.1.0
+    ports:
+      - 4566:4566
+      - 4510-4559:4510-4559
+    environment:
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - ./localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
+      - ../.localstack:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock

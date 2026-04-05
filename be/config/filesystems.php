@@ -73,6 +73,22 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Upload Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure which disks are available for file uploads and which one
+    | should be used by default. The "allowed" array restricts the disk
+    | values that the API will accept.
+    |
+    */
+
+    'uploads' => [
+        'default' => env('UPLOAD_DISK', 'public'),
+        'allowed' => ['public', 's3'],
+    ],
+
     'links' => [
         public_path('storage') => storage_path('app/public'),
     ],

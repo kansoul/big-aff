@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Traits\Attribute\FileAttribute;
 use App\Models\Traits\Relationship\FileRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property-read string $url
+ */
 class File extends Model
 {
-    use FileRelationship, HasFactory, SoftDeletes;
+    use FileAttribute, FileRelationship, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -20,6 +24,10 @@ class File extends Model
         'size',
         'path',
         'alt_text',
+    ];
+
+    protected $appends = [
+        'url',
     ];
 
     /**

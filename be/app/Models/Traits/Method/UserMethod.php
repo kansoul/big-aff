@@ -13,10 +13,10 @@ trait UserMethod
 {
     public function hasPermissionFlag(Permission $permission): bool
     {
-        $this->loadMissing('role.rolePermissions');
-        $perms = $this->role?->getPermissionSlugs() ?? [];
+        $this->loadMissing('role');
+        $mask = $this->role?->getPermissionMask() ?? '0';
 
-        return Permission::collectionHasPermission($perms, $permission);
+        return Permission::maskHasPermission($mask, $permission);
     }
 
     /**
@@ -24,10 +24,10 @@ trait UserMethod
      */
     public function managesAllUsers(): bool
     {
-        $this->loadMissing('role.rolePermissions');
-        $perms = $this->role?->getPermissionSlugs() ?? [];
+        $this->loadMissing('role');
+        $mask = $this->role?->getPermissionMask() ?? '0';
 
-        return Permission::hasFullAccessCollection($perms);
+        return Permission::hasFullAccess($mask);
     }
 
     /**

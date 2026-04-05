@@ -25,12 +25,12 @@ Content-Type: application/json
 
 ## Response Format
 
+`sendResponse()` trả về `response()->json($data, $code)` trực tiếp — payload đúng như controller truyền vào (thường là `{"data": ...}`), **không** có bọc mặc định `success` / `message`.
+
 ### Thành công
 ```json
 {
-  "success": true,
-  "data": { ... },
-  "message": "Operation successful"
+  "data": { ... }
 }
 ```
 
@@ -90,7 +90,6 @@ POST /api/auth/login
 **Response thành công (200):**
 ```json
 {
-  "success": true,
   "data": {
     "id": 1,
     "name": "Admin User",
@@ -98,10 +97,9 @@ POST /api/auth/login
     "role": {
       "id": 1,
       "name": "Admin",
-      "permission_mask": 2047
+      "permissions": ["report.overview.view", "report.export", "settings.users.view", "settings.users.create", "settings.users.update", "settings.users.delete", "settings.roles.view", "settings.roles.create", "settings.roles.update", "settings.roles.delete", "settings.roles.assign"]
     }
-  },
-  "message": "Login successful"
+  }
 }
 ```
 
@@ -126,7 +124,6 @@ GET /api/auth/me
 **Response (200):**
 ```json
 {
-  "success": true,
   "data": {
     "id": 1,
     "name": "Admin User",
@@ -135,7 +132,7 @@ GET /api/auth/me
     "role": {
       "id": 1,
       "name": "Admin",
-      "permission_mask": 2047
+      "permissions": ["report.overview.view", "report.export", "settings.users.view", "settings.users.create", "settings.users.update", "settings.users.delete", "settings.roles.view", "settings.roles.create", "settings.roles.update", "settings.roles.delete", "settings.roles.assign"]
     }
   }
 }
@@ -151,13 +148,7 @@ POST /api/auth/logout
 
 **Yêu cầu:** Xác thực (auth:sanctum)
 
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Logged out successfully"
-}
-```
+**Response:** `204 No Content` với body rỗng (`[]`).
 
 ---
 
@@ -171,12 +162,11 @@ Tất cả endpoints yêu cầu xác thực và permission tương ứng.
 GET /api/users
 ```
 
-**Permission yêu cầu:** `SettingsUsersView` (bit 2 = 4)
+**Permission yêu cầu:** `SettingsUsersView` (slug: `'settings.users.view'`)
 
 **Response (200):**
 ```json
 {
-  "success": true,
   "data": [
     {
       "id": 1,
@@ -186,7 +176,7 @@ GET /api/users
       "role": {
         "id": 2,
         "name": "Editor",
-        "permission_mask": 7
+        "permissions": ["report.overview.view", "report.export", "settings.users.view"]
       },
       "parent": null
     }
@@ -202,7 +192,7 @@ GET /api/users
 POST /api/users
 ```
 
-**Permission yêu cầu:** `SettingsUsersCreate` (bit 3 = 8)
+**Permission yêu cầu:** `SettingsUsersCreate` (slug: `'settings.users.create'`)
 
 **Request Body:**
 ```json
@@ -218,14 +208,12 @@ POST /api/users
 **Response (200):**
 ```json
 {
-  "success": true,
   "data": {
     "id": 5,
     "name": "Jane Doe",
     "email": "jane@example.com",
     "role": { ... }
-  },
-  "message": "User created successfully"
+  }
 }
 ```
 
@@ -249,7 +237,7 @@ POST /api/users
 PUT /api/users/{user}
 ```
 
-**Permission yêu cầu:** `SettingsUsersUpdate` (bit 4 = 16)
+**Permission yêu cầu:** `SettingsUsersUpdate` (slug: `'settings.users.update'`)
 
 **Path Parameters:**
 - `user` — ID của user cần cập nhật
@@ -268,9 +256,7 @@ PUT /api/users/{user}
 **Response (200):**
 ```json
 {
-  "success": true,
-  "data": { ... },
-  "message": "User updated successfully"
+  "data": { ... }
 }
 ```
 
@@ -282,18 +268,12 @@ PUT /api/users/{user}
 DELETE /api/users/{user}
 ```
 
-**Permission yêu cầu:** `SettingsUsersDelete` (bit 5 = 32)
+**Permission yêu cầu:** `SettingsUsersDelete` (slug: `'settings.users.delete'`)
 
 **Path Parameters:**
 - `user` — ID của user cần xóa
 
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "User deleted successfully"
-}
-```
+**Response:** `204 No Content` với body rỗng (`[]`).
 
 ---
 
@@ -305,12 +285,11 @@ DELETE /api/users/{user}
 GET /api/users/parent-child-assignments
 ```
 
-**Permission yêu cầu:** `SettingsUsersView` (bit 2 = 4)
+**Permission yêu cầu:** `SettingsUsersView` (slug: `'settings.users.view'`)
 
 **Response (200):**
 ```json
 {
-  "success": true,
   "data": [
     {
       "id": 1,
@@ -337,7 +316,7 @@ GET /api/users/parent-child-assignments
 PUT /api/users/{user}/parent-children
 ```
 
-**Permission yêu cầu:** `SettingsUsersUpdate` (bit 4 = 16)
+**Permission yêu cầu:** `SettingsUsersUpdate` (slug: `'settings.users.update'`)
 
 **Path Parameters:**
 - `user` — ID của parent user
@@ -352,8 +331,13 @@ PUT /api/users/{user}/parent-children
 **Response (200):**
 ```json
 {
-  "success": true,
-  "message": "Parent-child assignments updated"
+  "data": [
+    {
+      "id": 1,
+      "parent": { "id": 1, "name": "Manager A", "email": "manager@example.com" },
+      "child": { "id": 3, "name": "Employee B", "email": "employee@example.com" }
+    }
+  ]
 }
 ```
 
@@ -367,22 +351,21 @@ PUT /api/users/{user}/parent-children
 GET /api/roles
 ```
 
-**Permission yêu cầu:** `SettingsRolesView` (64) **HOẶC** `SettingsUsersCreate` (8) **HOẶC** `SettingsUsersUpdate` (16)
+**Permission yêu cầu:** `SettingsRolesView` (slug: `'settings.roles.view'`) **HOẶC** `SettingsUsersCreate` (slug: `'settings.users.create'`) **HOẶC** `SettingsUsersUpdate` (slug: `'settings.users.update'`)
 
 **Response (200):**
 ```json
 {
-  "success": true,
   "data": [
     {
       "id": 1,
       "name": "Admin",
-      "permission_mask": 2047
+      "permissions": ["report.overview.view", "report.export", "settings.users.view", "settings.users.create", "settings.users.update", "settings.users.delete", "settings.roles.view", "settings.roles.create", "settings.roles.update", "settings.roles.delete", "settings.roles.assign"]
     },
     {
       "id": 2,
       "name": "Editor",
-      "permission_mask": 7
+      "permissions": ["report.overview.view", "report.export", "settings.users.view"]
     }
   ]
 }
@@ -396,26 +379,24 @@ GET /api/roles
 POST /api/roles
 ```
 
-**Permission yêu cầu:** `SettingsRolesCreate` (bit 7 = 128)
+**Permission yêu cầu:** `SettingsRolesCreate` (slug: `'settings.roles.create'`)
 
 **Request Body:**
 ```json
 {
   "name": "Moderator",
-  "permission_mask": 196
+  "permissions": ["settings.users.view", "settings.roles.view", "settings.roles.create"]
 }
 ```
 
 **Response (200):**
 ```json
 {
-  "success": true,
   "data": {
     "id": 4,
     "name": "Moderator",
-    "permission_mask": 196
-  },
-  "message": "Role created successfully"
+    "permissions": ["settings.users.view", "settings.roles.view", "settings.roles.create"]
+  }
 }
 ```
 
@@ -427,7 +408,7 @@ POST /api/roles
 PUT /api/roles/{role}
 ```
 
-**Permission yêu cầu:** `SettingsRolesUpdate` (256) **HOẶC** `SettingsRolesAssign` (1024)
+**Permission yêu cầu:** `SettingsRolesUpdate` (slug: `'settings.roles.update'`) **HOẶC** `SettingsRolesAssign` (slug: `'settings.roles.assign'`)
 
 **Path Parameters:**
 - `role` — ID của role cần cập nhật
@@ -436,16 +417,14 @@ PUT /api/roles/{role}
 ```json
 {
   "name": "Moderator",
-  "permission_mask": 324
+  "permissions": ["settings.users.view", "settings.roles.view", "settings.roles.update"]
 }
 ```
 
 **Response (200):**
 ```json
 {
-  "success": true,
-  "data": { ... },
-  "message": "Role updated successfully"
+  "data": { ... }
 }
 ```
 
@@ -457,45 +436,36 @@ PUT /api/roles/{role}
 DELETE /api/roles/{role}
 ```
 
-**Permission yêu cầu:** `SettingsRolesDelete` (bit 9 = 512)
+**Permission yêu cầu:** `SettingsRolesDelete` (slug: `'settings.roles.delete'`)
 
 **Path Parameters:**
 - `role` — ID của role cần xóa
 
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Role deleted successfully"
-}
-```
+**Response:** `204 No Content` với body rỗng (`[]`).
 
 ---
 
-## Permission Bits Reference
+## Permission Slugs Reference
 
-| Permission | Bit | Giá trị | Mô tả |
-|-----------|-----|---------|-------|
-| `ReportOverviewView` | 0 | 1 | Xem trang tổng quan báo cáo |
-| `ReportExport` | 1 | 2 | Xuất báo cáo |
-| `SettingsUsersView` | 2 | 4 | Xem danh sách users |
-| `SettingsUsersCreate` | 3 | 8 | Tạo user mới |
-| `SettingsUsersUpdate` | 4 | 16 | Cập nhật user |
-| `SettingsUsersDelete` | 5 | 32 | Xóa user |
-| `SettingsRolesView` | 6 | 64 | Xem danh sách roles |
-| `SettingsRolesCreate` | 7 | 128 | Tạo role mới |
-| `SettingsRolesUpdate` | 8 | 256 | Cập nhật role |
-| `SettingsRolesDelete` | 9 | 512 | Xóa role |
-| `SettingsRolesAssign` | 10 | 1024 | Gán role cho user |
+Mỗi quyền là một **chuỗi slug** cố định; lưu trong bảng pivot `role_permissions` và dùng trong middleware `permission.scope:` (có thể nối nhiều slug bằng `|`).
 
-**Full permissions mask:** `2047` (tất cả 11 bits = `11111111111` nhị phân)
+| Permission (enum) | Slug | Mô tả |
+|-------------------|------|-------|
+| `ReportOverviewView` | `report.overview.view` | Xem trang tổng quan báo cáo |
+| `ReportExport` | `report.export` | Xuất báo cáo |
+| `SettingsUsersView` | `settings.users.view` | Xem danh sách users |
+| `SettingsUsersCreate` | `settings.users.create` | Tạo user mới |
+| `SettingsUsersUpdate` | `settings.users.update` | Cập nhật user |
+| `SettingsUsersDelete` | `settings.users.delete` | Xóa user |
+| `SettingsRolesView` | `settings.roles.view` | Xem danh sách roles |
+| `SettingsRolesCreate` | `settings.roles.create` | Tạo role mới |
+| `SettingsRolesUpdate` | `settings.roles.update` | Cập nhật role |
+| `SettingsRolesDelete` | `settings.roles.delete` | Xóa role |
+| `SettingsRolesAssign` | `settings.roles.assign` | Gán / đồng bộ permissions cho role |
 
-**Ví dụ tính permission_mask:**
-```
-Admin = View + Create + Update + Delete Users + View + Create + Update + Delete + Assign Roles
-      = 4 + 8 + 16 + 32 + 64 + 128 + 256 + 512 + 1024
-      = 2044 (không bao gồm Report)
-```
+**Ví dụ role “full admin” (tất cả slug):** trả về trong API dưới dạng mảng `permissions` gồm đủ 11 slug ở trên.
+
+**Gán quyền cho role:** gửi `permissions: string[]` trong body `POST /api/roles` hoặc `PUT /api/roles/{role}` (giá trị hợp lệ = các slug trong bảng trên).
 
 ---
 
