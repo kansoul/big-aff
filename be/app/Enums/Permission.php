@@ -15,7 +15,7 @@ enum Permission: string
 
     case ReportExport = 'report.export';                     // bit 1  →  2
 
-    // —— Settings → Users ——
+        // —— Settings → Users ——
     case SettingsUsersView = 'settings.users.view';          // bit 2  →  4
 
     case SettingsUsersCreate = 'settings.users.create';      // bit 3  →  8
@@ -24,7 +24,7 @@ enum Permission: string
 
     case SettingsUsersDelete = 'settings.users.delete';      // bit 5  →  32
 
-    // —— Settings → Roles ——
+        // —— Settings → Roles ——
     case SettingsRolesView = 'settings.roles.view';          // bit 6  →  64
 
     case SettingsRolesCreate = 'settings.roles.create';      // bit 7  →  128
@@ -34,6 +34,17 @@ enum Permission: string
     case SettingsRolesDelete = 'settings.roles.delete';      // bit 9  →  512
 
     case SettingsRolesAssign = 'settings.roles.assign';      // bit 10 →  1024
+
+        // —— Settings → Sites ——
+    case SettingsSitesView = 'settings.sites.view';          // bit 11 →  2048
+
+    case SettingsSitesCreate = 'settings.sites.create';      // bit 12 →  4096
+
+    case SettingsSitesUpdate = 'settings.sites.update';      // bit 13 →  8192
+
+    case SettingsSitesDelete = 'settings.sites.delete';      // bit 14 →  16384
+
+    case SettingsSitesAssign = 'settings.sites.assign';      // bit 15 →  32768
 
     /**
      * Bit value for this permission (1 << declaration index).
@@ -58,7 +69,7 @@ enum Permission: string
      */
     public static function values(): array
     {
-        return array_map(static fn (self $p) => $p->value, self::cases());
+        return array_map(static fn(self $p) => $p->value, self::cases());
     }
 
     /**
@@ -133,6 +144,6 @@ enum Permission: string
     {
         $parts = array_map('trim', explode('|', $pipeSeparated));
 
-        return array_values(array_filter($parts, fn (string $s): bool => $s !== ''));
+        return array_values(array_filter($parts, fn(string $s): bool => $s !== ''));
     }
 }

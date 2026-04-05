@@ -4,6 +4,7 @@ use App\Enums\Permission;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserParentChildController;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +34,23 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [FileController::class, 'store']);
         Route::get('{file}', [FileController::class, 'show']);
         Route::delete('{file}', [FileController::class, 'destroy']);
+    });
+
+    Route::prefix('sites')->group(function () {
+        Route::get('options', [SiteController::class, 'options'])
+            ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
+        Route::get('/', [SiteController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::SettingsSitesView->value);
+        Route::post('/', [SiteController::class, 'store'])
+            ->middleware('permission.scope:'.Permission::SettingsSitesCreate->value);
+        Route::get('{site}', [SiteController::class, 'show'])
+            ->middleware('permission.scope:'.Permission::SettingsSitesView->value);
+        Route::match(['put', 'patch'], '{site}', [SiteController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::SettingsSitesUpdate->value);
+        Route::delete('{site}', [SiteController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::SettingsSitesDelete->value);
+        Route::post('{site}/assign-users', [SiteController::class, 'assignUsers'])
+            ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
     });
 
     Route::prefix('roles')->group(function () {

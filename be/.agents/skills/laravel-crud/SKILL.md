@@ -32,7 +32,6 @@ For folder locations (`routes/`, `app/Http/Controllers/Api/`, `app/Models/Traits
   - Put model behavior in traits under `App\Models\Traits\...` (for example relationship/scope/attribute/method/observer traits).
   - When adding or changing model functionality, create or edit the corresponding trait and only wire it in the model via `use`.
 - **Routes**: API routes live in `be/routes/api.php`. Use `Route::middleware('auth:sanctum')` for endpoints that require authentication.
-- **Testing**: write **PHPUnit** feature tests (this repo uses PHPUnit v12). Do not add new Pest tests.
 - **Best practices (required)**: when building CRUD, you must follow the `be/.agents/skills/laravel-best-practices` skill (performance, security, validation, routing, testing, architecture). If there is a minor conflict between a "CRUD template" and best practices, prefer **best practices + conventions already present in the codebase**.
 
 ## CRUD blueprint (no new table by default)
@@ -114,23 +113,6 @@ If you only need a subset of actions: use `->only([...])` or `->except([...])`.
 
 **Authorization beyond Sanctum (this repo):** when an endpoint must require a specific **permission**, chain middleware `permission.scope:{value}` where `{value}` is `Permission::YourCase->value` (string slug), or pipe-separated alternatives (e.g. `'settings.roles.update|settings.roles.assign'`). Full-access users are handled by having every defined permission slug in `role_permissions`, not a wildcard. Do **not** invent slugs that are not on `App\Enums\Permission`. For Form Request `authorize()` and policies, use `hasPermissionFlag(Permission::...)`. See **`laravel-best-practices`** → Permissions (string slugs).
 
-### 6) PHPUnit feature tests
-
-Minimum coverage:
-
-- **index**: correct JSON shape, pagination OK (if you paginate)
-- **store**: 201 + record created
-- **show**: 200 + correct data
-- **update**: 200 + record updated
-- **destroy**: 200 + record deleted
-- **authorization**: Sanctum-protected endpoints must return 401 when unauthenticated
-
-Prefer assertions such as:
-
-- `assertOk()/assertCreated()`
-- `assertJsonPath('data.id', $entity->id)`
-- `assertDatabaseHas()/assertDatabaseMissing()` (or project helpers if any)
-
 ### (Optional) Database artifacts (ONLY when explicitly needed)
 
 Create these only when the user asks or the table/model does not exist yet:
@@ -179,5 +161,4 @@ Errors use `sendError()`:
 - No N+1 (eager-load relations in the query when the resource needs them).
 - Requests use `$request->validated()`.
 - Resource uses `whenLoaded()` for relations.
-- PHPUnit feature tests cover the main CRUD flows + auth (if applicable).
 - Follow `laravel-best-practices`: authorize (policies/gates when applicable), do not expose sensitive fields in Resources, avoid query builder/raw SQL with raw user input, and run `vendor/bin/pint --dirty --format agent` after editing PHP files.
