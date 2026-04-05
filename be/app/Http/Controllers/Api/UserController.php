@@ -33,8 +33,9 @@ class UserController extends BaseController
         $users = $this->userService->listForActor($auth);
 
         return $this->sendResponse(
-            ManagedUserResource::collection($users),
-            'Users retrieved successfully.'
+            [
+                'data' => ManagedUserResource::collection($users),
+            ]
         );
     }
 
@@ -43,9 +44,9 @@ class UserController extends BaseController
         $user = $this->userService->create($request->validated());
 
         return $this->sendResponse(
-            new ManagedUserResource($user),
-            'User created successfully.',
-            Response::HTTP_CREATED
+            [
+                'data' => new ManagedUserResource($user),
+            ]
         );
     }
 
@@ -54,8 +55,9 @@ class UserController extends BaseController
         $updated = $this->userService->update($user, $request->validated());
 
         return $this->sendResponse(
-            new ManagedUserResource($updated),
-            'User updated successfully.'
+            [
+                'data' => new ManagedUserResource($updated),
+            ]
         );
     }
 
@@ -65,6 +67,6 @@ class UserController extends BaseController
 
         $this->userService->delete($user);
 
-        return $this->sendResponse(null, 'User deleted successfully.');
+        return $this->sendResponse([], Response::HTTP_NO_CONTENT);
     }
 }

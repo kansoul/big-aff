@@ -1,6 +1,6 @@
 ---
 name: laravel-crud
-description: "Use this skill whenever implementing CRUD (Create/Read/Update/Delete) endpoints in this repo’s Laravel backend. Follows the project’s current conventions: API controllers extend App\\Http\\Controllers\\API\\BaseController (sendResponse/sendError), validation via FormRequest, transformation via JsonResource, and business logic placed in Services/ + optional Actions/. Includes route patterns (routes/api.php), Sanctum middleware usage, pagination, filtering, and PHPUnit feature tests."
+description: "Use this skill whenever implementing CRUD (Create/Read/Update/Delete) endpoints in this repo's Laravel backend. Follows the project's current conventions: API controllers extend App\\Http\\Controllers\\API\\BaseController (sendResponse/sendError), validation via FormRequest, transformation via JsonResource, and business logic placed in Services/ + optional Actions/. Includes route patterns (routes/api.php), Sanctum middleware usage, pagination, filtering, and PHPUnit feature tests."
 license: MIT
 metadata:
   author: big-ticollab
@@ -20,8 +20,8 @@ For folder locations (`routes/`, `app/Http/Controllers/Api/`, `app/Models/Traits
 ## Project conventions you MUST follow here
 
 - **Standard API responses**: Controllers should extend `App\Http\Controllers\API\BaseController` and use:
-  - `sendResponse($data, $message = 'Success', $code = 200)`
-  - `sendError($error, $errorMessages = [], $code = 404)`
+  - `sendResponse(mixed $data, int $code = 200)` — returns `response()->json($data, $code)` directly; controllers build the response array themselves (e.g. `['data' => new Resource($entity)]`).
+  - `sendError(string $error, array $errorMessages = [], int $code = 404)` — returns `{"success": false, "message": "...", "data": null}` (plus `"errors"` when provided).
 - **Validation**: use `FormRequest` and always call `$request->validated()` (do not use `$request->all()`).
 - **Transform output**: use `App\Http\Resources\*Resource` (`JsonResource`) for `show`/`index` payloads.
 - **Business logic placement**:
@@ -33,7 +33,7 @@ For folder locations (`routes/`, `app/Http/Controllers/Api/`, `app/Models/Traits
   - When adding or changing model functionality, create or edit the corresponding trait and only wire it in the model via `use`.
 - **Routes**: API routes live in `be/routes/api.php`. Use `Route::middleware('auth:sanctum')` for endpoints that require authentication.
 - **Testing**: write **PHPUnit** feature tests (this repo uses PHPUnit v12). Do not add new Pest tests.
-- **Best practices (required)**: when building CRUD, you must follow the `be/.agents/skills/laravel-best-practices` skill (performance, security, validation, routing, testing, architecture). If there is a minor conflict between a “CRUD template” and best practices, prefer **best practices + conventions already present in the codebase**.
+- **Best practices (required)**: when building CRUD, you must follow the `be/.agents/skills/laravel-best-practices` skill (performance, security, validation, routing, testing, architecture). If there is a minor conflict between a "CRUD template" and best practices, prefer **best practices + conventions already present in the codebase**.
 
 ## CRUD blueprint (no new table by default)
 
@@ -80,17 +80,17 @@ Create the controller under `app/Http/Controllers/Api/` (namespace **`App\Http\C
 
 - `index()`:
   - accept filter params (at minimum: `per_page`, `page`, optional `q`).
-  - return `sendResponse(Resource::collection($paginator), '...')`
+  - return `$this->sendResponse(['data' => Resource::collection($items), 'pagination' => $this->parsePagination($paginator)])` (or without pagination if not paginating).
 - `store(StoreRequest $request)`:
   - `$entity = $service->create($request->validated())`
-  - return `sendResponse(new Resource($entity), 'Created', 201)`
+  - return `$this->sendResponse(['data' => new Resource($entity)])`
 - `show(<Entity> $entity)`:
   - implicit route model binding
-  - return `sendResponse(new Resource($entity), 'Retrieved')`
+  - return `$this->sendResponse(['data' => new Resource($entity)])`
 - `update(UpdateRequest $request, <Entity> $entity)`:
-  - return `sendResponse(new Resource($updated), 'Updated')`
+  - return `$this->sendResponse(['data' => new Resource($updated)])`
 - `destroy(<Entity> $entity)`:
-  - delete and return `sendResponse(null, 'Deleted')`
+  - delete and return `$this->sendResponse([], Response::HTTP_NO_CONTENT)`
 
 Error handling:
 
@@ -112,7 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 If you only need a subset of actions: use `->only([...])` or `->except([...])`.
 
-**Authorization beyond Sanctum (this repo):** when an endpoint must require a specific **permission bit**, chain middleware `permission.scope:{value}` where `{value}` is `Permission::YourCase->value` (integer), or pipe-separated alternatives (**digits only**; full-access users are handled via an all-bits-set role mask, not a wildcard token). Do **not** invent bits that are not on `App\Enums\Permission`. For Form Request `authorize()` and policies, use `hasPermissionFlag(Permission::...)`. See **`laravel-best-practices`** → Permissions (bitmask).
+**Authorization beyond Sanctum (this repo):** when an endpoint must require a specific **permission**, chain middleware `permission.scope:{value}` where `{value}` is `Permission::YourCase->value` (string slug), or pipe-separated alternatives (e.g. `'settings.roles.update|settings.roles.assign'`). Full-access users are handled by having every defined permission slug in `role_permissions`, not a wildcard. Do **not** invent slugs that are not on `App\Enums\Permission`. For Form Request `authorize()` and policies, use `hasPermissionFlag(Permission::...)`. See **`laravel-best-practices`** → Permissions (string slugs).
 
 ### 6) PHPUnit feature tests
 
@@ -128,7 +128,7 @@ Minimum coverage:
 Prefer assertions such as:
 
 - `assertOk()/assertCreated()`
-- `assertJsonPath('success', true)`
+- `assertJsonPath('data.id', $entity->id)`
 - `assertDatabaseHas()/assertDatabaseMissing()` (or project helpers if any)
 
 ### (Optional) Database artifacts (ONLY when explicitly needed)
@@ -144,13 +144,20 @@ Create these only when the user asks or the table/model does not exist yet:
 
 ## Response shape (must match BaseController)
 
-All “happy path” endpoints using `sendResponse()` share this shape:
+`sendResponse(mixed $data, int $code)` calls `response()->json($data, $code)` directly — no automatic wrapping. Controllers are responsible for building the response array. The project convention is:
 
 ```json
 {
-  "success": true,
-  "data": "...",
-  "message": "..."
+  "data": "... (Resource or collection) ..."
+}
+```
+
+For paginated endpoints, include `pagination` alongside `data`:
+
+```json
+{
+  "data": ["..."],
+  "pagination": { "current_page": 1, "total": 50 }
 }
 ```
 
@@ -161,7 +168,7 @@ Errors use `sendError()`:
   "success": false,
   "message": "...",
   "data": null,
-  "errors": { }
+  "errors": {}
 }
 ```
 

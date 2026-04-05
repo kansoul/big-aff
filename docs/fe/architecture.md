@@ -27,7 +27,7 @@ Frontend sử dụng **Feature-Driven Architecture** — code được tổ ch�
          ▼
 ┌──────────────────┐
 │ RequirePermission│
-│ (check bit mask) │
+│ (check permission slug) │
 └────────┬─────────┘
          │
          ▼
@@ -120,7 +120,7 @@ const router = createBrowserRouter([
       {
         path: paths.USERS,
         element: (
-          <RequirePermission bit={PermissionBits.SettingsUsersView}>
+          <RequirePermission slug={PermissionSlugs.SettingsUsersView}>
             {lazy(() => import('../features/users/pages/UsersPage'))}
           </RequirePermission>
         )
@@ -210,40 +210,45 @@ export const deleteUser = (id: number) =>
 
 ## Permission System (Frontend)
 
-Frontend đồng bộ hoàn toàn với backend PHP enum:
+Frontend đồng bộ hoàn toàn với backend PHP enum (string slug). Quyền của role lưu ở pivot `role_permissions` (mỗi dòng một slug). API trả `permissions: string[]` trên user (không còn `permission_mask`).
 
 ```typescript
 // constants/permissions.ts
-export const PermissionBits = {
-  ReportOverviewView:  1 << 0,   // 1
-  ReportExport:        1 << 1,   // 2
-  SettingsUsersView:   1 << 2,   // 4
-  SettingsUsersCreate: 1 << 3,   // 8
-  SettingsUsersUpdate: 1 << 4,   // 16
-  SettingsUsersDelete: 1 << 5,   // 32
-  SettingsRolesView:   1 << 6,   // 64
-  SettingsRolesCreate: 1 << 7,   // 128
-  SettingsRolesUpdate: 1 << 8,   // 256
-  SettingsRolesDelete: 1 << 9,   // 512
-  SettingsRolesAssign: 1 << 10,  // 1024
+export const PermissionSlugs = {
+  ReportOverviewView:  'report.overview.view',
+  ReportExport:        'report.export',
+  SettingsUsersView:   'settings.users.view',
+  SettingsUsersCreate: 'settings.users.create',
+  SettingsUsersUpdate: 'settings.users.update',
+  SettingsUsersDelete: 'settings.users.delete',
+  SettingsRolesView:   'settings.roles.view',
+  SettingsRolesCreate: 'settings.roles.create',
+  SettingsRolesUpdate: 'settings.roles.update',
+  SettingsRolesDelete: 'settings.roles.delete',
+  SettingsRolesAssign: 'settings.roles.assign',
 } as const
 
-// Kiểm tra quyền
-export const hasPermission = (mask: number, bit: number): boolean =>
-  (mask & bit) !== 0
+// Kiểm tra quyền (có thể có shortcut “full access” trong implementation thực tế)
+export function hasPermission(
+  perms: string[] | null | undefined,
+  slug: string,
+): boolean {
+  if (!perms?.length) return false
+  return perms.includes(slug)
+}
 ```
 
 **RequirePermission component:**
 ```tsx
 // app/router/RequirePermission.tsx
-function RequirePermission({ bit, children }) {
+function RequirePermission({ slug, children }) {
   const user = useAuthStore((s) => s.user)
-  const mask = user?.role?.permission_mask ?? 0
-  
-  if (!hasPermission(mask, bit)) {
+  const perms = user?.permissions
+
+  if (!hasPermission(perms, slug)) {
     return <Navigate to={paths.DASHBOARD} />
   }
-  
+
   return children
 }
 ```
@@ -264,8 +269,8 @@ Hai cấp bảo vệ:
    - Nếu chưa: redirect về `/login`
    - Nếu rồi: render children
 
-2. **RequirePermission** — Kiểm tra user có permission bit không
-   - Nhận prop `bit`: permission bit cần kiểm tra
+2. **RequirePermission** — Kiểm tra user có permission slug không
+   - Nhận prop `slug`: permission slug cần kiểm tra
    - Nếu không có quyền: redirect về dashboard
    - Nếu có: render children
 

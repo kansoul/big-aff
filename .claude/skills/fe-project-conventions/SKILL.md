@@ -12,7 +12,7 @@ description: >-
 
 # Frontend project conventions (`fe/`)
 
-**Read this skill first** when adding or moving files under `fe/`, wiring routes, or calling the API. It encodes this repo’s structure; do not invent parallel layouts (for example a second `components` root or a different API client) without aligning with existing code.
+**Read this skill first** when adding or moving files under `fe/`, wiring routes, or calling the API. It encodes this repo's structure; do not invent parallel layouts (for example a second `components` root or a different API client) without aligning with existing code.
 
 ## Monorepo context
 
@@ -58,7 +58,7 @@ Use this folder for **UI and small modules that belong to a single feature** and
 | Put here | Put elsewhere |
 |----------|----------------|
 | Dialogs, wizard steps, feature tables/cards, permission trees tied to one screen | **`components/ui/`** — shadcn/Radix primitives |
-| `formatXxxError`, mask/bit helpers used only by that feature’s pages | **`components/common/`** — shell/header/loaders shared app-wide |
+| `formatXxxError`, mask/bit helpers used only by that feature's pages | **`components/common/`** — shell/header/loaders shared app-wide |
 | Optional **`index.ts`** barrel — import as `@/features/<domain>/components` | **`shared/`** — axios, cross-feature types |
 
 Exported **types** and shared **Zod** schemas belong in **`features/<domain>/types/`** (see **Feature types**), not under `components/`.
@@ -93,7 +93,7 @@ shadcn **`components.json`** aliases: `@/components`, `@/components/ui`, `@/lib/
 | Forms | **react-hook-form**, **zod**, **@hookform/resolvers** |
 | HTTP | **axios** via **`@/shared/api/axios`** (`axiosInstance`), **`@/config`** `apiURL` |
 | Auth | Laravel **Sanctum** (CSRF cookie + `withCredentials`); global auth state in **`useAuthStore`** (Zustand) |
-| Dates | **dayjs** (or project’s existing choice) |
+| Dates | **dayjs** (or project's existing choice) |
 | Global client state | **zustand** |
 
 ## Routing
@@ -102,29 +102,29 @@ shadcn **`components.json`** aliases: `@/components`, `@/components/ui`, `@/lib/
 - **`routeSegment()`** — for **`createBrowserRouter`** child routes under a parent with **`path: '/'`**, pass **`path: routeSegment(PATHS.somePage)`** so segments stay derived from the same **`PATHS`** entry (supports nested segments such as `settings/users`).
 - Define routes in **`fe/src/routes/index.tsx`**.
 - Use **`lazy()`** for page and layout components; export named components from feature pages (e.g. `export function DashboardPage`) and map with `{ default: m.DashboardPage }` when needed.
-- Wrap authenticated areas with **`ProtectedRoute`**; wrap permission-gated UI with **`RequirePermission`** and **`PermissionBits`** / **`@/constants/permissions`**.
+- Wrap authenticated areas with **`ProtectedRoute`**; wrap permission-gated UI with **`RequirePermission`** and **`PermissionSlugs`** / **`@/constants/permissions`**.
 - Add nav items and titles in **`@/constants/header.ts`** (and keep permission fields consistent with the backend).
 
-## Permissions (bitmask on roles; keep FE/ BE in sync)
+## Permissions (string slugs on roles; keep FE / BE in sync)
 
-There is **no** `permissions` table or dynamic permission CRUD. Access comes from the user’s **role** (`roles.permission_mask`) and a shared definition in code:
+There is **no** `permission_mask` column or dynamic permission CRUD UI. Access comes from the user's **role** via the **`role_permissions`** pivot table (each row = one slug string) and a shared definition in code:
 
 | Location | Role |
 |----------|------|
-| **`be/app/Enums/Permission.php`** | One `enum` case = one bit (`1 << n`). Routes use `Permission::SomeCase->value` in `permission.scope:` (pipe `|` for OR); policies use `hasPermissionFlag(Permission::...)`. Middleware accepts **numeric bits only**; full access is an all-bits-set `permission_mask`, not a `*` wildcard in the route string. |
-| **`fe/src/constants/permissions.ts`** | **`PermissionBits`** (same integers as PHP), **`PERMISSION_CATALOG`** (cluster → screen → rows for the role editor UI). |
+| **`be/app/Enums/Permission.php`** | One `enum` case = one string slug (e.g. `'settings.users.view'`). Routes use `Permission::SomeCase->value` in `permission.scope:` (pipe for OR); policies use `hasPermissionFlag(Permission::...)`. Full access means the role has every defined slug in `role_permissions`. |
+| **`fe/src/constants/permissions.ts`** | **`PermissionSlugs`** (same string values as PHP), **`PERMISSION_CATALOG`** (cluster → screen → rows for the role editor UI). |
 
-The logged-in user receives **`permission_mask`** from the API—see **`fe/src/shared/types`** (`User`). Use **`hasPermission(mask, PermissionBits.SomeCase)`** (or **`maskHasPermission`**) for checks.
+The logged-in user receives **`permissions: string[]`** from the API — see **`fe/src/shared/types`** (`User`). Use **`hasPermission(perms, PermissionSlugs.SomeCase)`** for checks.
 
 ### Checklist: new page / screen / API
 
-1. **Backend first** — add the new `Permission` case; protect routes with `->middleware('permission.scope:'.Permission::YourCase->value)` (pipe `|` for alternatives). Use `hasPermissionFlag(Permission::...)` in Form requests or policies. See **`be/routes/api.php`** and **`EnsurePermissionScope`**.
-2. **Frontend constants** — add the same bit to **`PermissionBits`**, add an entry under the right cluster/screen in **`PERMISSION_CATALOG`**.
+1. **Backend first** — add the new `Permission` case; protect routes with `->middleware('permission.scope:'.Permission::YourCase->value)` (pipe for alternatives). Use `hasPermissionFlag(Permission::...)` in Form requests or policies. See **`be/routes/api.php`** and **`EnsurePermissionScope`**.
+2. **Frontend constants** — add the same slug to **`PermissionSlugs`**, add an entry under the right cluster/screen in **`PERMISSION_CATALOG`**.
 3. **Paths** — add the pathname to **`PATHS`** in **`fe/src/constants/paths.ts`**; wire **`fe/src/routes/index.tsx`** with **`routeSegment(PATHS....)`** and use **`PATHS`** in redirects / links / nav **`href`**.
-4. **Route** — in **`fe/src/routes/index.tsx`**, wrap the page with **`RequirePermission`** using the matching **`PermissionBits`** value (e.g. `PermissionBits.SettingsRolesView`).
-5. **Nav** — if the page is linked from the header, set **`requiredPermission`** on the item in **`fe/src/constants/header.ts`** to that bit (use **`PATHS`** for **`href`**).
+4. **Route** — in **`fe/src/routes/index.tsx`**, wrap the page with **`RequirePermission`** using the matching **`PermissionSlugs`** value (e.g. `PermissionSlugs.SettingsRolesView`).
+5. **Nav** — if the page is linked from the header, set **`requiredPermission`** on the item in **`fe/src/constants/header.ts`** to that slug (use **`PATHS`** for **`href`**).
 
-**Do not** introduce permission bits that are not on the PHP enum, or values that disagree between TS and PHP.
+**Do not** introduce permission slugs that are not on the PHP enum, or values that disagree between TS and PHP.
 
 ## API & errors
 
@@ -145,7 +145,7 @@ The logged-in user receives **`permission_mask`** from the API—see **`fe/src/s
 
 ## Re-render optimization (React + Zustand)
 
-Apply these patterns when implementing **new pages, layouts, and global state** so unrelated updates do not repaint large subtrees. Full rule list: **`vercel-react-best-practices`** (`rerender-*`); this section is the repo’s required minimum.
+Apply these patterns when implementing **new pages, layouts, and global state** so unrelated updates do not repaint large subtrees. Full rule list: **`vercel-react-best-practices`** (`rerender-*`); this section is the repo's required minimum.
 
 ### Zustand: always use selectors
 
@@ -165,7 +165,7 @@ Apply these patterns when implementing **new pages, layouts, and global state** 
 
 ### Avoid
 
-- **Do not** define new component types **inside** another component’s render (inline `function` / `const` child components); extract to module scope or a named `memo` subcomponent.
+- **Do not** define new component types **inside** another component's render (inline `function` / `const` child components); extract to module scope or a named `memo` subcomponent.
 - **Do not** add `memo` / `useMemo` everywhere by default—use them on **hot paths** (global nav, large lists, dialogs fed by busy parents). Prefer fixing **Zustand** subscriptions first.
 
 ## Code style (tooling)

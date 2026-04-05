@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Permission;
 use App\Models\Traits\Relationship\RoleRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,41 +14,33 @@ class Role extends Model
 
     protected $fillable = [
         'name',
+        'permissions',
     ];
 
     /**
+     * Decode the bitwise mask into permission slug strings.
+     *
      * @return list<string>
      */
     public function getPermissionSlugs(): array
     {
-        if ($this->relationLoaded('rolePermissions')) {
-            return $this->rolePermissions
-                ->pluck('permission')
-                ->unique()
-                ->sort()
-                ->values()
-                ->all();
-        }
-
-        return $this->rolePermissions()
-            ->pluck('permission')
-            ->unique()
-            ->sort()
-            ->values()
-            ->all();
+        return Permission::maskToSlugs($this->permissions ?? '0');
     }
 
     /**
+     * Encode slug strings into a bitwise mask and persist.
+     *
      * @param  list<string>  $slugs
      */
     public function syncPermissionSlugs(array $slugs): void
     {
-        $unique = array_values(array_unique(array_values(array_filter($slugs))));
+        $this->update([
+            'permissions' => Permission::slugsToMask($slugs),
+        ]);
+    }
 
-        $this->rolePermissions()->delete();
-
-        foreach ($unique as $slug) {
-            $this->rolePermissions()->create(['permission' => $slug]);
-        }
+    public function getPermissionMask(): string
+    {
+        return $this->permissions ?? '0';
     }
 }

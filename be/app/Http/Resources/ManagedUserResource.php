@@ -30,8 +30,6 @@ class ManagedUserResource extends JsonResource
                     return null;
                 }
 
-                $this->role->loadMissing('rolePermissions');
-
                 return [
                     'id' => $this->role->id,
                     'name' => $this->role->name,

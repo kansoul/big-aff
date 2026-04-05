@@ -22,8 +22,9 @@ class RoleController extends BaseController
         $roles = $this->roleService->list();
 
         return $this->sendResponse(
-            RoleResource::collection($roles),
-            'Roles retrieved successfully.'
+            [
+                'data' => RoleResource::collection($roles),
+            ]
         );
     }
 
@@ -32,9 +33,9 @@ class RoleController extends BaseController
         $role = $this->roleService->create($request->validated());
 
         return $this->sendResponse(
-            new RoleResource($role),
-            'Role created successfully.',
-            Response::HTTP_CREATED
+            [
+                'data' => new RoleResource($role),
+            ]
         );
     }
 
@@ -43,8 +44,9 @@ class RoleController extends BaseController
         $updated = $this->roleService->update($role, $request->validated());
 
         return $this->sendResponse(
-            new RoleResource($updated),
-            'Role updated successfully.'
+            [
+                'data' => new RoleResource($updated),
+            ]
         );
     }
 
@@ -52,6 +54,6 @@ class RoleController extends BaseController
     {
         $this->roleService->delete($role);
 
-        return $this->sendResponse(null, 'Role deleted successfully.');
+        return $this->sendResponse([], Response::HTTP_NO_CONTENT);
     }
 }

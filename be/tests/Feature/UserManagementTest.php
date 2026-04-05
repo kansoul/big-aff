@@ -19,7 +19,7 @@ class UserManagementTest extends TestCase
         $role = Role::query()->create(['name' => 'admin']);
         $role->syncPermissionSlugs(Permission::values());
 
-        return $role->fresh(['rolePermissions']);
+        return $role->fresh();
     }
 
     private function roleWithPermissions(Permission ...$permissions): Role
@@ -27,7 +27,7 @@ class UserManagementTest extends TestCase
         $role = Role::query()->create(['name' => 'user']);
         $role->syncPermissionSlugs(array_map(static fn (Permission $p) => $p->value, $permissions));
 
-        return $role->fresh(['rolePermissions']);
+        return $role->fresh();
     }
 
     public function test_guest_cannot_list_users(): void

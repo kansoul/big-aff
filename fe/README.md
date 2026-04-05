@@ -87,7 +87,7 @@ fe/src/
 │   └── types/            # User, ApiResponse, form types dùng chung
 ├── constants/
 │   ├── paths.ts          # PATHS, routeSegment()
-│   ├── permissions.ts    # PermissionBits, PERMISSION_CATALOG
+│   ├── permissions.ts    # PermissionSlugs, PERMISSION_CATALOG
 │   └── header.ts         # Nav items
 ├── config/               # apiURL, strictMode, appTitle
 ├── lib/
@@ -111,13 +111,13 @@ fe/src/
 
 - Định nghĩa **tất cả** pathname một lần tại `@/constants/paths.ts` dưới key `PATHS`.
 - Dùng `routeSegment(PATHS.xxx)` cho child routes trong `createBrowserRouter`.
-- Bọc route cần xác thực với `ProtectedRoute`; bọc route cần quyền với `RequirePermission` + `PermissionBits`.
+- Bọc route cần xác thực với `ProtectedRoute`; bọc route cần quyền với `RequirePermission` + `PermissionSlugs`.
 
-### Permissions (bitmask)
+### Permissions (string slugs)
 
-- Quyền được lưu trong `roles.permission_mask` (số nguyên, bitwise).
-- `PermissionBits` ở `@/constants/permissions.ts` phải đồng bộ với `be/app/Enums/Permission.php`.
-- Dùng `hasPermission(mask, PermissionBits.XxxYyy)` để kiểm tra quyền.
+- Quyền được lưu trong bảng `role_permissions` (mỗi dòng = một slug string).
+- `PermissionSlugs` ở `@/constants/permissions.ts` phải đồng bộ với `be/app/Enums/Permission.php`.
+- Dùng `hasPermission(perms, PermissionSlugs.XxxYyy)` để kiểm tra quyền (perms là `string[]`).
 
 ### API calls
 
@@ -136,7 +136,7 @@ fe/src/
 ## Thêm feature mới
 
 1. Tạo thư mục `features/<domain>/` với `api/`, `components/`, `pages/`, `types/`.
-2. Thêm bit quyền vào `PermissionBits` (đồng bộ với PHP enum).
+2. Thêm slug quyền vào `PermissionSlugs` (đồng bộ với PHP enum).
 3. Thêm pathname vào `PATHS` trong `constants/paths.ts`.
 4. Đăng ký route trong `routes/index.tsx` với `RequirePermission`.
 5. Thêm nav item vào `constants/header.ts` nếu cần.

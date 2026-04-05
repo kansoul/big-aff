@@ -16,7 +16,7 @@ class UserService
     public function listForActor(User $auth): Collection
     {
         $query = User::query()
-            ->with(['role.rolePermissions', 'assignedParentLink.parentUser'])
+            ->with(['role', 'assignedParentLink.parentUser'])
             ->orderBy('name');
 
         if (! $auth->managesAllUsers()) {
@@ -49,7 +49,7 @@ class UserService
             ]);
         }
 
-        $user->load(['role.rolePermissions', 'assignedParentLink.parentUser']);
+        $user->load(['role', 'assignedParentLink.parentUser']);
 
         return $user;
     }
@@ -81,7 +81,7 @@ class UserService
             $user->update($data);
         }
 
-        $user->load(['role.rolePermissions', 'assignedParentLink.parentUser']);
+        $user->load(['role', 'assignedParentLink.parentUser']);
 
         return $user->fresh();
     }

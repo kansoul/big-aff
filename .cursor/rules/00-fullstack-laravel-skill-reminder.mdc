@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Backend / full-stack: kích hoạt skill Laravel
 
-- Mọi thay đổi trong **`be/`**, hoặc prompt về **API / Laravel / PHP / Sanctum / route** cùng lúc với **`fe/`**: **đọc trước** **`be/.agents/skills/laravel-best-practices/SKILL.md`** (mục *Repository layout* và quy ước Permissions). Bản symlink cùng nội dung: **`/.agents/skills/laravel-best-practices/SKILL.md`**.
+- Mọi thay đổi trong **`be/`**, hoặc prompt về **API / Laravel / PHP / Sanctum / route** cùng lúc với **`fe/`**: **đọc trước** **`be/.agents/skills/laravel-best-practices/SKILL.md`** (mục *Repository layout* và quy ước Permissions — bitwise string trên `roles.permissions`). Bản symlink cùng nội dung: **`/.agents/skills/laravel-best-practices/SKILL.md`**.
 - CRUD API theo **`be/.agents/skills/laravel-crud/SKILL.md`** khi phù hợp.
 - Chi tiết Cursor rule theo glob: **`/.cursor/rules/be-laravel-skills.mdc`**.
 

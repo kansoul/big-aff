@@ -31,8 +31,9 @@ class UserParentChildController extends BaseController
         $payload = $this->userParentChildService->listAssignmentsForActor($auth);
 
         return $this->sendResponse(
-            $payload,
-            'User parent-child assignments retrieved successfully.'
+            [
+                'data' => $payload,
+            ]
         );
     }
 
@@ -51,8 +52,9 @@ class UserParentChildController extends BaseController
         $payload = $this->userParentChildService->listAssignmentsForActor($auth);
 
         return $this->sendResponse(
-            $payload,
-            'Assignments updated successfully.'
+            [
+                'data' => $payload,
+            ]
         );
     }
 }

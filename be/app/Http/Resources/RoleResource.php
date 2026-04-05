@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property string $name
+ * @property string $permissions
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -24,7 +25,6 @@ class RoleResource extends JsonResource
     {
         /** @var Role $role */
         $role = $this->resource;
-        $role->loadMissing('rolePermissions');
 
         return [
             'id' => $this->id,

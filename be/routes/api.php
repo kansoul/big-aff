@@ -2,6 +2,7 @@
 
 use App\Enums\Permission;
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserParentChildController;
@@ -25,6 +26,13 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::SettingsUsersUpdate->value);
         Route::delete('{user}', [UserController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::SettingsUsersDelete->value);
+    });
+
+    Route::prefix('files')->middleware('ensure.app.user')->group(function () {
+        Route::get('/', [FileController::class, 'index']);
+        Route::post('/', [FileController::class, 'store']);
+        Route::get('{file}', [FileController::class, 'show']);
+        Route::delete('{file}', [FileController::class, 'destroy']);
     });
 
     Route::prefix('roles')->group(function () {

@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsurePermissionScope
 {
     /**
-     * Grant access if the user has any of the required permissions (pipe-separated slugs), or full access (all defined permissions on the role).
+     * Grant access if the user's role mask includes any of the required permissions (pipe-separated slugs).
      *
      * @param  Closure(Request): Response  $next
      */
@@ -22,10 +22,10 @@ class EnsurePermissionScope
             abort(Response::HTTP_UNAUTHORIZED, 'Unauthenticated.');
         }
 
-        $user->loadMissing('role.rolePermissions');
-        $rolePerms = $user->role?->getPermissionSlugs() ?? [];
+        $user->loadMissing('role');
+        $mask = $user->role?->getPermissionMask() ?? '0';
 
-        if (! Permission::collectionAllowsAnyOf($rolePerms, $permissions)) {
+        if (! Permission::maskAllowsAnyOf($mask, $permissions)) {
             abort(Response::HTTP_FORBIDDEN, 'Forbidden.');
         }
 

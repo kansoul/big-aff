@@ -23,6 +23,6 @@ class UpdateRoleAction
             }
         });
 
-        return $role->fresh(['rolePermissions']);
+        return $role->fresh();
     }
 }

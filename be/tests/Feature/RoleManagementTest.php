@@ -18,7 +18,7 @@ class RoleManagementTest extends TestCase
         $role = Role::query()->create(['name' => 'admin']);
         $role->syncPermissionSlugs(Permission::values());
 
-        return $role->fresh(['rolePermissions']);
+        return $role->fresh();
     }
 
     public function test_guest_cannot_list_roles(): void

@@ -7,7 +7,7 @@
 ## Mục tiêu
 
 - Cung cấp API backend cho ứng dụng web quản trị
-- Hệ thống phân quyền linh hoạt dựa trên bitmask
+- Hệ thống phân quyền linh hoạt dựa trên string slugs (role_permissions pivot)
 - Quản lý phân cấp người dùng (parent-child hierarchy)
 - Quản lý nội dung (bài viết, danh mục) hỗ trợ đa ngôn ngữ và đa site
 
@@ -17,7 +17,7 @@
 |--------|-------|
 | **Authentication** | Đăng nhập/đăng xuất với Laravel Sanctum (session-based) |
 | **User Management** | CRUD người dùng, gán vai trò, quản lý cây phân cấp |
-| **Role Management** | CRUD vai trò, cấu hình permission bằng bitmask |
+| **Role Management** | CRUD vai trò, cấu hình permissions (slug strings trong role_permissions) |
 | **Parent-Child Assignment** | Gán quan hệ cha-con giữa các user |
 | **Categories** | Quản lý danh mục phân cấp (đã có migration) |
 | **Posts** | Quản lý bài viết hỗ trợ AI, WordPress sync (đã có migration) |

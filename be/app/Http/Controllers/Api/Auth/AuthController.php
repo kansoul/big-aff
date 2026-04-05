@@ -23,8 +23,9 @@ class AuthController extends BaseController
 
         return match ($result['status']) {
             AuthStatus::SUCCESS => $this->sendResponse(
-                data: new UserResource($result['user']),
-                message: 'Login successful'
+                [
+                    'data' => new UserResource($result['user']),
+                ]
             ),
             AuthStatus::INVALID_CREDENTIALS => $this->sendError(
                 error: $result['message'],
@@ -45,11 +46,12 @@ class AuthController extends BaseController
             return $this->sendError('Unauthenticated.', [], Response::HTTP_UNAUTHORIZED);
         }
 
-        $user->load('role.rolePermissions');
+        $user->load('role');
 
         return $this->sendResponse(
-            data: new UserResource($user),
-            message: 'User retrieved successfully'
+            [
+                'data' => new UserResource($user),
+            ]
         );
     }
 
@@ -58,7 +60,7 @@ class AuthController extends BaseController
         $result = $this->authService->logout();
 
         if ($result['status'] === AuthStatus::LOGGED_OUT) {
-            return $this->sendResponse(null, $result['message']);
+            return $this->sendResponse([], Response::HTTP_NO_CONTENT);
         }
 
         return $this->sendError($result['message'], [], Response::HTTP_INTERNAL_SERVER_ERROR);

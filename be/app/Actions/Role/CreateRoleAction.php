@@ -2,6 +2,7 @@
 
 namespace App\Actions\Role;
 
+use App\Enums\Permission;
 use App\Models\Role;
 use Illuminate\Support\Facades\DB;
 
@@ -15,14 +16,10 @@ class CreateRoleAction
         $permissions = $data['permissions'] ?? [];
         unset($data['permissions']);
 
-        return DB::transaction(function () use ($data, $permissions) {
-            $role = Role::query()->create($data);
+        if ($permissions !== []) {
+            $data['permissions'] = Permission::slugsToMask($permissions);
+        }
 
-            if ($permissions !== []) {
-                $role->syncPermissionSlugs($permissions);
-            }
-
-            return $role->fresh(['rolePermissions']);
-        });
+        return DB::transaction(static fn () => Role::query()->create($data));
     }
 }

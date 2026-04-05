@@ -1,6 +1,6 @@
 /**
- * Permission slugs mirror `App\Enums\Permission` (Laravel). Roles store any subset in `role_permissions` (unlimited rows).
- * API exposes `permissions: string[]` on user and role resources.
+ * Permission slugs mirror `App\Enums\Permission` (Laravel). Roles store permissions as a bitwise
+ * mask string on `roles.permissions`. API exposes `permissions: string[]` (decoded slugs) on user and role resources.
  */
 
 export const PermissionSlugs = {

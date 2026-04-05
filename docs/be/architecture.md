@@ -83,7 +83,7 @@ Chứa toàn bộ business logic:
 ```
 AuthService      # Xử lý login/logout/me
 UserService      # CRUD users, gán role, parent-child
-RoleService      # CRUD roles, cập nhật permission mask
+RoleService      # CRUD roles, sync permission slugs
 ```
 
 ### 3. Actions (`app/Actions/`)
@@ -114,8 +114,7 @@ User
 └── Traits/UserScope           # Query scopes
 
 Role
-├── Traits/BitwiseMethod       # Bitwise permission helpers
-└── Traits/RoleRelationship    # Quan hệ với User
+└── Traits/RoleRelationship    # Quan hệ với User (getPermissionSlugs(), syncPermissionSlugs() trên model)
 
 UserParentChild                # Junction table model
 ```
@@ -151,14 +150,14 @@ Transform Eloquent models sang JSON:
 
 ```
 UserResource         # Thông tin user (bao gồm role)
-RoleResource         # Thông tin role + permission_mask
+RoleResource         # Thông tin role + permissions (string[])
 UserParentChildResource
 ```
 
 ### 8. Enums (`app/Enums/`)
 
 ```
-Permission           # Bitwise permission flags
+Permission           # String permission slugs
 RoleEnum             # Loại role (admin, user, ...)
 AuthStatus           # Trạng thái xác thực
 ```
@@ -167,30 +166,27 @@ AuthStatus           # Trạng thái xác thực
 
 ### Cách hoạt động
 
-Hệ thống sử dụng **bitwise bitmask** — mỗi quyền là một bit trong một số nguyên:
+Hệ thống dùng **string slugs** — mỗi quyền là một chuỗi cố định (ví dụ `'settings.users.view'`), định nghĩa trong enum `Permission` kiểu `string`. Các slug được lưu trong bảng pivot **`role_permissions`**: mỗi dòng gắn một `role_id` với một cột `permission` (chuỗi slug).
 
 ```php
-// app/Enums/Permission.php
-enum Permission: int
+// app/Enums/Permission.php (ví dụ)
+enum Permission: string
 {
-    case ReportOverviewView   = 1 << 0;   // 1
-    case ReportExport         = 1 << 1;   // 2
-    case SettingsUsersView    = 1 << 2;   // 4
-    case SettingsUsersCreate  = 1 << 3;   // 8
-    case SettingsUsersUpdate  = 1 << 4;   // 16
-    case SettingsUsersDelete  = 1 << 5;   // 32
-    case SettingsRolesView    = 1 << 6;   // 64
-    case SettingsRolesCreate  = 1 << 7;   // 128
-    case SettingsRolesUpdate  = 1 << 8;   // 256
-    case SettingsRolesDelete  = 1 << 9;   // 512
-    case SettingsRolesAssign  = 1 << 10;  // 1024
+    case ReportOverviewView   = 'report.overview.view';
+    case ReportExport         = 'report.export';
+    case SettingsUsersView    = 'settings.users.view';
+    case SettingsUsersCreate  = 'settings.users.create';
+    case SettingsUsersUpdate  = 'settings.users.update';
+    case SettingsUsersDelete  = 'settings.users.delete';
+    case SettingsRolesView    = 'settings.roles.view';
+    case SettingsRolesCreate  = 'settings.roles.create';
+    case SettingsRolesUpdate  = 'settings.roles.update';
+    case SettingsRolesDelete  = 'settings.roles.delete';
+    case SettingsRolesAssign  = 'settings.roles.assign';
 }
 ```
 
-Mỗi Role lưu `permission_mask` là tổng các bit quyền được cấp:
-```
-permission_mask = 4 + 8 + 16 = 28  →  có quyền View, Create, Update Users
-```
+Mỗi **Role** có nhiều hàng trong `role_permissions`; model Role cung cấp `getPermissionSlugs()` và `syncPermissionSlugs()` để đọc/cập nhật tập slug.
 
 ### Middleware: `EnsurePermissionScope`
 
@@ -202,7 +198,7 @@ Route::middleware(['auth:sanctum', 'permission.scope:' . Permission::SettingsUse
     ->get('/users', [UserController::class, 'index']);
 ```
 
-Middleware nhận danh sách permission bits (pipe-separated), kiểm tra user có ít nhất một trong số đó không.
+Middleware nhận danh sách permission slugs (pipe-separated), kiểm tra user có ít nhất một trong số đó không.
 
 ## Cấu trúc Database
 
@@ -212,18 +208,18 @@ Middleware nhận danh sách permission bits (pipe-separated), kiểm tra user c
 │          │  role_id│          │
 │ id       │         │ id       │
 │ name     │         │ name     │
-│ perm_mask│         │ email    │
-└──────────┘         │ role_id  │
-                     │ parent_id├──┐ (self-ref)
-                     └──────────┘  │
-                          ▲        │
-                          │        ▼
-               ┌──────────────────────┐
-               │   user_parent_child  │
-               │                      │
-               │ parent_user_id       │
-               │ child_user_id (uniq) │
-               └──────────────────────┘
+└────┬─────┘         │ email    │
+     │               │ role_id  │
+     │               │ parent_id├──┐ (self-ref)
+     │               └──────────┘  │
+     │                    ▲        │
+     ▼                    │        ▼
+┌──────────────────┐      │  ┌──────────────────────┐
+│ role_permissions │      │  │   user_parent_child  │
+│                  │      │  │                      │
+│ role_id (FK)     │      └──│ parent_user_id       │
+│ permission (str) │         │ child_user_id (uniq) │
+└──────────────────┘         └──────────────────────┘
 
 ┌────────────┐       ┌──────────────┐
 │ categories │◄──────│    posts     │
@@ -256,5 +252,5 @@ Frontend                          Backend
    │  Cookies: session + XSRF         │
    │─────────────────────────────────►│
    │◄─────────────────────────────────│
-   │  {user data + permission_mask}   │
+   │  {user data + permissions: string[]}   │
 ```

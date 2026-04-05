@@ -8,7 +8,7 @@ Frontend của **big-ticollab** là một Single Page Application (SPA) được
 
 - Giao diện quản trị hiện đại, responsive
 - Tích hợp xác thực với Laravel Sanctum (session-based)
-- Phân quyền UI dựa trên permission bitmask (đồng bộ với backend)
+- Phân quyền UI dựa trên permission string slugs (đồng bộ với backend)
 - Kiến trúc module hóa, dễ mở rộng
 
 ## Tính năng chính
@@ -31,7 +31,7 @@ fe/src/
 ├── components/             # Shared UI components (shadcn/ui + custom)
 ├── constants/
 │   ├── paths.ts            # Tất cả route paths
-│   ├── permissions.ts      # Permission bits (đồng bộ với PHP enum)
+│   ├── permissions.ts      # Permission slugs (đồng bộ với PHP enum)
 │   └── headerNavItems.ts   # Navigation menu items
 ├── features/
 │   ├── auth/               # Đăng nhập, types, API calls

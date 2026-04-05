@@ -41,7 +41,8 @@ Nếu một prompt yêu cầu **cả** giao diện và API: vẫn phải đọc 
 
 - **Model:** giữ model gọn; logic/relationship/scope/observer đặt trong trait **`app/Models/Traits/*`**, gắn vào model qua `use`.
 - **Action/Service:** business logic bắt buộc nằm trong **`app/Actions/*`**. **`app/Services/*`** chỉ được phép điều phối nhiều action, gom workflow, hoặc làm orchestration giữa action/repository/transaction.
-- **Permissions:** bitmask trên **`roles.permission_mask`**; định nghĩa bằng **`App\Enums\Permission`** (không có bảng `permissions`). Middleware **`permission.scope:`** + checklist khi thêm API/scope mới — xem **`be/.agents/skills/laravel-best-practices/SKILL.md`** (mục Permissions).
+- **Permissions:** bitwise bitmask lưu dạng string trên **`roles.permissions`** (ví dụ `"2047"`); định nghĩa bằng **`App\Enums\Permission`** (string enum, mỗi case có `->bit()` = `1 << index`). Middleware **`permission.scope:`** dùng slug pipe-separated (ví dụ `'settings.users.view|settings.users.create'`). Khi thêm permission mới: **chỉ append** case mới vào cuối enum, không chèn giữa. Checklist khi thêm API/scope mới — xem **`be/.agents/skills/laravel-best-practices/SKILL.md`** (mục Permissions).
+- **API response:** `sendResponse(mixed $data, int $code = 200)` trả `response()->json($data, $code)` trực tiếp — controller tự build array (ví dụ `['data' => new Resource($entity)]`). `sendError(string $error, array $errorMessages, int $code)` trả `{"success": false, ...}`.
 - **API:** bám **`AuthController`**, **`BaseController`** (`sendResponse` / `sendError`), và pattern hiện có trong **`routes/api.php`**.
 - **Sau khi sửa PHP:** chạy **`vendor/bin/pint --dirty --format agent`** (theo `be/AGENTS.md`).
 - **Tài liệu Laravel:** ưu tiên công cụ **`search-docs`** (Laravel Boost) khi cần API chính xác theo phiên bản đã cài.

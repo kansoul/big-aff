@@ -26,11 +26,9 @@ class UserResource extends JsonResource
     {
         /** @var User $user */
         $user = $this->resource;
-        $user->loadMissing('role.rolePermissions');
+        $user->loadMissing('role');
 
-        $permissions = $user->role !== null
-            ? $user->role->getPermissionSlugs()
-            : [];
+        $permissions = $user->role?->getPermissionSlugs() ?? [];
 
         return [
             'id' => $this->id,
