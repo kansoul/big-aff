@@ -91,7 +91,7 @@ function AssignUsersTableCardInner({
 
                   {/* Child picker */}
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                         Child Users
                       </p>
