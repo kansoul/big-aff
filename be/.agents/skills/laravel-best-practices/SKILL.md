@@ -111,14 +111,6 @@ Do not add new top-level folders under `app/` without matching an existing conve
 - `App::environment()` or `app()->isProduction()`
 - Config, lang files, and constants over hardcoded text
 
-### 8. Testing Patterns → `rules/testing.md`
-
-- `LazilyRefreshDatabase` over `RefreshDatabase` for speed
-- `assertModelExists()` over raw `assertDatabaseHas()`
-- Factory states and sequences over manual overrides
-- Use fakes (`Event::fake()`, `Exceptions::fake()`, etc.) — but always after factory setup, not before
-- `recycle()` to share relationship instances across factories
-
 ### 9. Queue & Job Patterns → `rules/queue-jobs.md`
 
 - `retry_after` must exceed job `timeout`; use exponential backoff `[1, 5, 10]`
