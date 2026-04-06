@@ -4,8 +4,8 @@ namespace App\Actions\File;
 
 use App\Http\Requests\File\ListFilesRequest;
 use App\Models\File;
-use App\Support\Pagination\PaginationInput;
-use App\Support\Pagination\SortInput;
+use App\Support\PaginationInput\PaginationInput;
+use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 
