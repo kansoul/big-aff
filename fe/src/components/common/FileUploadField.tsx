@@ -4,44 +4,13 @@ import { ImageIcon, Pencil, Upload, X, ZoomIn } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ImagePreviewDialog — full-screen image preview
-// ─────────────────────────────────────────────────────────────────────────────
-
-function ImagePreviewDialog({
-  src,
-  open,
-  onClose,
-}: {
-  src: string
-  open: boolean
-  onClose: () => void
-}) {
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        if (!v) onClose()
-      }}
-    >
-      <DialogContent className="border-none bg-transparent p-0 shadow-none sm:max-w-[90vw] md:w-auto h-auto max-h-[90vh]">
-        <DialogTitle className="sr-only">Image Preview</DialogTitle>
-        <div className="flex items-center justify-center overflow-hidden rounded-md">
-          <img
-            src={src}
-            alt="Preview"
-            className="max-h-[85vh] max-w-full rounded-md object-contain shadow-2xl"
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
+import { ImagePreviewDialog } from './ImagePreviewDialog'
 
 // ─────────────────────────────────────────────────────────────────────────────
+
 // FileUploadInput — controlled drag-and-drop file input with preview
 //
 // Usage inside a FormField render prop, or standalone:

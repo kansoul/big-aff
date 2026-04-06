@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { FileText, Loader2, X } from 'lucide-react'
+import { FileText, Loader2 } from 'lucide-react'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
 import { RoleFormErrorAlert } from '@/features/settings/components/RoleFormErrorAlert'
 import type { MediaFile } from '@/features/media/types'
 
@@ -25,27 +26,11 @@ export function FileDetailDialog({
 
   return (
     <>
-      {lightboxOpen && file ? (
-        <div
-          className="fixed inset-0 z-200 flex items-center justify-center bg-black/95 cursor-zoom-out"
-          onClick={() => setLightboxOpen(false)}
-        >
-          <button
-            type="button"
-            onClick={() => setLightboxOpen(false)}
-            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
-            aria-label="Close"
-          >
-            <X className="h-6 w-6" />
-          </button>
-          <img
-            src={file.url}
-            alt={file.alt_text || file.original_name}
-            className="max-h-[90vh] max-w-[90vw] object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      ) : null}
+      <ImagePreviewDialog
+        src={file?.url}
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+      />
 
       <Dialog
         open={open}
