@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { mediaApi } from '@/features/media/api'
 import { FileDetailDialog, MediaTableCard, UploadFileDialog } from '@/features/media/components'
+import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
 import type { MediaFile, MediaFilterParams, MediaOrderBy } from '@/features/media/types'
 import { usersApi } from '@/features/users/api/users'
 import { formatApiError } from '@/features/settings/components'
@@ -46,6 +47,7 @@ export function MediaPage() {
   const [detailFile, setDetailFile] = useState<MediaFile | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
+  const [previewFile, setPreviewFile] = useState<MediaFile | null>(null)
 
   const [deleteTarget, setDeleteTarget] = useState<MediaFile | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -132,10 +134,14 @@ export function MediaPage() {
   )
 
   const onFileClick = useCallback((file: MediaFile) => {
-    setDetailError(null)
-    setDetailLoading(false)
-    setDetailFile(file)
-    setDetailOpen(true)
+    if (file.mime_type?.startsWith('image/') || file.mime_type?.startsWith('video/')) {
+      setPreviewFile(file)
+    } else {
+      setDetailError(null)
+      setDetailLoading(false)
+      setDetailFile(file)
+      setDetailOpen(true)
+    }
   }, [])
 
   const onDetailOpenChange = useCallback((open: boolean) => {
@@ -195,6 +201,12 @@ export function MediaPage() {
         loading={detailLoading}
         error={detailError}
         file={detailFile}
+      />
+      <ImagePreviewDialog
+        src={previewFile?.url}
+        open={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+        type={previewFile?.mime_type?.startsWith('video/') ? 'video' : 'image'}
       />
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>

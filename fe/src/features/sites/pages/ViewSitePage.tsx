@@ -7,7 +7,7 @@ import { sitesApi } from '@/features/sites/api'
 import type { SiteDetail } from '@/features/sites/types'
 import { formatApiError } from '@/features/settings/components'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { PATHS } from '@/constants/paths'
@@ -205,20 +205,11 @@ export function ViewSitePage() {
         </Card>
       ) : null}
 
-      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
-        <DialogContent className="border-none bg-transparent p-0 shadow-none sm:max-w-[90vw] md:w-auto h-auto max-h-[90vh]">
-          <DialogTitle className="sr-only">Image Preview</DialogTitle>
-          {previewImage && (
-            <div className="flex items-center justify-center overflow-hidden rounded-md">
-              <img
-                src={previewImage}
-                alt="Preview"
-                className="max-h-[85vh] max-w-full rounded-md object-contain shadow-2xl"
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ImagePreviewDialog
+        src={previewImage}
+        open={!!previewImage}
+        onClose={() => setPreviewImage(null)}
+      />
     </div>
   )
 }
