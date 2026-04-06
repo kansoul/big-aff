@@ -2,28 +2,28 @@
 
 namespace App\Services\User;
 
+use App\Actions\User\CreateUserAction;
+use App\Actions\User\DeleteUserAction;
+use App\Actions\User\ListUsersAction;
+use App\Actions\User\UpdateUserAction;
 use App\Models\User;
-use App\Models\UserParentChild;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class UserService
 {
+    public function __construct(
+        private readonly ListUsersAction $listUsersAction,
+        private readonly CreateUserAction $createUserAction,
+        private readonly UpdateUserAction $updateUserAction,
+        private readonly DeleteUserAction $deleteUserAction,
+    ) {}
+
     /**
-     * Users visible to the actor (full access → all; otherwise self and descendants).
-     *
-     * @return Collection<int, User>
+     * @param  array<string, mixed>  $filters
      */
-    public function listForActor(User $auth): Collection
+    public function list(User $actor, array $filters): LengthAwarePaginator
     {
-        $query = User::query()
-            ->with(['role', 'assignedParentLink.parentUser'])
-            ->orderBy('name');
-
-        if (! $auth->managesAllUsers()) {
-            $query->whereIn('id', $auth->manageableUserIds());
-        }
-
-        return $query->get();
+        return $this->listUsersAction->execute($actor, $filters);
     }
 
     /**
@@ -31,27 +31,7 @@ class UserService
      */
     public function create(array $data): User
     {
-        $password = $data['password'];
-        unset($data['password']);
-
-        $parentId = $data['parent_id'] ?? null;
-        unset($data['parent_id']);
-
-        $user = User::query()->create([
-            ...$data,
-            'password' => $password,
-        ]);
-
-        if ($parentId !== null && $parentId !== '') {
-            UserParentChild::query()->create([
-                'parent_user_id' => (int) $parentId,
-                'child_user_id' => $user->id,
-            ]);
-        }
-
-        $user->load(['role', 'assignedParentLink.parentUser']);
-
-        return $user;
+        return $this->createUserAction->execute($data);
     }
 
     /**
@@ -59,35 +39,11 @@ class UserService
      */
     public function update(User $user, array $data): User
     {
-        if (array_key_exists('password', $data) && ($data['password'] === null || $data['password'] === '')) {
-            unset($data['password']);
-        }
-
-        if (array_key_exists('parent_id', $data)) {
-            $parentId = $data['parent_id'];
-            unset($data['parent_id']);
-
-            UserParentChild::query()->where('child_user_id', $user->id)->delete();
-
-            if ($parentId !== null && $parentId !== '') {
-                UserParentChild::query()->create([
-                    'parent_user_id' => (int) $parentId,
-                    'child_user_id' => $user->id,
-                ]);
-            }
-        }
-
-        if ($data !== []) {
-            $user->update($data);
-        }
-
-        $user->load(['role', 'assignedParentLink.parentUser']);
-
-        return $user->fresh();
+        return $this->updateUserAction->execute($user, $data);
     }
 
     public function delete(User $user): void
     {
-        $user->delete();
+        $this->deleteUserAction->execute($user);
     }
 }

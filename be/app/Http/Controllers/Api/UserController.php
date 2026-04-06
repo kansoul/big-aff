@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\API\BaseController;
+use App\Http\Requests\User\ListUsersRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Resources\ManagedUserResource;
@@ -10,7 +11,6 @@ use App\Models\User;
 use App\Services\User\UserService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -21,7 +21,7 @@ class UserController extends BaseController
     use AuthorizesRequests;
 
     public function __construct(
-        private readonly UserService $userService
+        private readonly UserService $userService,
     ) {}
 
     /**
@@ -29,9 +29,9 @@ class UserController extends BaseController
      *
      * Return all users the authenticated actor is allowed to manage.
      *
-     * @response 200 {"data": [{"id": 1, "name": "User", "email": "user@example.com", "role_id": 1, "role": {"id": 1, "name": "Admin", "permissions": []}, "parent_id": null, "parent": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}]}
+     * @response 200 {"data": [{"id": 1, "name": "User", "email": "user@example.com", "role_id": 1, "role": {"id": 1, "name": "Admin", "permissions": []}, "parent_id": null, "parent": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
      */
-    public function index(Request $request): JsonResponse
+    public function index(ListUsersRequest $request): JsonResponse
     {
         $auth = $request->user();
         if (! $auth instanceof User) {
@@ -40,11 +40,12 @@ class UserController extends BaseController
 
         $this->authorize('viewAny', User::class);
 
-        $users = $this->userService->listForActor($auth);
+        $paginator = $this->userService->list($auth, $request->validated());
 
         return $this->sendResponse(
             [
-                'data' => ManagedUserResource::collection($users),
+                'data' => ManagedUserResource::collection($paginator->items()),
+                'pagination' => $this->parsePagination($paginator),
             ]
         );
     }

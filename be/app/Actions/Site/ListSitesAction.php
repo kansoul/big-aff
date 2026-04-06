@@ -4,8 +4,8 @@ namespace App\Actions\Site;
 
 use App\Http\Requests\Site\ListSitesRequest;
 use App\Models\Site;
-use App\Support\Pagination\PaginationInput;
-use App\Support\Pagination\SortInput;
+use App\Support\PaginationInput\PaginationInput;
+use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ListSitesAction

@@ -5,21 +5,18 @@ namespace App\Http\Requests\User;
 use App\Actions\User\ListUsersAction;
 use App\Http\Requests\Concerns\ValidatesPaginationQuery;
 use App\Http\Requests\Concerns\ValidatesSortQuery;
-use App\Models\User;
 use App\Support\PaginationInput\PaginationInput;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class SyncUserParentChildrenRequest extends FormRequest
+class ListParentChildAssignmentsRequest extends FormRequest
 {
     use ValidatesPaginationQuery;
     use ValidatesSortQuery;
 
     public function authorize(): bool
     {
-        $user = $this->route('user');
-
-        return $user instanceof User && ($this->user()?->can('update', $user) ?? false);
+        return true;
     }
 
     /**
@@ -28,10 +25,6 @@ class SyncUserParentChildrenRequest extends FormRequest
     public function rules(): array
     {
         return array_merge(
-            [
-                'child_ids' => ['nullable', 'array'],
-                'child_ids.*' => ['integer', 'distinct', 'exists:users,id'],
-            ],
             $this->paginationRules(),
             $this->sortRules(ListUsersAction::ORDERABLE_COLUMNS),
             [

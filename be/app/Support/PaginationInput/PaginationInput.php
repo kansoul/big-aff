@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Support\Pagination;
+namespace App\Support\PaginationInput;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -22,15 +23,19 @@ final readonly class PaginationInput
     /**
      * Build from `$request->validated()` (or any array that may include `page`, `per_page`).
      *
+     * Use `$prefix` for option lists, e.g. `options_` reads `options_page` and `options_per_page`.
+     *
      * @param  array<string, mixed>  $payload
      */
-    public static function fromValidatedArray(array $payload, ?int $defaultPerPage = null): self
+    public static function fromValidatedArray(array $payload, ?int $defaultPerPage = null, string $prefix = ''): self
     {
         $default = $defaultPerPage ?? self::DEFAULT_PER_PAGE;
+        $pageKey = $prefix.'page';
+        $perPageKey = $prefix.'per_page';
 
         return new self(
-            perPage: (int) ($payload['per_page'] ?? $default),
-            page: isset($payload['page']) ? (int) $payload['page'] : null,
+            perPage: (int) ($payload[$perPageKey] ?? $default),
+            page: isset($payload[$pageKey]) ? (int) $payload[$pageKey] : null,
         );
     }
 
@@ -44,6 +49,22 @@ final readonly class PaginationInput
         return $query->paginate(
             perPage: $this->perPage,
             pageName: 'page',
+            page: $this->page,
+        );
+    }
+
+    /**
+     * Simple pagination (no total count) — for option/dropdown lists.
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     */
+    public function simplePaginateQuery(Builder $query, string $pageName = 'page'): Paginator
+    {
+        return $query->simplePaginate(
+            perPage: $this->perPage,
+            pageName: $pageName,
             page: $this->page,
         );
     }

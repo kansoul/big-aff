@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Concerns;
 
-use App\Support\Pagination\PaginationInput;
+use App\Support\PaginationInput\PaginationInput;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 trait ValidatesPaginationQuery

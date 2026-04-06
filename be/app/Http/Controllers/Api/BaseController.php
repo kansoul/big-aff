@@ -4,8 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\JsonResource;
 
 class BaseController extends Controller
 {
@@ -19,10 +19,6 @@ class BaseController extends Controller
 
     /**
      * Parse pagination for resources
-     *
-     * @param LengthAwarePaginator $dataPagination
-     *
-     * @return array
      */
     protected function parsePagination(LengthAwarePaginator $dataPagination): array
     {
@@ -37,6 +33,20 @@ class BaseController extends Controller
             'per_page' => $dataPagination->perPage(),
             'prev_page_url' => $dataPagination->previousPageUrl(),
             'total' => $dataPagination->total(),
+        ];
+    }
+
+    /**
+     * Pagination metadata for simple paginator (no total / last page).
+     */
+    protected function parseSimplePagination(Paginator $paginator): array
+    {
+        return [
+            'current_page' => $paginator->currentPage(),
+            'per_page' => $paginator->perPage(),
+            'has_more_pages' => $paginator->hasMorePages(),
+            'next_page_url' => $paginator->nextPageUrl(),
+            'prev_page_url' => $paginator->previousPageUrl(),
         ];
     }
 

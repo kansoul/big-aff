@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support\Pagination;
+namespace App\Support\SortInput;
 
 use Illuminate\Database\Eloquent\Builder;
 

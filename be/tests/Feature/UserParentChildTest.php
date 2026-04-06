@@ -107,6 +107,30 @@ class UserParentChildTest extends TestCase
         ])->assertStatus(422);
     }
 
+    public function test_null_child_ids_clears_parent_children(): void
+    {
+        $role = $this->fullAccessRole();
+        $admin = User::factory()->create(['role_id' => $role->id]);
+        $parent = User::factory()->create(['role_id' => $role->id]);
+        $child = User::factory()->create(['role_id' => $role->id]);
+
+        UserParentChild::query()->create([
+            'parent_user_id' => $parent->id,
+            'child_user_id' => $child->id,
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $this->putJson('/api/users/'.$parent->id.'/parent-children', [
+            'child_ids' => null,
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('user_parent_child', [
+            'parent_user_id' => $parent->id,
+            'child_user_id' => $child->id,
+        ]);
+    }
+
     public function test_sync_moves_child_from_previous_parent(): void
     {
         $role = $this->fullAccessRole();
