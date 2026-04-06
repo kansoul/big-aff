@@ -2,49 +2,44 @@ import { Loader2, Trash2 } from 'lucide-react'
 
 import {
   AlertDialog,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle,
+  AlertDialogCancel,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import type { Role } from '@/shared/types'
+import type { Site } from '@/features/sites/types'
 
-import { RoleFormErrorAlert } from './RoleFormErrorAlert'
-
-type DeleteRoleDialogProps = {
-  role: Role | null
+type DeleteSiteDialogProps = {
+  site: Site | null
   onOpenChange: (open: boolean) => void
-  formError: string | null
   deleting: boolean
   onConfirmDelete: () => void | Promise<void>
 }
 
-export function DeleteRoleDialog({
-  role,
+export function DeleteSiteDialog({
+  site,
   onOpenChange,
-  formError,
   deleting,
   onConfirmDelete,
-}: DeleteRoleDialogProps) {
+}: DeleteSiteDialogProps) {
   return (
-    <AlertDialog open={!!role} onOpenChange={onOpenChange}>
+    <AlertDialog open={!!site} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogMedia className="bg-destructive/10 text-destructive">
             <Trash2 />
           </AlertDialogMedia>
-          <AlertDialogTitle>Delete role</AlertDialogTitle>
+          <AlertDialogTitle>Delete site</AlertDialogTitle>
           <AlertDialogDescription>
             Are you sure you want to delete{' '}
-            <span className="font-medium text-foreground">{role?.name}</span>? Users assigned to
-            this role will be affected.
+            <span className="font-medium text-foreground">{site?.name}</span>? This action cannot be
+            undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {formError && role ? <RoleFormErrorAlert message={formError} /> : null}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
           <Button

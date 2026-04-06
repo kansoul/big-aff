@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 
 import { rolesApi } from '@/features/settings/api/roles'
 import { formatApiError } from '@/features/settings/components'
@@ -42,7 +43,6 @@ export function SettingsUsersPage() {
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState(true)
-  const [listError, setListError] = useState<string | null>(null)
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editUser, setEditUser] = useState<ManagedUser | null>(null)
@@ -73,13 +73,12 @@ export function SettingsUsersPage() {
 
   const loadData = useCallback(async () => {
     try {
-      setListError(null)
       setLoading(true)
       const [userList, roleList] = await Promise.all([usersApi.list(), rolesApi.list()])
       setUsers(userList)
       setRoles(roleList)
     } catch (err) {
-      setListError(formatApiError(err))
+      toast.error(formatApiError(err))
     } finally {
       setLoading(false)
     }
@@ -212,7 +211,6 @@ export function SettingsUsersPage() {
   return (
     <div className="flex flex-col gap-8">
       <SettingsUsersTableCard
-        listError={listError}
         loading={loading}
         users={users}
         currentUserId={user?.id}

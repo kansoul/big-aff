@@ -1,12 +1,16 @@
-import { Button } from '@/components/ui/button'
+import { Loader2, Trash2 } from 'lucide-react'
+
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
 import { RoleFormErrorAlert } from '@/features/settings/components/RoleFormErrorAlert'
 import type { ManagedUser } from '@/shared/types'
 
@@ -26,35 +30,42 @@ export function DeleteUserDialog({
   onConfirmDelete,
 }: DeleteUserDialogProps) {
   return (
-    <Dialog open={!!userRow} onOpenChange={onOpenChange}>
-      <DialogContent className=" sm:max-w-md" showCloseButton>
-        <DialogHeader>
-          <DialogTitle className="font-black tracking-tight uppercase text-base">
-            Delete user
-          </DialogTitle>
-          <DialogDescription>
-            This removes the account{' '}
-            <span className="font-medium text-foreground">{userRow?.name}</span> ({userRow?.email}
-            ). Child users will keep existing data but their parent link may be cleared depending on
-            server rules.
-          </DialogDescription>
-        </DialogHeader>
+    <AlertDialog open={!!userRow} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogMedia className="bg-destructive/10 text-destructive">
+            <Trash2 />
+          </AlertDialogMedia>
+          <AlertDialogTitle>Delete user</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete{' '}
+            <span className="font-medium text-foreground">{userRow?.name}</span> ({userRow?.email})?
+            This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
         {formError && userRow ? <RoleFormErrorAlert message={formError} /> : null}
-        <DialogFooter className="border-0 bg-transparent p-0 sm:justify-end gap-2">
-          <Button type="button" variant="outline" className="" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
           <Button
             type="button"
             variant="destructive"
-            className=""
             disabled={deleting}
             onClick={() => void onConfirmDelete()}
           >
-            {deleting ? 'Deleting…' : 'Delete'}
+            {deleting ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                Deleting…
+              </>
+            ) : (
+              <>
+                <Trash2 className="size-3.5" />
+                Delete
+              </>
+            )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

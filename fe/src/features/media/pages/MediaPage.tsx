@@ -33,7 +33,6 @@ export function MediaPage() {
   const [data, setData] = useState<MediaFile[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [listError, setListError] = useState<string | null>(null)
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 15 })
   const [filters, setFilters] = useState<MediaFilterParams>(DEFAULT_FILTERS)
@@ -62,13 +61,12 @@ export function MediaPage() {
 
   const loadData = useCallback(async () => {
     try {
-      setListError(null)
       setLoading(true)
       const res = await mediaApi.list(pagination.pageIndex + 1, pagination.pageSize, filters)
       setData(res.data.data)
       setRowCount(res.data.pagination.total)
     } catch (err) {
-      setListError(formatApiError(err))
+      toast.error(formatApiError(err))
     } finally {
       setLoading(false)
     }
@@ -173,7 +171,6 @@ export function MediaPage() {
         data={data}
         rowCount={rowCount}
         loading={loading}
-        listError={listError}
         pagination={pagination}
         onPaginationChange={setPagination}
         filters={filters}

@@ -106,6 +106,8 @@ export function MediaPickerDialog({
           created_from: null,
           created_to: null,
           user_id: null,
+          order: null,
+          order_by: null,
         })
         if (cancelled) return
         setRecent(res.data.data)
@@ -133,6 +135,8 @@ export function MediaPickerDialog({
         created_from: null,
         created_to: null,
         user_id: null,
+        order: null,
+        order_by: null,
       })
       .then((res) => {
         setRecent((prev) => [...prev, ...res.data.data])

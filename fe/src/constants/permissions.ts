@@ -15,6 +15,11 @@ export const PermissionSlugs = {
   SettingsRolesUpdate: 'settings.roles.update',
   SettingsRolesDelete: 'settings.roles.delete',
   SettingsRolesAssign: 'settings.roles.assign',
+  SettingsSitesView: 'settings.sites.view',
+  SettingsSitesCreate: 'settings.sites.create',
+  SettingsSitesUpdate: 'settings.sites.update',
+  SettingsSitesDelete: 'settings.sites.delete',
+  SettingsSitesAssign: 'settings.sites.assign',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -130,6 +135,37 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
             key: 'SettingsRolesAssign',
             slug: PermissionSlugs.SettingsRolesAssign,
             label: 'Assign permissions',
+          },
+        ],
+      },
+      {
+        id: 'sites',
+        label: 'Sites',
+        permissions: [
+          {
+            key: 'SettingsSitesView',
+            slug: PermissionSlugs.SettingsSitesView,
+            label: 'View',
+          },
+          {
+            key: 'SettingsSitesCreate',
+            slug: PermissionSlugs.SettingsSitesCreate,
+            label: 'Create',
+          },
+          {
+            key: 'SettingsSitesUpdate',
+            slug: PermissionSlugs.SettingsSitesUpdate,
+            label: 'Update',
+          },
+          {
+            key: 'SettingsSitesDelete',
+            slug: PermissionSlugs.SettingsSitesDelete,
+            label: 'Delete',
+          },
+          {
+            key: 'SettingsSitesAssign',
+            slug: PermissionSlugs.SettingsSitesAssign,
+            label: 'Assign users',
           },
         ],
       },

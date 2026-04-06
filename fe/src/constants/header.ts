@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 
 import { NAV_SECTIONS, PATHS, type NavSectionId } from '@/constants/paths'
 import { PermissionSlugs } from '@/constants/permissions'
-import { GitBranch, Images, LayoutDashboard, Settings, UserCog, Users } from 'lucide-react'
+import { GitBranch, Globe, Images, LayoutDashboard, Settings, UserCog, Users } from 'lucide-react'
 
 export type NavSubItem = {
   name: string
@@ -46,6 +46,12 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         href: PATHS.settingsRoles,
         icon: UserCog,
         requiredPermission: PermissionSlugs.SettingsRolesView,
+      },
+      {
+        name: 'Sites',
+        href: PATHS.settingsSites,
+        icon: Globe,
+        requiredPermission: PermissionSlugs.SettingsSitesView,
       },
     ],
   },

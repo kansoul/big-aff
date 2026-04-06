@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { AssignUsersTableCard } from '@/features/users/components/AssignUsersTableCard'
 import { usersApi } from '@/features/users/api/users'
@@ -21,7 +22,6 @@ export function AssignUsersPage() {
   const [userOptions, setUserOptions] = useState<UserOptionForAssign[]>([])
   const [drafts, setDrafts] = useState<Record<number, number[]>>({})
   const [loading, setLoading] = useState(true)
-  const [listError, setListError] = useState<string | null>(null)
   const [savingRowId, setSavingRowId] = useState<number | null>(null)
   const [flashError, setFlashError] = useState<string | null>(null)
 
@@ -36,12 +36,11 @@ export function AssignUsersPage() {
 
   const load = useCallback(async () => {
     try {
-      setListError(null)
       setLoading(true)
       const payload = await usersApi.listParentChildAssignments()
       applyPayload(payload)
     } catch (err) {
-      setListError(formatApiError(err))
+      toast.error(formatApiError(err))
     } finally {
       setLoading(false)
     }
@@ -95,7 +94,6 @@ export function AssignUsersPage() {
       ) : null}
 
       <AssignUsersTableCard
-        listError={listError}
         loading={loading}
         assignments={assignments}
         userOptions={userOptions}

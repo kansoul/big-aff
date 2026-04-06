@@ -6,7 +6,7 @@ import {
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
 } from 'mantine-react-table'
-import { AlertCircle, Images, Trash2, Upload } from 'lucide-react'
+import { Images, Trash2, Upload } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -123,7 +123,6 @@ type MediaTableCardProps = {
   data: MediaFile[]
   rowCount: number
   loading: boolean
-  listError: string | null
   pagination: PaginationState
   onPaginationChange: Dispatch<SetStateAction<PaginationState>>
   filters: MediaFilterParams
@@ -139,7 +138,6 @@ function MediaTableCardInner({
   data,
   rowCount,
   loading,
-  listError,
   pagination,
   onPaginationChange,
   filters,
@@ -173,9 +171,11 @@ function MediaTableCardInner({
     },
     enableColumnFilters: false,
     enableGlobalFilter: false,
+    enableColumnPinning: true,
     initialState: {
       density: 'md',
       columnVisibility: { user_id: false },
+      columnPinning: { right: ['actions'] },
     },
     state: { pagination, isLoading: loading, sorting },
     enablePagination: true,
@@ -185,12 +185,6 @@ function MediaTableCardInner({
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbarCustomActions: () => (
       <div className="flex flex-wrap items-end gap-3 py-1 w-full">
-        {listError ? (
-          <div className="flex w-full items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
-            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-            <p>{listError}</p>
-          </div>
-        ) : null}
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground">From</Label>
           <DatePicker
