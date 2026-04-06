@@ -14,7 +14,7 @@ import {
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { mediaApi } from '@/features/media/api'
-import type { Media } from '@/features/media/types'
+import type { MediaFile } from '@/features/media/types'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -25,7 +25,7 @@ type Tab = 'recent' | 'upload'
 type UploadState =
   | { status: 'idle' }
   | { status: 'uploading'; progress: number; name: string }
-  | { status: 'done'; media: Media }
+  | { status: 'done'; media: MediaFile }
   | { status: 'error'; message: string }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ type UploadState =
 type MediaPickerDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSelect: (media: Media) => void
+  onSelect: (media: MediaFile) => void
   title?: string
   accept?: string
 }
@@ -48,13 +48,13 @@ export function MediaPickerDialog({
   accept = 'image/*',
 }: MediaPickerDialogProps) {
   const [tab, setTab] = useState<Tab>('recent')
-  const [recent, setRecent] = useState<Media[]>([])
+  const [recent, setRecent] = useState<MediaFile[]>([])
   // Start as true so the loading state shows immediately on first open
   const [loadingRecent, setLoadingRecent] = useState(true)
   const [recentError, setRecentError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
-  const [selected, setSelected] = useState<Media | null>(null)
+  const [selected, setSelected] = useState<MediaFile | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>({ status: 'idle' })
   const [dragging, setDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -102,11 +102,15 @@ export function MediaPickerDialog({
 
     const fetchRecent = async () => {
       try {
-        const res = await mediaApi.list(1)
+        const res = await mediaApi.list(1, 24, {
+          created_from: null,
+          created_to: null,
+          user_id: null,
+        })
         if (cancelled) return
         setRecent(res.data.data)
         setPage(1)
-        setHasMore(res.data.meta.current_page < res.data.meta.last_page)
+        setHasMore(res.data.pagination.current_page < res.data.pagination.last_page)
         setRecentError(null)
       } catch {
         if (!cancelled) setRecentError('Failed to load recent media.')
@@ -125,11 +129,15 @@ export function MediaPickerDialog({
     const nextPage = page + 1
     setLoadingRecent(true)
     mediaApi
-      .list(nextPage)
+      .list(nextPage, 24, {
+        created_from: null,
+        created_to: null,
+        user_id: null,
+      })
       .then((res) => {
         setRecent((prev) => [...prev, ...res.data.data])
         setPage(nextPage)
-        setHasMore(res.data.meta.current_page < res.data.meta.last_page)
+        setHasMore(res.data.pagination.current_page < res.data.pagination.last_page)
       })
       .catch(() => setRecentError('Failed to load more media.'))
       .finally(() => setLoadingRecent(false))
@@ -138,7 +146,7 @@ export function MediaPickerDialog({
   const handleUpload = useCallback((file: File) => {
     setUploadState({ status: 'uploading', progress: 0, name: file.name })
     mediaApi
-      .upload(file, (progress) => {
+      .upload(file, {}, (progress) => {
         setUploadState({ status: 'uploading', progress, name: file.name })
       })
       .then((res) => {
@@ -324,8 +332,8 @@ export function MediaPickerDialog({
 // ─────────────────────────────────────────────────────────────────────────────
 
 type MediaPickerInputProps = {
-  value?: Media | null
-  onChange?: (media: Media | null) => void
+  value?: MediaFile | null
+  onChange?: (media: MediaFile | null) => void
   accept?: string
   placeholder?: string
   disabled?: boolean
@@ -341,7 +349,7 @@ export function MediaPickerInput({
   const [open, setOpen] = useState(false)
 
   const handleSelect = useCallback(
-    (media: Media) => {
+    (media: MediaFile) => {
       onChange?.(media)
     },
     [onChange],
@@ -359,9 +367,13 @@ export function MediaPickerInput({
     return (
       <>
         <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 p-2">
-          <img src={value.url} alt={value.name} className="size-12 shrink-0 rounded object-cover" />
+          <img
+            src={value.url}
+            alt={value.original_name}
+            className="size-12 shrink-0 rounded object-cover"
+          />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <p className="truncate text-sm font-medium">{value.name}</p>
+            <p className="truncate text-sm font-medium">{value.original_name}</p>
             <p className="text-xs text-muted-foreground">{(value.size / 1024).toFixed(0)} KB</p>
           </div>
           <div className="flex shrink-0 gap-1">
@@ -456,7 +468,7 @@ export function MediaPickerField<T extends FieldValues>({
           {label ? <FormLabel>{label}</FormLabel> : null}
           <FormControl>
             <MediaPickerInput
-              value={field.value as Media | null}
+              value={field.value as MediaFile | null}
               onChange={field.onChange}
               accept={accept}
               placeholder={placeholder}
@@ -478,9 +490,9 @@ const MediaTile = ({
   selected,
   onSelect,
 }: {
-  media: Media
+  media: MediaFile
   selected: boolean
-  onSelect: (m: Media) => void
+  onSelect: (m: MediaFile) => void
 }) => (
   <button
     type="button"
@@ -492,7 +504,7 @@ const MediaTile = ({
   >
     <img
       src={media.url}
-      alt={media.name}
+      alt={media.original_name}
       className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
       loading="lazy"
     />
@@ -563,17 +575,17 @@ const UploadProgress = ({ name, progress }: { name: string; progress: number }) 
   </div>
 )
 
-const UploadDone = ({ media, onReset }: { media: Media; onReset: () => void }) => (
+const UploadDone = ({ media, onReset }: { media: MediaFile; onReset: () => void }) => (
   <div className="flex flex-1 flex-col items-center justify-center gap-4">
     <div className="overflow-hidden rounded-lg border border-border">
-      <img src={media.url} alt={media.name} className="max-h-48 max-w-xs object-contain" />
+      <img src={media.url} alt={media.original_name} className="max-h-48 max-w-xs object-contain" />
     </div>
     <div className="flex flex-col items-center gap-1 text-center">
       <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
         <CheckCircle2 className="size-4 text-primary" />
         Upload successful
       </div>
-      <p className="max-w-xs truncate text-xs text-muted-foreground">{media.name}</p>
+      <p className="max-w-xs truncate text-xs text-muted-foreground">{media.original_name}</p>
     </div>
     <Button type="button" variant="outline" size="sm" onClick={onReset}>
       Upload another

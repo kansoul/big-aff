@@ -31,6 +31,9 @@ const AssignUsersPage = lazy(() =>
     default: m.AssignUsersPage,
   })),
 )
+const MediaPage = lazy(() =>
+  import('@/features/media/pages/MediaPage').then((m) => ({ default: m.MediaPage })),
+)
 
 export const router = createBrowserRouter([
   {
@@ -60,6 +63,11 @@ export const router = createBrowserRouter([
             path: routeSegment(PATHS.dashboard),
             element: <DashboardPage />,
             handle: { title: 'Dashboard', navSection: NAV_SECTIONS.dashboard },
+          },
+          {
+            path: routeSegment(PATHS.media),
+            element: <MediaPage />,
+            handle: { title: 'Media' },
           },
           {
             path: routeSegment(PATHS.settingsUsers),
