@@ -34,6 +34,26 @@ const AssignUsersPage = lazy(() =>
 const MediaPage = lazy(() =>
   import('@/features/media/pages/MediaPage').then((m) => ({ default: m.MediaPage })),
 )
+const SettingsSitesPage = lazy(() =>
+  import('@/features/sites/pages/SettingsSitesPage').then((m) => ({
+    default: m.SettingsSitesPage,
+  })),
+)
+const CreateSitePage = lazy(() =>
+  import('@/features/sites/pages/CreateSitePage').then((m) => ({
+    default: m.CreateSitePage,
+  })),
+)
+const ViewSitePage = lazy(() =>
+  import('@/features/sites/pages/ViewSitePage').then((m) => ({
+    default: m.ViewSitePage,
+  })),
+)
+const EditSitePage = lazy(() =>
+  import('@/features/sites/pages/EditSitePage').then((m) => ({
+    default: m.EditSitePage,
+  })),
+)
 
 export const router = createBrowserRouter([
   {
@@ -95,6 +115,42 @@ export const router = createBrowserRouter([
               </RequirePermission>
             ),
             handle: { title: 'Roles', navSection: NAV_SECTIONS.settings },
+          },
+          {
+            path: routeSegment(PATHS.settingsSites),
+            element: (
+              <RequirePermission permission={PermissionSlugs.SettingsSitesView}>
+                <SettingsSitesPage />
+              </RequirePermission>
+            ),
+            handle: { title: 'Sites', navSection: NAV_SECTIONS.settings },
+          },
+          {
+            path: routeSegment(PATHS.settingsSitesCreate),
+            element: (
+              <RequirePermission permission={PermissionSlugs.SettingsSitesCreate}>
+                <CreateSitePage />
+              </RequirePermission>
+            ),
+            handle: { title: 'Create Site', navSection: NAV_SECTIONS.settings },
+          },
+          {
+            path: routeSegment(PATHS.settingsSitesView),
+            element: (
+              <RequirePermission permission={PermissionSlugs.SettingsSitesView}>
+                <ViewSitePage />
+              </RequirePermission>
+            ),
+            handle: { title: 'View Site', navSection: NAV_SECTIONS.settings },
+          },
+          {
+            path: routeSegment(PATHS.settingsSitesEdit),
+            element: (
+              <RequirePermission permission={PermissionSlugs.SettingsSitesUpdate}>
+                <EditSitePage />
+              </RequirePermission>
+            ),
+            handle: { title: 'Edit Site', navSection: NAV_SECTIONS.settings },
           },
         ],
       },

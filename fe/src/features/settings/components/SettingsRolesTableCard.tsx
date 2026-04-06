@@ -6,7 +6,7 @@ import {
   MRT_ShowHideColumnsButton,
   MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
-import { AlertCircle, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
+import { Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import type { Role } from '@/shared/types'
@@ -92,7 +92,6 @@ function getRolesColumns(meta: ActionMeta): MRT_ColumnDef<Role>[] {
 }
 
 type SettingsRolesTableCardProps = {
-  listError: string | null
   loading: boolean
   roles: Role[]
   canCreate: boolean
@@ -105,7 +104,6 @@ type SettingsRolesTableCardProps = {
 }
 
 function SettingsRolesTableCardInner({
-  listError,
   loading,
   roles,
   canCreate,
@@ -127,9 +125,11 @@ function SettingsRolesTableCardInner({
     enableColumnFilters: false,
     enableGlobalFilter: true,
     positionGlobalFilter: 'left',
+    enableColumnPinning: true,
     initialState: {
       showGlobalFilter: true,
       density: 'md',
+      columnPinning: { right: ['actions'] },
     },
     state: { isLoading: loading },
     enablePagination: true,
@@ -167,13 +167,6 @@ function SettingsRolesTableCardInner({
 
   return (
     <>
-      {listError ? (
-        <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <p>{listError}</p>
-        </div>
-      ) : null}
-
       <MantineReactTable table={table} />
     </>
   )

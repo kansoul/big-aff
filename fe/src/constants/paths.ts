@@ -10,7 +10,14 @@ export const PATHS = {
   settingsUsers: '/settings/users',
   settingsUsersAssign: '/settings/users-assign',
   settingsRoles: '/settings/roles',
+  settingsSites: '/settings/sites',
+  settingsSitesCreate: '/settings/sites/create',
+  settingsSitesView: '/settings/sites/:id',
+  settingsSitesEdit: '/settings/sites/:id/edit',
 } as const
+
+export const siteViewPath = (id: number | string) => `/settings/sites/${id}`
+export const siteEditPath = (id: number | string) => `/settings/sites/${id}/edit`
 
 /** Identifies a top-level nav group; set on route `handle.navSection` and optional `NavItem.navSection`. */
 export const NAV_SECTIONS = {

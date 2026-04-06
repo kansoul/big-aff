@@ -6,7 +6,7 @@ import {
   MRT_ShowHideColumnsButton,
   MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
-import { AlertCircle, Pencil, Plus, Trash2, Users } from 'lucide-react'
+import { Pencil, Plus, Trash2, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import type { ManagedUser } from '@/shared/types'
@@ -109,7 +109,6 @@ function getUsersColumns(meta: ActionMeta): MRT_ColumnDef<ManagedUser>[] {
 }
 
 type SettingsUsersTableCardProps = {
-  listError: string | null
   loading: boolean
   users: ManagedUser[]
   currentUserId: number | undefined
@@ -122,7 +121,6 @@ type SettingsUsersTableCardProps = {
 }
 
 function SettingsUsersTableCardInner({
-  listError,
   loading,
   users,
   currentUserId,
@@ -144,10 +142,12 @@ function SettingsUsersTableCardInner({
     enableColumnFilters: false,
     enableGlobalFilter: true,
     positionGlobalFilter: 'left',
+    enableColumnPinning: true,
     initialState: {
       showGlobalFilter: true,
       density: 'md',
       columnVisibility: { parent: false, role: false },
+      columnPinning: { right: ['actions'] },
     },
     state: { isLoading: loading },
     enablePagination: true,
@@ -188,13 +188,6 @@ function SettingsUsersTableCardInner({
 
   return (
     <>
-      {listError ? (
-        <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <p>{listError}</p>
-        </div>
-      ) : null}
-
       <MantineReactTable table={table} />
     </>
   )

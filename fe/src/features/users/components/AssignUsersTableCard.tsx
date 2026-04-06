@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { AlertCircle, Loader2, Save, Users } from 'lucide-react'
+import { Loader2, Save, Users } from 'lucide-react'
 
 import { AssignUsersChildrenPicker, type AssignChildOption } from './AssignUsersChildrenPicker'
 import type { UserOptionForAssign, UserParentAssignmentRow } from '@/features/users/types'
@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 type AssignUsersTableCardProps = {
-  listError: string | null
   loading: boolean
   assignments: UserParentAssignmentRow[]
   userOptions: UserOptionForAssign[]
@@ -29,7 +28,6 @@ function childOptionsForRow(
 }
 
 function AssignUsersTableCardInner({
-  listError,
   loading,
   assignments,
   userOptions,
@@ -41,13 +39,6 @@ function AssignUsersTableCardInner({
 }: AssignUsersTableCardProps) {
   return (
     <>
-      {listError ? (
-        <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <p>{listError}</p>
-        </div>
-      ) : null}
-
       <div className="flex flex-col gap-3">
         {loading ? (
           <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 py-14 text-sm text-muted-foreground">

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 
 import { rolesApi } from '@/features/settings/api/roles'
 import {
@@ -38,7 +39,6 @@ export function SettingsRolesPage() {
 
   const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState(true)
-  const [listError, setListError] = useState<string | null>(null)
 
   const [createOpen, setCreateOpen] = useState(false)
   const [createPermissions, setCreatePermissions] = useState<string[]>([])
@@ -52,12 +52,11 @@ export function SettingsRolesPage() {
 
   const loadData = useCallback(async () => {
     try {
-      setListError(null)
       setLoading(true)
       const roleList = await rolesApi.list()
       setRoles(roleList)
     } catch (err) {
-      setListError(formatApiError(err))
+      toast.error(formatApiError(err))
     } finally {
       setLoading(false)
     }
@@ -192,7 +191,6 @@ export function SettingsRolesPage() {
   return (
     <div className="flex flex-col gap-8">
       <SettingsRolesTableCard
-        listError={listError}
         loading={loading}
         roles={roles}
         canCreate={canCreate}
