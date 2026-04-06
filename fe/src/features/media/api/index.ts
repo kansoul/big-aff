@@ -9,6 +9,8 @@ export const mediaApi = {
         per_page: perPage,
         ...(filters.created_from ? { created_from: filters.created_from } : {}),
         ...(filters.created_to ? { created_to: filters.created_to } : {}),
+        ...(filters.order ? { order: filters.order } : {}),
+        ...(filters.order_by ? { order_by: filters.order_by } : {}),
         ...(filters.user_id != null ? { user_id: filters.user_id } : {}),
       },
     }),

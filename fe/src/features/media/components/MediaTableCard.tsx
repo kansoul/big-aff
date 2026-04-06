@@ -3,6 +3,7 @@ import {
   MantineReactTable,
   useMantineReactTable,
   type MRT_ColumnDef,
+  type MRT_SortingState,
   MRT_ShowHideColumnsButton,
 } from 'mantine-react-table'
 import { AlertCircle, Images, Trash2, Upload } from 'lucide-react'
@@ -56,6 +57,7 @@ function getColumns({ onFileClick, onDeleteFile }: ColumnMeta): MRT_ColumnDef<Me
       accessorKey: 'mime_type',
       header: 'Type',
       size: 120,
+      enableSorting: false,
       Cell: ({ row }) => {
         const type = row.original.mime_type
         if (!type) return <span className="text-muted-foreground/50">—</span>
@@ -78,6 +80,7 @@ function getColumns({ onFileClick, onDeleteFile }: ColumnMeta): MRT_ColumnDef<Me
       accessorKey: 'user_id',
       header: 'User ID',
       size: 80,
+      enableSorting: false,
       Cell: ({ row }) => <span className="text-muted-foreground">{row.original.user_id}</span>,
     },
     {
@@ -125,6 +128,7 @@ type MediaTableCardProps = {
   onPaginationChange: Dispatch<SetStateAction<PaginationState>>
   filters: MediaFilterParams
   onFilterChange: (field: keyof MediaFilterParams, value: string | number | null) => void
+  onSortingChange: (sorting: MRT_SortingState) => void
   users: ManagedUser[]
   onUploadClick: () => void
   onFileClick: (file: MediaFile) => void
@@ -140,6 +144,7 @@ function MediaTableCardInner({
   onPaginationChange,
   filters,
   onFilterChange,
+  onSortingChange,
   users,
   onUploadClick,
   onFileClick,
@@ -150,19 +155,29 @@ function MediaTableCardInner({
     [onFileClick, onDeleteFile],
   )
 
+  const sorting: MRT_SortingState = useMemo(
+    () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
+    [filters.order_by, filters.order],
+  )
+
   const table = useMantineReactTable({
     data,
     columns,
     manualPagination: true,
+    manualSorting: true,
     rowCount,
     onPaginationChange,
+    onSortingChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(sorting) : updater
+      onSortingChange(next)
+    },
     enableColumnFilters: false,
     enableGlobalFilter: false,
     initialState: {
       density: 'md',
       columnVisibility: { user_id: false },
     },
-    state: { pagination, isLoading: loading },
+    state: { pagination, isLoading: loading, sorting },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,

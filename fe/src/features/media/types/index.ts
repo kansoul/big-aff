@@ -31,8 +31,19 @@ export interface MediaListResponse {
   pagination: MediaPagination
 }
 
+export type MediaOrderBy =
+  | 'id'
+  | 'created_at'
+  | 'updated_at'
+  | 'original_name'
+  | 'size'
+  | 'file_name'
+export type MediaOrder = 'asc' | 'desc'
+
 export interface MediaFilterParams {
   created_from: string | null
   created_to: string | null
+  order: MediaOrder | null
+  order_by: MediaOrderBy | null
   user_id: number | null
 }

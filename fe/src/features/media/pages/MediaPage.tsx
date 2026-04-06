@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { mediaApi } from '@/features/media/api'
 import { FileDetailDialog, MediaTableCard, UploadFileDialog } from '@/features/media/components'
-import type { MediaFile, MediaFilterParams } from '@/features/media/types'
+import type { MediaFile, MediaFilterParams, MediaOrderBy } from '@/features/media/types'
 import { usersApi } from '@/features/users/api/users'
 import { formatApiError } from '@/features/settings/components'
 import type { ManagedUser } from '@/shared/types'
@@ -23,6 +23,8 @@ type PaginationState = { pageIndex: number; pageSize: number }
 const DEFAULT_FILTERS: MediaFilterParams = {
   created_from: null,
   created_to: null,
+  order: null,
+  order_by: null,
   user_id: null,
 }
 
@@ -84,6 +86,16 @@ export function MediaPage() {
     [],
   )
 
+  const onSortingChange = useCallback((sorting: { id: string; desc: boolean }[]) => {
+    const first = sorting[0] ?? null
+    setFilters((prev) => ({
+      ...prev,
+      order_by: first ? (first.id as MediaOrderBy) : null,
+      order: first ? (first.desc ? 'desc' : 'asc') : null,
+    }))
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  }, [])
+
   const onUploadClick = useCallback(() => {
     setUploadError(null)
     setUploadProgress(0)
@@ -122,21 +134,10 @@ export function MediaPage() {
   )
 
   const onFileClick = useCallback((file: MediaFile) => {
-    setDetailFile(null)
     setDetailError(null)
-    setDetailLoading(true)
+    setDetailLoading(false)
+    setDetailFile(file)
     setDetailOpen(true)
-    void mediaApi
-      .detail(file.id)
-      .then((res) => {
-        setDetailFile(res.data.data)
-      })
-      .catch((err) => {
-        setDetailError(formatApiError(err))
-      })
-      .finally(() => {
-        setDetailLoading(false)
-      })
   }, [])
 
   const onDetailOpenChange = useCallback((open: boolean) => {
@@ -177,6 +178,7 @@ export function MediaPage() {
         onPaginationChange={setPagination}
         filters={filters}
         onFilterChange={onFilterChange}
+        onSortingChange={onSortingChange}
         users={users}
         onUploadClick={onUploadClick}
         onFileClick={onFileClick}
