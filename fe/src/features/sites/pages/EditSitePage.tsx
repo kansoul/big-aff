@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AlertCircle, ArrowLeft, Loader2, Save, Trash2 } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Eye, Loader2, Save, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { sitesApi } from '@/features/sites/api'
@@ -16,7 +16,7 @@ import { DeleteSiteDialog } from '@/features/sites/components/DeleteSiteDialog'
 import { formatApiError } from '@/features/settings/components'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
-import { PATHS } from '@/constants/paths'
+import { PATHS, siteViewPath } from '@/constants/paths'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 
@@ -131,25 +131,44 @@ export function EditSitePage() {
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => navigate(PATHS.settingsSites)}
+            onClick={() => {
+              void navigate(PATHS.settingsSites)
+            }}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm text-muted-foreground">Back to Sites</span>
         </div>
-        {canDelete && siteData ? (
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            className="gap-1.5"
-            disabled={submitting || deleting}
-            onClick={() => setDeleteDialogOpen(true)}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Delete Site
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {siteData && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              disabled={submitting || deleting}
+              onClick={() => {
+                void navigate(siteViewPath(siteData.id))
+              }}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              View Detail
+            </Button>
+          )}
+          {canDelete && siteData ? (
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="gap-1.5"
+              disabled={submitting || deleting}
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete Site
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <Form {...form}>
@@ -177,7 +196,9 @@ export function EditSitePage() {
               type="button"
               variant="outline"
               disabled={submitting}
-              onClick={() => navigate(PATHS.settingsSites)}
+              onClick={() => {
+                void navigate(PATHS.settingsSites)
+              }}
             >
               Cancel
             </Button>
