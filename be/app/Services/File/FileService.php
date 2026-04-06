@@ -31,7 +31,7 @@ class FileService
     }
 
     /**
-     * @param  array{user_id: int|null, created_from: string|null, created_to: string|null, per_page: int, page: int}  $payload
+     * @param  array{user_id?: int|null, created_from?: string|null, created_to?: string|null, per_page?: int|null, page?: int|null, order_by?: string|null, order?: string|null}  $payload
      */
     public function listFiles(array $payload): LengthAwarePaginator
     {

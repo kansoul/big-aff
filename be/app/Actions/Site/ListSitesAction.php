@@ -2,13 +2,30 @@
 
 namespace App\Actions\Site;
 
+use App\Http\Requests\Site\ListSitesRequest;
 use App\Models\Site;
+use App\Support\Pagination\PaginationInput;
+use App\Support\Pagination\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ListSitesAction
 {
     /**
-     * @param  array{q?: string|null, status?: string|null, per_page?: int|null, page?: int|null}  $filters
+     * Columns allowed for `order_by` (must match {@see ListSitesRequest} rules).
+     *
+     * @var array<int, string>
+     */
+    public const ORDERABLE_COLUMNS = [
+        'id',
+        'name',
+        'url',
+        'status',
+        'created_at',
+        'updated_at',
+    ];
+
+    /**
+     * @param  array{keyword?: string|null, status?: string|null, per_page?: int|null, page?: int|null, order_by?: string|null, order?: string|null}  $filters
      */
     public function execute(array $filters): LengthAwarePaginator
     {
@@ -26,8 +43,15 @@ class ListSitesAction
             $query->where('status', $filters['status']);
         }
 
-        $perPage = (int) ($filters['per_page'] ?? 15);
+        SortInput::fromValidatedArray(
+            $filters,
+            self::ORDERABLE_COLUMNS,
+            defaultColumn: 'id',
+            defaultDirection: 'desc',
+        )->applyTo($query);
 
-        return $query->orderByDesc('id')->paginate($perPage);
+        $pagination = PaginationInput::fromValidatedArray($filters);
+
+        return $pagination->paginateQuery($query);
     }
 }

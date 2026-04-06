@@ -2,19 +2,35 @@
 
 namespace App\Actions\File;
 
+use App\Http\Requests\File\ListFilesRequest;
 use App\Models\File;
+use App\Support\Pagination\PaginationInput;
+use App\Support\Pagination\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 
 class ListFilesAction
 {
-    const DEFAULT_PER_PAGE = 15;
     /**
-     * @param  array{user_id: int|null, created_from: string|null, created_to: string|null, per_page: int, page: int}  $payload
+     * Columns allowed for `order_by` (must match {@see ListFilesRequest} rules).
+     *
+     * @var array<int, string>
+     */
+    public const ORDERABLE_COLUMNS = [
+        'id',
+        'created_at',
+        'updated_at',
+        'original_name',
+        'size',
+        'file_name',
+    ];
+
+    /**
+     * @param  array{user_id?: int|null, created_from?: string|null, created_to?: string|null, per_page?: int|null, page?: int|null, order_by?: string|null, order?: string|null}  $payload
      */
     public function execute(array $payload): LengthAwarePaginator
     {
-        $query = File::query()->orderByDesc('created_at')
+        $query = File::query()
             ->when(isset($payload['user_id']), function ($query) use ($payload) {
                 $query->where('user_id', $payload['user_id']);
             })
@@ -25,8 +41,15 @@ class ListFilesAction
                 $query->where('created_at', '<=', Carbon::parse($payload['created_to'])->endOfDay());
             });
 
-        return $query->paginate(
-            perPage: self::DEFAULT_PER_PAGE,
-        );
+        SortInput::fromValidatedArray(
+            $payload,
+            self::ORDERABLE_COLUMNS,
+            defaultColumn: 'created_at',
+            defaultDirection: 'desc',
+        )->applyTo($query);
+
+        $pagination = PaginationInput::fromValidatedArray($payload);
+
+        return $pagination->paginateQuery($query);
     }
 }
