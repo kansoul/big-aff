@@ -97,6 +97,7 @@ class SiteController extends BaseController
      * Update an existing site (partial update supported). Optionally replace logo or favicon.
      *
      * @urlParam site integer required The site ID. Example: 1
+     *
      * @bodyParam name string optional Site name. Example: Updated Site
      * @bodyParam url string optional Site URL (must be unique). Example: https://updated.com
      * @bodyParam description string optional Description. Example: Updated description
@@ -156,6 +157,7 @@ class SiteController extends BaseController
      * Assign one or more users to a site.
      *
      * @urlParam site integer required The site ID. Example: 1
+     *
      * @bodyParam user_ids integer[] required Array of user IDs to assign. Example: [1, 2, 3]
      *
      * @response 200 {"message": "Users assigned successfully."}

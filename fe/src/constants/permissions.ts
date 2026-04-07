@@ -4,6 +4,7 @@
  */
 
 export const PermissionSlugs = {
+  FullAccess: '*',
   ReportOverviewView: 'report.overview.view',
   ReportExport: 'report.export',
   SettingsUsersView: 'settings.users.view',
@@ -20,6 +21,10 @@ export const PermissionSlugs = {
   SettingsSitesUpdate: 'settings.sites.update',
   SettingsSitesDelete: 'settings.sites.delete',
   SettingsSitesAssign: 'settings.sites.assign',
+  CategoriesView: 'categories.view',
+  CategoriesCreate: 'categories.create',
+  CategoriesUpdate: 'categories.update',
+  CategoriesDelete: 'categories.delete',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -27,6 +32,9 @@ export function allPermissionSlugs(): string[] {
 }
 
 export function hasFullAccess(perms: string[]): boolean {
+  if (perms.includes(PermissionSlugs.FullAccess)) {
+    return true
+  }
   const all = allPermissionSlugs()
   if (all.length === 0) {
     return false
@@ -166,6 +174,38 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
             key: 'SettingsSitesAssign',
             slug: PermissionSlugs.SettingsSitesAssign,
             label: 'Assign users',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'categories',
+    label: 'Categories',
+    screens: [
+      {
+        id: 'categories',
+        label: 'Categories',
+        permissions: [
+          {
+            key: 'CategoriesView',
+            slug: PermissionSlugs.CategoriesView,
+            label: 'View',
+          },
+          {
+            key: 'CategoriesCreate',
+            slug: PermissionSlugs.CategoriesCreate,
+            label: 'Create',
+          },
+          {
+            key: 'CategoriesUpdate',
+            slug: PermissionSlugs.CategoriesUpdate,
+            label: 'Update',
+          },
+          {
+            key: 'CategoriesDelete',
+            slug: PermissionSlugs.CategoriesDelete,
+            label: 'Delete',
           },
         ],
       },
