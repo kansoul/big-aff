@@ -52,6 +52,7 @@ export function FileUploadInput({
 
   const handleFile = useCallback(
     (file: File) => {
+      if (!file.type.startsWith('image/')) return
       onChange?.(file)
     },
     [onChange],
@@ -156,13 +157,12 @@ export function FileUploadInput({
 
   if (value) {
     const previewUrl = value instanceof File ? URL.createObjectURL(value) : null
-    const isImage = value.type.startsWith('image/')
     const sizeKb = (value.size / 1024).toFixed(0)
 
     return (
       <>
         <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 p-2">
-          {isImage && previewUrl ? (
+          {previewUrl ? (
             <button
               type="button"
               className="group relative shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
@@ -224,7 +224,7 @@ export function FileUploadInput({
             onChange={handleFileChange}
           />
         </div>
-        {isImage && previewUrl ? (
+        {previewUrl ? (
           <ImagePreviewDialog
             src={previewUrl}
             open={previewOpen}

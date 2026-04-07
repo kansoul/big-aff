@@ -89,7 +89,7 @@ export function EditSitePage() {
       setFormError(null)
       setSubmitting(true)
       await sitesApi.update(Number(id), values)
-      toast.success('Site updated.')
+      toast.success('Site updated successfully')
       void navigate(PATHS.settingsSites)
     } catch (err) {
       setFormError(formatApiError(err))

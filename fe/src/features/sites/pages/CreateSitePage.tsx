@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, ArrowLeft, Loader2, Save } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { sitesApi } from '@/features/sites/api'
 import { siteCreateSchema, type SiteCreateFormValues } from '@/features/sites/types'
@@ -35,7 +36,8 @@ export function CreateSitePage() {
       setFormError(null)
       setSubmitting(true)
       await sitesApi.create(values)
-      navigate(PATHS.settingsSites)
+      toast.success('Site created successfully')
+      void navigate(PATHS.settingsSites)
     } catch (err) {
       setFormError(formatApiError(err))
     } finally {
@@ -51,7 +53,7 @@ export function CreateSitePage() {
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          onClick={() => navigate(PATHS.settingsSites)}
+          onClick={() => void navigate(PATHS.settingsSites)}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -79,7 +81,7 @@ export function CreateSitePage() {
               type="button"
               variant="outline"
               disabled={submitting}
-              onClick={() => navigate(PATHS.settingsSites)}
+              onClick={() => void navigate(PATHS.settingsSites)}
             >
               Cancel
             </Button>
