@@ -2,7 +2,9 @@
 
 use App\Enums\Permission;
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\UserController;
@@ -51,6 +53,34 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::SettingsSitesDelete->value);
         Route::post('{site}/assign-users', [SiteController::class, 'assignUsers'])
             ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
+    });
+
+    Route::prefix('posts')->group(function () {
+        Route::get('options', [PostController::class, 'options'])
+            ->middleware('permission.scope:'.Permission::AdsLinksCreate->value.'|'.Permission::AdsLinksView->value);
+        Route::get('/', [PostController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::PostsView->value);
+        Route::post('/', [PostController::class, 'store'])
+            ->middleware('permission.scope:'.Permission::PostsCreate->value);
+        Route::get('{post}', [PostController::class, 'show'])
+            ->middleware('permission.scope:'.Permission::PostsView->value);
+        Route::match(['put', 'patch'], '{post}', [PostController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::PostsUpdate->value);
+        Route::delete('{post}', [PostController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::PostsDelete->value);
+    });
+
+    Route::prefix('categories')->group(function () {
+        Route::get('/', [CategoryController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::CategoriesView->value);
+        Route::post('/', [CategoryController::class, 'store'])
+            ->middleware('permission.scope:'.Permission::CategoriesCreate->value);
+        Route::get('{category}', [CategoryController::class, 'show'])
+            ->middleware('permission.scope:'.Permission::CategoriesView->value);
+        Route::match(['put', 'patch'], '{category}', [CategoryController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::CategoriesUpdate->value);
+        Route::delete('{category}', [CategoryController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::CategoriesDelete->value);
     });
 
     Route::prefix('roles')->group(function () {

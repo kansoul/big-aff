@@ -23,6 +23,40 @@ Accept: application/json
 Content-Type: application/json
 ```
 
+### Cách dùng curl với session (cookie jar)
+
+Tất cả curl ví dụ bên dưới dùng **cookie jar** (`cookies.txt`) để tự động lưu và gửi lại cookies giữa các request.
+
+**Bước 1 — Lấy CSRF cookie:**
+```bash
+curl -c cookies.txt -b cookies.txt \
+  -X GET http://localhost:8000/sanctum/csrf-cookie \
+  -H "Accept: application/json"
+```
+
+**Bước 2 — Đăng nhập (lưu session vào cookies.txt):**
+```bash
+XSRF_TOKEN=$(grep XSRF-TOKEN cookies.txt | awk '{print $NF}' | python3 -c "import sys,urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))")
+
+curl -c cookies.txt -b cookies.txt \
+  -X POST http://localhost:8000/api/auth/login \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "X-XSRF-TOKEN: $XSRF_TOKEN" \
+  -d '{"email":"admin@example.com","password":"password"}'
+```
+
+> Sau bước này `cookies.txt` chứa cả `laravel_session` và `XSRF-TOKEN`. Mọi curl tiếp theo chỉ cần thêm `-c cookies.txt -b cookies.txt -H "X-XSRF-TOKEN: $XSRF_TOKEN"`.
+
+**Alias tiện lợi (thêm vào shell session):**
+```bash
+# Chạy một lần sau khi đăng nhập thành công
+export XSRF_TOKEN=$(grep XSRF-TOKEN cookies.txt | awk '{print $NF}' | python3 -c "import sys,urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))")
+alias acurl='curl -c cookies.txt -b cookies.txt -H "Accept: application/json" -H "Content-Type: application/json" -H "X-XSRF-TOKEN: $XSRF_TOKEN"'
+```
+
+> Sau khi có `acurl`, tất cả ví dụ bên dưới dùng `acurl` thay cho `curl` — không cần copy cookie thủ công.
+
 ## Response Format
 
 `sendResponse()` trả về `response()->json($data, $code)` trực tiếp — payload đúng như controller truyền vào (thường là `{"data": ...}`), **không** có bọc mặc định `success` / `message`.
@@ -69,6 +103,12 @@ Phải gọi trước khi đăng nhập để nhận XSRF-TOKEN cookie.
 
 **Response:** `204 No Content` + Set-Cookie header
 
+```bash
+curl -c cookies.txt -b cookies.txt \
+  -X GET http://localhost:8000/sanctum/csrf-cookie \
+  -H "Accept: application/json"
+```
+
 ---
 
 ### Đăng nhập
@@ -85,6 +125,17 @@ POST /api/auth/login
   "email": "admin@example.com",
   "password": "password"
 }
+```
+
+```bash
+XSRF_TOKEN=$(grep XSRF-TOKEN cookies.txt | awk '{print $NF}' | python3 -c "import sys,urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))")
+
+curl -c cookies.txt -b cookies.txt \
+  -X POST http://localhost:8000/api/auth/login \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "X-XSRF-TOKEN: $XSRF_TOKEN" \
+  -d '{"email":"admin@example.com","password":"password"}'
 ```
 
 **Response thành công (200):**
@@ -121,6 +172,10 @@ GET /api/auth/me
 
 **Yêu cầu:** Xác thực (auth:sanctum)
 
+```bash
+acurl -X GET http://localhost:8000/api/auth/me
+```
+
 **Response (200):**
 ```json
 {
@@ -148,6 +203,10 @@ POST /api/auth/logout
 
 **Yêu cầu:** Xác thực (auth:sanctum)
 
+```bash
+acurl -X POST http://localhost:8000/api/auth/logout
+```
+
 **Response:** `204 No Content` với body rỗng (`[]`).
 
 ---
@@ -163,6 +222,10 @@ GET /api/users
 ```
 
 **Permission yêu cầu:** `SettingsUsersView` (slug: `'settings.users.view'`)
+
+```bash
+acurl -X GET http://localhost:8000/api/users
+```
 
 **Response (200):**
 ```json
@@ -203,6 +266,11 @@ POST /api/users
   "password_confirmation": "password123",
   "role_id": 2
 }
+```
+
+```bash
+acurl -X POST http://localhost:8000/api/users \
+  -d '{"name":"Jane Doe","email":"jane@example.com","password":"password123","password_confirmation":"password123","role_id":2}'
 ```
 
 **Response (200):**
@@ -253,6 +321,11 @@ PUT /api/users/{user}
 }
 ```
 
+```bash
+acurl -X PUT http://localhost:8000/api/users/5 \
+  -d '{"name":"Jane Smith","email":"jane.smith@example.com","role_id":3}'
+```
+
 **Response (200):**
 ```json
 {
@@ -273,6 +346,10 @@ DELETE /api/users/{user}
 **Path Parameters:**
 - `user` — ID của user cần xóa
 
+```bash
+acurl -X DELETE http://localhost:8000/api/users/5
+```
+
 **Response:** `204 No Content` với body rỗng (`[]`).
 
 ---
@@ -286,6 +363,10 @@ GET /api/users/parent-child-assignments
 ```
 
 **Permission yêu cầu:** `SettingsUsersView` (slug: `'settings.users.view'`)
+
+```bash
+acurl -X GET http://localhost:8000/api/users/parent-child-assignments
+```
 
 **Response (200):**
 ```json
@@ -328,6 +409,11 @@ PUT /api/users/{user}/parent-children
 }
 ```
 
+```bash
+acurl -X PUT http://localhost:8000/api/users/1/parent-children \
+  -d '{"child_user_ids":[3,4,5]}'
+```
+
 **Response (200):**
 ```json
 {
@@ -352,6 +438,10 @@ GET /api/roles
 ```
 
 **Permission yêu cầu:** `SettingsRolesView` (slug: `'settings.roles.view'`) **HOẶC** `SettingsUsersCreate` (slug: `'settings.users.create'`) **HOẶC** `SettingsUsersUpdate` (slug: `'settings.users.update'`)
+
+```bash
+acurl -X GET http://localhost:8000/api/roles
+```
 
 **Response (200):**
 ```json
@@ -389,6 +479,11 @@ POST /api/roles
 }
 ```
 
+```bash
+acurl -X POST http://localhost:8000/api/roles \
+  -d '{"name":"Moderator","permissions":["settings.users.view","settings.roles.view","settings.roles.create"]}'
+```
+
 **Response (200):**
 ```json
 {
@@ -421,6 +516,11 @@ PUT /api/roles/{role}
 }
 ```
 
+```bash
+acurl -X PUT http://localhost:8000/api/roles/4 \
+  -d '{"name":"Moderator","permissions":["settings.users.view","settings.roles.view","settings.roles.update"]}'
+```
+
 **Response (200):**
 ```json
 {
@@ -440,6 +540,10 @@ DELETE /api/roles/{role}
 
 **Path Parameters:**
 - `role` — ID của role cần xóa
+
+```bash
+acurl -X DELETE http://localhost:8000/api/roles/4
+```
 
 **Response:** `204 No Content` với body rỗng (`[]`).
 
