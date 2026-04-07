@@ -134,7 +134,7 @@ export function MediaPage() {
   )
 
   const onFileClick = useCallback((file: MediaFile) => {
-    if (file.mime_type?.startsWith('image/') || file.mime_type?.startsWith('video/')) {
+    if (file.mime_type?.startsWith('image/')) {
       setPreviewFile(file)
     } else {
       setDetailError(null)
@@ -206,7 +206,6 @@ export function MediaPage() {
         src={previewFile?.url}
         open={!!previewFile}
         onClose={() => setPreviewFile(null)}
-        type={previewFile?.mime_type?.startsWith('video/') ? 'video' : 'image'}
       />
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
