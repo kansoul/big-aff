@@ -45,7 +45,7 @@ class SiteController extends BaseController
     /**
      * Create site
      *
-     * Create a new site. Optionally upload logo and favicon files.
+     * Create a new site. Optionally set logo and favicon by file IDs.
      *
      * @bodyParam name string required Site name. Example: My Site
      * @bodyParam url string required Site URL (must be unique). Example: https://mysite.com
@@ -55,8 +55,8 @@ class SiteController extends BaseController
      * @bodyParam settings.gtm string optional Google Tag Manager ID. Example: GTM-XXXXXX
      * @bodyParam settings.fb_pixel string optional Facebook Pixel ID. Example: 123456789
      * @bodyParam settings.theme string optional Theme name. Example: theme-1
-     * @bodyParam logo file optional Logo image (max 5MB).
-     * @bodyParam favicon file optional Favicon image (max 1MB).
+     * @bodyParam logo_id int optional ID of uploaded file for logo (files table).
+     * @bodyParam favicon_id int optional ID of uploaded file for favicon (files table).
      *
      * @response 201 {"data": {"id": 1, "name": "My Site", "url": "https://mysite.com", "description": "A description", "status": "active", "settings": {"gtm": null, "fb_pixel": null, "theme_name": null}, "logo": null, "favicon": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
      * @response 422 {"message": "The name field is required.", "errors": {"name": ["The name field is required."]}}
@@ -94,7 +94,7 @@ class SiteController extends BaseController
     /**
      * Update site
      *
-     * Update an existing site (partial update supported). Optionally replace logo or favicon.
+     * Update an existing site (partial update supported). Optionally set logo_id or favicon_id.
      *
      * @urlParam site integer required The site ID. Example: 1
      *
@@ -106,8 +106,8 @@ class SiteController extends BaseController
      * @bodyParam settings.gtm string optional Google Tag Manager ID. Example: GTM-XXXXXX
      * @bodyParam settings.fb_pixel string optional Facebook Pixel ID. Example: 123456789
      * @bodyParam settings.theme string optional Theme name. Example: theme-1
-     * @bodyParam logo file optional Replacement logo image (max 5MB).
-     * @bodyParam favicon file optional Replacement favicon image (max 1MB).
+     * @bodyParam logo_id int optional ID of uploaded file for logo (files table).
+     * @bodyParam favicon_id int optional ID of uploaded file for favicon (files table).
      *
      * @response 200 {"data": {"id": 1, "name": "Updated Site", "url": "https://updated.com", "description": "Updated description", "status": "maintenance", "settings": {}, "logo": null, "favicon": null, "created_by": 1, "updated_by": 2, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
      * @response 404 {"message": "No query results for model [App\\Models\\Site] 1"}
