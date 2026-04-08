@@ -12,7 +12,6 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
-  eslintPluginPrettierRecommended,
   {
     languageOptions: {
       globals: {
@@ -43,7 +42,6 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['off', { allowConstantExport: true }],
-      semi: ['error', 'never'],
       'prettier/prettier': [
         'error',
         {
@@ -78,4 +76,5 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
+  eslintPluginPrettierRecommended,
 )
