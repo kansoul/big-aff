@@ -30,14 +30,10 @@ import {
 } from '@/components/ui/select'
 import { RoleFormErrorAlert } from '@/features/settings/components/RoleFormErrorAlert'
 
+const DIRECTORY_OPTIONS = ['media', 'media/site', 'media/posts'] as const
+
 const uploadFormSchema = z.object({
-  disk: z.enum(['public', 's3']).or(z.literal('')).optional(),
-  directory: z
-    .string()
-    .max(255, 'Max 255 characters')
-    .regex(/^[a-zA-Z0-9_\-/]*$/, 'Only letters, numbers, _, -, / allowed')
-    .optional()
-    .or(z.literal('')),
+  directory: z.enum(DIRECTORY_OPTIONS).or(z.literal('')).optional(),
   alt_text: z.string().max(255, 'Max 255 characters').optional().or(z.literal('')),
 })
 
@@ -51,7 +47,7 @@ type UploadFileDialogProps = {
   submitting: boolean
   onSubmit: (
     file: File,
-    options: { disk?: string | null; directory?: string | null; alt_text?: string | null },
+    options: { directory?: string | null; alt_text?: string | null },
   ) => Promise<void>
 }
 
@@ -69,14 +65,14 @@ export function UploadFileDialog({
 
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(uploadFormSchema),
-    defaultValues: { disk: '', directory: '', alt_text: '' },
+    defaultValues: { directory: '', alt_text: '' },
   })
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
       if (!next && submitting) return
       if (!next) {
-        form.reset({ disk: '', directory: '', alt_text: '' })
+        form.reset({ directory: '', alt_text: '' })
         setSelectedFile(null)
         setFileError(null)
         if (fileInputRef.current) fileInputRef.current.value = ''
@@ -105,12 +101,11 @@ export function UploadFileDialog({
     }
     try {
       await onSubmit(selectedFile, {
-        disk: values.disk || null,
         directory: values.directory || null,
         alt_text: values.alt_text || null,
       })
       // Reset local state on success before dialog closes
-      form.reset({ disk: '', directory: '', alt_text: '' })
+      form.reset({ directory: '', alt_text: '' })
       setSelectedFile(null)
       setFileError(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -186,35 +181,24 @@ export function UploadFileDialog({
 
             <FormField
               control={form.control}
-              name="disk"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Disk</FormLabel>
-                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Default" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="public">public</SelectItem>
-                      <SelectItem value="s3">s3</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="directory"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Directory</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. images/avatars" {...field} />
-                  </FormControl>
+                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Default (media)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {DIRECTORY_OPTIONS.map((dir) => (
+                        <SelectItem key={dir} value={dir}>
+                          {dir}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -225,7 +209,7 @@ export function UploadFileDialog({
               name="alt_text"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Alt Text</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Describe the file…" {...field} />
                   </FormControl>

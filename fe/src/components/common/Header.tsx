@@ -156,7 +156,9 @@ const MobileNav = React.memo(function MobileNav({
           const MobileLeafIcon = item.icon
           return (
             <NavLink key={item.name} to={item.href} end onClick={onNavigate} className={linkClass}>
-              <MobileLeafIcon className="size-4 shrink-0 opacity-80" aria-hidden />
+              {MobileLeafIcon && (
+                <MobileLeafIcon className="size-4 shrink-0 opacity-80" aria-hidden />
+              )}
               {item.name}
             </NavLink>
           )
@@ -187,7 +189,9 @@ const MobileNav = React.memo(function MobileNav({
                       )
                     }
                   >
-                    <MobileParentIcon className="size-4 shrink-0 opacity-80" aria-hidden />
+                    {MobileParentIcon && (
+                      <MobileParentIcon className="size-4 shrink-0 opacity-80" aria-hidden />
+                    )}
                     {item.name}
                   </NavLink>
                   <CollapsibleTrigger asChild>
@@ -212,7 +216,9 @@ const MobileNav = React.memo(function MobileNav({
                     )}
                   >
                     <span className="flex min-w-0 items-center gap-2.5">
-                      <MobileParentIcon className="size-4 shrink-0 opacity-80" aria-hidden />
+                      {MobileParentIcon && (
+                        <MobileParentIcon className="size-4 shrink-0 opacity-80" aria-hidden />
+                      )}
                       {item.name}
                     </span>
                     <ChevronDown className="size-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
@@ -312,7 +318,7 @@ export const Header = React.memo(function Header() {
                       cn(navTabBase, isActive ? navTabActive : navTabInactive)
                     }
                   >
-                    <ItemIcon className="size-3.5 shrink-0" aria-hidden />
+                    {ItemIcon && <ItemIcon className="size-3.5 shrink-0" aria-hidden />}
                     {item.name}
                   </NavLink>
                 )
@@ -332,7 +338,7 @@ export const Header = React.memo(function Header() {
                         )}
                         aria-haspopup="menu"
                       >
-                        <ParentIcon className="size-3.5 shrink-0" aria-hidden />
+                        {ParentIcon && <ParentIcon className="size-3.5 shrink-0" aria-hidden />}
                         {item.name}
                         <ChevronDown className="size-3.5 opacity-60" aria-hidden />
                       </button>
@@ -371,7 +377,9 @@ export const Header = React.memo(function Header() {
                       cn(navTabBase, isActive || groupActive ? navTabActive : navTabInactive)
                     }
                   >
-                    <HoverParentIcon className="size-3.5 shrink-0" aria-hidden />
+                    {HoverParentIcon && (
+                      <HoverParentIcon className="size-3.5 shrink-0" aria-hidden />
+                    )}
                     {item.name}
                     <ChevronDown
                       className="size-3.5 opacity-60 transition-transform group-hover:rotate-180"

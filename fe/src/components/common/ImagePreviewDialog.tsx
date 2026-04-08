@@ -15,7 +15,7 @@ export function ImagePreviewDialog({ src, open, onClose }: ImagePreviewDialogPro
       }}
     >
       <DialogContent
-        className="max-w-none w-screen h-screen border-none bg-transparent p-0 shadow-none flex items-center justify-center m-0"
+        className="max-w-none w-screen h-screen border-0 outline-none ring-0 bg-transparent p-0 shadow-none! flex items-center justify-center m-0"
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">Image Preview</DialogTitle>
