@@ -1,0 +1,81 @@
+name: Discord PR Notification
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  notify-discord:
+    name: Send Discord Notification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Discord Embed
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          PR_AUTHOR_AVATAR="${{ github.event.pull_request.user.avatar_url }}"
+          PR_AUTHOR_URL="${{ github.event.pull_request.user.html_url }}"
+          PR_BODY="${{ github.event.pull_request.body }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          HEAD_BRANCH="${{ github.event.pull_request.head.ref }}"
+          BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+          REPO_NAME="${{ github.repository }}"
+
+          # Giới hạn body tối đa 300 ký tự
+          PR_BODY_SHORT=$(echo "$PR_BODY" | head -c 300)
+          if [ ${#PR_BODY} -gt 300 ]; then
+            PR_BODY_SHORT="${PR_BODY_SHORT}..."
+          fi
+
+          # Escape ký tự đặc biệt cho JSON
+          PR_BODY_ESCAPED=$(echo "$PR_BODY_SHORT" | python3 -c "
+          import sys, json
+          text = sys.stdin.read().strip()
+          if not text:
+              text = '_Không có mô tả_'
+          print(json.dumps(text)[1:-1])
+          ")
+
+          PR_TITLE_ESCAPED=$(echo "$PR_TITLE" | python3 -c "
+          import sys, json
+          print(json.dumps(sys.stdin.read().strip())[1:-1])
+          ")
+
+          # Gửi Discord Embed
+          curl -s -o /dev/null -w "%{http_code}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [
+                {
+                  \"title\": \"🔀 Pull Request #${PR_NUMBER}: ${PR_TITLE_ESCAPED}\",
+                  \"url\": \"${PR_URL}\",
+                  \"color\": 5814783,
+                  \"author\": {
+                    \"name\": \"${PR_AUTHOR}\",
+                    \"url\": \"${PR_AUTHOR_URL}\",
+                    \"icon_url\": \"${PR_AUTHOR_AVATAR}\"
+                  },
+                  \"fields\": [
+                    {
+                      \"name\": \"🌿 Branch\",
+                      \"value\": \"\`${HEAD_BRANCH}\` → \`${BASE_BRANCH}\`\",
+                      \"inline\": false
+                    },
+                    {
+                      \"name\": \"📝 Mô tả\",
+                      \"value\": \"${PR_BODY_ESCAPED}\",
+                      \"inline\": false
+                    }
+                  ],
+                  \"footer\": {
+                    \"text\": \"GitHub Pull Request\"
+                  },
+                  \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+                }
+              ]
+            }" \
+            "$DISCORD_WEBHOOK_URL"
