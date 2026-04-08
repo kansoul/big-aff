@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckWhitelist;
 use App\Http\Middleware\EnsureAppUser;
 use App\Http\Middleware\EnsurePermissionScope;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified' => EnsureEmailIsVerified::class,
             'permission.scope' => EnsurePermissionScope::class,
             'ensure.app.user' => EnsureAppUser::class,
+            'check.whitelist' => CheckWhitelist::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

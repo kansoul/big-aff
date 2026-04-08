@@ -82,6 +82,9 @@ enum Permission: string
 
     case CategoriesDelete = 'categories.delete';             // bit 30 →  1073741824
 
+    // —— Follows ——
+    case FollowsView = 'follows.view';                       // bit 31 →  2147483648
+
     /**
      * Bit value for this permission (1 << declaration index).
      */
