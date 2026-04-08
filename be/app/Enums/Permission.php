@@ -84,6 +84,7 @@ enum Permission: string
 
     // —— Follows ——
     case FollowsView = 'follows.view';                       // bit 31 →  2147483648
+    case FollowsDelete = 'follows.delete';                   // bit 32 →  4294967296
 
     /**
      * Bit value for this permission (1 << declaration index).

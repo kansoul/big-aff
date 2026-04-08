@@ -22,8 +22,12 @@ Route::middleware('check.whitelist')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('follows', [FollowController::class, 'index'])
-        ->middleware('permission.scope:'.Permission::FollowsView->value);
+    Route::prefix('follows')->group(function () {
+        Route::get('/', [FollowController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::FollowsView->value);
+        Route::delete('/{follow}', [FollowController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::FollowsDelete->value);
+    });
 
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);

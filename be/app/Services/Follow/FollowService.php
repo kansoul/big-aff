@@ -2,6 +2,7 @@
 
 namespace App\Services\Follow;
 
+use App\Actions\Follow\DeleteFollowAction;
 use App\Actions\Follow\ListFollowsAction;
 use App\Actions\Follow\SubscribeFollowAction;
 use App\Actions\Follow\UnsubscribeFollowAction;
@@ -14,6 +15,7 @@ class FollowService
         private readonly ListFollowsAction $listFollowsAction,
         private readonly SubscribeFollowAction $subscribeFollowAction,
         private readonly UnsubscribeFollowAction $unsubscribeFollowAction,
+        private readonly DeleteFollowAction $deleteFollowAction,
     ) {}
 
     /**
@@ -32,8 +34,16 @@ class FollowService
         return $this->subscribeFollowAction->execute($data);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function unsubscribe(array $data): void
     {
         $this->unsubscribeFollowAction->execute($data);
+    }
+
+    public function delete(Follow $follow): void
+    {
+        $this->deleteFollowAction->execute($follow);
     }
 }

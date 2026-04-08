@@ -6,6 +6,7 @@ use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\Follow\ListFollowsRequest;
 use App\Http\Requests\Follow\StoreFollowRequest;
 use App\Http\Resources\FollowResource;
+use App\Models\Follow;
 use App\Services\Follow\FollowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -95,5 +96,21 @@ class FollowController extends BaseController
 
             return $this->sendError('Failed to unsubscribe', [], 500);
         }
+    }
+
+    /**
+     * Delete follow
+     *
+     * Delete a follow.
+     *
+     * @urlParam follow integer required The follow ID. Example: 1
+     *
+     * @response 200 {"data": []}
+     */
+    public function destroy(Follow $follow): JsonResponse
+    {
+        $this->followService->delete($follow);
+
+        return $this->sendResponse([]);
     }
 }
