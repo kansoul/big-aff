@@ -9,7 +9,7 @@ trait FileScope
 {
     public function scopeVisibleToUser(Builder $query, User $user): Builder
     {
-        if ($user->is_full_access) {
+        if ($user->isAdmin) {
             return $query;
         }
 
