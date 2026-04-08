@@ -6,7 +6,7 @@ import {
   MRT_ShowHideColumnsButton,
   MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
-import { Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import type { Role } from '@/shared/types'
@@ -131,7 +131,7 @@ function SettingsRolesTableCardInner({
       density: 'md',
       columnPinning: { right: ['actions'] },
     },
-    state: { isLoading: loading },
+    state: { showLoadingOverlay: loading },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
@@ -157,12 +157,7 @@ function SettingsRolesTableCardInner({
         <MRT_ShowHideColumnsButton table={t} />
       </div>
     ),
-    renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <ShieldCheck className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No roles yet. Create one to get started.</p>
-      </div>
-    ),
+    renderEmptyRowsFallback: () => null,
   })
 
   return (

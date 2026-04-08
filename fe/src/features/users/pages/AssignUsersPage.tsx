@@ -34,21 +34,33 @@ export function AssignUsersPage() {
     [],
   )
 
-  const load = useCallback(async () => {
-    try {
-      setLoading(true)
-      const payload = await usersApi.listParentChildAssignments()
-      applyPayload(payload)
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    let ignore = false
+
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const payload = await usersApi.listParentChildAssignments()
+        if (!ignore) {
+          applyPayload(payload)
+        }
+      } catch (err) {
+        if (!ignore) {
+          toast.error(formatApiError(err))
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void fetchData()
+
+    return () => {
+      ignore = true
     }
   }, [applyPayload])
-
-  useEffect(() => {
-    void load()
-  }, [load])
 
   const onDraftChange = useCallback((parentId: number, childIds: number[]) => {
     setDrafts((d) => ({ ...d, [parentId]: childIds }))

@@ -46,7 +46,7 @@ export function SettingsSitesPage() {
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 15 })
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
   const [filters, setFilters] = useState<SiteFilterParams>(DEFAULT_FILTERS)
   const [globalFilter, setGlobalFilter] = useState('')
   const isFirstRender = useRef(true)
@@ -64,22 +64,39 @@ export function SettingsSitesPage() {
     return () => clearTimeout(timer)
   }, [globalFilter])
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
-      const res = await sitesApi.list(pagination.pageIndex + 1, pagination.pageSize, filters)
-      setData(res.data.data)
-      setRowCount(res.data.pagination.total)
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [pagination, filters])
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const loadData = useCallback(() => {
+    setRefreshSignal((s) => s + 1)
+  }, [])
 
   useEffect(() => {
-    void loadData()
-  }, [loadData])
+    let ignore = false
+
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const res = await sitesApi.list(pagination.pageIndex + 1, pagination.pageSize, filters)
+        if (!ignore) {
+          setData(res.data.data)
+          setRowCount(res.data.pagination.total)
+        }
+      } catch (err) {
+        if (!ignore) {
+          toast.error(formatApiError(err))
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void fetchData()
+
+    return () => {
+      ignore = true
+    }
+  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
   const onFilterChange = useCallback((field: keyof SiteFilterParams, value: string | null) => {
     setFilters((prev) => ({ ...prev, [field]: value }))
@@ -111,7 +128,7 @@ export function SettingsSitesPage() {
       await sitesApi.delete(deletingSite.id)
       toast.success(`Site "${deletingSite.name}" deleted.`)
       setDeletingSite(null)
-      void loadData()
+      loadData()
     } catch (err) {
       toast.error(formatApiError(err))
     } finally {

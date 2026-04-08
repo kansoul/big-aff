@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AlertCircle, ArrowLeft, Eye, Loader2, Save, Trash2 } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Eye, Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { sitesApi } from '@/features/sites/api'
@@ -12,13 +12,10 @@ import {
   type SiteDetail,
 } from '@/features/sites/types'
 import { SiteFormSections } from '@/features/sites/components/SiteFormSections'
-import { DeleteSiteDialog } from '@/features/sites/components/DeleteSiteDialog'
 import { formatApiError } from '@/features/settings/components'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { PATHS, siteViewPath } from '@/constants/paths'
-import { useAuthStore } from '@/hooks/useAuthStore'
-import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 
 export function EditSitePage() {
   const { id } = useParams<{ id: string }>()
@@ -26,19 +23,8 @@ export function EditSitePage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-  const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null)
-  const [existingFaviconUrl, setExistingFaviconUrl] = useState<string | null>(null)
 
   const [siteData, setSiteData] = useState<SiteDetail | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-
-  const user = useAuthStore((s) => s.user)
-  const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
-  const canDelete = useMemo(
-    () => hasPermission(perms, PermissionSlugs.SettingsSitesDelete),
-    [perms],
-  )
 
   const form = useForm<SiteCreateFormValues>({
     resolver: zodResolver(siteCreateSchema),
@@ -64,16 +50,14 @@ export function EditSitePage() {
           url: site.url,
           description: site.description ?? '',
           status: site.status,
-          logo: null,
-          favicon: null,
+          logo: site.logo ?? null,
+          favicon: site.favicon ?? null,
           settings: {
             gtm: site.settings?.gtm ?? '',
             fb_pixel: site.settings?.fb_pixel ?? '',
             theme: site.settings?.theme ?? '',
           },
         })
-        setExistingLogoUrl(site.logo?.url ?? null)
-        setExistingFaviconUrl(site.favicon?.url ?? null)
       } catch (err) {
         toast.error(formatApiError(err))
         void navigate(PATHS.settingsSites)
@@ -95,21 +79,6 @@ export function EditSitePage() {
       setFormError(formatApiError(err))
     } finally {
       setSubmitting(false)
-    }
-  }
-
-  const onConfirmDelete = async () => {
-    if (!siteData) return
-    try {
-      setDeleting(true)
-      await sitesApi.delete(siteData.id)
-      toast.success(`Site "${siteData.name}" deleted.`)
-      setDeleteDialogOpen(false)
-      void navigate(PATHS.settingsSites)
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setDeleting(false)
     }
   }
 
@@ -146,7 +115,7 @@ export function EditSitePage() {
               variant="outline"
               size="sm"
               className="gap-1.5"
-              disabled={submitting || deleting}
+              disabled={submitting}
               onClick={() => {
                 void navigate(siteViewPath(siteData.id))
               }}
@@ -155,19 +124,6 @@ export function EditSitePage() {
               View Detail
             </Button>
           )}
-          {canDelete && siteData ? (
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              className="gap-1.5"
-              disabled={submitting || deleting}
-              onClick={() => setDeleteDialogOpen(true)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete Site
-            </Button>
-          ) : null}
         </div>
       </div>
 
@@ -178,11 +134,7 @@ export function EditSitePage() {
           }}
           className="flex flex-col gap-6"
         >
-          <SiteFormSections
-            control={form.control}
-            existingLogoUrl={existingLogoUrl}
-            existingFaviconUrl={existingFaviconUrl}
-          />
+          <SiteFormSections control={form.control} />
 
           {formError ? (
             <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
@@ -218,13 +170,6 @@ export function EditSitePage() {
           </div>
         </form>
       </Form>
-
-      <DeleteSiteDialog
-        site={deleteDialogOpen ? siteData : null}
-        onOpenChange={setDeleteDialogOpen}
-        deleting={deleting}
-        onConfirmDelete={onConfirmDelete}
-      />
     </div>
   )
 }

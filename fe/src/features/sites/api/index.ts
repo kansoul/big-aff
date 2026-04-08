@@ -24,38 +24,33 @@ export const sitesApi = {
 
   delete: (id: number) => axiosInstance.delete(`/sites/${id}`),
 
-  update: (id: number, values: SiteCreateFormValues) => {
-    const fd = new FormData()
-    fd.append('_method', 'PUT')
-    fd.append('name', values.name)
-    fd.append('url', values.url)
-    if (values.description !== undefined) fd.append('description', values.description)
-    if (values.status !== undefined) fd.append('status', values.status)
-    if (values.logo instanceof File) fd.append('logo', values.logo)
-    if (values.favicon instanceof File) fd.append('favicon', values.favicon)
-    if (values.settings?.gtm !== undefined) fd.append('settings[gtm]', values.settings.gtm)
-    if (values.settings?.fb_pixel !== undefined)
-      fd.append('settings[fb_pixel]', values.settings.fb_pixel)
-    if (values.settings?.theme !== undefined) fd.append('settings[theme]', values.settings.theme)
-    return axiosInstance.post<{ data: SiteDetail }>(`/sites/${id}`, fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-  },
+  update: (id: number, values: SiteCreateFormValues) =>
+    axiosInstance.put<{ data: SiteDetail }>(`/sites/${id}`, {
+      name: values.name,
+      url: values.url,
+      description: values.description ?? null,
+      status: values.status ?? null,
+      logo_id: values.logo?.id ?? null,
+      favicon_id: values.favicon?.id ?? null,
+      settings: {
+        gtm: values.settings?.gtm ?? null,
+        fb_pixel: values.settings?.fb_pixel ?? null,
+        theme: values.settings?.theme ?? null,
+      },
+    }),
 
-  create: (values: SiteCreateFormValues) => {
-    const fd = new FormData()
-    fd.append('name', values.name)
-    fd.append('url', values.url)
-    if (values.description !== undefined) fd.append('description', values.description)
-    if (values.status !== undefined) fd.append('status', values.status)
-    if (values.logo instanceof File) fd.append('logo', values.logo)
-    if (values.favicon instanceof File) fd.append('favicon', values.favicon)
-    if (values.settings?.gtm !== undefined) fd.append('settings[gtm]', values.settings.gtm)
-    if (values.settings?.fb_pixel !== undefined)
-      fd.append('settings[fb_pixel]', values.settings.fb_pixel)
-    if (values.settings?.theme !== undefined) fd.append('settings[theme]', values.settings.theme)
-    return axiosInstance.post<{ data: Site }>('/sites', fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-  },
+  create: (values: SiteCreateFormValues) =>
+    axiosInstance.post<{ data: Site }>('/sites', {
+      name: values.name,
+      url: values.url,
+      description: values.description ?? null,
+      status: values.status ?? null,
+      logo_id: values.logo?.id ?? null,
+      favicon_id: values.favicon?.id ?? null,
+      settings: {
+        gtm: values.settings?.gtm ?? null,
+        fb_pixel: values.settings?.fb_pixel ?? null,
+        theme: values.settings?.theme ?? null,
+      },
+    }),
 }

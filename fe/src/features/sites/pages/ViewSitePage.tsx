@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ExternalLink, Loader2 } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { sitesApi } from '@/features/sites/api'
@@ -12,13 +12,22 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { PATHS } from '@/constants/paths'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/hooks/useAuthStore'
+import { PermissionSlugs, hasPermission } from '@/constants/permissions'
+import { DeleteSiteDialog } from '@/features/sites/components'
 
 export function ViewSitePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+
+  const user = useAuthStore((s) => s.user)
+  const canDelete = hasPermission(user?.permissions ?? [], PermissionSlugs.SettingsSitesDelete)
+
   const [loading, setLoading] = useState(true)
   const [detail, setDetail] = useState<SiteDetail | null>(null)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -36,8 +45,23 @@ export function ViewSitePage() {
     void fetchDetail()
   }, [id, navigate])
 
+  const onConfirmDelete = async () => {
+    if (!detail) return
+    try {
+      setDeleting(true)
+      await sitesApi.delete(detail.id)
+      toast.success(`Site "${detail.name}" deleted.`)
+      setDeleteDialogOpen(false)
+      void navigate(PATHS.settingsSites)
+    } catch (err) {
+      toast.error(formatApiError(err))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">View Site</h1>
@@ -54,6 +78,17 @@ export function ViewSitePage() {
             <ArrowLeft className="size-4" />
             Back to Sites
           </Button>
+          {canDelete && detail ? (
+            <Button
+              variant="destructive"
+              className="gap-1.5"
+              disabled={deleting}
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="size-4" />
+              Delete Site
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -209,6 +244,13 @@ export function ViewSitePage() {
         src={previewImage}
         open={!!previewImage}
         onClose={() => setPreviewImage(null)}
+      />
+
+      <DeleteSiteDialog
+        site={deleteDialogOpen ? detail : null}
+        onOpenChange={setDeleteDialogOpen}
+        deleting={deleting}
+        onConfirmDelete={onConfirmDelete}
       />
     </div>
   )

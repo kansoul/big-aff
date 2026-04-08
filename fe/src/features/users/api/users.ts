@@ -1,16 +1,23 @@
 import type {
   ParentChildAssignmentsPayload,
   UserCreatePayload,
+  UserFilterParams,
+  UserListResponse,
   UserUpdatePayload,
 } from '@/features/users/types'
 import { axiosInstance } from '@/shared/api/axios'
 import type { ApiResponse, ManagedUser } from '@/shared/types'
 
 export const usersApi = {
-  async list(): Promise<ManagedUser[]> {
-    const response = await axiosInstance.get<ApiResponse<ManagedUser[]>>('/users')
-    return response.data.data
-  },
+  list: (page: number, perPage: number, filters: UserFilterParams) =>
+    axiosInstance.get<UserListResponse['data']>('/users', {
+      params: {
+        page,
+        per_page: perPage,
+        ...(filters.order ? { order: filters.order } : {}),
+        ...(filters.order_by ? { order_by: filters.order_by } : {}),
+      },
+    }),
 
   async create(payload: UserCreatePayload): Promise<ManagedUser> {
     const response = await axiosInstance.post<ApiResponse<ManagedUser>>('/users', payload)

@@ -1,5 +1,9 @@
 import { z } from 'zod'
 
+import type { MediaFile } from '@/features/media/types'
+
+export type { MediaFile }
+
 export type SiteStatus = 'active' | 'maintenance' | 'suspended'
 export type SiteOrderBy = 'id' | 'name' | 'url' | 'status' | 'created_at' | 'updated_at'
 export type SiteOrder = 'asc' | 'desc'
@@ -23,8 +27,8 @@ export const siteCreateSchema = z.object({
     ),
   description: z.string().optional(),
   status: z.enum(['active', 'maintenance', 'suspended']).optional(),
-  logo: z.custom<File | null>().nullable().optional(),
-  favicon: z.custom<File | null>().nullable().optional(),
+  logo: z.custom<MediaFile | null>().nullable().optional(),
+  favicon: z.custom<MediaFile | null>().nullable().optional(),
   settings: z
     .object({
       gtm: z.string().max(255).optional(),
@@ -45,21 +49,10 @@ export interface Site {
   updated_at: string
 }
 
-export interface SiteFile {
-  id: number
-  url: string
-  file_name: string
-  original_name: string
-  mime_type: string
-  size: number
-  path: string
-  alt_text?: string | null
-}
-
 export interface SiteDetail extends Site {
   description?: string | null
-  logo?: SiteFile | null
-  favicon?: SiteFile | null
+  logo?: MediaFile | null
+  favicon?: MediaFile | null
   settings?: {
     gtm?: string | null
     fb_pixel?: string | null
