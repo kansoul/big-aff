@@ -27,7 +27,6 @@ class CategoryController extends BaseController
      * Return paginated list of categories.
      *
      * @queryParam query string Search by name or description. Example: news
-     * @queryParam parent_id integer Filter by parent category. Example: 1
      * @queryParam per_page integer Items per page (max 100). Example: 15
      * @queryParam page integer Page number. Example: 1
      */
@@ -47,14 +46,13 @@ class CategoryController extends BaseController
      * Create a new category.
      *
      * @bodyParam name string required Category name (max 255). Example: Technology
-     * @bodyParam parent_id integer optional Parent category ID. Example: 1
      * @bodyParam description string optional Category description. Example: Tech news
      * @bodyParam feature_image file optional Feature image file (jpg, jpeg, png, gif, webp, max 10MB).
      */
     public function store(StoreCategoryRequest $request): JsonResponse
     {
         $category = $this->categoryService->create($request->validated());
-        $category->load(['featureMedia', 'parent']);
+        $category->load(['featureMedia']);
 
         return $this->sendResponse(
             ['data' => new CategoryResource($category)],
@@ -71,7 +69,7 @@ class CategoryController extends BaseController
      */
     public function show(Category $category): JsonResponse
     {
-        $category->load(['featureMedia', 'parent']);
+        $category->load(['featureMedia']);
 
         return $this->sendResponse(
             ['data' => new CategoryResource($category)]
@@ -86,7 +84,6 @@ class CategoryController extends BaseController
      * @urlParam category integer required The category ID. Example: 1
      *
      * @bodyParam name string optional Category name (max 255). Example: Updated Name
-     * @bodyParam parent_id integer optional Parent category ID. Example: 2
      * @bodyParam description string optional Category description. Example: Updated description
      * @bodyParam feature_image file optional Feature image file (jpg, jpeg, png, gif, webp, max 10MB).
      */

@@ -14,7 +14,6 @@ class UpdateCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'parent_id' => ['sometimes', 'nullable', 'integer', 'exists:categories,id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
             'feature_image' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:10240'],

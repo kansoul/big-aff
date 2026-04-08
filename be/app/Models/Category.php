@@ -12,7 +12,6 @@ class Category extends Model
     use CategoryRelationship, HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'parent_id',
         'name',
         'description',
         'feature_media_id',
