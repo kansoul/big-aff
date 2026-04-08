@@ -21,6 +21,17 @@ export const PermissionSlugs = {
   SettingsSitesUpdate: 'settings.sites.update',
   SettingsSitesDelete: 'settings.sites.delete',
   SettingsSitesAssign: 'settings.sites.assign',
+  AdsLinksView: 'ads-links.view',
+  AdsLinksCreate: 'ads-links.create',
+  AdsLinksUpdate: 'ads-links.update',
+  PostsView: 'posts.view',
+  PostsCreate: 'posts.create',
+  PostsUpdate: 'posts.update',
+  PostsDelete: 'posts.delete',
+  FilesView: 'files.view',
+  FilesCreate: 'files.create',
+  FilesUpdate: 'files.update',
+  FilesDelete: 'files.delete',
   CategoriesView: 'categories.view',
   CategoriesCreate: 'categories.create',
   CategoriesUpdate: 'categories.update',
@@ -174,6 +185,97 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
             key: 'SettingsSitesAssign',
             slug: PermissionSlugs.SettingsSitesAssign,
             label: 'Assign users',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'ads-links',
+    label: 'Ads Links',
+    screens: [
+      {
+        id: 'ads-links',
+        label: 'Ads Links',
+        permissions: [
+          {
+            key: 'AdsLinksView',
+            slug: PermissionSlugs.AdsLinksView,
+            label: 'View',
+          },
+          {
+            key: 'AdsLinksCreate',
+            slug: PermissionSlugs.AdsLinksCreate,
+            label: 'Create',
+          },
+          {
+            key: 'AdsLinksUpdate',
+            slug: PermissionSlugs.AdsLinksUpdate,
+            label: 'Update',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'posts',
+    label: 'Posts',
+    screens: [
+      {
+        id: 'posts',
+        label: 'Posts',
+        permissions: [
+          {
+            key: 'PostsView',
+            slug: PermissionSlugs.PostsView,
+            label: 'View',
+          },
+          {
+            key: 'PostsCreate',
+            slug: PermissionSlugs.PostsCreate,
+            label: 'Create',
+          },
+          {
+            key: 'PostsUpdate',
+            slug: PermissionSlugs.PostsUpdate,
+            label: 'Update',
+          },
+          {
+            key: 'PostsDelete',
+            slug: PermissionSlugs.PostsDelete,
+            label: 'Delete',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'files',
+    label: 'Files',
+    screens: [
+      {
+        id: 'files',
+        label: 'Files',
+        permissions: [
+          {
+            key: 'FilesView',
+            slug: PermissionSlugs.FilesView,
+            label: 'View',
+          },
+          {
+            key: 'FilesCreate',
+            slug: PermissionSlugs.FilesCreate,
+            label: 'Create',
+          },
+          {
+            key: 'FilesUpdate',
+            slug: PermissionSlugs.FilesUpdate,
+            label: 'Update',
+          },
+          {
+            key: 'FilesDelete',
+            slug: PermissionSlugs.FilesDelete,
+            label: 'Delete',
           },
         ],
       },

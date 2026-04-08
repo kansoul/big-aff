@@ -1,4 +1,4 @@
-import { memo, useMemo, type Dispatch, type SetStateAction } from 'react'
+import { memo, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import {
   MantineReactTable,
   useMantineReactTable,
@@ -6,12 +6,11 @@ import {
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
 } from 'mantine-react-table'
-import { Images, Trash2, Upload } from 'lucide-react'
+import { Trash2, Upload, ZoomIn } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -19,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
 import type { MediaFile, MediaFilterParams } from '@/features/media/types'
 import type { ManagedUser } from '@/shared/types'
 
@@ -33,22 +33,48 @@ function formatBytes(bytes: number): string {
 }
 
 type ColumnMeta = {
-  onFileClick: (file: MediaFile) => void
   onDeleteFile: (file: MediaFile) => void
+  onPreviewClick: (file: MediaFile) => void
 }
 
-function getColumns({ onFileClick, onDeleteFile }: ColumnMeta): MRT_ColumnDef<MediaFile>[] {
+function getColumns({ onDeleteFile, onPreviewClick }: ColumnMeta): MRT_ColumnDef<MediaFile>[] {
   return [
+    {
+      id: 'preview',
+      header: 'Preview',
+      size: 72,
+      enableSorting: false,
+      enableHiding: true,
+      Cell: ({ row }) => {
+        const file = row.original
+        const isImage = file.mime_type?.startsWith('image/')
+        if (!isImage || !file.url) {
+          return <span className="text-muted-foreground/50">—</span>
+        }
+        return (
+          <button
+            type="button"
+            onClick={() => onPreviewClick(file)}
+            className="group relative h-10 w-10 overflow-hidden rounded-md border border-border bg-muted shrink-0"
+          >
+            <img
+              src={file.url}
+              alt={file.alt_text || file.original_name}
+              className="h-full w-full object-cover"
+            />
+            <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+              <ZoomIn className="h-4 w-4 text-white" />
+            </span>
+          </button>
+        )
+      },
+    } satisfies MRT_ColumnDef<MediaFile>,
     {
       accessorKey: 'original_name',
       header: 'File Name',
       size: 200,
       Cell: ({ row }) => (
-        <button
-          type="button"
-          onClick={() => onFileClick(row.original)}
-          className="font-medium text-primary underline underline-offset-2 hover:opacity-80 text-left truncate max-w-full"
-        >
+        <button type="button" className="font-medium text-primary text-left truncate max-w-full">
           {row.original.original_name}
         </button>
       ),
@@ -130,7 +156,6 @@ type MediaTableCardProps = {
   onSortingChange: (sorting: MRT_SortingState) => void
   users: ManagedUser[]
   onUploadClick: () => void
-  onFileClick: (file: MediaFile) => void
   onDeleteFile: (file: MediaFile) => void
 }
 
@@ -145,12 +170,13 @@ function MediaTableCardInner({
   onSortingChange,
   users,
   onUploadClick,
-  onFileClick,
   onDeleteFile,
 }: MediaTableCardProps) {
+  const [previewFile, setPreviewFile] = useState<MediaFile | null>(null)
+
   const columns = useMemo(
-    () => getColumns({ onFileClick, onDeleteFile }),
-    [onFileClick, onDeleteFile],
+    () => getColumns({ onDeleteFile, onPreviewClick: setPreviewFile }),
+    [onDeleteFile],
   )
 
   const sorting: MRT_SortingState = useMemo(
@@ -177,7 +203,7 @@ function MediaTableCardInner({
       columnVisibility: { user_id: false },
       columnPinning: { right: ['actions'] },
     },
-    state: { pagination, isLoading: loading, sorting },
+    state: { pagination, sorting, showLoadingOverlay: loading },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
@@ -240,21 +266,17 @@ function MediaTableCardInner({
         <MRT_ShowHideColumnsButton table={t} />
       </div>
     ),
-    renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <Images className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No files found.</p>
-      </div>
-    ),
+    renderEmptyRowsFallback: () => null,
   })
 
   return (
     <>
-      <Card className="mt-4 overflow-hidden border-border shadow-none">
-        <CardContent className="p-0">
-          <MantineReactTable table={table} />
-        </CardContent>
-      </Card>
+      <MantineReactTable table={table} />
+      <ImagePreviewDialog
+        src={previewFile?.url ?? null}
+        open={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+      />
     </>
   )
 }

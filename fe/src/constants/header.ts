@@ -1,8 +1,21 @@
 import type { LucideIcon } from 'lucide-react'
 
-import { NAV_SECTIONS, PATHS, type NavSectionId } from '@/constants/paths'
+import { PATHS, type NavSectionId } from '@/constants/paths'
 import { PermissionSlugs } from '@/constants/permissions'
-import { GitBranch, Globe, Images, LayoutDashboard, Settings, UserCog, Users } from 'lucide-react'
+import {
+  FileText,
+  FolderOpen,
+  GitBranch,
+  Globe,
+  Images,
+  LayoutDashboard,
+  Link2,
+  Radio,
+  UserCheck,
+  UserCog,
+  Users,
+  UsersRound,
+} from 'lucide-react'
 
 export type NavSubItem = {
   name: string
@@ -15,7 +28,7 @@ export type NavSubItem = {
 export type NavItem = {
   name: string
   href?: string
-  icon: LucideIcon
+  icon?: LucideIcon
   items?: NavSubItem[]
   /** When set, parent row matches `handle.navSection` on the active route (see `routes/index.tsx`). */
   navSection?: NavSectionId
@@ -23,11 +36,52 @@ export type NavItem = {
 
 export const NAVIGATION_ITEMS: NavItem[] = [
   { name: 'Dashboard', href: PATHS.dashboard, icon: LayoutDashboard },
-  { name: 'Media', href: PATHS.media, icon: Images },
   {
-    name: 'Settings',
-    icon: Settings,
-    navSection: NAV_SECTIONS.settings,
+    name: 'Content',
+    items: [
+      {
+        name: 'Posts',
+        href: PATHS.posts,
+        icon: FileText,
+        requiredPermission: PermissionSlugs.PostsView,
+      },
+      {
+        name: 'Categories',
+        href: PATHS.categories,
+        icon: FolderOpen,
+        requiredPermission: PermissionSlugs.CategoriesView,
+      },
+      {
+        name: 'Media',
+        href: PATHS.media,
+        icon: Images,
+        requiredPermission: PermissionSlugs.FilesView,
+      },
+    ],
+  },
+  {
+    name: 'Marketing',
+    items: [
+      {
+        name: 'Channels',
+        href: PATHS.channels,
+        icon: Radio,
+      },
+      {
+        name: 'Follows',
+        href: PATHS.follows,
+        icon: UserCheck,
+      },
+      {
+        name: 'Ads Links',
+        href: PATHS.adsLinks,
+        icon: Link2,
+        requiredPermission: PermissionSlugs.AdsLinksView,
+      },
+    ],
+  },
+  {
+    name: 'Organization',
     items: [
       {
         name: 'Users',
@@ -36,10 +90,15 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         requiredPermission: PermissionSlugs.SettingsUsersView,
       },
       {
-        name: 'Users & children',
+        name: 'Sub-Users',
         href: PATHS.settingsUsersAssign,
         icon: GitBranch,
         requiredPermission: PermissionSlugs.SettingsUsersView,
+      },
+      {
+        name: 'Teams',
+        href: PATHS.teams,
+        icon: UsersRound,
       },
       {
         name: 'Roles',
@@ -47,6 +106,11 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         icon: UserCog,
         requiredPermission: PermissionSlugs.SettingsRolesView,
       },
+    ],
+  },
+  {
+    name: 'System',
+    items: [
       {
         name: 'Sites',
         href: PATHS.settingsSites,
