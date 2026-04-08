@@ -4,7 +4,6 @@ namespace App\Actions\Site;
 
 use App\Actions\File\DeleteFileAction;
 use App\Actions\File\StoreFileAction;
-use App\Enums\DiskEnum;
 use App\Enums\SiteStatus;
 use App\Models\File;
 use App\Models\Site;
@@ -29,7 +28,6 @@ class CreateSiteAction
             if (isset($data['logo']) && $data['logo'] instanceof UploadedFile) {
                 $logo = $this->storeFileAction->execute([
                     'file' => $data['logo'],
-                    'disk' => DiskEnum::S3,
                     'directory' => 'sites/logos',
                 ]);
             }
@@ -37,7 +35,6 @@ class CreateSiteAction
             if (isset($data['favicon']) && $data['favicon'] instanceof UploadedFile) {
                 $favicon = $this->storeFileAction->execute([
                     'file' => $data['favicon'],
-                    'disk' => DiskEnum::S3,
                     'directory' => 'sites/favicons',
                 ]);
             }

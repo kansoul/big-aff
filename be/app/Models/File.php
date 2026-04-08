@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Traits\Attribute\FileAttribute;
 use App\Models\Traits\Relationship\FileRelationship;
+use App\Models\Traits\Scope\FileScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class File extends Model
 {
-    use FileAttribute, FileRelationship, HasFactory, SoftDeletes;
+    use FileAttribute, FileRelationship, FileScope, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id',

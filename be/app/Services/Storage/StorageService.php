@@ -10,39 +10,45 @@ use League\Flysystem\StorageAttributes;
 
 class StorageService implements StorageServiceInterface
 {
-    public function store(UploadedFile $file, string $directory, string $fileName, string $disk): string
+    public function store(UploadedFile $file, string $directory, string $fileName): string
     {
-        return $file->storeAs($directory, $fileName, $disk);
+        return $file->storeAs($directory, $fileName, self::PUBLIC_DISK);
     }
 
     public function delete(string $disk, string $path): void
     {
-        $this->disk($disk)->delete($path);
+        $this->disk()->delete($path);
     }
 
-    public function url(string $disk, string $path): string
+    public function url(string $path): string
     {
-        return $this->disk($disk)->url($path);
+        return $this->disk()->url($path);
     }
 
     public function exists(string $disk, string $path): bool
     {
-        return $this->disk($disk)->exists($path);
+        return $this->disk()->exists($path);
     }
 
     public function size(string $disk, string $path): int
     {
-        return $this->disk($disk)->size($path);
+        return $this->disk()->size($path);
     }
 
     public function mimeType(string $disk, string $path): ?string
     {
-        return $this->disk($disk)->mimeType($path) ?: null;
+        return $this->disk()->mimeType($path) ?: null;
     }
 
     public function temporaryUrl(string $disk, string $path, \DateTimeInterface $expiration): string
     {
-        return $this->disk($disk)->temporaryUrl($path, $expiration);
+        $adapter = $this->disk();
+
+        if (method_exists($adapter, 'temporaryUrl')) {
+            return $adapter->temporaryUrl($path, $expiration);
+        }
+
+        return $adapter->url($path);
     }
 
     /**
@@ -50,7 +56,7 @@ class StorageService implements StorageServiceInterface
      */
     public function listObjects(string $disk, string $prefix = '', bool $recursive = false, int $limit = 100): array
     {
-        $adapter = $this->disk($disk);
+        $adapter = $this->disk();
         $listing = $adapter->getDriver()->listContents($prefix === '' ? '' : $prefix, $recursive);
 
         $items = [];
@@ -84,9 +90,9 @@ class StorageService implements StorageServiceInterface
         ];
     }
 
-    private function disk(string $disk): FilesystemAdapter
+    private function disk(): FilesystemAdapter
     {
         /** @var FilesystemAdapter */
-        return Storage::disk($disk);
+        return Storage::disk(self::PUBLIC_DISK);
     }
 }

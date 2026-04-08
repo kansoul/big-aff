@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Services\User\UserParentChildService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @tags Users
@@ -29,24 +28,8 @@ class UserParentChildController extends BaseController
      */
     public function index(ListParentChildAssignmentsRequest $request): JsonResponse
     {
-        $auth = $request->user();
-        if (! $auth instanceof User) {
-            return $this->sendError('Unauthenticated.', [], Response::HTTP_UNAUTHORIZED);
-        }
-
-        $this->authorize('viewAny', User::class);
-
-        $payload = $this->userParentChildService->listAssignments($auth, $request->validated());
-
         return $this->sendResponse(
-            [
-                'data' => [
-                    'assignments' => $payload['assignments']->items(),
-                    'user_options' => $payload['user_options']->items(),
-                ],
-                'pagination' => $this->parsePagination($payload['assignments']),
-                'options_pagination' => $this->parseSimplePagination($payload['user_options']),
-            ]
+            $this->userParentChildService->listAssignmentsPayload($request->validated()),
         );
     }
 
@@ -58,27 +41,8 @@ class UserParentChildController extends BaseController
      */
     public function update(SyncUserParentChildrenRequest $request, User $user): JsonResponse
     {
-        $auth = $request->user();
-        if (! $auth instanceof User) {
-            return $this->sendError('Unauthenticated.', [], Response::HTTP_UNAUTHORIZED);
-        }
-
-        /** @var array<string, mixed> $data */
-        $data = $request->validated();
-
-        $this->userParentChildService->syncChildren($auth, $user, $data['child_ids'] ?? null);
-
-        $payload = $this->userParentChildService->listAssignments($auth, $request->validated());
-
         return $this->sendResponse(
-            [
-                'data' => [
-                    'assignments' => $payload['assignments']->items(),
-                    'user_options' => $payload['user_options']->items(),
-                ],
-                'pagination' => $this->parsePagination($payload['assignments']),
-                'options_pagination' => $this->parseSimplePagination($payload['user_options']),
-            ]
+            $this->userParentChildService->syncChildrenAndListAssignmentsPayload($user, $request->validated()),
         );
     }
 }

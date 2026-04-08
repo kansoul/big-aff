@@ -27,6 +27,7 @@ class ListFilesRequest extends FormRequest
             $this->paginationRules(),
             $this->sortRules(ListFilesAction::ORDERABLE_COLUMNS),
             [
+                'alt_text' => ['nullable', 'string', 'max:255'],
                 'user_id' => ['nullable', 'integer', 'exists:users,id'],
                 'created_from' => ['nullable', 'date'],
                 'created_to' => ['nullable', 'date', 'after:created_from'],

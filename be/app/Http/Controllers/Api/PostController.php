@@ -34,7 +34,7 @@ class PostController extends BaseController
      * @queryParam per_page integer Items per page (max 100). Example: 15
      * @queryParam page integer Page number. Example: 1
      *
-     * @response 200 {"data": [{"id": 1, "title": "My Post", "slug": "my-post", "lang": "vi", "description": "A short description", "content": "<p>Post content</p>", "feature_media_id": null, "feature_media": null, "status": "draft", "is_hidden": false, "type": "article", "category_id": null, "category": null, "created_by": 1, "updated_by": null, "published_at": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
+     * @response 200 {"data": [{"id": 1, "title": "My Post", "slug": "my-post", "lang": "vi", "description": "A short description", "content": "<p>Post content</p>", "feature_media_id": null, "status": "draft", "is_hidden": false, "type": "article", "category_id": null, "category": null, "created_by": 1, "updated_by": null, "published_at": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
      */
     public function index(ListPostsRequest $request): JsonResponse
     {
@@ -56,7 +56,7 @@ class PostController extends BaseController
      * @bodyParam lang string optional Language code (max 10). Example: vi
      * @bodyParam description string optional Short description. Example: A short description
      * @bodyParam content string optional Full HTML content. Example: <p>Post content</p>
-     * @bodyParam feature_media file optional Feature image file (image, max 10MB).
+     * @bodyParam feature_media_id integer optional ID of the feature media file. Example: 1
      * @bodyParam status string optional Post status. Enum: draft, published, archived. Example: draft
      * @bodyParam is_hidden boolean optional Whether the post is hidden. Example: false
      * @bodyParam type string optional Post type (max 50). Example: article
@@ -108,7 +108,7 @@ class PostController extends BaseController
      * @bodyParam lang string optional Language code (max 10). Example: vi
      * @bodyParam description string optional Short description. Example: Updated description
      * @bodyParam content string optional Full HTML content. Example: <p>Updated content</p>
-     * @bodyParam feature_media file optional Feature image file (image, max 10MB). Pass null to remove.
+     * @bodyParam feature_media_id integer optional ID of the feature media file. Pass null to remove. Example: 1
      * @bodyParam status string optional Post status. Enum: draft, published, archived. Example: published
      * @bodyParam is_hidden boolean optional Whether the post is hidden. Example: false
      * @bodyParam type string optional Post type (max 50). Example: article

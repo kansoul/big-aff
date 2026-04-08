@@ -16,7 +16,7 @@ class UpdateCategoryRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'feature_image' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:10240'],
+            'feature_media_id' => ['sometimes', 'nullable', 'integer', 'exists:files,id'],
         ];
     }
 }

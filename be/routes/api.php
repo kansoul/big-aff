@@ -32,6 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('files')->middleware('ensure.app.user')->group(function () {
+        Route::get('/options', [FileController::class, 'options']);
         Route::get('/', [FileController::class, 'index']);
         Route::post('/', [FileController::class, 'store']);
         Route::get('{file}', [FileController::class, 'show']);

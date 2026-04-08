@@ -27,7 +27,7 @@ class UpdatePostRequest extends FormRequest
             'lang' => ['sometimes', 'nullable', 'string', 'max:10'],
             'description' => ['sometimes', 'nullable', 'string'],
             'content' => ['sometimes', 'nullable', 'string'],
-            'feature_media' => ['sometimes', 'nullable', 'file', 'image', 'max:10240'],
+            'feature_media_id' => ['sometimes', 'nullable', 'integer', 'exists:files,id'],
             'status' => ['sometimes', 'string', Rule::in(PostStatus::values())],
             'is_hidden' => ['sometimes', 'boolean'],
             'type' => ['sometimes', 'nullable', 'string', 'max:50'],
