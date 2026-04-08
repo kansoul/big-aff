@@ -29,9 +29,9 @@ class StoreSiteRequest extends FormRequest
             'settings.fb_pixel' => ['nullable', 'string', 'max:255'],
             'settings.theme' => ['nullable', 'string', 'max:255'],
 
-            'logo' => ['nullable', 'file', 'image', 'max:5120'],
+            'logo_id' => ['nullable', 'integer', 'exists:files,id'],
 
-            'favicon' => ['nullable', 'file', 'image', 'max:1024'],
+            'favicon_id' => ['nullable', 'integer', 'exists:files,id'],
         ];
     }
 }
