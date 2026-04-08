@@ -1,4 +1,5 @@
 import { axiosInstance } from '@/shared/api/axios'
+import { isNil } from '@/lib/utils'
 import type { MediaFile, MediaFilterParams, MediaListResponse } from '@/features/media/types'
 
 export const mediaApi = {
@@ -11,7 +12,7 @@ export const mediaApi = {
         ...(filters.created_to ? { created_to: filters.created_to } : {}),
         ...(filters.order ? { order: filters.order } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),
-        ...(filters.user_id != null ? { user_id: filters.user_id } : {}),
+        ...(!isNil(filters.user_id) ? { user_id: filters.user_id } : {}),
       },
     }),
 
@@ -21,12 +22,11 @@ export const mediaApi = {
 
   upload: (
     file: File,
-    options: { disk?: string | null; directory?: string | null; alt_text?: string | null },
+    options: { directory?: string | null; alt_text?: string | null },
     onProgress?: (percent: number) => void,
   ) => {
     const form = new FormData()
     form.append('file', file)
-    if (options.disk) form.append('disk', options.disk)
     if (options.directory) form.append('directory', options.directory)
     if (options.alt_text) form.append('alt_text', options.alt_text)
     return axiosInstance.post<{ data: MediaFile }>('/files', form, {
