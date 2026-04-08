@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { MRT_SortingState } from 'mantine-react-table'
 import { toast } from 'sonner'
 
 import { rolesApi } from '@/features/settings/api/roles'
@@ -16,12 +17,18 @@ import {
   userCreateSchema,
   userUpdateSchema,
   type UserCreateFormValues,
+  type UserFilterParams,
+  type UserOrderBy,
   type UserUpdateFormValues,
   type UserUpdatePayload,
 } from '@/features/users/types'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import type { ManagedUser, Role } from '@/shared/types'
+
+type PaginationState = { pageIndex: number; pageSize: number }
+
+const DEFAULT_FILTERS: UserFilterParams = { order: null, order_by: null }
 
 export function SettingsUsersPage() {
   const user = useAuthStore((s) => s.user)
@@ -41,8 +48,12 @@ export function SettingsUsersPage() {
   )
 
   const [users, setUsers] = useState<ManagedUser[]>([])
+  const [rowCount, setRowCount] = useState(0)
   const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState(true)
+
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
+  const [filters, setFilters] = useState<UserFilterParams>(DEFAULT_FILTERS)
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editUser, setEditUser] = useState<ManagedUser | null>(null)
@@ -71,22 +82,53 @@ export function SettingsUsersPage() {
     },
   })
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
-      const [userList, roleList] = await Promise.all([usersApi.list(), rolesApi.list()])
-      setUsers(userList)
-      setRoles(roleList)
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const loadData = useCallback(() => {
+    setRefreshSignal((s) => s + 1)
   }, [])
 
   useEffect(() => {
-    void loadData()
-  }, [loadData])
+    let ignore = false
+
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const [usersRes, roleList] = await Promise.all([
+          usersApi.list(pagination.pageIndex + 1, pagination.pageSize, filters),
+          rolesApi.list(),
+        ])
+        if (!ignore) {
+          setUsers(usersRes.data.data)
+          setRowCount(usersRes.data.pagination.total)
+          setRoles(roleList)
+        }
+      } catch (err) {
+        if (!ignore) {
+          toast.error(formatApiError(err))
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void fetchData()
+
+    return () => {
+      ignore = true
+    }
+  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
+
+  const onSortingChange = useCallback((sorting: MRT_SortingState) => {
+    const first = sorting[0] ?? null
+    setFilters((prev) => ({
+      ...prev,
+      order_by: first ? (first.id as UserOrderBy) : null,
+      order: first ? (first.desc ? 'desc' : 'asc') : null,
+    }))
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  }, [])
 
   const onCreateOpenChange = useCallback(
     (open: boolean) => {
@@ -129,7 +171,7 @@ export function SettingsUsersPage() {
         role_id: values.role_id,
       })
       setCreateOpen(false)
-      await loadData()
+      loadData()
     } catch (err) {
       setFormError(formatApiError(err))
     } finally {
@@ -154,7 +196,7 @@ export function SettingsUsersPage() {
       }
       await usersApi.update(editUser.id, payload)
       setEditUser(null)
-      await loadData()
+      loadData()
     } catch (err) {
       setFormError(formatApiError(err))
     } finally {
@@ -171,7 +213,7 @@ export function SettingsUsersPage() {
       setDeleting(true)
       await usersApi.remove(deleteUserRow.id)
       setDeleteUserRow(null)
-      await loadData()
+      loadData()
     } catch (err) {
       setFormError(formatApiError(err))
     } finally {
@@ -213,6 +255,11 @@ export function SettingsUsersPage() {
       <SettingsUsersTableCard
         loading={loading}
         users={users}
+        rowCount={rowCount}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        filters={filters}
+        onSortingChange={onSortingChange}
         currentUserId={user?.id}
         canCreate={canCreate}
         canUpdate={canUpdate}

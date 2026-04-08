@@ -50,21 +50,38 @@ export function SettingsRolesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
-      const roleList = await rolesApi.list()
-      setRoles(roleList)
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const loadData = useCallback(() => {
+    setRefreshSignal((s) => s + 1)
   }, [])
 
   useEffect(() => {
-    void loadData()
-  }, [loadData])
+    let ignore = false
+
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const roleList = await rolesApi.list()
+        if (!ignore) {
+          setRoles(roleList)
+        }
+      } catch (err) {
+        if (!ignore) {
+          toast.error(formatApiError(err))
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void fetchData()
+
+    return () => {
+      ignore = true
+    }
+  }, [refreshSignal])
 
   const createForm = useForm<RoleNameFormValues>({
     resolver: zodResolver(roleNameSchema),
@@ -114,7 +131,7 @@ export function SettingsRolesPage() {
       })
       setCreateOpen(false)
       createForm.reset({ name: '' })
-      await loadData()
+      loadData()
     } catch (err) {
       setFormError(formatApiError(err))
     } finally {
@@ -141,7 +158,7 @@ export function SettingsRolesPage() {
       }
       await rolesApi.update(editRole.id, payload)
       setEditRole(null)
-      await loadData()
+      loadData()
     } catch (err) {
       setFormError(formatApiError(err))
     } finally {
@@ -158,7 +175,7 @@ export function SettingsRolesPage() {
       setDeleting(true)
       await rolesApi.remove(deleteRole.id)
       setDeleteRole(null)
-      await loadData()
+      loadData()
     } catch (err) {
       setFormError(formatApiError(err))
     } finally {

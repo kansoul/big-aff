@@ -31,3 +31,34 @@ export type UserUpdatePayload = {
   password?: string
   role_id?: number
 }
+
+export interface UserPagination {
+  current_page: number
+  from: number | null
+  to: number | null
+  last_page: number
+  last_page_url: string
+  next_page_url: string | null
+  path: string
+  per_page: number
+  prev_page_url: string | null
+  total: number
+}
+
+export interface UserListResponse {
+  data: { data: import('@/shared/types').ManagedUser[]; pagination: UserPagination }
+}
+
+export type UserOrderBy =
+  | 'id'
+  | 'name'
+  | 'email'
+  | 'role_id'
+  | 'status'
+  | 'created_at'
+  | 'updated_at'
+
+export interface UserFilterParams {
+  order: 'asc' | 'desc' | null
+  order_by: UserOrderBy | null
+}

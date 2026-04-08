@@ -1,15 +1,19 @@
-import { memo, useMemo } from 'react'
+import { memo, useMemo, type Dispatch, type SetStateAction } from 'react'
 import {
   MantineReactTable,
   useMantineReactTable,
   type MRT_ColumnDef,
+  type MRT_SortingState,
   MRT_ShowHideColumnsButton,
   MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
-import { Pencil, Plus, Trash2, Users } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import type { UserFilterParams } from '@/features/users/types'
 import type { ManagedUser } from '@/shared/types'
+
+type PaginationState = { pageIndex: number; pageSize: number }
 
 type ActionMeta = {
   currentUserId: number | undefined
@@ -39,6 +43,7 @@ function getUsersColumns(meta: ActionMeta): MRT_ColumnDef<ManagedUser>[] {
       accessorKey: 'role',
       header: 'Role',
       size: 140,
+      enableSorting: false,
       Cell: ({ row }) => {
         const name = row.original.role?.name
         if (!name) return <span className="text-muted-foreground/50">—</span>
@@ -53,6 +58,7 @@ function getUsersColumns(meta: ActionMeta): MRT_ColumnDef<ManagedUser>[] {
       accessorKey: 'parent',
       header: 'Parent',
       size: 160,
+      enableSorting: false,
       Cell: ({ row }) => {
         const name = row.original.parent?.name
         return <span className="text-muted-foreground">{name ?? '—'}</span>
@@ -72,7 +78,7 @@ function getUsersColumns(meta: ActionMeta): MRT_ColumnDef<ManagedUser>[] {
             },
             mantineTableBodyCellProps: { style: { width: 80 } },
             Cell: ({ row }: { row: { original: ManagedUser } }) => {
-              const user = row.original
+              const u = row.original
               return (
                 <div className="flex justify-end gap-0.5">
                   {canUpdate ? (
@@ -81,20 +87,20 @@ function getUsersColumns(meta: ActionMeta): MRT_ColumnDef<ManagedUser>[] {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      aria-label={`Edit ${user.name}`}
-                      onClick={() => onEditRow(user)}
+                      aria-label={`Edit ${u.name}`}
+                      onClick={() => onEditRow(u)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                   ) : null}
-                  {canDelete && user.id !== currentUserId ? (
+                  {canDelete && u.id !== currentUserId ? (
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      aria-label={`Delete ${user.name}`}
-                      onClick={() => onDeleteRow(user)}
+                      aria-label={`Delete ${u.name}`}
+                      onClick={() => onDeleteRow(u)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -111,6 +117,11 @@ function getUsersColumns(meta: ActionMeta): MRT_ColumnDef<ManagedUser>[] {
 type SettingsUsersTableCardProps = {
   loading: boolean
   users: ManagedUser[]
+  rowCount: number
+  pagination: PaginationState
+  onPaginationChange: Dispatch<SetStateAction<PaginationState>>
+  filters: UserFilterParams
+  onSortingChange: (sorting: MRT_SortingState) => void
   currentUserId: number | undefined
   canCreate: boolean
   canUpdate: boolean
@@ -123,6 +134,11 @@ type SettingsUsersTableCardProps = {
 function SettingsUsersTableCardInner({
   loading,
   users,
+  rowCount,
+  pagination,
+  onPaginationChange,
+  filters,
+  onSortingChange,
   currentUserId,
   canCreate,
   canUpdate,
@@ -136,30 +152,37 @@ function SettingsUsersTableCardInner({
     [currentUserId, canUpdate, canDelete, onEditRow, onDeleteRow],
   )
 
+  const sorting: MRT_SortingState = useMemo(
+    () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
+    [filters.order_by, filters.order],
+  )
+
   const table = useMantineReactTable({
     data: users,
     columns,
+    manualPagination: true,
+    manualSorting: true,
+    rowCount,
+    onPaginationChange,
+    onSortingChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(sorting) : updater
+      onSortingChange(next)
+    },
     enableColumnFilters: false,
-    enableGlobalFilter: true,
-    positionGlobalFilter: 'left',
+    enableGlobalFilter: false,
     enableColumnPinning: true,
     initialState: {
-      showGlobalFilter: true,
       density: 'md',
       columnVisibility: { parent: false, role: false },
       columnPinning: { right: ['actions'] },
     },
-    state: { isLoading: loading },
+    state: { pagination, sorting, showLoadingOverlay: loading },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
-    mantineSearchTextInputProps: {
-      placeholder: 'Search by name or email…',
-      sx: { minWidth: 'clamp(120px, 40vw, 260px)' },
-    },
     localization: {
-      rowsPerPage: 'Per Page', // <-- Custom chữ tại đây
+      rowsPerPage: 'Per Page',
     },
     renderToolbarInternalActions: ({ table: t }) => (
       <div className="flex items-center gap-1">
@@ -178,12 +201,7 @@ function SettingsUsersTableCardInner({
         <MRT_ShowHideColumnsButton table={t} />
       </div>
     ),
-    renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <Users className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No users in this scope.</p>
-      </div>
-    ),
+    renderEmptyRowsFallback: () => null,
   })
 
   return (

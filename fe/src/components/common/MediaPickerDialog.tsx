@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Control, FieldPath, FieldValues } from 'react-hook-form'
+import {
+  MantineReactTable,
+  useMantineReactTable,
+  type MRT_ColumnDef,
+  type MRT_RowSelectionState,
+} from 'mantine-react-table'
 import { AlertCircle, CheckCircle2, ImageIcon, Loader2, Pencil, Upload, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -29,6 +35,145 @@ type UploadState =
   | { status: 'error'; message: string }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Columns (defined outside component — no deps)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MEDIA_COLUMNS: MRT_ColumnDef<MediaFile>[] = [
+  {
+    accessorKey: 'original_name',
+    header: 'File',
+    size: 200,
+    Cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <img
+          src={row.original.url}
+          alt={row.original.original_name}
+          className="size-8 shrink-0 rounded object-cover"
+          loading="lazy"
+        />
+        <span className="truncate text-sm font-medium text-foreground">
+          {row.original.original_name}
+        </span>
+      </div>
+    ),
+  },
+]
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RecentMediaTable — MRT with row-selection + server pagination
+// ─────────────────────────────────────────────────────────────────────────────
+
+type RecentMediaTableProps = {
+  open: boolean
+  selected: MediaFile | null
+  onSelect: (media: MediaFile | null) => void
+}
+
+function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
+  const [data, setData] = useState<MediaFile[]>([])
+  const [rowCount, setRowCount] = useState(0)
+  // pageIndex starts at 0; reset via key remount when dialog reopens
+  const [pageIndex, setPageIndex] = useState(0)
+  // Start true so the skeleton shows immediately on mount
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+
+    const doFetch = async () => {
+      try {
+        const res = await mediaApi.list(pageIndex + 1, 10, {
+          created_from: null,
+          created_to: null,
+          user_id: null,
+          order: null,
+          order_by: null,
+        })
+        if (cancelled) return
+        setData(res.data.data)
+        setRowCount(res.data.pagination.total)
+        setError(null)
+      } catch {
+        if (!cancelled) setError('Failed to load media.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    void doFetch()
+    return () => {
+      cancelled = true
+    }
+  }, [open, pageIndex])
+
+  const rowSelection: MRT_RowSelectionState = useMemo(
+    () => (selected ? { [String(selected.id)]: true } : {}),
+    [selected],
+  )
+
+  const columns = useMemo(() => MEDIA_COLUMNS, [])
+
+  const table = useMantineReactTable({
+    data,
+    columns,
+    getRowId: (row) => String(row.id),
+    enableRowSelection: true,
+    enableMultiRowSelection: false,
+    onRowSelectionChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(rowSelection) : updater
+      const selectedId = Object.keys(next)[0]
+      if (!selectedId) {
+        onSelect(null)
+        return
+      }
+      const found = data.find((m) => String(m.id) === selectedId) ?? null
+      onSelect(found)
+    },
+    state: {
+      rowSelection,
+      pagination: { pageIndex, pageSize: 10 },
+      showLoadingOverlay: loading,
+    },
+    manualPagination: true,
+    rowCount,
+    onPaginationChange: (updater) => {
+      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: 10 }) : updater
+      setLoading(true)
+      setPageIndex(next.pageIndex)
+    },
+    enableColumnFilters: false,
+    enableGlobalFilter: false,
+    enableSorting: false,
+    enableColumnActions: false,
+    enableFullScreenToggle: false,
+    enableDensityToggle: false,
+    enableHiding: false,
+    enablePagination: true,
+    paginationDisplayMode: 'pages',
+    positionToolbarAlertBanner: 'none',
+    initialState: { density: 'md' },
+    mantineTableContainerProps: { sx: { maxHeight: 320, overflowY: 'auto' } },
+    renderTopToolbar: () => null,
+    renderEmptyRowsFallback: () =>
+      error ? (
+        <div className="flex items-center gap-2 p-4 text-sm text-destructive">
+          <AlertCircle className="size-4 shrink-0" />
+          <p>{error}</p>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-2 py-10 text-center">
+          <ImageIcon className="size-8 text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">No uploads yet</p>
+        </div>
+      ),
+  })
+
+  return <MantineReactTable table={table} />
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MediaPickerDialog — raw dialog, no RHF dependency
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -48,32 +193,23 @@ export function MediaPickerDialog({
   accept = 'image/*',
 }: MediaPickerDialogProps) {
   const [tab, setTab] = useState<Tab>('recent')
-  const [recent, setRecent] = useState<MediaFile[]>([])
-  // Start as true so the loading state shows immediately on first open
-  const [loadingRecent, setLoadingRecent] = useState(true)
-  const [recentError, setRecentError] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(false)
   const [selected, setSelected] = useState<MediaFile | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>({ status: 'idle' })
   const [dragging, setDragging] = useState(false)
+  // Increment on each open to remount RecentMediaTable with fresh state
+  const [openKey, setOpenKey] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounter = useRef(0)
 
-  // Wrap onOpenChange to reset all state without touching a useEffect.
-  // setState inside event handlers is always fine — no cascading renders.
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
-      if (!nextOpen) {
+      if (nextOpen) {
+        setOpenKey((k) => k + 1)
+      } else {
         setTab('recent')
         setSelected(null)
         setUploadState({ status: 'idle' })
         setDragging(false)
-        setRecent([])
-        setRecentError(null)
-        setLoadingRecent(true) // prime for next open
-        setPage(1)
-        setHasMore(false)
         dragCounter.current = 0
       }
       onOpenChange(nextOpen)
@@ -81,71 +217,9 @@ export function MediaPickerDialog({
     [onOpenChange],
   )
 
-  // When the user switches to the Recent tab, prime loading state via handler.
   const handleTabChange = useCallback((v: string) => {
-    const next = v as Tab
-    setTab(next)
-    if (next === 'recent') {
-      setRecent([])
-      setRecentError(null)
-      setLoadingRecent(true)
-      setPage(1)
-      setHasMore(false)
-    }
+    setTab(v as Tab)
   }, [])
-
-  // Fetch recent media. All setState calls live inside the async callbacks,
-  // never synchronously in the effect body (satisfies react-hooks/set-state-in-effect).
-  useEffect(() => {
-    if (!open || tab !== 'recent') return
-    let cancelled = false
-
-    const fetchRecent = async () => {
-      try {
-        const res = await mediaApi.list(1, 24, {
-          created_from: null,
-          created_to: null,
-          user_id: null,
-          order: null,
-          order_by: null,
-        })
-        if (cancelled) return
-        setRecent(res.data.data)
-        setPage(1)
-        setHasMore(res.data.pagination.current_page < res.data.pagination.last_page)
-        setRecentError(null)
-      } catch {
-        if (!cancelled) setRecentError('Failed to load recent media.')
-      } finally {
-        if (!cancelled) setLoadingRecent(false)
-      }
-    }
-
-    void fetchRecent()
-    return () => {
-      cancelled = true
-    }
-  }, [open, tab])
-
-  const loadMore = useCallback(() => {
-    const nextPage = page + 1
-    setLoadingRecent(true)
-    mediaApi
-      .list(nextPage, 24, {
-        created_from: null,
-        created_to: null,
-        user_id: null,
-        order: null,
-        order_by: null,
-      })
-      .then((res) => {
-        setRecent((prev) => [...prev, ...res.data.data])
-        setPage(nextPage)
-        setHasMore(res.data.pagination.current_page < res.data.pagination.last_page)
-      })
-      .catch(() => setRecentError('Failed to load more media.'))
-      .finally(() => setLoadingRecent(false))
-  }, [page])
 
   const handleUpload = useCallback((file: File) => {
     setUploadState({ status: 'uploading', progress: 0, name: file.name })
@@ -212,7 +286,7 @@ export function MediaPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex max-h-[min(92vh,680px)] w-full max-w-[min(94vw,56rem)] flex-col gap-0 p-6 sm:max-w-2xl">
+      <DialogContent className="flex max-h-[min(92vh,720px)] w-full max-w-[min(94vw,60rem)] flex-col gap-0 p-6 sm:max-w-3xl">
         <DialogHeader className="mb-3 shrink-0">
           <DialogTitle className="text-base font-black uppercase tracking-tight">
             {title}
@@ -225,50 +299,16 @@ export function MediaPickerDialog({
             <TabsTrigger value="upload">Upload new</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="recent" className="mt-0 flex min-h-0 flex-1 flex-col gap-3">
-            {loadingRecent && recent.length === 0 ? (
-              <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-card py-14 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" />
-                <span>Loading…</span>
-              </div>
-            ) : recentError ? (
-              <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                <AlertCircle className="size-4 shrink-0" />
-                <p>{recentError}</p>
-              </div>
-            ) : recent.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card py-14 text-center">
-                <ImageIcon className="size-8 text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">No uploads yet</p>
-              </div>
-            ) : (
-              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                  {recent.map((media) => (
-                    <MediaTile
-                      key={media.id}
-                      media={media}
-                      selected={selected?.id === media.id}
-                      onSelect={setSelected}
-                    />
-                  ))}
-                </div>
-                {hasMore && (
-                  <div className="flex justify-center pb-1">
-                    <Button variant="outline" size="sm" onClick={loadMore} disabled={loadingRecent}>
-                      {loadingRecent ? (
-                        <>
-                          <Loader2 className="size-3.5 animate-spin" />
-                          Loading…
-                        </>
-                      ) : (
-                        'Load more'
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
+          <TabsContent
+            value="recent"
+            className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border"
+          >
+            <RecentMediaTable
+              key={openKey}
+              open={open && tab === 'recent'}
+              selected={selected}
+              onSelect={setSelected}
+            />
           </TabsContent>
 
           <TabsContent value="upload" className="mt-0 flex min-h-0 flex-1 flex-col">
@@ -312,7 +352,14 @@ export function MediaPickerDialog({
             Cancel
           </Button>
           <Button type="button" disabled={confirmDisabled} onClick={handleConfirm}>
-            Use this
+            {selected && tab === 'recent' ? (
+              <>
+                <CheckCircle2 className="size-3.5" />
+                Use this
+              </>
+            ) : (
+              'Use this'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -322,17 +369,6 @@ export function MediaPickerDialog({
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MediaPickerInput — controlled input trigger + preview
-// Use inside a FormField render prop, or standalone with value/onChange.
-//
-//   <FormField control={form.control} name="avatar" render={({ field }) => (
-//     <FormItem>
-//       <FormLabel>Avatar</FormLabel>
-//       <FormControl>
-//         <MediaPickerInput value={field.value} onChange={field.onChange} />
-//       </FormControl>
-//       <FormMessage />
-//     </FormItem>
-//   )} />
 // ─────────────────────────────────────────────────────────────────────────────
 
 type MediaPickerInputProps = {
@@ -443,9 +479,6 @@ export function MediaPickerInput({
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MediaPickerField — self-contained RHF field
-// Pass control + name; renders label, input trigger, and validation message.
-//
-//   <MediaPickerField control={form.control} name="avatar" label="Avatar" />
 // ─────────────────────────────────────────────────────────────────────────────
 
 type MediaPickerFieldProps<T extends FieldValues> = {
@@ -488,37 +521,6 @@ export function MediaPickerField<T extends FieldValues>({
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal sub-components (not exported)
 // ─────────────────────────────────────────────────────────────────────────────
-
-const MediaTile = ({
-  media,
-  selected,
-  onSelect,
-}: {
-  media: MediaFile
-  selected: boolean
-  onSelect: (m: MediaFile) => void
-}) => (
-  <button
-    type="button"
-    onClick={() => onSelect(media)}
-    className={cn(
-      'group relative aspect-square overflow-hidden rounded-md border bg-muted transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-      selected ? 'border-primary ring-2 ring-primary' : 'border-border hover:border-primary/50',
-    )}
-  >
-    <img
-      src={media.url}
-      alt={media.original_name}
-      className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
-      loading="lazy"
-    />
-    {selected && (
-      <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
-        <CheckCircle2 className="size-5 text-primary drop-shadow" />
-      </div>
-    )}
-  </button>
-)
 
 type DropZoneProps = {
   dragging: boolean

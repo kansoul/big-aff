@@ -1,7 +1,7 @@
 import type { Control } from 'react-hook-form'
 
 import type { SiteCreateFormValues } from '@/features/sites/types'
-import { FileUploadField } from '@/components/common/FileUploadField'
+import { MediaPickerField } from '@/components/common/MediaPickerDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -16,15 +16,9 @@ import {
 
 type SiteFormSectionsProps = {
   control: Control<SiteCreateFormValues>
-  existingLogoUrl?: string | null
-  existingFaviconUrl?: string | null
 }
 
-export function SiteFormSections({
-  control,
-  existingLogoUrl,
-  existingFaviconUrl,
-}: SiteFormSectionsProps) {
+export function SiteFormSections({ control }: SiteFormSectionsProps) {
   return (
     <>
       <Card className="border-border shadow-none">
@@ -118,22 +112,19 @@ export function SiteFormSections({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <FileUploadField
+          <MediaPickerField
             control={control}
             name="logo"
             label="Logo"
             accept="image/*"
-            hint="PNG, JPG, WEBP up to 5 MB"
-            existingUrl={existingLogoUrl}
+            placeholder="Pick a logo…"
           />
-          <FileUploadField
+          <MediaPickerField
             control={control}
             name="favicon"
             label="Favicon"
             accept="image/png,image/x-icon,image/svg+xml"
-            hint="PNG, ICO, SVG up to 1 MB"
-            previewSize="sm"
-            existingUrl={existingFaviconUrl}
+            placeholder="Pick a favicon…"
           />
         </CardContent>
       </Card>
@@ -177,9 +168,27 @@ export function SiteFormSections({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Theme</FormLabel>
-                <FormControl>
-                  <Input placeholder="default" {...field} />
-                </FormControl>
+                <Select
+                  value={field.value || '__none__'}
+                  onValueChange={(v) => field.onChange(v === '__none__' ? '' : v)}
+                >
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select theme" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="__none__">No theme</SelectItem>
+                    {Array.from({ length: 10 }, (_, i) => ({
+                      value: `theme-${i + 1}`,
+                      label: `Theme ${i + 1}`,
+                    })).map((theme) => (
+                      <SelectItem key={theme.value} value={theme.value}>
+                        {theme.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

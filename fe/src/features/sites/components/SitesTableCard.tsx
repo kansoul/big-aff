@@ -7,10 +7,9 @@ import {
   MRT_ShowHideColumnsButton,
   MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
-import { Eye, Globe, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Eye, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -239,7 +238,7 @@ function SitesTableCardInner({
       columnVisibility: { updated_at: false },
       columnPinning: { right: ['actions'] },
     },
-    state: { pagination, isLoading: loading, sorting, globalFilter },
+    state: { pagination, sorting, globalFilter, showLoadingOverlay: loading },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
@@ -279,21 +278,10 @@ function SitesTableCardInner({
         <MRT_ShowHideColumnsButton table={t} />
       </div>
     ),
-    renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <Globe className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No sites found.</p>
-      </div>
-    ),
+    renderEmptyRowsFallback: () => null,
   })
 
-  return (
-    <Card className="mt-4 overflow-hidden border-border shadow-none">
-      <CardContent className="p-0">
-        <MantineReactTable table={table} />
-      </CardContent>
-    </Card>
-  )
+  return <MantineReactTable table={table} />
 }
 
 export const SitesTableCard = memo(SitesTableCardInner)
