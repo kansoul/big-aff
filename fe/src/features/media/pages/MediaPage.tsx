@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Loader2, Trash2 } from 'lucide-react'
 
 import { mediaApi } from '@/features/media/api'
-import { FileDetailDialog, MediaTableCard, UploadFileDialog } from '@/features/media/components'
+import { MediaTableCard, UploadFileDialog } from '@/features/media/components'
 import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
 import type { MediaFile, MediaFilterParams, MediaOrderBy } from '@/features/media/types'
 import { usersApi } from '@/features/users/api/users'
@@ -16,6 +17,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
@@ -35,7 +37,7 @@ export function MediaPage() {
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 15 })
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
   const [filters, setFilters] = useState<MediaFilterParams>(DEFAULT_FILTERS)
 
   const [uploadOpen, setUploadOpen] = useState(false)
@@ -43,10 +45,6 @@ export function MediaPage() {
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
-  const [detailOpen, setDetailOpen] = useState(false)
-  const [detailFile, setDetailFile] = useState<MediaFile | null>(null)
-  const [detailLoading, setDetailLoading] = useState(false)
-  const [detailError, setDetailError] = useState<string | null>(null)
   const [previewFile, setPreviewFile] = useState<MediaFile | null>(null)
 
   const [deleteTarget, setDeleteTarget] = useState<MediaFile | null>(null)
@@ -54,34 +52,51 @@ export function MediaPage() {
 
   useEffect(() => {
     void usersApi
-      .list()
-      .then(setUsers)
+      .list(1, 100, { order: null, order_by: null })
+      .then((res) => setUsers(res.data.data))
       .catch(() => {
         console.log('Failed to load users for media page filter')
       })
   }, [])
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
-      const res = await mediaApi.list(pagination.pageIndex + 1, pagination.pageSize, filters)
-      setData(res.data.data)
-      setRowCount(res.data.pagination.total)
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [pagination, filters])
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const loadData = useCallback(() => {
+    setRefreshSignal((s) => s + 1)
+  }, [])
 
   useEffect(() => {
-    void loadData()
-  }, [loadData])
+    let ignore = false
+
+    const fetchData = async () => {
+      try {
+        const res = await mediaApi.list(pagination.pageIndex + 1, pagination.pageSize, filters)
+        if (!ignore) {
+          setData(res.data.data)
+          setRowCount(res.data.pagination.total)
+        }
+      } catch (err) {
+        if (!ignore) {
+          toast.error(formatApiError(err))
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void fetchData()
+
+    return () => {
+      ignore = true
+    }
+  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
   const onFilterChange = useCallback(
     (field: keyof MediaFilterParams, value: string | number | null) => {
       setFilters((prev) => ({ ...prev, [field]: value }))
       setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+      setLoading(true)
     },
     [],
   )
@@ -111,10 +126,7 @@ export function MediaPage() {
   }, [])
 
   const onUploadSubmit = useCallback(
-    async (
-      file: File,
-      options: { disk?: string | null; directory?: string | null; alt_text?: string | null },
-    ) => {
+    async (file: File, options: { directory?: string | null; alt_text?: string | null }) => {
       try {
         setUploadError(null)
         setUploading(true)
@@ -122,7 +134,7 @@ export function MediaPage() {
         await mediaApi.upload(file, options, setUploadProgress)
         setUploadOpen(false)
         setUploadProgress(0)
-        await loadData()
+        loadData()
         toast.success('File uploaded successfully')
       } catch (err) {
         setUploadError(formatApiError(err))
@@ -132,25 +144,6 @@ export function MediaPage() {
     },
     [loadData],
   )
-
-  const onFileClick = useCallback((file: MediaFile) => {
-    if (file.mime_type?.startsWith('image/')) {
-      setPreviewFile(file)
-    } else {
-      setDetailError(null)
-      setDetailLoading(false)
-      setDetailFile(file)
-      setDetailOpen(true)
-    }
-  }, [])
-
-  const onDetailOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      setDetailFile(null)
-      setDetailError(null)
-    }
-    setDetailOpen(open)
-  }, [])
 
   const onDeleteFile = useCallback((file: MediaFile) => {
     setDeleteTarget(file)
@@ -162,7 +155,7 @@ export function MediaPage() {
       setDeleting(true)
       await mediaApi.delete(deleteTarget.id)
       setDeleteTarget(null)
-      await loadData()
+      loadData()
       toast.success('File deleted successfully')
     } catch {
       setDeleteTarget(null)
@@ -184,7 +177,6 @@ export function MediaPage() {
         onSortingChange={onSortingChange}
         users={users}
         onUploadClick={onUploadClick}
-        onFileClick={onFileClick}
         onDeleteFile={onDeleteFile}
       />
       <UploadFileDialog
@@ -195,13 +187,7 @@ export function MediaPage() {
         submitting={uploading}
         onSubmit={onUploadSubmit}
       />
-      <FileDetailDialog
-        open={detailOpen}
-        onOpenChange={onDetailOpenChange}
-        loading={detailLoading}
-        error={detailError}
-        file={detailFile}
-      />
+
       <ImagePreviewDialog
         src={previewFile?.url}
         open={!!previewFile}
@@ -210,10 +196,14 @@ export function MediaPage() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
+            <AlertDialogMedia className="bg-destructive/10 text-destructive">
+              <Trash2 />
+            </AlertDialogMedia>
             <AlertDialogTitle>Delete file?</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="font-medium text-foreground">{deleteTarget?.original_name}</span>{' '}
-              will be permanently deleted. This action cannot be undone.
+              Are you sure you want to delete{' '}
+              <span className="font-medium text-foreground">{deleteTarget?.original_name}</span>?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -224,9 +214,19 @@ export function MediaPage() {
                 void onConfirmDelete()
               }}
               disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
-              {deleting ? 'Deleting…' : 'Delete'}
+              {deleting ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  Deleting…
+                </>
+              ) : (
+                <>
+                  <Trash2 className="size-3.5" />
+                  Delete
+                </>
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

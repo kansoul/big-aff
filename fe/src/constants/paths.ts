@@ -7,6 +7,10 @@ export const PATHS = {
   login: '/login',
   dashboard: '/dashboard',
   media: '/media',
+  posts: '/posts',
+  postsCreate: '/posts/create',
+  postsView: '/posts/:id',
+  postsEdit: '/posts/:id/edit',
   settingsUsers: '/settings/users',
   settingsUsersAssign: '/settings/users-assign',
   settingsRoles: '/settings/roles',
@@ -14,7 +18,15 @@ export const PATHS = {
   settingsSitesCreate: '/settings/sites/create',
   settingsSitesView: '/settings/sites/:id',
   settingsSitesEdit: '/settings/sites/:id/edit',
+  categories: '/categories',
+  channels: '/channels',
+  follows: '/follows',
+  adsLinks: '/ads-links',
+  teams: '/teams',
 } as const
+
+export const postViewPath = (id: number | string) => `/posts/${id}`
+export const postEditPath = (id: number | string) => `/posts/${id}/edit`
 
 export const siteViewPath = (id: number | string) => `/settings/sites/${id}`
 export const siteEditPath = (id: number | string) => `/settings/sites/${id}/edit`
