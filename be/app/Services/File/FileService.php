@@ -44,12 +44,6 @@ class FileService
      */
     public function listFiles(array $payload): LengthAwarePaginator
     {
-        $user = Auth::user();
-
-        if (! $user->is_full_access) {
-            $payload['directory_prefix'] = config('filesystems.uploads.directories.posts');
-        }
-
         return $this->listFilesAction->execute($payload);
     }
 
