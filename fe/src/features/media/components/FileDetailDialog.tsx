@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, Loader2 } from 'lucide-react'
+import { FileText, Loader2, ZoomIn } from 'lucide-react'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
@@ -57,12 +57,20 @@ export function FileDetailDialog({
             <div className="space-y-4">
               <div className="flex items-center justify-center overflow-hidden rounded-md border border-border bg-muted/40 min-h-32">
                 {isImage ? (
-                  <img
-                    src={file.url}
-                    alt={file.alt_text || file.original_name}
-                    className="max-h-72 w-auto object-contain cursor-zoom-in"
+                  <button
+                    type="button"
+                    className="group relative cursor-zoom-in focus-visible:outline-none"
                     onClick={() => setLightboxOpen(true)}
-                  />
+                  >
+                    <img
+                      src={file.url}
+                      alt={file.alt_text || file.original_name}
+                      className="max-h-72 w-auto object-contain"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20">
+                      <ZoomIn className="size-6 text-white opacity-0 drop-shadow transition-opacity group-hover:opacity-100" />
+                    </div>
+                  </button>
                 ) : (
                   <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
                     <FileText className="h-10 w-10 opacity-30" />
