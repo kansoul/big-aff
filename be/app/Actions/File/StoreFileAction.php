@@ -25,16 +25,15 @@ class StoreFileAction
         /** @var UploadedFile $uploadedFile */
         $uploadedFile = $data['file'];
 
-        $disk = $this->resolveDisk($data['disk'] ?? null);
-        $directory = $this->resolveDirectory($data['directory'] ?? null);
+        $directory = $user->isAdmin && isset($data['directory']) ? $data['directory'] : config('filesystems.uploads.directories.posts');
         $extension = $uploadedFile->getClientOriginalExtension();
         $fileName = Str::uuid().'.'.$extension;
 
-        $path = $this->storageService->store($uploadedFile, $directory, $fileName, $disk);
+        $path = $this->storageService->store($uploadedFile, $directory, $fileName);
 
         return File::query()->create([
             'user_id' => $user->id,
-            'disk' => $disk,
+            'disk' => StorageServiceInterface::PUBLIC_DISK,
             'file_name' => $fileName,
             'original_name' => $uploadedFile->getClientOriginalName(),
             'mime_type' => $uploadedFile->getMimeType() ?? $uploadedFile->getClientMimeType(),
@@ -42,23 +41,5 @@ class StoreFileAction
             'path' => $path,
             'alt_text' => $data['alt_text'] ?? null,
         ]);
-    }
-
-    private function resolveDisk(?string $requested): string
-    {
-        if ($requested !== null && $requested !== '') {
-            return $requested;
-        }
-
-        return config('filesystems.uploads.default', 'public');
-    }
-
-    private function resolveDirectory(?string $requested): string
-    {
-        if ($requested !== null && $requested !== '') {
-            return trim($requested, '/');
-        }
-
-        return 'uploads/'.now()->format('Y/m');
     }
 }

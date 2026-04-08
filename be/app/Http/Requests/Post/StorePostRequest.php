@@ -25,7 +25,7 @@ class StorePostRequest extends FormRequest
             'lang' => ['nullable', 'string', 'max:10'],
             'description' => ['nullable', 'string'],
             'content' => ['nullable', 'string'],
-            'feature_media' => ['nullable', 'file', 'image', 'max:10240'],
+            'feature_media_id' => ['nullable', 'integer', 'exists:files,id'],
             'status' => ['nullable', 'string', Rule::in(PostStatus::values())],
             'is_hidden' => ['nullable', 'boolean'],
             'type' => ['nullable', 'string', 'max:50'],

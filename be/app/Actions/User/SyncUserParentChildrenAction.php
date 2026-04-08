@@ -4,6 +4,7 @@ namespace App\Actions\User;
 
 use App\Models\User;
 use App\Models\UserParentChild;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -12,15 +13,18 @@ class SyncUserParentChildrenAction
     /**
      * @param  list<int>|null  $childIds  When null or empty, the user is no longer a parent (all child links removed).
      */
-    public function execute(User $actor, User $parent, ?array $childIds): void
+    public function execute(User $parent, ?array $childIds): void
     {
+        /** @var User $user */
+        $user = Auth::user();
+
         if ($parent->isAssignedChildInParentChildTable()) {
             throw ValidationException::withMessages([
                 'child_ids' => [__('This user is already assigned as a child and cannot have children.')],
             ]);
         }
 
-        if (! $actor->canManageUser($parent)) {
+        if (! $user->canManageUser($parent)) {
             throw ValidationException::withMessages([
                 'parent' => [__('You cannot change assignments for this user.')],
             ]);
@@ -38,7 +42,7 @@ class SyncUserParentChildrenAction
 
         foreach ($childIds as $childId) {
             $target = User::query()->whereKey($childId)->first();
-            if ($target === null || ! $actor->canManageUser($target)) {
+            if ($target === null || ! $user->canManageUser($target)) {
                 throw ValidationException::withMessages([
                     'child_ids' => [__('Invalid child user.')],
                 ]);

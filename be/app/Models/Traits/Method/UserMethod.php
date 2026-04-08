@@ -24,10 +24,7 @@ trait UserMethod
      */
     public function managesAllUsers(): bool
     {
-        $this->loadMissing('role');
-        $mask = $this->role?->getPermissionMask() ?? '0';
-
-        return Permission::hasFullAccess($mask);
+        return (bool) $this->is_full_access;
     }
 
     /**

@@ -47,7 +47,7 @@ class CategoryController extends BaseController
      *
      * @bodyParam name string required Category name (max 255). Example: Technology
      * @bodyParam description string optional Category description. Example: Tech news
-     * @bodyParam feature_image file optional Feature image file (jpg, jpeg, png, gif, webp, max 10MB).
+     * @bodyParam feature_media_id integer optional Feature media ID from files table. Example: 10
      */
     public function store(StoreCategoryRequest $request): JsonResponse
     {
@@ -85,7 +85,7 @@ class CategoryController extends BaseController
      *
      * @bodyParam name string optional Category name (max 255). Example: Updated Name
      * @bodyParam description string optional Category description. Example: Updated description
-     * @bodyParam feature_image file optional Feature image file (jpg, jpeg, png, gif, webp, max 10MB).
+     * @bodyParam feature_media_id integer optional Feature media ID from files table. Example: 10
      */
     public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
     {

@@ -23,7 +23,6 @@ class UpdateSiteAction
             if (isset($data['logo']) && $data['logo'] instanceof UploadedFile) {
                 $logo = $this->storeFileAction->execute([
                     'file' => $data['logo'],
-                    'disk' => $data['logo_disk'] ?? null,
                     'directory' => 'sites/logos',
                 ]);
                 $data['logo_id'] = $logo->id;
@@ -32,7 +31,6 @@ class UpdateSiteAction
             if (isset($data['favicon']) && $data['favicon'] instanceof UploadedFile) {
                 $favicon = $this->storeFileAction->execute([
                     'file' => $data['favicon'],
-                    'disk' => $data['favicon_disk'] ?? null,
                     'directory' => 'sites/favicons',
                 ]);
                 $data['favicon_id'] = $favicon->id;

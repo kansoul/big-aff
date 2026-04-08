@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\File\ListFilesRequest;
+use App\Http\Requests\File\OptionsFileRequest;
 use App\Http\Requests\File\StoreFileRequest;
 use App\Http\Resources\FileResource;
 use App\Models\File;
@@ -76,5 +77,19 @@ class FileController extends BaseController
         $this->fileService->delete($file);
 
         return $this->sendResponse([], Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Get file options
+     *
+     * Return a list of available directories for file uploads.
+     */
+    public function options(OptionsFileRequest $request): JsonResponse
+    {
+        $options = $this->fileService->getOptions($request->validated());
+
+        return $this->sendResponse([
+            'data' => FileResource::collection($options),
+        ]);
     }
 }

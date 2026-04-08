@@ -6,11 +6,13 @@ use Illuminate\Http\UploadedFile;
 
 interface StorageServiceInterface
 {
-    public function store(UploadedFile $file, string $directory, string $fileName, string $disk): string;
+    public const PUBLIC_DISK = 'public';
+
+    public function store(UploadedFile $file, string $directory, string $fileName): string;
 
     public function delete(string $disk, string $path): void;
 
-    public function url(string $disk, string $path): string;
+    public function url(string $path): string;
 
     public function exists(string $disk, string $path): bool;
 

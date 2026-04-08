@@ -86,7 +86,12 @@ return [
 
     'uploads' => [
         'default' => env('UPLOAD_DISK', 'public'),
-        'allowed' => ['public', 's3'],
+        'allowed' => ['public'],
+        'directories' => [
+            'media' => 'media',
+            'site' => 'media/site',
+            'posts' => 'media/posts',
+        ],
     ],
 
     'links' => [

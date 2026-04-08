@@ -9,6 +9,7 @@ use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class ListParentChildAssignmentsAction
 {
@@ -16,9 +17,10 @@ class ListParentChildAssignmentsAction
      * @param  array<string, mixed>  $filters
      * @return array{assignments: LengthAwarePaginator, user_options: Paginator}
      */
-    public function execute(User $actor, array $filters): array
+    public function execute(array $filters): array
     {
-        $assignmentsQuery = $this->usersVisibleToActorQuery($actor)
+        $user = Auth::user();
+        $assignmentsQuery = $this->usersVisibleToUserQuery($user)
             ->whereNotIn('id', UserParentChild::query()->select('child_user_id'));
 
         SortInput::fromValidatedArray(
@@ -61,7 +63,7 @@ class ListParentChildAssignmentsAction
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        $optionsQuery = $this->usersVisibleToActorQuery($actor)
+        $optionsQuery = $this->usersVisibleToUserQuery($user)
             ->orderBy('name')
             ->orderBy('id');
 
@@ -86,13 +88,13 @@ class ListParentChildAssignmentsAction
     /**
      * @return Builder<User>
      */
-    private function usersVisibleToActorQuery(User $actor): Builder
+    private function usersVisibleToUserQuery(User $user): Builder
     {
         $query = User::query()
             ->with(['role', 'assignedParentLink.parentUser']);
 
-        if (! $actor->managesAllUsers()) {
-            $query->whereIn('id', $actor->manageableUserIds());
+        if (! $user->managesAllUsers()) {
+            $query->whereIn('id', $user->manageableUserIds());
         }
 
         return $query;

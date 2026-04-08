@@ -13,7 +13,7 @@ trait FileAttribute
     protected function url(): Attribute
     {
         return Attribute::make(
-            get: fn (): string => app(StorageServiceInterface::class)->url($this->disk, $this->path),
+            get: fn (): string => app(StorageServiceInterface::class)->url($this->path),
         );
     }
 }
