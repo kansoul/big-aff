@@ -10,7 +10,7 @@ class ListCategoriesAction
     public function execute(array $filters): LengthAwarePaginator
     {
         $query = Category::query()
-            ->with(['featureMedia', 'parent'])
+            ->with(['featureMedia'])
             ->orderByDesc('created_at');
 
         if (! empty($filters['query'])) {
@@ -19,10 +19,6 @@ class ListCategoriesAction
                 $builder->where('name', 'like', "%{$queryString}%")
                     ->orWhere('description', 'like', "%{$queryString}%");
             });
-        }
-
-        if (! empty($filters['parent_id'])) {
-            $query->where('parent_id', $filters['parent_id']);
         }
 
         $perPage = (int) ($filters['per_page'] ?? 15);
