@@ -4,9 +4,9 @@ namespace App\Enums;
 
 enum SiteStatus: string
 {
-    case Active = 'active';
-    case Maintenance = 'maintenance';
-    case Suspended = 'suspended';
+    case ACTIVE = 'active';
+    case MAINTENANCE = 'maintenance';
+    case SUSPENDED = 'suspended';
 
     /**
      * @return array<string>
