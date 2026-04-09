@@ -25,17 +25,17 @@ class SiteFactory extends Factory
             'secret_key' => Str::random(40),
             'settings' => null,
             'description' => $this->faker->sentence(),
-            'status' => SiteStatus::Active->value,
+            'status' => SiteStatus::ACTIVE->value,
         ];
     }
 
     public function maintenance(): static
     {
-        return $this->state(['status' => SiteStatus::Maintenance->value]);
+        return $this->state(['status' => SiteStatus::MAINTENANCE->value]);
     }
 
     public function suspended(): static
     {
-        return $this->state(['status' => SiteStatus::Suspended->value]);
+        return $this->state(['status' => SiteStatus::SUSPENDED->value]);
     }
 }

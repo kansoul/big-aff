@@ -2,7 +2,6 @@
 
 namespace App\Actions\Site;
 
-use App\Enums\SiteStatus;
 use App\Models\Site;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -21,7 +20,7 @@ class CreateSiteAction
             'favicon_id' => $data['favicon_id'] ?? null,
             'settings' => $data['settings'] ?? null,
             'description' => $data['description'] ?? null,
-            'status' => SiteStatus::Active->value,
+            'status' => $data['status'] ?? null,
             'created_by' => $userId,
             'updated_by' => $userId,
         ]);

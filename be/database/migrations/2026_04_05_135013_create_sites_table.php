@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('favicon_id')->nullable()->constrained('files')->nullOnDelete();
             $table->json('settings')->nullable();
             $table->text('description')->nullable();
-            $table->string('status', 20)->default(SiteStatus::Active->value);
+            $table->string('status', 20)->default(SiteStatus::ACTIVE->value);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->softDeletes();
