@@ -162,3 +162,98 @@ Errors use `sendError()`:
 - Requests use `$request->validated()`.
 - Resource uses `whenLoaded()` for relations.
 - Follow `laravel-best-practices`: authorize (policies/gates when applicable), do not expose sensitive fields in Resources, avoid query builder/raw SQL with raw user input, and run `vendor/bin/pint --dirty --format agent` after editing PHP files.
+
+---
+
+## Project-specific: List Actions & Ownership (required)
+
+### FormRequest for list endpoints
+
+Every `List*Request` **must** use `ValidatesPaginationQuery` + `ValidatesSortQuery` and reference `ORDERABLE_COLUMNS` from the Action:
+
+```php
+use App\Actions\Post\ListPostsAction;
+use App\Http\Requests\Concerns\ValidatesPaginationQuery;
+use App\Http\Requests\Concerns\ValidatesSortQuery;
+
+class ListPostsRequest extends FormRequest
+{
+    use ValidatesPaginationQuery;
+    use ValidatesSortQuery;
+
+    public function rules(): array
+    {
+        return array_merge(
+            $this->paginationRules(),
+            $this->sortRules(ListPostsAction::ORDERABLE_COLUMNS),
+            [ /* domain filters */ ],
+        );
+    }
+}
+```
+
+### List*Action structure
+
+Every `List*Action` **must** declare `ORDERABLE_COLUMNS`, apply `OwnershipFilter`, then `SortInput`, then `PaginationInput`:
+
+```php
+use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\PaginationInput\PaginationInput;
+use App\Support\SortInput\SortInput;
+
+class ListPostsAction
+{
+    public const ORDERABLE_COLUMNS = ['id', 'title', 'status', 'created_at'];
+
+    public function execute(array $filters): LengthAwarePaginator
+    {
+        $ownership = OwnershipFilter::forAuthUser();
+
+        $query = Post::query()->with(['featureMedia', 'category']);
+        $ownership->applyTo($query); // no-op for admins
+
+        // domain filters...
+
+        SortInput::fromValidatedArray(
+            $filters,
+            self::ORDERABLE_COLUMNS,
+            defaultColumn: 'created_at',
+            defaultDirection: 'desc',
+        )->applyTo($query);
+
+        return PaginationInput::fromValidatedArray($filters)->paginateQuery($query);
+    }
+}
+```
+
+### Ownership Filtering — required on ALL actions
+
+`App\Support\OwnershipFilter\OwnershipFilter` must be applied in every action that reads or mutates data.
+Admins bypass the filter automatically.
+
+```php
+// List — model has created_by
+$ownership = OwnershipFilter::forAuthUser();
+$ownership->applyTo($query);
+
+// List — ownership via a related table (no created_by on the model)
+$ownership->applyThrough($query, 'site_id', fn(array $ids) =>
+    Site::whereIn('created_by', $ids)->select('id')
+);
+
+// Update / Delete — throws AuthorizationException (403) if not authorized
+OwnershipFilter::forAuthUser()->authorize($record->created_by);
+
+// Assign pattern — guard site + intersect userIds
+$ownership = OwnershipFilter::forAuthUser();
+$ownership->authorize($site->created_by);
+$userIds = array_values(array_intersect($userIds, $ownership->allowedUserIds()));
+```
+
+| Method | Purpose |
+|--------|---------|
+| `OwnershipFilter::forAuthUser()` | Instantiate for authenticated user |
+| `->applyTo(Builder $query, string $column = 'created_by')` | List — direct owner column |
+| `->applyThrough(Builder $query, string $column, Closure $subquery)` | List — owner via related table |
+| `->authorize(?int $ownerId)` | Update/Delete — throws 403 if unauthorized |
+| `->allowedUserIds(): array` | Raw array of allowed user IDs |

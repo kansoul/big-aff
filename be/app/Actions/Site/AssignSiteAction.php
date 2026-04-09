@@ -4,15 +4,24 @@ namespace App\Actions\Site;
 
 use App\Models\Site;
 use App\Models\UserSite;
+use App\Support\OwnershipFilter\OwnershipFilter;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
 class AssignSiteAction
 {
     /**
      * @param  array<int>  $userIds
+     *
+     * @throws AuthorizationException
      */
     public function execute(Site $site, array $userIds): void
     {
+        $ownership = OwnershipFilter::forAuthUser();
+        $ownership->authorize($site->created_by);
+
+        $userIds = array_values(array_intersect($userIds, $ownership->allowedUserIds()));
+
         DB::transaction(function () use ($site, $userIds): void {
             // Restore soft-deleted pivots for users that were previously removed
             UserSite::query()

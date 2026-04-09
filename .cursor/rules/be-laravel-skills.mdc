@@ -48,3 +48,78 @@ Nếu một prompt yêu cầu **cả** giao diện và API: vẫn phải đọc 
 - **Tài liệu Laravel:** ưu tiên công cụ **`search-docs`** (Laravel Boost) khi cần API chính xác theo phiên bản đã cài.
 
 Đừng nhân đôi toàn bộ nội dung skill trong rule này; mở đúng file **`SKILL.md`** ở bảng trên.
+
+## 2. Bắt buộc: List Action & Request pattern
+
+Khi tạo list endpoint, **bắt buộc** áp dụng đầy đủ pattern sau.
+
+### FormRequest
+
+```php
+use App\Actions\Post\ListPostsAction;
+use App\Http\Requests\Concerns\ValidatesPaginationQuery;
+use App\Http\Requests\Concerns\ValidatesSortQuery;
+
+class ListPostsRequest extends FormRequest
+{
+    use ValidatesPaginationQuery;
+    use ValidatesSortQuery;
+
+    public function rules(): array
+    {
+        return array_merge(
+            $this->paginationRules(),
+            $this->sortRules(ListPostsAction::ORDERABLE_COLUMNS),
+            [ /* domain filters */ ],
+        );
+    }
+}
+```
+
+### Action class
+
+```php
+use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\PaginationInput\PaginationInput;
+use App\Support\SortInput\SortInput;
+
+class ListPostsAction
+{
+    public const ORDERABLE_COLUMNS = ['id', 'title', 'created_at'];
+
+    public function execute(array $filters): LengthAwarePaginator
+    {
+        $ownership = OwnershipFilter::forAuthUser();
+
+        $query = Post::query()->with([...]);
+        $ownership->applyTo($query); // no-op cho admin
+
+        // domain filters...
+
+        SortInput::fromValidatedArray($filters, self::ORDERABLE_COLUMNS,
+            defaultColumn: 'created_at', defaultDirection: 'desc',
+        )->applyTo($query);
+
+        return PaginationInput::fromValidatedArray($filters)->paginateQuery($query);
+    }
+}
+```
+
+## 3. Bắt buộc: OwnershipFilter trên mọi action
+
+`App\Support\OwnershipFilter\OwnershipFilter` **phải** được dùng trong mọi action đọc hoặc ghi dữ liệu. Admin tự động bỏ qua filter (no-op).
+
+```php
+// List — có cột created_by trực tiếp
+OwnershipFilter::forAuthUser()->applyTo($query);
+
+// List — qua bảng liên quan (không có created_by)
+$ownership->applyThrough($query, 'site_id', fn(array $ids) =>
+    Site::whereIn('created_by', $ids)->select('id')
+);
+
+// Update / Delete — ném 403 nếu không có quyền
+OwnershipFilter::forAuthUser()->authorize($record->created_by);
+```
+
+Chi tiết đầy đủ: **`be/.agents/skills/laravel-crud/SKILL.md`** — mục "Project-specific: List Actions & Ownership".

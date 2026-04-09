@@ -4,11 +4,10 @@ namespace App\Actions\Post;
 
 use App\Http\Requests\Post\ListPostsRequest;
 use App\Models\Post;
-use App\Models\User;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Auth;
 
 class ListPostsAction
 {
@@ -33,7 +32,10 @@ class ListPostsAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
+        $ownership = OwnershipFilter::forAuthUser();
+
         $query = Post::query()->with(['featureMedia', 'category']);
+        $ownership->applyTo($query);
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];
