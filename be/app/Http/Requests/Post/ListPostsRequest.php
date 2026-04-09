@@ -35,6 +35,11 @@ class ListPostsRequest extends FormRequest
                 'type' => ['nullable', 'string', Rule::in(PostType::values())],
                 'lang' => ['nullable', 'string', 'max:10'],
                 'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+                'deleted_at' => ['nullable', 'string', 'in:with,only,without'],
+                'is_hidden' => ['nullable', 'integer', 'in:0,1'],
+                'created_by' => ['nullable', 'integer', 'exists:users,id'],
+                'created_at_from' => ['nullable', 'date'],
+                'created_at_to' => ['nullable', 'date', 'after_or_equal:created_at_from'],
             ],
         );
     }

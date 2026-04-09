@@ -31,6 +31,11 @@ class PostController extends BaseController
      * @queryParam type string Filter by type. Enum: normal, ai, wordpress. Example: normal
      * @queryParam lang string Filter by language. Example: vi
      * @queryParam category_id integer Filter by category. Example: 1
+     * @queryParam deleted_at string Include soft-deleted posts. Enum: with, only, without. Example: with
+     * @queryParam is_hidden integer Filter by hidden status. Enum: 0, 1. Example: 0
+     * @queryParam created_by integer Filter by creator user ID. Example: 1
+     * @queryParam created_at_from string Filter posts created on or after this date (Y-m-d). Example: 2026-01-01
+     * @queryParam created_at_to string Filter posts created on or before this date (Y-m-d). Example: 2026-12-31
      * @queryParam order_by string Column to sort by. Enum: id, title, slug, status, type, lang, published_at, created_at. Example: created_at
      * @queryParam order string Sort direction. Enum: asc, desc. Example: desc
      * @queryParam per_page integer Items per page (max 100). Example: 15
