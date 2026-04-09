@@ -74,35 +74,40 @@ function getUsersColumns(meta: ActionMeta): MRT_ColumnDef<ManagedUser>[] {
             enableGlobalFilter: false,
             enableHiding: false,
             mantineTableHeadCellProps: {
-              sx: { width: 80, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+              sx: {
+                width: 200,
+                '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
+              },
             },
-            mantineTableBodyCellProps: { style: { width: 80 } },
+            mantineTableBodyCellProps: { style: { width: 200 } },
             Cell: ({ row }: { row: { original: ManagedUser } }) => {
               const u = row.original
               return (
-                <div className="flex justify-end gap-0.5">
+                <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
                   {canUpdate ? (
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      size="sm"
+                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
                       aria-label={`Edit ${u.name}`}
                       onClick={() => onEditRow(u)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
+                      Edit
                     </Button>
                   ) : null}
                   {canDelete && u.id !== currentUserId ? (
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      size="sm"
+                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
                       aria-label={`Delete ${u.name}`}
                       onClick={() => onDeleteRow(u)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
+                      Delete
                     </Button>
                   ) : null}
                 </div>
@@ -181,6 +186,10 @@ function SettingsUsersTableCardInner({
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
+    mantineTableBodyRowProps: ({ row }) => ({
+      onClick: () => onEditRow(row.original),
+      sx: { cursor: 'pointer' },
+    }),
     localization: {
       rowsPerPage: 'Per Page',
     },

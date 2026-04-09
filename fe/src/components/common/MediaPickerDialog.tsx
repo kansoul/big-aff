@@ -6,18 +6,11 @@ import {
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
 } from 'mantine-react-table'
-import {
-  AlertCircle,
-  CheckCircle2,
-  ImageIcon,
-  Loader2,
-  Pencil,
-  Upload,
-  X,
-  ZoomIn,
-} from 'lucide-react'
+import { AlertCircle, CheckCircle2, ImageIcon, Pencil, Upload, X, ZoomIn } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { hasFullAccess } from '@/constants/permissions'
+import { useAuthStore } from '@/hooks/useAuthStore'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -27,6 +20,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { mediaApi } from '@/features/media/api'
 import type { MediaFile } from '@/features/media/types'
@@ -40,9 +42,15 @@ type Tab = 'recent' | 'upload'
 
 type UploadState =
   | { status: 'idle' }
-  | { status: 'uploading'; progress: number; name: string }
-  | { status: 'done'; media: MediaFile }
+  | { status: 'selected'; file: File; previewUrl: string }
   | { status: 'error'; message: string }
+
+export type UploadMeta = {
+  alt_text: string | null
+  directory: string | null
+}
+
+const DIRECTORY_OPTIONS = ['media', 'media/site', 'media/posts'] as const
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MediaFileCell — thumbnail with click-to-preview
@@ -92,6 +100,16 @@ const MEDIA_COLUMNS: MRT_ColumnDef<MediaFile>[] = [
     size: 200,
     Cell: ({ row }) => <MediaFileCell media={row.original} />,
   },
+  {
+    accessorKey: 'alt_text',
+    header: 'Name',
+    size: 140,
+    Cell: ({ row }) => (
+      <span className="max-w-xs truncate text-sm text-muted-foreground">
+        {row.original.alt_text}
+      </span>
+    ),
+  },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,6 +143,7 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
           user_id: null,
           order: null,
           order_by: null,
+          alt_text: null,
         })
         if (cancelled) return
         setData(res.data.data)
@@ -219,7 +238,7 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
 type MediaPickerDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSelect: (media: MediaFile) => void
+  onSelect: (media: MediaFile | File, meta: UploadMeta) => void
   title?: string
   accept?: string
 }
@@ -231,9 +250,14 @@ export function MediaPickerDialog({
   title = 'Select media',
   accept = 'image/*',
 }: MediaPickerDialogProps) {
+  const user = useAuthStore((s) => s.user)
+  const isAdmin = hasFullAccess(user?.permissions ?? [])
+
   const [tab, setTab] = useState<Tab>('recent')
   const [selected, setSelected] = useState<MediaFile | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>({ status: 'idle' })
+  const [altText, setAltText] = useState('')
+  const [directory, setDirectory] = useState<string>('')
   const [dragging, setDragging] = useState(false)
   // Increment on each open to remount RecentMediaTable with fresh state
   const [openKey, setOpenKey] = useState(0)
@@ -247,7 +271,12 @@ export function MediaPickerDialog({
       } else {
         setTab('recent')
         setSelected(null)
-        setUploadState({ status: 'idle' })
+        setUploadState((prev) => {
+          if (prev.status === 'selected') URL.revokeObjectURL(prev.previewUrl)
+          return { status: 'idle' }
+        })
+        setAltText('')
+        setDirectory('')
         setDragging(false)
         dragCounter.current = 0
       }
@@ -260,27 +289,20 @@ export function MediaPickerDialog({
     setTab(v as Tab)
   }, [])
 
-  const handleUpload = useCallback((file: File) => {
-    setUploadState({ status: 'uploading', progress: 0, name: file.name })
-    mediaApi
-      .upload(file, {}, (progress) => {
-        setUploadState({ status: 'uploading', progress, name: file.name })
-      })
-      .then((res) => {
-        setUploadState({ status: 'done', media: res.data.data })
-      })
-      .catch(() => {
-        setUploadState({ status: 'error', message: 'Upload failed. Please try again.' })
-      })
+  const handleFileSelect = useCallback((file: File) => {
+    setUploadState((prev) => {
+      if (prev.status === 'selected') URL.revokeObjectURL(prev.previewUrl)
+      return { status: 'selected', file, previewUrl: URL.createObjectURL(file) }
+    })
   }, [])
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
-      if (file) handleUpload(file)
+      if (file) handleFileSelect(file)
       e.target.value = ''
     },
-    [handleUpload],
+    [handleFileSelect],
   )
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -305,23 +327,26 @@ export function MediaPickerDialog({
       dragCounter.current = 0
       setDragging(false)
       const file = e.dataTransfer.files?.[0]
-      if (file) handleUpload(file)
+      if (file) handleFileSelect(file)
     },
-    [handleUpload],
+    [handleFileSelect],
   )
 
   const handleConfirm = useCallback(() => {
     if (tab === 'recent' && selected) {
-      onSelect(selected)
+      onSelect(selected, { alt_text: null, directory: null })
       handleOpenChange(false)
-    } else if (tab === 'upload' && uploadState.status === 'done') {
-      onSelect(uploadState.media)
+    } else if (tab === 'upload' && uploadState.status === 'selected') {
+      onSelect(uploadState.file, {
+        alt_text: altText.trim() || null,
+        directory: directory || null,
+      })
       handleOpenChange(false)
     }
-  }, [tab, selected, uploadState, onSelect, handleOpenChange])
+  }, [tab, selected, uploadState, altText, directory, onSelect, handleOpenChange])
 
   const confirmDisabled =
-    (tab === 'recent' && !selected) || (tab === 'upload' && uploadState.status !== 'done')
+    (tab === 'recent' && !selected) || (tab === 'upload' && uploadState.status !== 'selected')
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -350,7 +375,7 @@ export function MediaPickerDialog({
             />
           </TabsContent>
 
-          <TabsContent value="upload" className="mt-0 flex min-h-0 flex-1 flex-col">
+          <TabsContent value="upload" className="mt-0 flex min-h-0 flex-1 flex-col gap-4">
             <input
               ref={fileInputRef}
               type="file"
@@ -369,20 +394,59 @@ export function MediaPickerDialog({
                   onClick={() => fileInputRef.current?.click()}
                 />
                 {uploadState.status === 'error' && (
-                  <div className="mt-3 flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                     <AlertCircle className="size-4 shrink-0" />
                     <p>{uploadState.message}</p>
                   </div>
                 )}
               </>
-            ) : uploadState.status === 'uploading' ? (
-              <UploadProgress name={uploadState.name} progress={uploadState.progress} />
             ) : (
-              <UploadDone
-                media={uploadState.media}
-                onReset={() => setUploadState({ status: 'idle' })}
+              <FileSelected
+                file={uploadState.file}
+                previewUrl={uploadState.previewUrl}
+                onReset={() =>
+                  setUploadState((prev) => {
+                    if (prev.status === 'selected') URL.revokeObjectURL(prev.previewUrl)
+                    return { status: 'idle' }
+                  })
+                }
               />
             )}
+
+            {/* Upload metadata fields */}
+            <div className="flex flex-col gap-3">
+              {isAdmin && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="upload-directory">Directory</Label>
+                  <Select
+                    value={directory || '__default__'}
+                    onValueChange={(v) => setDirectory(v === '__default__' ? '' : v)}
+                  >
+                    <SelectTrigger id="upload-directory" className="w-full">
+                      <SelectValue placeholder="Default (media)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__default__">Default (media)</SelectItem>
+                      {DIRECTORY_OPTIONS.map((dir) => (
+                        <SelectItem key={dir} value={dir}>
+                          {dir}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="upload-alt-text">Alt text</Label>
+                <Input
+                  id="upload-alt-text"
+                  placeholder="Describe the file…"
+                  value={altText}
+                  onChange={(e) => setAltText(e.target.value)}
+                  maxLength={255}
+                />
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
 
@@ -411,8 +475,9 @@ export function MediaPickerDialog({
 // ─────────────────────────────────────────────────────────────────────────────
 
 type MediaPickerInputProps = {
-  value?: MediaFile | null
-  onChange?: (media: MediaFile | null) => void
+  value?: MediaFile | File | null
+  onChange?: (media: MediaFile | File | null) => void
+  onUploadMeta?: (meta: UploadMeta) => void
   accept?: string
   placeholder?: string
   disabled?: boolean
@@ -421,17 +486,31 @@ type MediaPickerInputProps = {
 export function MediaPickerInput({
   value,
   onChange,
+  onUploadMeta,
   accept,
   placeholder = 'Pick an image…',
   disabled = false,
 }: MediaPickerInputProps) {
   const [open, setOpen] = useState(false)
 
+  // Derive preview URL without state to avoid setState-in-effect lint errors.
+  // useMemo creates the URL; the cleanup effect revokes it when it changes.
+  const filePreviewUrl = useMemo(
+    () => (value instanceof File ? URL.createObjectURL(value) : null),
+    [value],
+  )
+  useEffect(() => {
+    return () => {
+      if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl)
+    }
+  }, [filePreviewUrl])
+
   const handleSelect = useCallback(
-    (media: MediaFile) => {
+    (media: MediaFile | File, meta: UploadMeta) => {
       onChange?.(media)
+      if (media instanceof File) onUploadMeta?.(meta)
     },
-    [onChange],
+    [onChange, onUploadMeta],
   )
 
   const handleClear = useCallback(
@@ -442,18 +521,37 @@ export function MediaPickerInput({
     [onChange],
   )
 
+  const displayUrl = value instanceof File ? filePreviewUrl : (value?.url ?? null)
+  const displayName = value instanceof File ? value.name : (value?.original_name ?? null)
+  const displaySize = value instanceof File ? value.size : (value?.size ?? null)
+
   if (value) {
     return (
       <>
         <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 p-2">
-          <img
-            src={value.url}
-            alt={value.original_name}
-            className="size-12 shrink-0 rounded object-cover"
-          />
+          {displayUrl ? (
+            <img
+              src={displayUrl}
+              alt={displayName ?? ''}
+              className="size-12 shrink-0 rounded object-cover"
+            />
+          ) : (
+            <div className="size-12 shrink-0 rounded bg-muted" />
+          )}
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <p className="truncate text-sm font-medium">{value.original_name}</p>
-            <p className="text-xs text-muted-foreground">{(value.size / 1024).toFixed(0)} KB</p>
+            <p className="truncate text-sm font-medium">{displayName}</p>
+            <div className="flex items-center gap-2">
+              {displaySize != null && (
+                <p className="text-xs text-muted-foreground">
+                  {(displaySize / 1024).toFixed(0)} KB
+                </p>
+              )}
+              {value instanceof File && (
+                <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                  Pending upload
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex shrink-0 gap-1">
             <Button
@@ -526,6 +624,7 @@ type MediaPickerFieldProps<T extends FieldValues> = {
   label?: string
   accept?: string
   placeholder?: string
+  onUploadMeta?: (meta: UploadMeta) => void
 }
 
 export function MediaPickerField<T extends FieldValues>({
@@ -534,6 +633,7 @@ export function MediaPickerField<T extends FieldValues>({
   label,
   accept,
   placeholder,
+  onUploadMeta,
 }: MediaPickerFieldProps<T>) {
   return (
     <FormField
@@ -544,8 +644,9 @@ export function MediaPickerField<T extends FieldValues>({
           {label ? <FormLabel>{label}</FormLabel> : null}
           <FormControl>
             <MediaPickerInput
-              value={field.value as MediaFile | null}
+              value={field.value as MediaFile | File | null}
               onChange={field.onChange}
+              onUploadMeta={onUploadMeta}
               accept={accept}
               placeholder={placeholder}
             />
@@ -602,38 +703,25 @@ const DropZone = ({
   </button>
 )
 
-const UploadProgress = ({ name, progress }: { name: string; progress: number }) => (
-  <div className="flex flex-1 flex-col items-center justify-center gap-4">
-    <Loader2 className="size-8 animate-spin text-primary" />
-    <div className="w-full max-w-xs space-y-2">
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span className="max-w-[200px] truncate">{name}</span>
-        <span>{progress}%</span>
-      </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-primary transition-all duration-150"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-    </div>
-  </div>
-)
-
-const UploadDone = ({ media, onReset }: { media: MediaFile; onReset: () => void }) => (
+const FileSelected = ({
+  file,
+  previewUrl,
+  onReset,
+}: {
+  file: File
+  previewUrl: string
+  onReset: () => void
+}) => (
   <div className="flex flex-1 flex-col items-center justify-center gap-4">
     <div className="overflow-hidden rounded-lg border border-border">
-      <img src={media.url} alt={media.original_name} className="max-h-48 max-w-xs object-contain" />
+      <img src={previewUrl} alt={file.name} className="max-h-48 max-w-xs object-contain" />
     </div>
     <div className="flex flex-col items-center gap-1 text-center">
-      <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-        <CheckCircle2 className="size-4 text-primary" />
-        Upload successful
-      </div>
-      <p className="max-w-xs truncate text-xs text-muted-foreground">{media.original_name}</p>
+      <p className="max-w-xs truncate text-sm font-medium text-foreground">{file.name}</p>
+      <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>
     </div>
     <Button type="button" variant="outline" size="sm" onClick={onReset}>
-      Upload another
+      Choose different file
     </Button>
   </div>
 )

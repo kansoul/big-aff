@@ -2,10 +2,10 @@ import { axiosInstance } from '@/shared/api/axios'
 import { isNil } from '@/lib/utils'
 import type {
   Category,
-  CategoryCreateFormValues,
+  CategoryCreateApiParams,
   CategoryFilterParams,
   CategoryListResponse,
-  CategoryUpdateFormValues,
+  CategoryUpdateApiParams,
 } from '@/features/categories/types'
 
 export const categoriesApi = {
@@ -21,21 +21,13 @@ export const categoriesApi = {
       },
     }),
 
-  create: (values: CategoryCreateFormValues) => {
+  create: (params: CategoryCreateApiParams) => {
     const fd = new FormData()
-    fd.append('name', values.name)
-    if (values.description) fd.append('description', values.description)
-    if (!isNil(values.parent_id)) fd.append('parent_id', String(values.parent_id))
-
-    if (values.feature_image instanceof File) {
-      fd.append('feature_image', values.feature_image)
-    } else if (
-      values.feature_image &&
-      typeof values.feature_image === 'object' &&
-      'id' in values.feature_image
-    ) {
-      fd.append('feature_media_id', String((values.feature_image as { id: number }).id))
-    }
+    fd.append('name', params.name)
+    if (params.description) fd.append('description', params.description)
+    if (!isNil(params.parent_id)) fd.append('parent_id', String(params.parent_id))
+    if (!isNil(params.feature_media_id))
+      fd.append('feature_media_id', String(params.feature_media_id))
 
     return axiosInstance.post<{ data: Category }>('/categories', fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -44,24 +36,17 @@ export const categoriesApi = {
 
   getDetail: (id: number) => axiosInstance.get<{ data: Category }>(`/categories/${id}`),
 
-  update: (id: number, values: CategoryUpdateFormValues) => {
+  update: (id: number, params: CategoryUpdateApiParams) => {
     const fd = new FormData()
     fd.append('_method', 'PUT')
-    if (!isNil(values.name)) fd.append('name', values.name)
-    if (!isNil(values.description)) fd.append('description', values.description ?? '')
-    if (!isNil(values.parent_id)) fd.append('parent_id', String(values.parent_id ?? ''))
-
-    if (values.feature_image instanceof File) {
-      fd.append('feature_image', values.feature_image)
-    } else if (
-      values.feature_image &&
-      typeof values.feature_image === 'object' &&
-      'id' in values.feature_image
-    ) {
-      fd.append('feature_media_id', String((values.feature_image as { id: number }).id))
-    } else if (isNil(values.feature_image)) {
-      fd.append('feature_media_id', '')
-    }
+    if (params.name) fd.append('name', params.name)
+    if (!isNil(params.description)) fd.append('description', params.description ?? '')
+    if (!isNil(params.parent_id)) fd.append('parent_id', String(params.parent_id ?? ''))
+    // Send feature_media_id: number to set, empty string to clear
+    fd.append(
+      'feature_media_id',
+      params.feature_media_id != null ? String(params.feature_media_id) : '',
+    )
 
     return axiosInstance.post<{ data: Category }>(`/categories/${id}`, fd, {
       headers: { 'Content-Type': 'multipart/form-data' },

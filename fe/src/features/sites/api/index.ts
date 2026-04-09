@@ -1,7 +1,7 @@
 import { axiosInstance } from '@/shared/api/axios'
 import type {
   Site,
-  SiteCreateFormValues,
+  SiteCreateApiParams,
   SiteDetail,
   SiteFilterParams,
   SiteListResponse,
@@ -24,37 +24,37 @@ export const sitesApi = {
 
   delete: (id: number) => axiosInstance.delete(`/sites/${id}`),
 
-  update: (id: number, values: SiteCreateFormValues) =>
+  update: (id: number, params: SiteCreateApiParams) =>
     axiosInstance.put<{ data: SiteDetail }>(`/sites/${id}`, {
-      name: values.name,
-      url: values.url,
-      description: values.description ?? null,
-      status: values.status ?? null,
-      logo_id: values.logo?.id ?? null,
-      favicon_id: values.favicon?.id ?? null,
+      name: params.name,
+      url: params.url,
+      description: params.description ?? null,
+      status: params.status ?? null,
+      logo_id: params.logo_id ?? null,
+      favicon_id: params.favicon_id ?? null,
       settings: {
-        gtm: values.settings?.gtm ?? null,
-        fb_pixel: values.settings?.fb_pixel ?? null,
-        theme: values.settings?.theme ?? null,
-        default_channel: values.settings.default_channel,
-        default_style: values.settings.default_style,
+        gtm: params.settings?.gtm ?? null,
+        fb_pixel: params.settings?.fb_pixel ?? null,
+        theme: params.settings?.theme ?? null,
+        default_channel: params.settings.default_channel,
+        default_style: params.settings.default_style,
       },
     }),
 
-  create: (values: SiteCreateFormValues) =>
+  create: (params: SiteCreateApiParams) =>
     axiosInstance.post<{ data: Site }>('/sites', {
-      name: values.name,
-      url: values.url,
-      description: values.description ?? null,
-      status: values.status ?? null,
-      logo_id: values.logo?.id ?? null,
-      favicon_id: values.favicon?.id ?? null,
+      name: params.name,
+      url: params.url,
+      description: params.description ?? null,
+      status: params.status ?? null,
+      logo_id: params.logo_id ?? null,
+      favicon_id: params.favicon_id ?? null,
       settings: {
-        gtm: values.settings?.gtm ?? null,
-        fb_pixel: values.settings?.fb_pixel ?? null,
-        theme: values.settings?.theme ?? null,
-        default_channel: values.settings.default_channel,
-        default_style: values.settings.default_style,
+        gtm: params.settings?.gtm ?? null,
+        fb_pixel: params.settings?.fb_pixel ?? null,
+        theme: params.settings?.theme ?? null,
+        default_channel: params.settings.default_channel,
+        default_style: params.settings.default_style,
       },
     }),
 }

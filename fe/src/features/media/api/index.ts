@@ -13,6 +13,7 @@ export const mediaApi = {
         ...(filters.order ? { order: filters.order } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),
         ...(!isNil(filters.user_id) ? { user_id: filters.user_id } : {}),
+        ...(filters.alt_text ? { alt_text: filters.alt_text } : {}),
       },
     }),
 

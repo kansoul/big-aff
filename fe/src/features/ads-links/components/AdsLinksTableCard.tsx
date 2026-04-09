@@ -18,6 +18,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import type {
   AdsLink,
   AdsLinkFilterParams,
@@ -153,17 +154,13 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
     {
       accessorKey: 'is_hidden',
       header: 'Status',
-      size: 80,
-      Cell: ({ row }) =>
-        row.original.is_hidden ? (
-          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
-            Hidden
-          </span>
-        ) : (
-          <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-            Active
-          </span>
-        ),
+      size: 100,
+      Cell: ({ row }) => (
+        <StatusBadge
+          status={row.original.is_hidden ? 'hidden' : 'active'}
+          label={row.original.is_hidden ? 'Hidden' : 'Active'}
+        />
+      ),
     },
     {
       id: 'copy_links',

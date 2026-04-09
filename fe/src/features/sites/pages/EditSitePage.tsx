@@ -13,6 +13,11 @@ import {
 } from '@/features/sites/types'
 import { SiteFormSections } from '@/features/sites/components/SiteFormSections'
 import { formatApiError } from '@/features/settings/components'
+import { mediaApi } from '@/features/media/api'
+import type { MediaFile } from '@/features/media/types'
+import type { UploadMeta } from '@/components/common/MediaPickerDialog'
+
+const DEFAULT_META: UploadMeta = { alt_text: null, directory: null }
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { PATHS, siteViewPath } from '@/constants/paths'
@@ -23,16 +28,18 @@ export function EditSitePage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [logoMeta, setLogoMeta] = useState<UploadMeta>(DEFAULT_META)
+  const [faviconMeta, setFaviconMeta] = useState<UploadMeta>(DEFAULT_META)
 
   const [siteData, setSiteData] = useState<SiteDetail | null>(null)
 
   const form = useForm<SiteCreateFormValues>({
-    resolver: zodResolver(siteCreateSchema),
+    resolver: zodResolver(siteCreateSchema) as any, // TODO: fix zodResolver type
     defaultValues: {
       name: '',
       url: '',
       description: '',
-      status: undefined,
+      status: 'active',
       logo: null,
       favicon: null,
       settings: { gtm: '', fb_pixel: '', theme: '', default_channel: '', default_style: '' },
@@ -70,11 +77,26 @@ export function EditSitePage() {
     void fetchDetail()
   }, [id, form, navigate])
 
+  const resolveMediaId = async (
+    value: MediaFile | File | null | undefined,
+    meta: UploadMeta,
+  ): Promise<number | null> => {
+    if (value instanceof File) {
+      const res = await mediaApi.upload(value, meta)
+      return res.data.data.id
+    }
+    return (value as MediaFile | null)?.id ?? null
+  }
+
   const onSubmit = async (values: SiteCreateFormValues) => {
     try {
       setFormError(null)
       setSubmitting(true)
-      await sitesApi.update(Number(id), values)
+      const [logo_id, favicon_id] = await Promise.all([
+        resolveMediaId(values.logo, logoMeta),
+        resolveMediaId(values.favicon, faviconMeta),
+      ])
+      await sitesApi.update(Number(id), { ...values, logo_id, favicon_id })
       toast.success('Site updated successfully')
       void navigate(PATHS.settingsSites)
     } catch (err) {
@@ -136,7 +158,11 @@ export function EditSitePage() {
           }}
           className="flex flex-col gap-6"
         >
-          <SiteFormSections control={form.control} />
+          <SiteFormSections
+            control={form.control}
+            onLogoMeta={setLogoMeta}
+            onFaviconMeta={setFaviconMeta}
+          />
 
           {formError ? (
             <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">

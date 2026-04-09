@@ -46,40 +46,45 @@ function getRolesColumns(meta: ActionMeta): MRT_ColumnDef<Role>[] {
           {
             id: 'actions',
             header: 'Actions',
-            size: 80,
+            size: 200,
             enableSorting: false,
             enableGlobalFilter: false,
             enableHiding: false,
             mantineTableHeadCellProps: {
-              sx: { width: 80, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+              sx: {
+                width: 200,
+                '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
+              },
             },
-            mantineTableBodyCellProps: { style: { width: 80 } },
+            mantineTableBodyCellProps: { style: { width: 200 } },
             Cell: ({ row }: { row: { original: Role } }) => {
               const role = row.original
               return (
-                <div className="flex justify-end gap-0.5">
+                <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
                   {canUpdate || canAssign ? (
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      size="sm"
+                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
                       aria-label={`Edit ${role.name}`}
                       onClick={() => onEditRow(role)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
+                      Edit
                     </Button>
                   ) : null}
                   {canDelete ? (
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      size="sm"
+                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
                       aria-label={`Delete ${role.name}`}
                       onClick={() => onDeleteRow(role)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
+                      Delete
                     </Button>
                   ) : null}
                 </div>

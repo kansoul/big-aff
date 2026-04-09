@@ -15,30 +15,17 @@ import { toast } from 'sonner'
 
 import { postsApi } from '@/features/posts/api'
 import { DeletePostDialog } from '@/features/posts/components'
-import type { Post, PostStatus } from '@/features/posts/types'
+import type { Post } from '@/features/posts/types'
 import { formatApiError } from '@/features/settings/components'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { PATHS, postEditPath } from '@/constants/paths'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { cn } from '@/lib/utils'
-
-const STATUS_STYLES: Record<PostStatus, string> = {
-  draft: 'bg-muted text-muted-foreground ring-border',
-  published:
-    'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-400 ring-green-200 dark:ring-green-900',
-  archived:
-    'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400 ring-red-200 dark:ring-red-900',
-}
-
-const STATUS_LABELS: Record<PostStatus, string> = {
-  draft: 'Draft',
-  published: 'Published',
-  archived: 'Archived',
-}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -149,16 +136,7 @@ export function ViewPostPage() {
 
               {/* Status + visibility row */}
               <div className="flex flex-wrap items-center gap-3">
-                {post.status && (
-                  <span
-                    className={cn(
-                      'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
-                      STATUS_STYLES[post.status],
-                    )}
-                  >
-                    {STATUS_LABELS[post.status]}
-                  </span>
-                )}
+                {post.status && <StatusBadge status={post.status} />}
                 <span
                   className={cn(
                     'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
