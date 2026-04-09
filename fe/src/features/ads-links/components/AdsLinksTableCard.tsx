@@ -6,19 +6,10 @@ import {
   MRT_ShowHideColumnsButton,
   MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
-import { AlertCircle, Copy, Eye, EyeOff, Pencil, Plus, RotateCcw } from 'lucide-react'
+import { AlertCircle, Copy, Eye, EyeOff, Pencil, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { DatePicker } from '@/components/ui/date-picker'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -26,6 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import type {
   AdsLink,
   AdsLinkFilterParams,
@@ -279,6 +271,7 @@ type AdsLinksTableCardProps = {
   listError: string | null
   loading: boolean
   adsLinks: AdsLink[]
+  totalRows: number
   currentUserId: number | undefined
   canCreate: boolean
   canUpdate: boolean
@@ -292,12 +285,15 @@ type AdsLinksTableCardProps = {
   onAddClick: () => void
   onEditRow: (row: AdsLink) => void
   onToggleHide: (row: AdsLink) => void
+  onPaginationChange: (page: number, perPage: number) => void
+  onSortingChange: (orderBy: string | null, order: 'asc' | 'desc' | null) => void
 }
 
 function AdsLinksTableCardInner({
   listError,
   loading,
   adsLinks,
+  totalRows,
   currentUserId,
   canCreate,
   canUpdate,
@@ -311,6 +307,8 @@ function AdsLinksTableCardInner({
   onAddClick,
   onEditRow,
   onToggleHide,
+  onPaginationChange,
+  onSortingChange,
 }: AdsLinksTableCardProps) {
   const [copyDialog, setCopyDialog] = useState<CopyDialogState>(COPY_DIALOG_CLOSED)
 
@@ -326,6 +324,77 @@ function AdsLinksTableCardInner({
     [currentUserId, canUpdate, onEditRow, onToggleHide],
   )
 
+  // Build filter field definitions for FilterPanel
+  const filterFields = useMemo<FilterFieldDef[]>(
+    () => [
+      {
+        field: 'post_id',
+        label: 'Post',
+        type: 'select',
+        value: filters.post_id ? String(filters.post_id) : null,
+        options: posts.map((p) => ({ label: p.title, value: String(p.id) })),
+      },
+      {
+        field: 'site_id',
+        label: 'Site',
+        type: 'select',
+        value: filters.site_id ? String(filters.site_id) : null,
+        options: sites.map((s) => ({ label: s.name, value: String(s.id) })),
+      },
+      {
+        field: 'channel_code',
+        label: 'Channel',
+        type: 'select',
+        value: filters.channel_code ?? null,
+        options: channels.map((c) => ({ label: c.name, value: c.code })),
+      },
+      {
+        field: 'is_hidden',
+        label: 'Status',
+        type: 'select',
+        placeholder: 'All',
+        value:
+          filters.is_hidden == 1 || filters.is_hidden === true
+            ? '1'
+            : filters.is_hidden == 0 || filters.is_hidden === false
+              ? '0'
+              : '__all__',
+        options: [
+          { label: 'Active', value: '0' },
+          { label: 'Hidden', value: '1' },
+        ],
+      },
+      {
+        field: 'date_range',
+        label: 'Created date',
+        type: 'daterange',
+        value: filters.date_range ?? null,
+      },
+      {
+        field: 'created_by',
+        label: 'Created by',
+        type: 'select',
+        value: filters.created_by ? String(filters.created_by) : null,
+        options: users.map((u) => ({ label: u.name, value: String(u.id) })),
+      },
+      {
+        field: 'pixel_id',
+        label: 'Facebook Pixel ID',
+        type: 'input',
+        value: filters.pixel_id ?? null,
+        placeholder: 'Search Pixel ID…',
+      },
+      {
+        field: 'googleid',
+        label: 'Google ID',
+        type: 'input',
+        value: filters.googleid ?? null,
+        placeholder: 'Search Google ID…',
+      },
+    ],
+    [filters, posts, sites, channels, users],
+  )
+
   const table = useMantineReactTable({
     data: adsLinks,
     columns,
@@ -336,7 +405,35 @@ function AdsLinksTableCardInner({
       showGlobalFilter: true,
       density: 'md',
     },
-    state: { showLoadingOverlay: loading },
+    // Server-side pagination
+    manualPagination: true,
+    rowCount: totalRows,
+    state: {
+      showLoadingOverlay: loading,
+      pagination: {
+        pageIndex: (filters.page ?? 1) - 1,
+        pageSize: filters.per_page ?? 15,
+      },
+      sorting: filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : [],
+    },
+    onPaginationChange: (updater) => {
+      const current = { pageIndex: (filters.page ?? 1) - 1, pageSize: filters.per_page ?? 15 }
+      const next = typeof updater === 'function' ? updater(current) : updater
+      onPaginationChange(next.pageIndex + 1, next.pageSize)
+    },
+    // Server-side sorting
+    manualSorting: true,
+    onSortingChange: (updater) => {
+      const current = filters.order_by
+        ? [{ id: filters.order_by, desc: filters.order === 'desc' }]
+        : []
+      const next = typeof updater === 'function' ? updater(current) : updater
+      if (next.length === 0) {
+        onSortingChange(null, null)
+      } else {
+        onSortingChange(next[0].id, next[0].desc ? 'desc' : 'asc')
+      }
+    },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
@@ -349,7 +446,7 @@ function AdsLinksTableCardInner({
     ),
     renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        {/* --- DÒNG TRÊN CÙNG: Các Action Buttons căn phải --- */}
+        {/* Action buttons */}
         <div className="flex w-full items-center justify-end gap-2">
           {canCreate && (
             <>
@@ -367,181 +464,12 @@ function AdsLinksTableCardInner({
           <MRT_ToggleGlobalFilterButton table={t} />
           <MRT_ShowHideColumnsButton table={t} />
         </div>
-
-        {/* --- KHU VỰC FILTER --- */}
-        <div className="flex flex-col gap-4 rounded-lg border bg-background/60 p-4 shadow-sm">
-          {/* Header & Nút Reset */}
-          <div className="flex items-center justify-between border-b border-border/50 pb-2">
-            <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              Filters
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1.5 px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-              onClick={onFilterReset}
-            >
-              <RotateCcw className="h-3 w-3" />
-              Reset Filters
-            </Button>
-          </div>
-
-          {/* Lưới các trường Filter */}
-          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Post */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Post</label>
-              <Select
-                value={filters.post_id ? String(filters.post_id) : '__all__'}
-                onValueChange={(v) =>
-                  onFilterChange({ post_id: v === '__all__' ? null : Number(v) })
-                }
-              >
-                {/* Thêm w-full vào đây */}
-                <SelectTrigger className="h-8 w-full text-xs">
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All</SelectItem>
-                  {posts.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Site */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Site</label>
-              <Select
-                value={filters.site_id ? String(filters.site_id) : '__all__'}
-                onValueChange={(v) =>
-                  onFilterChange({ site_id: v === '__all__' ? null : Number(v) })
-                }
-              >
-                <SelectTrigger className="h-8 w-full text-xs">
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All</SelectItem>
-                  {sites.map((s) => (
-                    <SelectItem key={s.id} value={String(s.id)}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Channel */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Channel</label>
-              <Select
-                value={filters.channel_code ?? '__all__'}
-                onValueChange={(v) => onFilterChange({ channel_code: v === '__all__' ? null : v })}
-              >
-                <SelectTrigger className="h-8 w-full text-xs">
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All</SelectItem>
-                  {channels.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Visible/Hidden */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Status</label>
-              <Select
-                value={
-                  filters.is_hidden === 1 || filters.is_hidden === true
-                    ? 'hidden'
-                    : filters.is_hidden === 0 || filters.is_hidden === false
-                      ? 'visible'
-                      : '__all__'
-                }
-                onValueChange={(v) =>
-                  onFilterChange({
-                    is_hidden: v === '__all__' ? undefined : v === 'hidden' ? 1 : 0,
-                  })
-                }
-              >
-                <SelectTrigger className="h-8 w-full text-xs">
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All</SelectItem>
-                  <SelectItem value="visible">Visible</SelectItem>
-                  <SelectItem value="hidden">Hidden</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Date from */}
-            <div className="flex w-full flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Created date</label>
-              <DatePicker
-                className="w-full"
-                value={filters.date_from ?? null}
-                onChange={(v) => onFilterChange({ date_from: v })}
-                placeholder="From date"
-              />
-            </div>
-
-            {/* Created by */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Created by</label>
-              <Select
-                value={filters.created_by ? String(filters.created_by) : '__all__'}
-                onValueChange={(v) =>
-                  onFilterChange({ created_by: v === '__all__' ? null : Number(v) })
-                }
-              >
-                <SelectTrigger className="h-8 w-full text-xs">
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All</SelectItem>
-                  {users.map((u) => (
-                    <SelectItem key={u.id} value={String(u.id)}>
-                      {u.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Facebook Pixel ID */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Facebook Pixel ID</label>
-              <Input
-                className="h-8 w-full text-xs"
-                placeholder="Search Pixel ID…"
-                value={filters.pixel_id ?? ''}
-                onChange={(e) => onFilterChange({ pixel_id: e.target.value || null })}
-              />
-            </div>
-
-            {/* Google ID */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Google ID</label>
-              <Input
-                className="h-8 w-full text-xs"
-                placeholder="Search Google ID…"
-                value={filters.googleid ?? ''}
-                onChange={(e) => onFilterChange({ googleid: e.target.value || null })}
-              />
-            </div>
-          </div>
-        </div>
+        <FilterPanel
+          fields={filterFields}
+          onReset={onFilterReset}
+          applyMode
+          onApply={onFilterChange}
+        />
       </div>
     ),
   })

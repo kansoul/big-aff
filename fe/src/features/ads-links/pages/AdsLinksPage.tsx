@@ -23,6 +23,7 @@ import {
   type AdsLinkFilterParams,
   type AdsLinkUpdateFormValues,
   type ChannelOption,
+  type Pagination,
   type PostOption,
   type SiteOption,
   type UserOption,
@@ -38,13 +39,14 @@ export function AdsLinksPage() {
   const canUpdate = useMemo(() => hasPermission(perms, PermissionSlugs.AdsLinksUpdate), [perms])
 
   const [adsLinks, setAdsLinks] = useState<AdsLink[]>([])
+  const [pagination, setPagination] = useState<Pagination | null>(null)
   const [sites, setSites] = useState<SiteOption[]>([])
   const [posts, setPosts] = useState<PostOption[]>([])
   const [channels, setChannels] = useState<ChannelOption[]>([])
   const [users, setUsers] = useState<UserOption[]>([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
-  const [filters, setFilters] = useState<AdsLinkFilterParams>({})
+  const [filters, setFilters] = useState<AdsLinkFilterParams>({ page: 1, per_page: 15 })
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editRow, setEditRow] = useState<AdsLink | null>(null)
@@ -89,6 +91,7 @@ export function AdsLinksPage() {
       setLoading(true)
       const result = await adsLinksApi.list(activeFilters)
       setAdsLinks(result.data ?? [])
+      setPagination(result.pagination ?? null)
     } catch (err) {
       setListError(formatApiError(err))
     } finally {
@@ -193,11 +196,28 @@ export function AdsLinksPage() {
   )
 
   const onFilterChange = useCallback((patch: Partial<AdsLinkFilterParams>) => {
-    setFilters((prev) => ({ ...prev, ...patch }))
+    const { date_range, is_hidden, ...rest } = patch
+    const range = date_range as { from: string | null; to: string | null } | undefined
+
+    setFilters((prev) => ({
+      ...prev,
+      ...rest,
+      is_hidden: is_hidden == 1 ? 1 : is_hidden == 0 ? 0 : undefined,
+      date_range: range,
+      page: 1,
+    }))
   }, [])
 
   const onFilterReset = useCallback(() => {
-    setFilters({})
+    setFilters({ page: 1, per_page: 15 })
+  }, [])
+
+  const onPaginationChange = useCallback((page: number, perPage: number) => {
+    setFilters((prev) => ({ ...prev, page, per_page: perPage }))
+  }, [])
+
+  const onSortingChange = useCallback((orderBy: string | null, order: 'asc' | 'desc' | null) => {
+    setFilters((prev) => ({ ...prev, order_by: orderBy, order, page: 1 }))
   }, [])
 
   const onAddClick = useCallback(() => {
@@ -223,6 +243,7 @@ export function AdsLinksPage() {
         listError={listError}
         loading={loading}
         adsLinks={adsLinks}
+        totalRows={pagination?.total ?? 0}
         currentUserId={user?.id}
         canCreate={canCreate}
         canUpdate={canUpdate}
@@ -236,6 +257,8 @@ export function AdsLinksPage() {
         onAddClick={onAddClick}
         onEditRow={onEditRow}
         onToggleHide={(row) => void onToggleHide(row)}
+        onPaginationChange={onPaginationChange}
+        onSortingChange={onSortingChange}
       />
       <CreateAdsLinkDialog
         open={createOpen}

@@ -5,17 +5,11 @@ import type {
   AdsLinkFilterParams,
   AdsLinkUpdatePayload,
   ChannelOption,
+  Pagination,
   PostOption,
   SiteOption,
   UserOption,
 } from '@/features/ads-links/types'
-
-interface Pagination {
-  total: number
-  per_page: number
-  current_page: number
-  last_page: number
-}
 
 interface ListResponse {
   data: AdsLink[]

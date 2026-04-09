@@ -81,9 +81,19 @@ export interface AdsLinkFilterParams {
   created_by?: number | null
   pixel_id?: string | null
   googleid?: string | null
-  date_from?: string | null
-  date_to?: string | null
+  date_range?: { from: string | null; to: string | null } | null
   is_hidden?: boolean | 1 | 0 | null
+  page?: number
+  per_page?: number
+  order_by?: string | null
+  order?: 'asc' | 'desc' | null
+}
+
+export interface Pagination {
+  total: number
+  per_page: number
+  current_page: number
+  last_page: number
 }
 
 export type CopyDialogState = {
