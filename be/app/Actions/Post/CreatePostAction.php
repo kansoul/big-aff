@@ -4,6 +4,7 @@ namespace App\Actions\Post;
 
 use App\Models\Post;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CreatePostAction
 {
@@ -12,8 +13,19 @@ class CreatePostAction
      */
     public function execute(array $data): Post
     {
-        $data['created_by'] = Auth::id();
+        return DB::transaction(function () use ($data): Post {
+            $keywordSetIds = $data['keyword_set_ids'] ?? [];
+            unset($data['keyword_set_ids']);
 
-        return Post::create($data);
+            $data['created_by'] = Auth::id();
+
+            $post = Post::create($data);
+
+            if (! empty($keywordSetIds)) {
+                $post->keywordSets()->sync($keywordSetIds);
+            }
+
+            return $post;
+        });
     }
 }

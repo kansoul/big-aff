@@ -26,15 +26,17 @@ class PostController extends BaseController
      *
      * Return paginated list of posts.
      *
-     * @queryParam q string Search by title or slug. Example: hello
-     * @queryParam status string Filter by status. Enum: draft, published, archived. Example: published
-     * @queryParam type string Filter by type. Example: article
+     * @queryParam query string Search by title or slug. Example: hello
+     * @queryParam status string Filter by status. Enum: draft, published, trash. Example: published
+     * @queryParam type string Filter by type. Enum: normal, ai, wordpress. Example: normal
      * @queryParam lang string Filter by language. Example: vi
      * @queryParam category_id integer Filter by category. Example: 1
+     * @queryParam order_by string Column to sort by. Enum: id, title, slug, status, type, lang, published_at, created_at. Example: created_at
+     * @queryParam order string Sort direction. Enum: asc, desc. Example: desc
      * @queryParam per_page integer Items per page (max 100). Example: 15
      * @queryParam page integer Page number. Example: 1
      *
-     * @response 200 {"data": [{"id": 1, "title": "My Post", "slug": "my-post", "lang": "vi", "description": "A short description", "content": "<p>Post content</p>", "feature_media_id": null, "status": "draft", "is_hidden": false, "type": "article", "category_id": null, "category": null, "created_by": 1, "updated_by": null, "published_at": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
+     * @response 200 {"data": [{"id": 1, "title": "My Post", "slug": "my-post", "lang": "vi", "note": null, "description": "A short description", "content": "<p>Post content</p>", "feature_media_id": null, "feature_media": null, "status": "draft", "is_hidden": false, "type": "normal", "category_id": null, "category": null, "created_by": 1, "updated_by": null, "published_at": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
      */
     public function index(ListPostsRequest $request): JsonResponse
     {
@@ -54,16 +56,18 @@ class PostController extends BaseController
      * @bodyParam title string required Post title (max 255). Example: My Post
      * @bodyParam slug string required URL slug (must be unique, max 255). Example: my-post
      * @bodyParam lang string optional Language code (max 10). Example: vi
+     * @bodyParam note string optional Short note (max 255). Example: Internal note
      * @bodyParam description string optional Short description. Example: A short description
      * @bodyParam content string optional Full HTML content. Example: <p>Post content</p>
      * @bodyParam feature_media_id integer optional ID of the feature media file. Example: 1
-     * @bodyParam status string optional Post status. Enum: draft, published, archived. Example: draft
+     * @bodyParam status string optional Post status. Enum: draft, published, trash. Example: draft
      * @bodyParam is_hidden boolean optional Whether the post is hidden. Example: false
-     * @bodyParam type string optional Post type (max 50). Example: article
+     * @bodyParam type string optional Post type. Enum: normal, ai, wordpress. Example: normal
      * @bodyParam category_id integer optional ID of the category. Example: 1
      * @bodyParam published_at string optional Publish date (ISO 8601). Example: 2026-01-01T00:00:00Z
+     * @bodyParam keyword_set_ids integer[] optional Array of keyword set IDs to attach. Example: [1, 2]
      *
-     * @response 201 {"data": {"id": 1, "title": "My Post", "slug": "my-post", "lang": "vi", "description": "A short description", "content": "<p>Post content</p>", "feature_media_id": null, "feature_media": null, "status": "draft", "is_hidden": false, "type": "article", "category_id": null, "category": null, "created_by": 1, "updated_by": null, "published_at": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
+     * @response 201 {"data": {"id": 1, "title": "My Post", "slug": "my-post", "lang": "vi", "note": null, "description": "A short description", "content": "<p>Post content</p>", "feature_media_id": null, "feature_media": null, "status": "draft", "is_hidden": false, "type": "normal", "category_id": null, "category": null, "created_by": 1, "updated_by": null, "published_at": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
      * @response 422 {"message": "The title field is required.", "errors": {"title": ["The title field is required."]}}
      */
     public function store(StorePostRequest $request): JsonResponse
@@ -84,12 +88,12 @@ class PostController extends BaseController
      *
      * @urlParam post integer required The post ID. Example: 1
      *
-     * @response 200 {"data": {"id": 1, "title": "My Post", "slug": "my-post", "lang": "vi", "description": "A short description", "content": "<p>Post content</p>", "feature_media_id": null, "feature_media": null, "status": "draft", "is_hidden": false, "type": "article", "category_id": null, "category": null, "created_by": 1, "updated_by": null, "published_at": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
+     * @response 200 {"data": {"id": 1, "title": "My Post", "slug": "my-post", "lang": "vi", "note": null, "description": "A short description", "content": "<p>Post content</p>", "feature_media_id": null, "feature_media": null, "status": "draft", "is_hidden": false, "type": "normal", "category_id": null, "category": null, "keyword_sets": {"id": 1, "name": "Set A", "keywords": ["kw1"]}, "created_by": 1, "updated_by": null, "published_at": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
      * @response 404 {"message": "No query results for model [App\\Models\\Post] 1"}
      */
     public function show(Post $post): JsonResponse
     {
-        $post->load(['featureMedia', 'category']);
+        $post->load(['featureMedia', 'category', 'keywordSets']);
 
         return $this->sendResponse(
             ['data' => new PostResource($post)]
@@ -106,16 +110,19 @@ class PostController extends BaseController
      * @bodyParam title string optional Post title (max 255). Example: Updated Post
      * @bodyParam slug string optional URL slug (must be unique, max 255). Example: updated-post
      * @bodyParam lang string optional Language code (max 10). Example: vi
+     * @bodyParam note string optional Short note (max 255). Example: Updated note
      * @bodyParam description string optional Short description. Example: Updated description
      * @bodyParam content string optional Full HTML content. Example: <p>Updated content</p>
      * @bodyParam feature_media_id integer optional ID of the feature media file. Pass null to remove. Example: 1
-     * @bodyParam status string optional Post status. Enum: draft, published, archived. Example: published
+     * @bodyParam status string optional Post status. Enum: draft, published, trash. Example: published
      * @bodyParam is_hidden boolean optional Whether the post is hidden. Example: false
-     * @bodyParam type string optional Post type (max 50). Example: article
+     * @bodyParam type string optional Post type. Enum: normal, ai, wordpress. Example: normal
      * @bodyParam category_id integer optional ID of the category. Example: 1
      * @bodyParam published_at string optional Publish date (ISO 8601). Example: 2026-06-01T00:00:00Z
+     * @bodyParam keyword_set_ids integer[] optional Array of keyword set IDs to sync. Pass null or omit to keep existing. Example: [1, 2]
      *
-     * @response 200 {"data": {"id": 1, "title": "Updated Post", "slug": "updated-post", "lang": "vi", "description": "Updated description", "content": "<p>Updated content</p>", "feature_media_id": null, "feature_media": null, "status": "published", "is_hidden": false, "type": "article", "category_id": null, "category": null, "created_by": 1, "updated_by": 2, "published_at": "2026-06-01T00:00:00+00:00", "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-06-01T00:00:00+00:00"}}
+     * @response 200 {"data": {"id": 1, "title": "Updated Post", "slug": "updated-post", "lang": "vi", "note": "Updated note", "description": "Updated description", "content": "<p>Updated content</p>", "feature_media_id": null, "feature_media": null, "status": "published", "is_hidden": false, "type": "normal", "category_id": null, "category": null, "created_by": 1, "updated_by": 2, "published_at": "2026-06-01T00:00:00+00:00", "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-06-01T00:00:00+00:00"}}
+     * @response 403 {"message": "This action is unauthorized."}
      * @response 404 {"message": "No query results for model [App\\Models\\Post] 1"}
      * @response 422 {"message": "The slug has already been taken.", "errors": {"slug": ["The slug has already been taken."]}}
      */
@@ -131,11 +138,12 @@ class PostController extends BaseController
     /**
      * Delete post
      *
-     * Soft-delete a post.
+     * Move a post to trash (sets status to "trash").
      *
      * @urlParam post integer required The post ID. Example: 1
      *
      * @response 204 {}
+     * @response 403 {"message": "This action is unauthorized."}
      * @response 404 {"message": "No query results for model [App\\Models\\Post] 1"}
      */
     public function destroy(Post $post): JsonResponse
@@ -154,23 +162,8 @@ class PostController extends BaseController
      */
     public function options(): JsonResponse
     {
-        $posts = Post::query()
-            ->select(['id', 'title', 'slug'])
-            ->with(['keywordSets:id,post_id,name'])
-            ->whereNull('deleted_at')
-            ->orderBy('title')
-            ->get();
-
         return $this->sendResponse([
-            'data' => $posts->map(fn(Post $post) => [
-                'id' => $post->id,
-                'title' => $post->title,
-                'slug' => $post->slug,
-                'keyword_sets' => $post->keywordSets->map(fn($ks) => [
-                    'id' => $ks->id,
-                    'name' => $ks->name,
-                ]),
-            ]),
+            'data' => $this->postService->options(),
         ]);
     }
 }

@@ -34,7 +34,7 @@ class ListPostsAction
     {
         $ownership = OwnershipFilter::forAuthUser();
 
-        $query = Post::query()->with(['featureMedia', 'category']);
+        $query = Post::query()->with(['featureMedia', 'category', 'keywordSets']);
         $ownership->applyTo($query);
 
         if (! empty($filters['query'])) {

@@ -33,6 +33,8 @@ class StorePostRequest extends FormRequest
             'type' => ['nullable', 'string', Rule::in(PostType::values())],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'published_at' => ['nullable', 'date'],
+            'keyword_set_ids' => ['nullable', 'array'],
+            'keyword_set_ids.*' => ['integer', 'exists:keyword_sets,id'],
         ];
     }
 }

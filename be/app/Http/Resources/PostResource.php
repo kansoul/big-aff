@@ -31,8 +31,13 @@ class PostResource extends JsonResource
             'type' => $this->type,
             'category_id' => $this->category_id,
             'category' => $this->whenLoaded('category', fn () => [
-                'id' => $this->category->id,
-                'name' => $this->category->name,
+                'id' => $this->category?->id,
+                'name' => $this->category?->name,
+            ]),
+            'keyword_sets' => $this->whenLoaded('keywordSets', fn () => [
+                'id' => $this->keywordSets?->id,
+                'name' => $this->keywordSets?->name,
+                'keywords' => $this->keywordSets?->keywords,
             ]),
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,

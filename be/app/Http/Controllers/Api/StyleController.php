@@ -73,7 +73,7 @@ class StyleController extends BaseController
             ->get();
 
         return $this->sendResponse([
-            'data' => $styles->map(fn(Style $style) => [
+            'data' => $styles->map(fn (Style $style) => [
                 'code' => $style->code,
                 'name' => $style->name,
             ]),
