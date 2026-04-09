@@ -86,6 +86,16 @@ enum Permission: string
     case FollowsView = 'follows.view';                       // bit 31 →  2147483648
     case FollowsDelete = 'follows.delete';                   // bit 32 →  4294967296
 
+    // —— Styles ——
+    case StylesView = 'styles.view';                         // bit 33 →  8589934592
+    case StylesCreate = 'styles.create';                     // bit 34 →  17179869184
+    case StylesDelete = 'styles.delete';                     // bit 35 →  34359738368
+
+    // —— Channels ——
+    case ChannelsView = 'channels.view';                     // bit 36 →  68719476736
+    case ChannelsCreate = 'channels.create';                 // bit 37 →  137438953472
+    case ChannelsDelete = 'channels.delete';                 // bit 38 →  274877906944
+
     /**
      * Bit value for this permission (1 << declaration index).
      */

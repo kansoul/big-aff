@@ -20,9 +20,10 @@ export const PATHS = {
   settingsSitesEdit: '/settings/sites/:id/edit',
   categories: '/categories',
   channels: '/channels',
+  styles: '/styles',
   follows: '/follows',
-  adsLinks: '/ads-links',
   teams: '/teams',
+  adsLinks: '/ads-links',
 } as const
 
 export const postViewPath = (id: number | string) => `/posts/${id}`

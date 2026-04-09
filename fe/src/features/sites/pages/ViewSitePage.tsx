@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ExternalLink, Loader2, Trash2 } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Loader2, Trash2, ZoomIn } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { sitesApi } from '@/features/sites/api'
@@ -163,13 +163,16 @@ export function ViewSitePage() {
                         <button
                           type="button"
                           onClick={() => detail.logo?.url && setPreviewImage(detail.logo.url)}
-                          className="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed bg-muted/30 p-6 transition-colors hover:bg-muted/50"
+                          className="group relative flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed bg-muted/30 p-6 transition-colors hover:bg-muted/50"
                         >
                           <img
                             src={detail.logo.url}
                             alt="Site Logo"
                             className="max-h-[120px] object-contain"
                           />
+                          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/0 transition-colors group-hover:bg-black/20">
+                            <ZoomIn className="size-6 text-white opacity-0 drop-shadow transition-opacity group-hover:opacity-100" />
+                          </div>
                         </button>
                       </div>
                     )}
@@ -179,13 +182,16 @@ export function ViewSitePage() {
                         <button
                           type="button"
                           onClick={() => detail.favicon?.url && setPreviewImage(detail.favicon.url)}
-                          className="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed bg-muted/30 p-6 transition-colors hover:bg-muted/50"
+                          className="group relative flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed bg-muted/30 p-6 transition-colors hover:bg-muted/50"
                         >
                           <img
                             src={detail.favicon.url}
                             alt="Site Favicon"
                             className="max-h-[120px] object-contain"
                           />
+                          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/0 transition-colors group-hover:bg-black/20">
+                            <ZoomIn className="size-6 text-white opacity-0 drop-shadow transition-opacity group-hover:opacity-100" />
+                          </div>
                         </button>
                       </div>
                     )}

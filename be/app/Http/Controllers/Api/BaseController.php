@@ -5,10 +5,13 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 
 class BaseController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Return a standardized successful JSON response.
      */

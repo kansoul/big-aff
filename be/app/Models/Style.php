@@ -12,7 +12,9 @@ class Style extends Model
     use HasFactory, SoftDeletes, StyleRelationship;
 
     protected $fillable = [
-        'style_code',
+        'code',
         'name',
+        'created_by',
+        'updated_by',
     ];
 }

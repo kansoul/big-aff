@@ -35,7 +35,7 @@ export function EditSitePage() {
       status: undefined,
       logo: null,
       favicon: null,
-      settings: { gtm: '', fb_pixel: '', theme: '' },
+      settings: { gtm: '', fb_pixel: '', theme: '', default_channel: '', default_style: '' },
     },
   })
 
@@ -56,6 +56,8 @@ export function EditSitePage() {
             gtm: site.settings?.gtm ?? '',
             fb_pixel: site.settings?.fb_pixel ?? '',
             theme: site.settings?.theme ?? '',
+            default_channel: site.settings?.default_channel ?? '',
+            default_style: site.settings?.default_style ?? '',
           },
         })
       } catch (err) {

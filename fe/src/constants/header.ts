@@ -10,6 +10,7 @@ import {
   Images,
   LayoutDashboard,
   Link2,
+  Palette,
   Radio,
   UserCheck,
   UserCog,
@@ -66,6 +67,13 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         name: 'Channels',
         href: PATHS.channels,
         icon: Radio,
+        requiredPermission: PermissionSlugs.ChannelsView,
+      },
+      {
+        name: 'Styles',
+        href: PATHS.styles,
+        icon: Palette,
+        requiredPermission: PermissionSlugs.StylesView,
       },
       {
         name: 'Follows',
