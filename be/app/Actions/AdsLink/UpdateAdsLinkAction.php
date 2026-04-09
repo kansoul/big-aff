@@ -3,6 +3,7 @@
 namespace App\Actions\AdsLink;
 
 use App\Models\AdsLink;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Support\Facades\Auth;
 
 class UpdateAdsLinkAction
@@ -12,6 +13,8 @@ class UpdateAdsLinkAction
      */
     public function execute(AdsLink $adsLink, array $data): AdsLink
     {
+        OwnershipFilter::forAuthUser()->authorize($adsLink->created_by);
+
         $trackingIds = $adsLink->tracking_ids ?? [];
 
         if (array_key_exists('fbid', $data)) {
