@@ -96,6 +96,12 @@ enum Permission: string
     case ChannelsCreate = 'channels.create';                 // bit 37 →  137438953472
     case ChannelsDelete = 'channels.delete';                 // bit 38 →  274877906944
 
+    // —— Keyword Sets ——
+    case KeywordSetsView = 'keyword-sets.view';              // bit 39 →  549755813888
+    case KeywordSetsCreate = 'keyword-sets.create';          // bit 40 →  1099511627776
+    case KeywordSetsUpdate = 'keyword-sets.update';          // bit 41 →  2199023255552
+    case KeywordSetsDelete = 'keyword-sets.delete';          // bit 42 →  4398046511104
+
     /**
      * Bit value for this permission (1 << declaration index).
      */

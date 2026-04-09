@@ -35,6 +35,8 @@ class UpdatePostRequest extends FormRequest
             'type' => ['sometimes', 'nullable', 'string', Rule::in(PostType::values())],
             'category_id' => ['sometimes', 'nullable', 'integer', 'exists:categories,id'],
             'published_at' => ['sometimes', 'nullable', 'date'],
+            'keyword_set_ids' => ['sometimes', 'nullable', 'array'],
+            'keyword_set_ids.*' => ['integer', 'exists:keyword_sets,id'],
         ];
     }
 }

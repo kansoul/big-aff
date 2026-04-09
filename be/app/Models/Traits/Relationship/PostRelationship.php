@@ -4,10 +4,11 @@ namespace App\Models\Traits\Relationship;
 
 use App\Models\Category;
 use App\Models\File;
+use App\Models\KeywordSet;
 use App\Models\PostKeywordSet;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 trait PostRelationship
 {
@@ -44,10 +45,10 @@ trait PostRelationship
     }
 
     /**
-     * @return HasMany<PostKeywordSet, $this>
+     * @return BelongsToMany<KeywordSet, $this>
      */
-    public function keywordSets(): HasMany
+    public function keywordSets(): BelongsToMany
     {
-        return $this->hasMany(PostKeywordSet::class);
+        return $this->belongsToMany(KeywordSet::class, 'post_keyword_sets')->using(PostKeywordSet::class);
     }
 }

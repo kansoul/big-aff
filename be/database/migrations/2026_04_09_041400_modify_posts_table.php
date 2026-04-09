@@ -1,10 +1,10 @@
 <?php
 
+use App\Enums\PostStatus;
+use App\Enums\PostType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Enums\PostType;
-use App\Enums\PostStatus;
 
 return new class extends Migration
 {

@@ -2,38 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Traits\Relationship\PostKeywordSetRelationship;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class PostKeywordSet extends Model
+class PostKeywordSet extends Pivot
 {
-    use HasFactory, SoftDeletes;
+    use PostKeywordSetRelationship;
+
+    protected $table = 'post_keyword_sets';
+
+    public $timestamps = true;
 
     protected $fillable = [
         'post_id',
-        'name',
-        'keywords',
-        'created_by',
-        'updated_by',
+        'keyword_set_id',
     ];
-
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'keywords' => 'array',
-        ];
-    }
-
-    /**
-     * @return BelongsTo<Post, $this>
-     */
-    public function post(): BelongsTo
-    {
-        return $this->belongsTo(Post::class);
-    }
 }

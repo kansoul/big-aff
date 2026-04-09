@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Traits\Relationship\KeywordSetRelationship;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class KeywordSet extends Model
+{
+    use HasFactory, KeywordSetRelationship, SoftDeletes;
+
+    protected $fillable = [
+        'name',
+        'keywords',
+        'created_by',
+        'updated_by',
+    ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'keywords' => 'array',
+        ];
+    }
+}

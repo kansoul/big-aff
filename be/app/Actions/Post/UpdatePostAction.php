@@ -6,6 +6,7 @@ use App\Models\Post;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class UpdatePostAction
 {
@@ -18,10 +19,18 @@ class UpdatePostAction
     {
         OwnershipFilter::forAuthUser()->authorize($post->created_by);
 
-        $data['updated_by'] = Auth::id();
+        return DB::transaction(function () use ($post, $data): Post {
+            $keywordSetIds = array_key_exists('keyword_set_ids', $data) ? $data['keyword_set_ids'] : false;
+            unset($data['keyword_set_ids']);
 
-        $post->update($data);
+            $data['updated_by'] = Auth::id();
+            $post->update($data);
 
-        return $post->fresh(['featureMedia', 'category']);
+            if ($keywordSetIds !== false) {
+                $post->keywordSets()->sync($keywordSetIds ?? []);
+            }
+
+            return $post->fresh(['featureMedia', 'category']);
+        });
     }
 }
