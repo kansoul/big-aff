@@ -3,6 +3,8 @@
 namespace App\Actions\Follow;
 
 use App\Models\Follow;
+use App\Models\Site;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -22,7 +24,10 @@ class ListFollowsAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
+        $ownership = OwnershipFilter::forAuthUser();
+
         $query = Follow::query();
+        $ownership->applyThrough($query, 'site_id', fn (array $ids) => Site::whereIn('created_by', $ids)->select('id'));
 
         if (! empty($filters['query'])) {
             $query->where('email', 'like', '%'.$filters['query'].'%');

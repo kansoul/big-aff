@@ -29,6 +29,8 @@ class CategoryController extends BaseController
      * @queryParam query string Search by name or description. Example: news
      * @queryParam per_page integer Items per page (max 100). Example: 15
      * @queryParam page integer Page number. Example: 1
+     * @queryParam order_by string Column to sort by (id, name, created_at, updated_at). Example: name
+     * @queryParam order string Sort direction (asc, desc). Example: asc
      */
     public function index(ListCategoriesRequest $request): JsonResponse
     {

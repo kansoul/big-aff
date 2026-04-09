@@ -4,6 +4,7 @@ namespace App\Actions\Site;
 
 use App\Http\Requests\Site\ListSitesRequest;
 use App\Models\Site;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -29,7 +30,10 @@ class ListSitesAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
+        $ownership = OwnershipFilter::forAuthUser();
+
         $query = Site::query()->with(['logo', 'favicon']);
+        $ownership->applyTo($query);
 
         if (! empty($filters['keyword'])) {
             $keyword = $filters['keyword'];
