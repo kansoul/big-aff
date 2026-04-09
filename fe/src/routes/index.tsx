@@ -6,6 +6,7 @@ import { ProtectedRoute } from '@/app/router/ProtectedRoute'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { NAV_SECTIONS, PATHS, routeSegment } from '@/constants/paths'
 import { PermissionSlugs } from '@/constants/permissions'
+import { PageLoader } from '@/components/common/PageLoader'
 
 const AuthLayout = lazy(() => import('@/layouts/AuthLayout'))
 const LoginPage = lazy(() =>
@@ -40,8 +41,16 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: '*',
+    lazy: async () => {
+      const { NotFoundPage } = await import('@/features/errors/pages/NotFoundPage')
+      return { Component: NotFoundPage }
+    },
+  },
+  {
     path: PATHS.root,
     element: <ProtectedRoute />,
+    HydrateFallback: PageLoader,
     children: [
       {
         path: PATHS.root,
@@ -132,6 +141,36 @@ export const router = createBrowserRouter([
               }
             },
             handle: { title: 'Users & Child Users', navSection: NAV_SECTIONS.settings },
+          },
+          {
+            path: routeSegment(PATHS.channels),
+            lazy: async () => {
+              const { ChannelsPage } = await import('@/features/channels/pages/ChannelsPage')
+              return {
+                Component: withPermission(ChannelsPage, PermissionSlugs.ChannelsView),
+              }
+            },
+            handle: { title: 'Channels' },
+          },
+          {
+            path: routeSegment(PATHS.styles),
+            lazy: async () => {
+              const { StylesPage } = await import('@/features/styles/pages/StylesPage')
+              return {
+                Component: withPermission(StylesPage, PermissionSlugs.StylesView),
+              }
+            },
+            handle: { title: 'Styles' },
+          },
+          {
+            path: routeSegment(PATHS.adsLinks),
+            lazy: async () => {
+              const { AdsLinksPage } = await import('@/features/ads-links/pages/AdsLinksPage')
+              return {
+                Component: withPermission(AdsLinksPage, PermissionSlugs.AdsLinksView),
+              }
+            },
+            handle: { title: 'Ads Links' },
           },
           {
             path: routeSegment(PATHS.settingsRoles),

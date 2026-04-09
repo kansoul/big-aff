@@ -32,6 +32,8 @@ class UpdateSiteRequest extends FormRequest
             'settings.gtm' => ['nullable', 'string', 'max:255'],
             'settings.fb_pixel' => ['nullable', 'string', 'max:255'],
             'settings.theme' => ['nullable', 'string', 'max:255'],
+            'settings.default_channel' => ['required', 'string', 'exists:channels,code'],
+            'settings.default_style' => ['required', 'string', 'exists:styles,code'],
             'logo_id' => ['sometimes', 'nullable', 'integer', 'exists:files,id'],
             'favicon_id' => ['sometimes', 'nullable', 'integer', 'exists:files,id'],
         ];

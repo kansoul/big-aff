@@ -29,13 +29,17 @@ export const siteCreateSchema = z.object({
   status: z.enum(['active', 'maintenance', 'suspended']).optional(),
   logo: z.custom<MediaFile | null>().nullable().optional(),
   favicon: z.custom<MediaFile | null>().nullable().optional(),
-  settings: z
-    .object({
-      gtm: z.string().max(255).optional(),
-      fb_pixel: z.string().max(255).optional(),
-      theme: z.string().max(255).optional(),
-    })
-    .optional(),
+  settings: z.object({
+    gtm: z.string().max(255).optional(),
+    fb_pixel: z.string().max(255).optional(),
+    theme: z.string().max(255).optional(),
+    default_channel: z
+      .string({ error: 'Default channel is required' })
+      .min(1, 'Default channel is required'),
+    default_style: z
+      .string({ error: 'Default style is required' })
+      .min(1, 'Default style is required'),
+  }),
 })
 
 export type SiteCreateFormValues = z.infer<typeof siteCreateSchema>
@@ -57,6 +61,8 @@ export interface SiteDetail extends Site {
     gtm?: string | null
     fb_pixel?: string | null
     theme?: string | null
+    default_channel?: string | null
+    default_style?: string | null
   } | null
 }
 

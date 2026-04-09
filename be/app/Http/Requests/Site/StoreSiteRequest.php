@@ -28,6 +28,8 @@ class StoreSiteRequest extends FormRequest
             'settings.gtm' => ['nullable', 'string', 'max:255'],
             'settings.fb_pixel' => ['nullable', 'string', 'max:255'],
             'settings.theme' => ['nullable', 'string', 'max:255'],
+            'settings.default_channel' => ['required', 'string', 'exists:channels,code'],
+            'settings.default_style' => ['required', 'string', 'exists:styles,code'],
 
             'logo_id' => ['nullable', 'integer', 'exists:files,id'],
 

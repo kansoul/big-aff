@@ -36,6 +36,12 @@ export const PermissionSlugs = {
   CategoriesCreate: 'categories.create',
   CategoriesUpdate: 'categories.update',
   CategoriesDelete: 'categories.delete',
+  StylesView: 'styles.view',
+  StylesCreate: 'styles.create',
+  StylesDelete: 'styles.delete',
+  ChannelsView: 'channels.view',
+  ChannelsCreate: 'channels.create',
+  ChannelsDelete: 'channels.delete',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -307,6 +313,60 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           {
             key: 'CategoriesDelete',
             slug: PermissionSlugs.CategoriesDelete,
+            label: 'Delete',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'styles',
+    label: 'Styles',
+    screens: [
+      {
+        id: 'styles',
+        label: 'Styles',
+        permissions: [
+          {
+            key: 'StylesView',
+            slug: PermissionSlugs.StylesView,
+            label: 'View',
+          },
+          {
+            key: 'StylesCreate',
+            slug: PermissionSlugs.StylesCreate,
+            label: 'Create',
+          },
+          {
+            key: 'StylesDelete',
+            slug: PermissionSlugs.StylesDelete,
+            label: 'Delete',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'channels',
+    label: 'Channels',
+    screens: [
+      {
+        id: 'channels',
+        label: 'Channels',
+        permissions: [
+          {
+            key: 'ChannelsView',
+            slug: PermissionSlugs.ChannelsView,
+            label: 'View',
+          },
+          {
+            key: 'ChannelsCreate',
+            slug: PermissionSlugs.ChannelsCreate,
+            label: 'Create',
+          },
+          {
+            key: 'ChannelsDelete',
+            slug: PermissionSlugs.ChannelsDelete,
             label: 'Delete',
           },
         ],

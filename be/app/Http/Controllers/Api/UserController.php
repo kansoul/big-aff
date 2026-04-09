@@ -83,6 +83,24 @@ class UserController extends BaseController
     }
 
     /**
+     * User options for select inputs
+     */
+    public function options(): JsonResponse
+    {
+        $users = User::query()
+            ->select(['id', 'name'])
+            ->orderBy('name')
+            ->get();
+
+        return $this->sendResponse([
+            'data' => $users->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+            ]),
+        ]);
+    }
+
+    /**
      * Delete user
      *
      * Remove a user from the system.
