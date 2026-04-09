@@ -34,11 +34,7 @@ class PostResource extends JsonResource
                 'id' => $this->category?->id,
                 'name' => $this->category?->name,
             ]),
-            'keyword_sets' => $this->whenLoaded('keywordSets', fn () => [
-                'id' => $this->keywordSets?->id,
-                'name' => $this->keywordSets?->name,
-                'keywords' => $this->keywordSets?->keywords,
-            ]),
+            'keyword_sets' => KeywordSetResource::collection($this->whenLoaded('keywordSets')),
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
             'published_at' => $this->published_at,
