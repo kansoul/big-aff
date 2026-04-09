@@ -6,7 +6,16 @@ import {
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
 } from 'mantine-react-table'
-import { AlertCircle, CheckCircle2, ImageIcon, Loader2, Pencil, Upload, X } from 'lucide-react'
+import {
+  AlertCircle,
+  CheckCircle2,
+  ImageIcon,
+  Loader2,
+  Pencil,
+  Upload,
+  X,
+  ZoomIn,
+} from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -21,6 +30,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { mediaApi } from '@/features/media/api'
 import type { MediaFile } from '@/features/media/types'
+import { ImagePreviewDialog } from './ImagePreviewDialog'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -35,6 +45,43 @@ type UploadState =
   | { status: 'error'; message: string }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// MediaFileCell — thumbnail with click-to-preview
+// ─────────────────────────────────────────────────────────────────────────────
+
+function MediaFileCell({ media }: { media: MediaFile }) {
+  const [preview, setPreview] = useState(false)
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="group relative size-8 shrink-0 overflow-hidden rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={(e) => {
+            e.stopPropagation()
+            setPreview(true)
+          }}
+          title="Preview"
+        >
+          <img
+            src={media.url}
+            alt={media.original_name}
+            className="size-8 object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+            <ZoomIn className="size-3.5 text-white" />
+          </div>
+        </button>
+        <span className="truncate text-sm font-medium text-foreground">{media.original_name}</span>
+      </div>
+
+      <ImagePreviewDialog src={media.url} open={preview} onClose={() => setPreview(false)} />
+    </>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Columns (defined outside component — no deps)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -43,19 +90,7 @@ const MEDIA_COLUMNS: MRT_ColumnDef<MediaFile>[] = [
     accessorKey: 'original_name',
     header: 'File',
     size: 200,
-    Cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <img
-          src={row.original.url}
-          alt={row.original.original_name}
-          className="size-8 shrink-0 rounded object-cover"
-          loading="lazy"
-        />
-        <span className="truncate text-sm font-medium text-foreground">
-          {row.original.original_name}
-        </span>
-      </div>
-    ),
+    Cell: ({ row }) => <MediaFileCell media={row.original} />,
   },
 ]
 
@@ -131,6 +166,10 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
       const found = data.find((m) => String(m.id) === selectedId) ?? null
       onSelect(found)
     },
+    mantineTableBodyRowProps: ({ row }) => ({
+      onClick: row.getToggleSelectedHandler(),
+      sx: { cursor: 'pointer' },
+    }),
     state: {
       rowSelection,
       pagination: { pageIndex, pageSize: 10 },
@@ -547,7 +586,7 @@ const DropZone = ({
     onDragOver={onDragOver}
     onDrop={onDrop}
     className={cn(
-      'flex flex-1 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+      'flex flex-1 cursor-pointer flex-col items-center justify-center py-4 gap-3 rounded-xl border-2 border-dashed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
       dragging
         ? 'border-primary bg-primary/5 text-primary'
         : 'border-border bg-muted/30 text-muted-foreground hover:border-primary/40 hover:bg-muted/50',

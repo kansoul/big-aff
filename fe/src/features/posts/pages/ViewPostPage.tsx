@@ -9,6 +9,7 @@ import {
   Loader2,
   Pencil,
   Trash2,
+  ZoomIn,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -133,13 +134,16 @@ export function ViewPostPage() {
                 <button
                   type="button"
                   onClick={() => setPreviewImage(post.feature_media!.url)}
-                  className="group overflow-hidden rounded-lg border border-border bg-muted/30 transition-colors hover:bg-muted/50"
+                  className="group relative overflow-hidden rounded-lg border border-border bg-muted/30 transition-colors hover:bg-muted/50"
                 >
                   <img
                     src={post.feature_media.url}
                     alt={post.title}
                     className="max-h-64 w-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
                   />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20">
+                    <ZoomIn className="size-6 text-white opacity-0 drop-shadow transition-opacity group-hover:opacity-100" />
+                  </div>
                 </button>
               )}
 
