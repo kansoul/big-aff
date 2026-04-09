@@ -26,9 +26,9 @@ export const siteCreateSchema = z.object({
       { message: 'Must be a valid URL' },
     ),
   description: z.string().optional(),
-  status: z.enum(['active', 'maintenance', 'suspended']).optional(),
-  logo: z.custom<MediaFile | null>().nullable().optional(),
-  favicon: z.custom<MediaFile | null>().nullable().optional(),
+  status: z.enum(['active', 'maintenance', 'suspended']).default('active'),
+  logo: z.union([z.custom<MediaFile>(), z.custom<File>()]).nullable().optional(),
+  favicon: z.union([z.custom<MediaFile>(), z.custom<File>()]).nullable().optional(),
   settings: z.object({
     gtm: z.string().max(255).optional(),
     fb_pixel: z.string().max(255).optional(),
@@ -82,6 +82,23 @@ export interface SitePagination {
 export interface SiteListResponse {
   data: Site[]
   pagination: SitePagination
+}
+
+/** Params sent to the API after resolving media (upload-on-submit) */
+export type SiteCreateApiParams = {
+  name: string
+  url: string
+  description?: string | null
+  status?: SiteStatus | null
+  logo_id?: number | null
+  favicon_id?: number | null
+  settings: {
+    gtm?: string | null
+    fb_pixel?: string | null
+    theme?: string | null
+    default_channel: string
+    default_style: string
+  }
 }
 
 export interface SiteFilterParams {

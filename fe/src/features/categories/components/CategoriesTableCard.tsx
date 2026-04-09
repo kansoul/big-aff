@@ -6,7 +6,7 @@ import {
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
 } from 'mantine-react-table'
-import { Eye, FolderOpen, Pencil, Plus, Trash2 } from 'lucide-react'
+import { FolderOpen, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,7 +24,7 @@ type ActionMeta = {
 }
 
 function getColumns(meta: ActionMeta): MRT_ColumnDef<Category>[] {
-  const { canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow } = meta
+  const { canUpdate, canDelete, onEditRow, onDeleteRow } = meta
 
   return [
     {
@@ -57,48 +57,40 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Category>[] {
     {
       id: 'actions',
       header: 'Action',
-      size: 112,
+      size: 200,
       enableSorting: false,
       enableGlobalFilter: false,
       enableHiding: false,
       mantineTableHeadCellProps: {
-        sx: { width: 112, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+        sx: { width: 200, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
       },
-      mantineTableBodyCellProps: { style: { width: 112 } },
+      mantineTableBodyCellProps: { style: { width: 200 } },
       Cell: ({ row }: { row: { original: Category } }) => (
-        <div className="flex justify-end gap-0.5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            aria-label={`View ${row.original.name}`}
-            onClick={() => onViewRow(row.original)}
-          >
-            <Eye className="h-3.5 w-3.5" />
-          </Button>
+        <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
           {canUpdate ? (
             <Button
               type="button"
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              size="sm"
+              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
               aria-label={`Edit ${row.original.name}`}
               onClick={() => onEditRow(row.original)}
             >
               <Pencil className="h-3.5 w-3.5" />
+              Edit
             </Button>
           ) : null}
           {canDelete ? (
             <Button
               type="button"
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              size="sm"
+              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
               aria-label={`Delete ${row.original.name}`}
               onClick={() => onDeleteRow(row.original)}
             >
               <Trash2 className="h-3.5 w-3.5" />
+              Delete
             </Button>
           ) : null}
         </div>
@@ -176,6 +168,10 @@ function CategoriesTableCardInner({
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
+    mantineTableBodyRowProps: ({ row }) => ({
+      onClick: () => onViewRow(row.original),
+      sx: { cursor: 'pointer' },
+    }),
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbarCustomActions: () => (
       <div className="flex flex-wrap items-end gap-3 py-1">

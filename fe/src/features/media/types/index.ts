@@ -46,4 +46,5 @@ export interface MediaFilterParams {
   order: MediaOrder | null
   order_by: MediaOrderBy | null
   user_id: number | null
+  alt_text: string | null
 }

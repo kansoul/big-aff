@@ -3,9 +3,9 @@ import type { Control, UseFormSetValue, UseFormWatch } from 'react-hook-form'
 
 import type { Category } from '@/features/categories/types'
 import type { PostFormValues } from '@/features/posts/types'
-import { MediaPickerField } from '@/components/common/MediaPickerDialog'
+import { MediaPickerField, type UploadMeta } from '@/components/common/MediaPickerDialog'
+import { TextEditorField, type TextEditorHandle } from '@/components/common/TextEditor'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import { DatePicker } from '@/components/ui/date-picker'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { TextEditorField } from '@/components/common/TextEditor'
 
 function slugify(text: string): string {
   return text
@@ -37,6 +36,9 @@ type PostFormSectionsProps = {
   categories?: Category[]
   /** When true, slug field is editable but auto-fill is disabled (edit mode) */
   disableAutoSlug?: boolean
+  onFeatureMediaMeta?: (meta: UploadMeta) => void
+  /** Ref forwarded to TextEditor — call editorRef.current.flushUploads() at submit time. */
+  editorRef?: React.Ref<TextEditorHandle>
 }
 
 export function PostFormSections({
@@ -45,6 +47,8 @@ export function PostFormSections({
   setValue,
   categories = [],
   disableAutoSlug = false,
+  onFeatureMediaMeta,
+  editorRef,
 }: PostFormSectionsProps) {
   const title = watch('title')
 
@@ -115,6 +119,7 @@ export function PostFormSections({
             )}
           />
           <TextEditorField
+            editorRef={editorRef}
             control={control}
             name="content"
             label="Content"
@@ -140,7 +145,7 @@ export function PostFormSections({
                   <FormLabel>
                     Status <span className="text-destructive">*</span>
                   </FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select status" />
@@ -149,7 +154,7 @@ export function PostFormSections({
                     <SelectContent>
                       <SelectItem value="draft">Draft</SelectItem>
                       <SelectItem value="published">Published</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
+                      <SelectItem value="trash">Trash</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -162,9 +167,22 @@ export function PostFormSections({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Type</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. article, news" {...field} value={field.value ?? ''} />
-                  </FormControl>
+                  <Select
+                    value={field.value ?? '__none__'}
+                    onValueChange={(v) => field.onChange(v === '__none__' ? null : v)}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="ai">AI</SelectItem>
+                      <SelectItem value="wordpress">WordPress</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -236,13 +254,19 @@ export function PostFormSections({
           </div>
           <FormField
             control={control}
-            name="is_hidden"
+            name="note"
             render={({ field }) => (
-              <FormItem className="flex items-center gap-2 space-y-0">
+              <FormItem>
+                <FormLabel>Note</FormLabel>
                 <FormControl>
-                  <Checkbox checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  <Input
+                    placeholder="Internal note…"
+                    maxLength={255}
+                    {...field}
+                    value={field.value ?? ''}
+                  />
                 </FormControl>
-                <FormLabel className="cursor-pointer font-normal">Hidden</FormLabel>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -262,6 +286,7 @@ export function PostFormSections({
             label="Feature Image"
             accept="image/*"
             placeholder="Pick a feature image…"
+            onUploadMeta={onFeatureMediaMeta}
           />
         </CardContent>
       </Card>

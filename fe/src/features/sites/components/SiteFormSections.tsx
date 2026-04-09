@@ -6,7 +6,7 @@ import { channelsApi } from '@/features/channels/api'
 import { stylesApi } from '@/features/styles/api'
 import type { ChannelOption } from '@/features/channels/types'
 import type { StyleOption } from '@/features/styles/types'
-import { MediaPickerField } from '@/components/common/MediaPickerDialog'
+import { MediaPickerField, type UploadMeta } from '@/components/common/MediaPickerDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -21,9 +21,11 @@ import {
 
 type SiteFormSectionsProps = {
   control: Control<SiteCreateFormValues>
+  onLogoMeta?: (meta: UploadMeta) => void
+  onFaviconMeta?: (meta: UploadMeta) => void
 }
 
-export function SiteFormSections({ control }: SiteFormSectionsProps) {
+export function SiteFormSections({ control, onLogoMeta, onFaviconMeta }: SiteFormSectionsProps) {
   const [channels, setChannels] = useState<ChannelOption[]>([])
   const [styles, setStyles] = useState<StyleOption[]>([])
 
@@ -94,7 +96,9 @@ export function SiteFormSections({ control }: SiteFormSectionsProps) {
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>
+                  Status<span className="text-destructive">*</span>
+                </FormLabel>
                 <Select
                   value={field.value ?? '__none__'}
                   onValueChange={(v) => field.onChange(v === '__none__' ? undefined : v)}
@@ -131,6 +135,7 @@ export function SiteFormSections({ control }: SiteFormSectionsProps) {
             label="Logo"
             accept="image/*"
             placeholder="Pick a logo…"
+            onUploadMeta={onLogoMeta}
           />
           <MediaPickerField
             control={control}
@@ -138,6 +143,7 @@ export function SiteFormSections({ control }: SiteFormSectionsProps) {
             label="Favicon"
             accept="image/png,image/x-icon,image/svg+xml"
             placeholder="Pick a favicon…"
+            onUploadMeta={onFaviconMeta}
           />
         </CardContent>
       </Card>

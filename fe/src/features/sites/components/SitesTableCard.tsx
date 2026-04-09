@@ -1,43 +1,19 @@
-import { memo, useMemo, type Dispatch, type SetStateAction } from 'react'
+import { memo, useMemo } from 'react'
 import {
   MantineReactTable,
   useMantineReactTable,
   type MRT_ColumnDef,
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
-  MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import type { Site, SiteFilterParams, SiteStatus } from '@/features/sites/types'
+import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import { StatusBadge } from '@/components/common/StatusBadge'
+import type { Site, SiteFilterParams } from '@/features/sites/types'
 
 type PaginationState = { pageIndex: number; pageSize: number }
-
-const STATUS_CONFIG: Record<SiteStatus, { label: string; className: string }> = {
-  active: {
-    label: 'Active',
-    className:
-      'inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20',
-  },
-  maintenance: {
-    label: 'Maintenance',
-    className:
-      'inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border',
-  },
-  suspended: {
-    label: 'Suspended',
-    className:
-      'inline-flex items-center rounded-md bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive ring-1 ring-inset ring-destructive/20',
-  },
-}
 
 type ActionMeta = {
   canUpdate: boolean
@@ -74,12 +50,7 @@ function getSitesColumns(meta: ActionMeta): MRT_ColumnDef<Site>[] {
       accessorKey: 'status',
       header: 'Status',
       size: 130,
-      Cell: ({ row }) => {
-        const status = row.original.status
-        const config = STATUS_CONFIG[status]
-        if (!config) return <span className="text-muted-foreground/50">—</span>
-        return <span className={config.className}>{config.label}</span>
-      },
+      Cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
       accessorKey: 'created_at',
@@ -106,45 +77,39 @@ function getSitesColumns(meta: ActionMeta): MRT_ColumnDef<Site>[] {
           {
             id: 'actions',
             header: 'Action',
-            size: 80,
+            size: 200,
             enableSorting: false,
             enableGlobalFilter: false,
             enableHiding: false,
             mantineTableHeadCellProps: {
               sx: {
-                width: 80,
+                width: 200,
                 '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
               },
             },
-            mantineTableBodyCellProps: { style: { width: 80 } },
+            mantineTableBodyCellProps: { style: { width: 200 } },
             Cell: ({ row }: { row: { original: Site } }) => (
-              <div className="flex justify-end gap-0.5">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                  onClick={() => meta.onView(row.original)}
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                </Button>
+              <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
                 {meta.canUpdate ? (
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    size="sm"
+                    className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
                     onClick={() => meta.onEdit(row.original)}
                   >
                     <Pencil className="h-3.5 w-3.5" />
+                    Edit
                   </Button>
                 ) : null}
                 {meta.canDelete ? (
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    size="sm"
+                    className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
                     onClick={() => meta.onDelete(row.original)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
+                    Delete
                   </Button>
                 ) : null}
               </div>
@@ -160,11 +125,10 @@ type SitesTableCardProps = {
   rowCount: number
   loading: boolean
   pagination: PaginationState
-  onPaginationChange: Dispatch<SetStateAction<PaginationState>>
+  onPaginationChange: (pagination: PaginationState) => void
   filters: SiteFilterParams
-  globalFilter: string
-  onGlobalFilterChange: (value: string) => void
-  onFilterChange: (field: keyof SiteFilterParams, value: string | null) => void
+  onFilterChange: (patch: Partial<SiteFilterParams>) => void
+  onFilterReset: () => void
   onSortingChange: (sorting: MRT_SortingState) => void
   canCreate: boolean
   onCreateClick: () => void
@@ -182,9 +146,8 @@ function SitesTableCardInner({
   pagination,
   onPaginationChange,
   filters,
-  globalFilter,
-  onGlobalFilterChange,
   onFilterChange,
+  onFilterReset,
   onSortingChange,
   canCreate,
   onCreateClick,
@@ -211,71 +174,86 @@ function SitesTableCardInner({
     [filters.order_by, filters.order],
   )
 
+  const filterFields = useMemo<FilterFieldDef[]>(
+    () => [
+      {
+        field: 'keyword',
+        label: 'Keyword',
+        type: 'input',
+        value: filters.keyword ?? null,
+        placeholder: 'Search by name or URL…',
+      },
+      {
+        field: 'status',
+        label: 'Status',
+        type: 'select',
+        value: filters.status ?? null,
+        options: [
+          { label: 'Active', value: 'active' },
+          { label: 'Maintenance', value: 'maintenance' },
+          { label: 'Suspended', value: 'suspended' },
+        ],
+      },
+    ],
+    [filters],
+  )
+
   const table = useMantineReactTable({
     data,
     columns,
     manualPagination: true,
     manualSorting: true,
-    manualFiltering: true,
     rowCount,
-    onPaginationChange,
+    onPaginationChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(pagination) : updater
+      onPaginationChange(next)
+    },
     onSortingChange: (updater) => {
       const next = typeof updater === 'function' ? updater(sorting) : updater
       onSortingChange(next)
     },
-    onGlobalFilterChange: (updater) => {
-      const next = typeof updater === 'function' ? updater(globalFilter) : updater
-      onGlobalFilterChange(next ?? '')
-    },
     enableColumnFilters: false,
-    enableGlobalFilter: true,
-    positionGlobalFilter: 'left',
-    enableFullScreenToggle: false,
+    enableGlobalFilter: false,
     enableColumnPinning: true,
     initialState: {
-      showGlobalFilter: true,
       density: 'md',
       columnVisibility: { updated_at: false },
       columnPinning: { right: ['actions'] },
     },
-    state: { pagination, sorting, globalFilter, showLoadingOverlay: loading },
+    state: { pagination, sorting, showLoadingOverlay: loading },
     enablePagination: true,
     paginationDisplayMode: 'pages',
+    enableFullScreenToggle: false,
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
-    mantineSearchTextInputProps: {
-      placeholder: 'Search by name or URL…',
-      sx: { minWidth: 'clamp(120px, 40vw, 260px)' },
-    },
+    mantineTableBodyRowProps: ({ row }) => ({
+      onClick: () => onViewClick(row.original),
+      sx: { cursor: 'pointer' },
+    }),
     localization: { rowsPerPage: 'Per Page' },
-    renderToolbarInternalActions: ({ table: t }) => (
-      <div className="flex items-center gap-2">
-        <Select
-          value={filters.status ?? '__all__'}
-          onValueChange={(v) => onFilterChange('status', v === '__all__' ? null : v)}
-        >
-          <SelectTrigger className="h-8 w-36 text-xs">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="maintenance">Maintenance</SelectItem>
-            <SelectItem value="suspended">Suspended</SelectItem>
-          </SelectContent>
-        </Select>
-        {canCreate ? (
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-            onClick={onCreateClick}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Site
-          </Button>
-        ) : null}
-        <div className="mx-1 h-5 w-px bg-border" />
-        <MRT_ToggleGlobalFilterButton table={t} />
-        <MRT_ShowHideColumnsButton table={t} />
+    renderTopToolbar: ({ table: t }) => (
+      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
+        <div className="flex w-full items-center justify-end gap-2">
+          {canCreate ? (
+            <>
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                onClick={onCreateClick}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Site
+              </Button>
+              <div className="mx-1 h-5 w-px bg-border" />
+            </>
+          ) : null}
+          <MRT_ShowHideColumnsButton table={t} />
+        </div>
+        <FilterPanel
+          fields={filterFields}
+          onReset={onFilterReset}
+          applyMode
+          onApply={onFilterChange}
+        />
       </div>
     ),
     renderEmptyRowsFallback: () => null,

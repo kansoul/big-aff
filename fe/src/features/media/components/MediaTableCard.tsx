@@ -9,15 +9,7 @@ import {
 import { Trash2, Upload, ZoomIn } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { DatePicker } from '@/components/ui/date-picker'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
 import type { MediaFile, MediaFilterParams } from '@/features/media/types'
 import type { ManagedUser } from '@/shared/types'
@@ -78,6 +70,21 @@ function getColumns({ onDeleteFile, onPreviewClick }: ColumnMeta): MRT_ColumnDef
           {row.original.original_name}
         </button>
       ),
+    },
+    {
+      accessorKey: 'alt_text',
+      header: 'Alt Text',
+      size: 150,
+      enableSorting: false,
+      Cell: ({ row }) => {
+        const alt = row.original.alt_text
+        if (!alt) return <span className="text-muted-foreground/50">—</span>
+        return (
+          <span className="text-muted-foreground truncate max-w-full block" title={alt}>
+            {alt}
+          </span>
+        )
+      },
     },
     {
       accessorKey: 'mime_type',
@@ -152,7 +159,8 @@ type MediaTableCardProps = {
   pagination: PaginationState
   onPaginationChange: Dispatch<SetStateAction<PaginationState>>
   filters: MediaFilterParams
-  onFilterChange: (field: keyof MediaFilterParams, value: string | number | null) => void
+  onFilterChange: (patch: Partial<MediaFilterParams>) => void
+  onFilterReset: () => void
   onSortingChange: (sorting: MRT_SortingState) => void
   users: ManagedUser[]
   onUploadClick: () => void
@@ -167,6 +175,7 @@ function MediaTableCardInner({
   onPaginationChange,
   filters,
   onFilterChange,
+  onFilterReset,
   onSortingChange,
   users,
   onUploadClick,
@@ -182,6 +191,37 @@ function MediaTableCardInner({
   const sorting: MRT_SortingState = useMemo(
     () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
     [filters.order_by, filters.order],
+  )
+
+  const filterFields = useMemo<FilterFieldDef[]>(
+    () => [
+      {
+        field: 'alt_text',
+        label: 'Alt Text',
+        type: 'input',
+        value: filters.alt_text ?? null,
+      },
+      {
+        field: 'created_from',
+        label: 'From',
+        type: 'datepicker',
+        value: filters.created_from ?? null,
+      },
+      {
+        field: 'created_to',
+        label: 'To',
+        type: 'datepicker',
+        value: filters.created_to ?? null,
+      },
+      {
+        field: 'user_id',
+        label: 'User',
+        type: 'select',
+        value: filters.user_id != null ? String(filters.user_id) : null,
+        options: users.map((u) => ({ label: u.name, value: String(u.id) })),
+      },
+    ],
+    [filters, users],
   )
 
   const table = useMantineReactTable({
@@ -209,61 +249,26 @@ function MediaTableCardInner({
     enableFullScreenToggle: false,
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
     localization: { rowsPerPage: 'Per Page' },
-    renderTopToolbarCustomActions: () => (
-      <div className="flex flex-wrap items-end gap-3 py-1 w-full">
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">From</Label>
-          <DatePicker
-            value={filters.created_from ?? null}
-            onChange={(v) => onFilterChange('created_from', v)}
-            placeholder="Start date"
-            className="w-32"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">To</Label>
-          <DatePicker
-            value={filters.created_to ?? null}
-            onChange={(v) => onFilterChange('created_to', v)}
-            placeholder="End date"
-            className="w-32"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">User</Label>
-          <Select
-            value={filters.user_id != null ? String(filters.user_id) : '__all__'}
-            onValueChange={(v) =>
-              onFilterChange('user_id', v === '__all__' ? null : parseInt(v, 10))
-            }
+    renderTopToolbar: ({ table: t }) => (
+      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
+        <div className="flex w-full items-center justify-end gap-2">
+          <Button
+            size="sm"
+            className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+            onClick={onUploadClick}
           >
-            <SelectTrigger className="h-8 w-40 text-xs">
-              <SelectValue placeholder="All users" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All users</SelectItem>
-              {users.map((u) => (
-                <SelectItem key={u.id} value={String(u.id)}>
-                  {u.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Upload className="h-3.5 w-3.5" />
+            Upload
+          </Button>
+          <div className="mx-1 h-5 w-px bg-border" />
+          <MRT_ShowHideColumnsButton table={t} />
         </div>
-      </div>
-    ),
-    renderToolbarInternalActions: ({ table: t }) => (
-      <div className="flex items-center gap-1">
-        <Button
-          size="sm"
-          className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-          onClick={onUploadClick}
-        >
-          <Upload className="h-3.5 w-3.5" />
-          Upload
-        </Button>
-        <div className="mx-1 h-5 w-px bg-border" />
-        <MRT_ShowHideColumnsButton table={t} />
+        <FilterPanel
+          fields={filterFields}
+          onReset={onFilterReset}
+          applyMode
+          onApply={onFilterChange}
+        />
       </div>
     ),
     renderEmptyRowsFallback: () => null,

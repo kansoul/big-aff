@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -9,6 +9,10 @@ import { postsApi } from '@/features/posts/api'
 import { PostFormSections } from '@/features/posts/components'
 import { postFormSchema, type PostFormValues } from '@/features/posts/types'
 import { formatApiError } from '@/features/settings/components'
+import type { TextEditorHandle } from '@/components/common/TextEditor'
+import { mediaApi } from '@/features/media/api'
+import type { UploadMeta } from '@/components/common/MediaPickerDialog'
+import type { MediaFile } from '@/features/media/types'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { categoriesApi } from '@/features/categories/api'
@@ -24,6 +28,11 @@ export function EditPostPage() {
   const [submitting, setSubmitting] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [formError, setFormError] = useState<string | null>(null)
+  const [featureMediaMeta, setFeatureMediaMeta] = useState<UploadMeta>({
+    alt_text: null,
+    directory: null,
+  })
+  const editorRef = useRef<TextEditorHandle>(null)
 
   useEffect(() => {
     void categoriesApi
@@ -44,12 +53,13 @@ export function EditPostPage() {
       title: '',
       slug: '',
       lang: null,
+      note: null,
       description: null,
       content: null,
       feature_media: null,
       status: 'draft',
       is_hidden: false,
-      type: null,
+      type: 'normal',
       category_id: null,
       published_at: null,
     },
@@ -67,12 +77,13 @@ export function EditPostPage() {
           title: p.title,
           slug: p.slug,
           lang: p.lang ?? null,
+          note: p.note ?? null,
           description: p.description ?? null,
           content: p.content ?? null,
           feature_media: p.feature_media ?? null,
           status: p.status ?? 'draft',
           is_hidden: p.is_hidden ?? false,
-          type: p.type ?? null,
+          type: p.type ?? 'normal',
           category_id: p.category_id ?? null,
           published_at: p.published_at ? p.published_at.slice(0, 10) : null,
         })
@@ -90,7 +101,22 @@ export function EditPostPage() {
     try {
       setFormError(null)
       setSubmitting(true)
-      await postsApi.update(Number(id), values)
+      // Flush any pending blob-URL images in the editor before saving
+      const resolvedContent = editorRef.current
+        ? await editorRef.current.flushUploads()
+        : (values.content ?? '')
+      let resolvedMedia: MediaFile | null = null
+      if (values.feature_media instanceof File) {
+        const res = await mediaApi.upload(values.feature_media, featureMediaMeta)
+        resolvedMedia = res.data.data
+      } else {
+        resolvedMedia = values.feature_media ?? null
+      }
+      await postsApi.update(Number(id), {
+        ...values,
+        content: resolvedContent,
+        feature_media_id: resolvedMedia?.id ?? null,
+      })
       toast.success('Post updated successfully')
       void navigate(PATHS.posts)
     } catch (err) {
@@ -146,6 +172,8 @@ export function EditPostPage() {
             setValue={form.setValue}
             categories={categories}
             disableAutoSlug
+            onFeatureMediaMeta={setFeatureMediaMeta}
+            editorRef={editorRef}
           />
 
           {formError ? (

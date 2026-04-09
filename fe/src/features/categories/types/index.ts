@@ -79,3 +79,18 @@ export const categoryUpdateSchema = z.object({
 })
 
 export type CategoryUpdateFormValues = z.infer<typeof categoryUpdateSchema>
+
+/** Params sent to the API after resolving media (upload-on-submit) */
+export type CategoryCreateApiParams = {
+  name: string
+  description?: string | null
+  parent_id?: number | null
+  feature_media_id?: number | null
+}
+
+export type CategoryUpdateApiParams = {
+  name?: string
+  description?: string | null
+  parent_id?: number | null
+  feature_media_id?: number | null
+}

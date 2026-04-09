@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { MRT_SortingState } from 'mantine-react-table'
 import { toast } from 'sonner'
@@ -48,21 +48,6 @@ export function SettingsSitesPage() {
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
   const [filters, setFilters] = useState<SiteFilterParams>(DEFAULT_FILTERS)
-  const [globalFilter, setGlobalFilter] = useState('')
-  const isFirstRender = useRef(true)
-
-  // Debounce globalFilter into filters.keyword — skip on initial mount
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-    const timer = setTimeout(() => {
-      setFilters((prev) => ({ ...prev, keyword: globalFilter || null }))
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [globalFilter])
 
   const [refreshSignal, setRefreshSignal] = useState(0)
   const loadData = useCallback(() => {
@@ -98,8 +83,13 @@ export function SettingsSitesPage() {
     }
   }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
-  const onFilterChange = useCallback((field: keyof SiteFilterParams, value: string | null) => {
-    setFilters((prev) => ({ ...prev, [field]: value }))
+  const onFilterChange = useCallback((patch: Partial<SiteFilterParams>) => {
+    setFilters((prev) => ({ ...prev, ...patch }))
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  }, [])
+
+  const onFilterReset = useCallback(() => {
+    setFilters(DEFAULT_FILTERS)
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))
   }, [])
 
@@ -145,9 +135,8 @@ export function SettingsSitesPage() {
         pagination={pagination}
         onPaginationChange={setPagination}
         filters={filters}
-        globalFilter={globalFilter}
-        onGlobalFilterChange={setGlobalFilter}
         onFilterChange={onFilterChange}
+        onFilterReset={onFilterReset}
         onSortingChange={onSortingChange}
         canCreate={canCreate}
         onCreateClick={onCreateClick}

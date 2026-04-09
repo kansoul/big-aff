@@ -34,6 +34,7 @@ export type SelectFilterField = BaseField & {
   type: 'select'
   value: string | null
   options: SelectOption[]
+  hideAllOption?: boolean
 }
 
 export type MultiSelectFilterField = BaseField & {
@@ -102,16 +103,17 @@ type FieldRendererProps<T extends FilterFieldDef = FilterFieldDef> = {
 }
 
 function SelectFieldRenderer({ field, onChange }: FieldRendererProps<SelectFilterField>) {
+  const hasAll = !field.hideAllOption
+  // When no all option and value is null, undefined tells Select there's no selection
+  const val = field.value ?? (hasAll ? '__all__' : undefined)
+
   return (
-    <Select
-      value={field.value ?? '__all__'}
-      onValueChange={(v) => onChange(v === '__all__' ? null : v)}
-    >
+    <Select value={val} onValueChange={(v) => onChange(v === '__all__' ? null : v)}>
       <SelectTrigger className={cn('h-8 w-full text-xs', field.className)}>
-        <SelectValue placeholder={field.placeholder ?? 'All'} />
+        <SelectValue placeholder={field.placeholder ?? 'Select...'} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="__all__">{field.placeholder ?? 'All'}</SelectItem>
+        {hasAll && <SelectItem value="__all__">{field.placeholder ?? 'All'}</SelectItem>}
         {field.options.map((opt) => (
           <SelectItem key={opt.value} value={opt.value}>
             {opt.label}

@@ -22,6 +22,11 @@ export const postsApi = {
         ...(filters.category_id != null ? { category_id: filters.category_id } : {}),
         ...(filters.lang ? { lang: filters.lang } : {}),
         ...(filters.type ? { type: filters.type } : {}),
+        ...(filters.created_by != null ? { created_by: filters.created_by } : {}),
+        ...(filters.created_at_from ? { created_at_from: filters.created_at_from } : {}),
+        ...(filters.created_at_to ? { created_at_to: filters.created_at_to } : {}),
+        ...(filters.is_hidden != null ? { is_hidden: filters.is_hidden } : {}),
+        ...(filters.deleted_at ? { deleted_at: filters.deleted_at } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),
         ...(filters.order ? { order: filters.order } : {}),
       },
@@ -32,9 +37,10 @@ export const postsApi = {
       title: values.title,
       slug: values.slug,
       lang: toNullable(values.lang),
+      note: toNullable(values.note),
       description: toNullable(values.description),
       content: toNullable(values.content),
-      feature_media_id: values.feature_media?.id ?? null,
+      feature_media_id: values.feature_media_id ?? null,
       status: toNullable(values.status),
       is_hidden: values.is_hidden ?? false,
       type: toNullable(values.type),
@@ -49,9 +55,10 @@ export const postsApi = {
       title: values.title,
       slug: values.slug,
       lang: toNullable(values.lang),
+      note: toNullable(values.note),
       description: toNullable(values.description),
       content: toNullable(values.content),
-      feature_media_id: values.feature_media?.id ?? null,
+      feature_media_id: values.feature_media_id ?? null,
       status: toNullable(values.status),
       is_hidden: values.is_hidden ?? false,
       type: toNullable(values.type),
@@ -60,4 +67,11 @@ export const postsApi = {
     }),
 
   remove: (id: number) => axiosInstance.delete(`/posts/${id}`),
+}
+
+export const userOptionsApi = {
+  async list(): Promise<{ label: string; value: string }[]> {
+    const res = await axiosInstance.get<{ data: { id: number; name: string }[] }>('/users/options')
+    return res.data.data.map(u => ({ label: u.name, value: String(u.id) }))
+  }
 }

@@ -21,6 +21,11 @@ const DEFAULT_FILTERS: PostFilterParams = {
   type: null,
   order_by: null,
   order: null,
+  created_at_from: null,
+  created_at_to: null,
+  created_by: null,
+  deleted_at: null,
+  is_hidden: null,
 }
 
 export function PostsPage() {
@@ -72,8 +77,13 @@ export function PostsPage() {
     }
   }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
-  const onFilterChange = useCallback((field: keyof PostFilterParams, value: string | null) => {
-    setFilters((prev) => ({ ...prev, [field]: value }))
+  const onFilterChange = useCallback((patch: Partial<PostFilterParams>) => {
+    setFilters((prev) => ({ ...prev, ...patch }))
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  }, [])
+
+  const onFilterReset = useCallback(() => {
+    setFilters(DEFAULT_FILTERS)
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))
   }, [])
 
@@ -113,6 +123,30 @@ export function PostsPage() {
     if (!open) setDeleteTarget(null)
   }, [])
 
+  const onToggleHidden = useCallback(
+    async (row: Post) => {
+      try {
+        await postsApi.update(row.id, {
+          title: row.title,
+          slug: row.slug,
+          lang: row.lang,
+          note: row.note,
+          description: row.description,
+          content: row.content,
+          status: row.status,
+          type: row.type ?? 'normal',
+          category_id: row.category_id,
+          is_hidden: !row.is_hidden,
+        })
+        toast.success(row.is_hidden ? 'Post unhidden successfully' : 'Post hidden successfully')
+        loadData()
+      } catch (err) {
+        toast.error(formatApiError(err))
+      }
+    },
+    [loadData],
+  )
+
   return (
     <div className="flex flex-col gap-8">
       <PostsTableCard
@@ -123,6 +157,7 @@ export function PostsPage() {
         onPaginationChange={setPagination}
         filters={filters}
         onFilterChange={onFilterChange}
+        onFilterReset={onFilterReset}
         onSortingChange={onSortingChange}
         canCreate={canCreate}
         canUpdate={canUpdate}
@@ -131,6 +166,7 @@ export function PostsPage() {
         onViewRow={onViewRow}
         onEditRow={onEditRow}
         onDeleteRow={onDeleteRow}
+        onToggleHidden={onToggleHidden}
       />
 
       <DeletePostDialog

@@ -29,6 +29,7 @@ const DEFAULT_FILTERS: MediaFilterParams = {
   order: null,
   order_by: null,
   user_id: null,
+  alt_text: null,
 }
 
 export function MediaPage() {
@@ -92,14 +93,17 @@ export function MediaPage() {
     }
   }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
-  const onFilterChange = useCallback(
-    (field: keyof MediaFilterParams, value: string | number | null) => {
-      setFilters((prev) => ({ ...prev, [field]: value }))
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-      setLoading(true)
-    },
-    [],
-  )
+  const onFilterChange = useCallback((patch: Partial<MediaFilterParams>) => {
+    setFilters((prev) => ({ ...prev, ...patch }))
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    setLoading(true)
+  }, [])
+
+  const onFilterReset = useCallback(() => {
+    setFilters(DEFAULT_FILTERS)
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    setLoading(true)
+  }, [])
 
   const onSortingChange = useCallback((sorting: { id: string; desc: boolean }[]) => {
     const first = sorting[0] ?? null
@@ -174,6 +178,7 @@ export function MediaPage() {
         onPaginationChange={setPagination}
         filters={filters}
         onFilterChange={onFilterChange}
+        onFilterReset={onFilterReset}
         onSortingChange={onSortingChange}
         users={users}
         onUploadClick={onUploadClick}

@@ -1,4 +1,4 @@
-import { memo, useMemo, type Dispatch, type SetStateAction } from 'react'
+import { memo, useMemo, useState, useEffect, type Dispatch, type SetStateAction } from 'react'
 import {
   MantineReactTable,
   useMantineReactTable,
@@ -6,35 +6,16 @@ import {
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
 } from 'mantine-react-table'
-import { Eye, FileText, Pencil, Plus, Trash2 } from 'lucide-react'
+import { EyeOff, FileText, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import type { Post, PostFilterParams, PostStatus } from '@/features/posts/types'
+import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import { StatusBadge } from '@/components/common/StatusBadge'
+import { userOptionsApi } from '@/features/posts/api'
+import { categoriesApi } from '@/features/categories/api'
+import type { Post, PostFilterParams } from '@/features/posts/types'
 
 type PaginationState = { pageIndex: number; pageSize: number }
-
-const STATUS_LABELS: Record<PostStatus, string> = {
-  draft: 'Draft',
-  published: 'Published',
-  archived: 'Archived',
-}
-
-const STATUS_COLORS: Record<PostStatus, string> = {
-  draft: 'bg-muted text-muted-foreground ring-border',
-  published:
-    'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-400 ring-green-200 dark:ring-green-900',
-  archived:
-    'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400 ring-red-200 dark:ring-red-900',
-}
 
 type ActionMeta = {
   canUpdate: boolean
@@ -42,10 +23,11 @@ type ActionMeta = {
   onViewRow: (row: Post) => void
   onEditRow: (row: Post) => void
   onDeleteRow: (row: Post) => void
+  onToggleHidden: (row: Post) => void
 }
 
 function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
-  const { canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow } = meta
+  const { canUpdate, canDelete, onEditRow, onDeleteRow, onToggleHidden } = meta
 
   return [
     {
@@ -60,17 +42,7 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
       accessorKey: 'status',
       header: 'Status',
       size: 110,
-      Cell: ({ row }) => {
-        const s = row.original.status
-        if (!s) return <span className="text-muted-foreground/50">—</span>
-        return (
-          <span
-            className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${STATUS_COLORS[s]}`}
-          >
-            {STATUS_LABELS[s]}
-          </span>
-        )
-      },
+      Cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
       accessorKey: 'type',
@@ -131,48 +103,61 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
     {
       id: 'actions',
       header: 'Action',
-      size: 100,
+      size: 250,
       enableSorting: false,
       enableGlobalFilter: false,
       enableHiding: false,
       mantineTableHeadCellProps: {
-        sx: { width: 100, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+        sx: { width: 250, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
       },
-      mantineTableBodyCellProps: { style: { width: 100 } },
+      mantineTableBodyCellProps: { style: { width: 250 } },
       Cell: ({ row }: { row: { original: Post } }) => (
-        <div className="flex justify-end gap-0.5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            aria-label={`View ${row.original.title}`}
-            onClick={() => onViewRow(row.original)}
-          >
-            <Eye className="h-3.5 w-3.5" />
-          </Button>
+        <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
           {canUpdate ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              aria-label={`Edit ${row.original.title}`}
-              onClick={() => onEditRow(row.original)}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={`h-8 gap-1.5 px-2 text-xs font-medium ${
+                  row.original.is_hidden
+                    ? 'text-destructive focus:text-destructive hover:text-destructive'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-label={
+                  row.original.is_hidden
+                    ? `Unhide ${row.original.title}`
+                    : `Hide ${row.original.title}`
+                }
+                onClick={() => onToggleHidden(row.original)}
+              >
+                <EyeOff className="h-3.5 w-3.5" />
+                {row.original.is_hidden ? 'Unhide' : 'Hide'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                aria-label={`Edit ${row.original.title}`}
+                onClick={() => onEditRow(row.original)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </Button>
+            </>
           ) : null}
           {canDelete ? (
             <Button
               type="button"
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              size="sm"
+              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
               aria-label={`Delete ${row.original.title}`}
               onClick={() => onDeleteRow(row.original)}
             >
               <Trash2 className="h-3.5 w-3.5" />
+              Delete
             </Button>
           ) : null}
         </div>
@@ -188,7 +173,8 @@ type PostsTableCardProps = {
   pagination: PaginationState
   onPaginationChange: Dispatch<SetStateAction<PaginationState>>
   filters: PostFilterParams
-  onFilterChange: (field: keyof PostFilterParams, value: string | null) => void
+  onFilterChange: (patch: Partial<PostFilterParams>) => void
+  onFilterReset: () => void
   onSortingChange: (sorting: MRT_SortingState) => void
   canCreate: boolean
   canUpdate: boolean
@@ -197,6 +183,7 @@ type PostsTableCardProps = {
   onViewRow: (row: Post) => void
   onEditRow: (row: Post) => void
   onDeleteRow: (row: Post) => void
+  onToggleHidden: (row: Post) => void
 }
 
 function PostsTableCardInner({
@@ -207,6 +194,7 @@ function PostsTableCardInner({
   onPaginationChange,
   filters,
   onFilterChange,
+  onFilterReset,
   onSortingChange,
   canCreate,
   canUpdate,
@@ -215,15 +203,113 @@ function PostsTableCardInner({
   onViewRow,
   onEditRow,
   onDeleteRow,
+  onToggleHidden,
 }: PostsTableCardProps) {
+  const [userOptions, setUserOptions] = useState<{ label: string; value: string }[]>([])
+  const [categoryOptions, setCategoryOptions] = useState<{ label: string; value: string }[]>([])
+
+  useEffect(() => {
+    void userOptionsApi.list().then(setUserOptions).catch(console.error)
+    void categoriesApi
+      .list(1, 100, { query: null, order: null, order_by: null })
+      .then((res) => {
+        setCategoryOptions(res.data.data.map((c: any) => ({ label: c.name, value: String(c.id) })))
+      })
+      .catch(console.error)
+  }, [])
+
   const columns = useMemo(
-    () => getColumns({ canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow }),
-    [canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow],
+    () => getColumns({ canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow, onToggleHidden }),
+    [canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow, onToggleHidden],
   )
 
   const sorting: MRT_SortingState = useMemo(
     () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
     [filters.order_by, filters.order],
+  )
+
+  const filterFields = useMemo<FilterFieldDef[]>(
+    () => [
+      {
+        field: 'query',
+        label: 'Search',
+        type: 'input',
+        value: filters.query ?? null,
+        placeholder: 'Search posts…',
+      },
+      {
+        field: 'status',
+        label: 'Status',
+        type: 'select',
+        value: filters.status ?? null,
+        options: [
+          { label: 'Draft', value: 'draft' },
+          { label: 'Published', value: 'published' },
+          { label: 'Archived', value: 'archived' },
+          { label: 'Trash', value: 'trash' },
+        ],
+      },
+      {
+        field: 'type',
+        label: 'Type',
+        type: 'select',
+        value: filters.type ?? null,
+        options: [
+          { label: 'Normal', value: 'normal' },
+          { label: 'AI', value: 'ai' },
+          { label: 'Wordpress', value: 'wordpress' },
+        ],
+      },
+      {
+        field: 'lang',
+        label: 'Language',
+        type: 'input',
+        value: filters.lang ?? null,
+        placeholder: 'Language code',
+      },
+      {
+        field: 'category_id',
+        label: 'Category',
+        type: 'select',
+        value: filters.category_id ? String(filters.category_id) : null,
+        options: categoryOptions,
+      },
+      {
+        field: 'created_by',
+        label: 'Creator',
+        type: 'select',
+        value: filters.created_by ? String(filters.created_by) : null,
+        options: userOptions,
+      },
+      {
+        field: 'created_at_from',
+        label: 'Created From',
+        type: 'datepicker',
+        value: filters.created_at_from ?? null,
+        placeholder: 'Select start date',
+      },
+      {
+        field: 'created_at_to',
+        label: 'Created To',
+        type: 'datepicker',
+        value: filters.created_at_to ?? null,
+        placeholder: 'Select end date',
+      },
+      {
+        field: 'is_hidden',
+        label: 'Hidden',
+        type: 'select',
+        value:
+          filters.is_hidden !== undefined && filters.is_hidden !== null
+            ? String(filters.is_hidden)
+            : null,
+        options: [
+          { label: 'Visible', value: '0' },
+          { label: 'Hidden', value: '1' },
+        ],
+      },
+    ],
+    [filters, userOptions, categoryOptions],
   )
 
   const table = useMantineReactTable({
@@ -246,56 +332,39 @@ function PostsTableCardInner({
       columnPinning: { right: ['actions'] },
     },
     state: { pagination, sorting, showLoadingOverlay: loading },
-
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
+    mantineTableBodyRowProps: ({ row }) => ({
+      onClick: () => onViewRow(row.original),
+      sx: { cursor: 'pointer' },
+    }),
     localization: { rowsPerPage: 'Per Page' },
-    renderTopToolbarCustomActions: () => (
-      <div className="flex flex-wrap items-end gap-3 py-1">
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Search</Label>
-          <Input
-            value={filters.query ?? ''}
-            onChange={(e) => onFilterChange('query', e.target.value || null)}
-            placeholder="Search posts…"
-            className="h-8 w-48 text-xs"
-          />
+    renderTopToolbar: ({ table: t }) => (
+      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
+        <div className="flex w-full items-center justify-end gap-2">
+          {canCreate ? (
+            <>
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                onClick={onAddClick}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Post
+              </Button>
+              <div className="mx-1 h-5 w-px bg-border" />
+            </>
+          ) : null}
+          <MRT_ShowHideColumnsButton table={t} />
         </div>
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Status</Label>
-          <Select
-            value={filters.status ?? '__all__'}
-            onValueChange={(v) => onFilterChange('status', v === '__all__' ? null : v)}
-          >
-            <SelectTrigger className="h-8 w-36 text-xs">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All statuses</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    ),
-    renderToolbarInternalActions: ({ table: t }) => (
-      <div className="flex items-center gap-1">
-        {canCreate ? (
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-            onClick={onAddClick}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Post
-          </Button>
-        ) : null}
-        <div className="mx-1 h-5 w-px bg-border" />
-        <MRT_ShowHideColumnsButton table={t} />
+        <FilterPanel
+          fields={filterFields}
+          onReset={onFilterReset}
+          applyMode
+          onApply={(values) => onFilterChange(values as Partial<PostFilterParams>)}
+        />
       </div>
     ),
     renderEmptyRowsFallback: () => (
