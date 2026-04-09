@@ -27,7 +27,7 @@ export function CreateSitePage() {
       status: undefined,
       logo: null,
       favicon: null,
-      settings: { gtm: '', fb_pixel: '', theme: '' },
+      settings: { gtm: '', fb_pixel: '', theme: '', default_channel: '', default_style: '' },
     },
   })
 

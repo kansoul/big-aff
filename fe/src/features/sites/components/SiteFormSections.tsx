@@ -1,6 +1,11 @@
+import { useEffect, useState } from 'react'
 import type { Control } from 'react-hook-form'
 
 import type { SiteCreateFormValues } from '@/features/sites/types'
+import { channelsApi } from '@/features/channels/api'
+import { stylesApi } from '@/features/styles/api'
+import type { ChannelOption } from '@/features/channels/types'
+import type { StyleOption } from '@/features/styles/types'
 import { MediaPickerField } from '@/components/common/MediaPickerDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -19,6 +24,14 @@ type SiteFormSectionsProps = {
 }
 
 export function SiteFormSections({ control }: SiteFormSectionsProps) {
+  const [channels, setChannels] = useState<ChannelOption[]>([])
+  const [styles, setStyles] = useState<StyleOption[]>([])
+
+  useEffect(() => {
+    void channelsApi.options().then((res) => setChannels(res.data))
+    void stylesApi.options().then((res) => setStyles(res.data))
+  }, [])
+
   return (
     <>
       <Card className="border-border shadow-none">
@@ -136,6 +149,58 @@ export function SiteFormSections({ control }: SiteFormSectionsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <FormField
+            control={control}
+            name="settings.default_channel"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Default Channel <span className="text-destructive">*</span>
+                </FormLabel>
+                <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select channel" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {channels.map((channel) => (
+                      <SelectItem key={channel.code} value={channel.code}>
+                        {channel.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="settings.default_style"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Default Style <span className="text-destructive">*</span>
+                </FormLabel>
+                <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select style" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {styles.map((style) => (
+                      <SelectItem key={style.code} value={style.code}>
+                        {style.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={control}
             name="settings.gtm"

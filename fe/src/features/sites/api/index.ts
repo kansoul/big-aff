@@ -36,6 +36,8 @@ export const sitesApi = {
         gtm: values.settings?.gtm ?? null,
         fb_pixel: values.settings?.fb_pixel ?? null,
         theme: values.settings?.theme ?? null,
+        default_channel: values.settings.default_channel,
+        default_style: values.settings.default_style,
       },
     }),
 
@@ -51,6 +53,8 @@ export const sitesApi = {
         gtm: values.settings?.gtm ?? null,
         fb_pixel: values.settings?.fb_pixel ?? null,
         theme: values.settings?.theme ?? null,
+        default_channel: values.settings.default_channel,
+        default_style: values.settings.default_style,
       },
     }),
 }
