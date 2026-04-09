@@ -20,7 +20,7 @@ class GetPostOptionsAction
         OwnershipFilter::forAuthUser()->applyTo($query);
 
         return $query->get()
-            ->map(fn(Post $post) => [
+            ->map(fn (Post $post) => [
                 'id' => $post->id,
                 'title' => $post->title,
                 'slug' => $post->slug,
