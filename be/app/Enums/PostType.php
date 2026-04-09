@@ -2,11 +2,11 @@
 
 namespace App\Enums;
 
-enum PostStatus: string
+enum PostType: string
 {
-    case DRAFT = 'draft';
-    case PUBLISHED = 'published';
-    case TRASH = 'trash';
+    case NORMAL = 'normal';
+    case AI = 'ai';
+    case WORDPRESS = 'wordpress';
 
     /**
      * @return array<string>
