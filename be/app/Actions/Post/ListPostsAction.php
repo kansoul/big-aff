@@ -2,19 +2,38 @@
 
 namespace App\Actions\Post;
 
+use App\Http\Requests\Post\ListPostsRequest;
 use App\Models\Post;
+use App\Models\User;
+use App\Support\PaginationInput\PaginationInput;
+use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class ListPostsAction
 {
     /**
-     * @param  array{query?: string|null, status?: string|null, type?: string|null, lang?: string|null, category_id?: int|null, per_page?: int|null, page?: int|null}  $filters
+     * Columns allowed for `order_by` (must match {@see ListPostsRequest} rules).
+     *
+     * @var array<int, string>
+     */
+    public const ORDERABLE_COLUMNS = [
+        'id',
+        'title',
+        'slug',
+        'status',
+        'type',
+        'lang',
+        'published_at',
+        'created_at',
+    ];
+
+    /**
+     * @param  array{query?: string|null, status?: string|null, type?: string|null, lang?: string|null, category_id?: int|null, per_page?: int|null, page?: int|null, order_by?: string|null, order?: string|null}  $filters
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $query = Post::query()
-            ->with(['featureMedia', 'category'])
-            ->orderByDesc('created_at');
+        $query = Post::query()->with(['featureMedia', 'category']);
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];
@@ -40,8 +59,13 @@ class ListPostsAction
             $query->where('category_id', $filters['category_id']);
         }
 
-        $perPage = (int) ($filters['per_page'] ?? 15);
+        SortInput::fromValidatedArray(
+            $filters,
+            self::ORDERABLE_COLUMNS,
+            defaultColumn: 'created_at',
+            defaultDirection: 'desc',
+        )->applyTo($query);
 
-        return $query->paginate($perPage);
+        return PaginationInput::fromValidatedArray($filters)->paginateQuery($query);
     }
 }

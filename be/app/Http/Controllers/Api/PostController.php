@@ -162,11 +162,11 @@ class PostController extends BaseController
             ->get();
 
         return $this->sendResponse([
-            'data' => $posts->map(fn (Post $post) => [
+            'data' => $posts->map(fn(Post $post) => [
                 'id' => $post->id,
                 'title' => $post->title,
                 'slug' => $post->slug,
-                'keyword_sets' => $post->keywordSets->map(fn ($ks) => [
+                'keyword_sets' => $post->keywordSets->map(fn($ks) => [
                     'id' => $ks->id,
                     'name' => $ks->name,
                 ]),
