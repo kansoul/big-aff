@@ -11,13 +11,13 @@ export const PATHS = {
   postsCreate: '/posts/create',
   postsView: '/posts/:id',
   postsEdit: '/posts/:id/edit',
-  settingsUsers: '/settings/users',
-  settingsUsersAssign: '/settings/users-assign',
-  settingsRoles: '/settings/roles',
-  settingsSites: '/settings/sites',
-  settingsSitesCreate: '/settings/sites/create',
-  settingsSitesView: '/settings/sites/:id',
-  settingsSitesEdit: '/settings/sites/:id/edit',
+  settingsUsers: '/users',
+  settingsUsersAssign: '/users-assign',
+  settingsRoles: '/roles',
+  settingsSites: '/sites',
+  settingsSitesCreate: '/sites/create',
+  settingsSitesView: '/sites/:id',
+  settingsSitesEdit: '/sites/:id/edit',
   categories: '/categories',
   channels: '/channels',
   styles: '/styles',
@@ -29,8 +29,8 @@ export const PATHS = {
 export const postViewPath = (id: number | string) => `/posts/${id}`
 export const postEditPath = (id: number | string) => `/posts/${id}/edit`
 
-export const siteViewPath = (id: number | string) => `/settings/sites/${id}`
-export const siteEditPath = (id: number | string) => `/settings/sites/${id}/edit`
+export const siteViewPath = (id: number | string) => `/sites/${id}`
+export const siteEditPath = (id: number | string) => `/sites/${id}/edit`
 
 /** Identifies a top-level nav group; set on route `handle.navSection` and optional `NavItem.navSection`. */
 export const NAV_SECTIONS = {

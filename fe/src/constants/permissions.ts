@@ -42,6 +42,8 @@ export const PermissionSlugs = {
   ChannelsView: 'channels.view',
   ChannelsCreate: 'channels.create',
   ChannelsDelete: 'channels.delete',
+  FollowsView: 'follows.view',
+  FollowsDelete: 'follows.delete',
 } as const
 
 export function allPermissionSlugs(): string[] {
