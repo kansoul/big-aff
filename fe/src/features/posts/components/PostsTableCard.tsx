@@ -211,7 +211,7 @@ function PostsTableCardInner({
   useEffect(() => {
     void userOptionsApi.list().then(setUserOptions).catch(console.error)
     void categoriesApi
-      .list(1, 100, { query: null, order: null, order_by: null })
+      .list({ page: 1, per_page: 100, query: null, order: null, order_by: null })
       .then((res) => {
         setCategoryOptions(res.data.data.map((c: any) => ({ label: c.name, value: String(c.id) })))
       })

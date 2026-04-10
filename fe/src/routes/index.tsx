@@ -173,6 +173,16 @@ export const router = createBrowserRouter([
             handle: { title: 'Ads Links' },
           },
           {
+            path: routeSegment(PATHS.follows),
+            lazy: async () => {
+              const { FollowsPage } = await import('@/features/follows/pages/FollowsPage')
+              return {
+                Component: withPermission(FollowsPage, PermissionSlugs.FollowsView),
+              }
+            },
+            handle: { title: 'Follows' },
+          },
+          {
             path: routeSegment(PATHS.settingsRoles),
             lazy: async () => {
               const { SettingsRolesPage } =

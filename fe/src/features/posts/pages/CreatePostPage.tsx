@@ -23,7 +23,9 @@ export function CreatePostPage() {
 
   useEffect(() => {
     void categoriesApi
-      .list(1, 100, {
+      .list({
+        page: 1,
+        per_page: 100,
         query: null,
         parent_id: null,
         order_by: 'name',
