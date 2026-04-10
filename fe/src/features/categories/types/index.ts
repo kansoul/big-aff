@@ -56,10 +56,12 @@ export interface CategoryListResponse {
 }
 
 export interface CategoryFilterParams {
-  query: string | null
+  query?: string | null
   parent_id?: number | string | null
-  order_by: CategoryOrderBy | null
-  order: CategoryOrder | null
+  order_by?: CategoryOrderBy | null
+  order?: CategoryOrder | null
+  page?: number
+  per_page?: number
 }
 
 export const categoryCreateSchema = z.object({

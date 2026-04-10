@@ -11,13 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchableSelect } from '@/components/common/SearchableSelect'
 
 type SiteFormSectionsProps = {
   control: Control<SiteCreateFormValues>
@@ -97,22 +91,17 @@ export function SiteFormSections({ control }: SiteFormSectionsProps) {
                 <FormLabel>
                   Status<span className="text-destructive">*</span>
                 </FormLabel>
-                <Select
+                <SearchableSelect
                   value={field.value ?? '__none__'}
                   onValueChange={(v) => field.onChange(v === '__none__' ? undefined : v)}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="__none__">No status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                    <SelectItem value="suspended">Suspended</SelectItem>
-                  </SelectContent>
-                </Select>
+                  options={[
+                    { label: 'No status', value: '__none__' },
+                    { label: 'Active', value: 'active' },
+                    { label: 'Maintenance', value: 'maintenance' },
+                    { label: 'Suspended', value: 'suspended' },
+                  ]}
+                  placeholder="Select status"
+                />
                 <FormMessage />
               </FormItem>
             )}
@@ -161,20 +150,12 @@ export function SiteFormSections({ control }: SiteFormSectionsProps) {
                 <FormLabel>
                   Default Channel <span className="text-destructive">*</span>
                 </FormLabel>
-                <Select value={field.value ?? ''} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select channel" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {channels.map((channel) => (
-                      <SelectItem key={channel.code} value={channel.code}>
-                        {channel.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={field.value ?? undefined}
+                  onValueChange={field.onChange}
+                  options={channels.map((c) => ({ label: c.name, value: c.code }))}
+                  placeholder="Select channel"
+                />
                 <FormMessage />
               </FormItem>
             )}
@@ -187,20 +168,12 @@ export function SiteFormSections({ control }: SiteFormSectionsProps) {
                 <FormLabel>
                   Default Style <span className="text-destructive">*</span>
                 </FormLabel>
-                <Select value={field.value ?? ''} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select style" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {styles.map((style) => (
-                      <SelectItem key={style.code} value={style.code}>
-                        {style.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={field.value ?? undefined}
+                  onValueChange={field.onChange}
+                  options={styles.map((s) => ({ label: s.name, value: s.code }))}
+                  placeholder="Select style"
+                />
                 <FormMessage />
               </FormItem>
             )}
@@ -237,27 +210,18 @@ export function SiteFormSections({ control }: SiteFormSectionsProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Theme</FormLabel>
-                <Select
+                <SearchableSelect
                   value={field.value || '__none__'}
                   onValueChange={(v) => field.onChange(v === '__none__' ? '' : v)}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select theme" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="__none__">No theme</SelectItem>
-                    {Array.from({ length: 10 }, (_, i) => ({
+                  options={[
+                    { label: 'No theme', value: '__none__' },
+                    ...Array.from({ length: 10 }, (_, i) => ({
                       value: `theme-${i + 1}`,
                       label: `Theme ${i + 1}`,
-                    })).map((theme) => (
-                      <SelectItem key={theme.value} value={theme.value}>
-                        {theme.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    })),
+                  ]}
+                  placeholder="Select theme"
+                />
                 <FormMessage />
               </FormItem>
             )}

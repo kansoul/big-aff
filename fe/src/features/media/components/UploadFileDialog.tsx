@@ -21,13 +21,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchableSelect } from '@/components/common/SearchableSelect'
 import { RoleFormErrorAlert } from '@/features/settings/components/RoleFormErrorAlert'
 
 const DIRECTORY_OPTIONS = ['media', 'media/site', 'media/posts'] as const
@@ -190,20 +184,15 @@ export function UploadFileDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Directory</FormLabel>
-                    <Select value={field.value ?? ''} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Default (media)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {DIRECTORY_OPTIONS.map((dir) => (
-                          <SelectItem key={dir} value={dir}>
-                            {dir}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={field.value ?? ''}
+                      onValueChange={field.onChange}
+                      options={[
+                        { label: 'Default (media)', value: '' },
+                        ...DIRECTORY_OPTIONS.map((dir) => ({ label: dir, value: dir })),
+                      ]}
+                      placeholder="Default (media)"
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
