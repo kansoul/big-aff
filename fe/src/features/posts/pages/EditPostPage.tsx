@@ -14,10 +14,18 @@ import { Form } from '@/components/ui/form'
 import { categoriesApi } from '@/features/categories/api'
 import type { Category } from '@/features/categories/types'
 import { PATHS, postViewPath } from '@/constants/paths'
+import { useAuthStore } from '@/hooks/useAuthStore'
+import { hasPermission, PermissionSlugs } from '@/constants/permissions'
 
 export function EditPostPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+
+  const user = useAuthStore((s) => s.user)
+  const perms = user?.permissions ?? []
+  const canCreateKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsCreate)
+  const canUpdateKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsUpdate)
+  const canDeleteKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsDelete)
 
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -170,6 +178,9 @@ export function EditPostPage() {
             categories={categories}
             defaultKeywordSets={postKeywordSets}
             disableAutoSlug
+            canCreateKeywordSet={canCreateKeywordSet}
+            canUpdateKeywordSet={canUpdateKeywordSet}
+            canDeleteKeywordSet={canDeleteKeywordSet}
           />
 
           {formError ? (

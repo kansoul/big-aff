@@ -14,9 +14,18 @@ import { Form } from '@/components/ui/form'
 import { categoriesApi } from '@/features/categories/api'
 import type { Category } from '@/features/categories/types'
 import { PATHS } from '@/constants/paths'
+import { useAuthStore } from '@/hooks/useAuthStore'
+import { hasPermission, PermissionSlugs } from '@/constants/permissions'
 
 export function CreatePostPage() {
   const navigate = useNavigate()
+
+  const user = useAuthStore((s) => s.user)
+  const perms = user?.permissions ?? []
+  const canCreateKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsCreate)
+  const canUpdateKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsUpdate)
+  const canDeleteKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsDelete)
+
   const [submitting, setSubmitting] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [formError, setFormError] = useState<string | null>(null)
@@ -99,6 +108,9 @@ export function CreatePostPage() {
             watch={form.watch}
             setValue={form.setValue}
             categories={categories}
+            canCreateKeywordSet={canCreateKeywordSet}
+            canUpdateKeywordSet={canUpdateKeywordSet}
+            canDeleteKeywordSet={canDeleteKeywordSet}
           />
 
           {formError ? (

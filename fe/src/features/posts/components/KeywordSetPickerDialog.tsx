@@ -37,6 +37,9 @@ type Props = {
   onOpenChange: (open: boolean) => void
   defaultSelectedItems: KeywordSet[]
   onConfirm: (items: KeywordSet[]) => void
+  canCreate?: boolean
+  canUpdate?: boolean
+  canDelete?: boolean
 }
 
 export function KeywordSetPickerDialog({
@@ -44,6 +47,9 @@ export function KeywordSetPickerDialog({
   onOpenChange,
   defaultSelectedItems,
   onConfirm,
+  canCreate = false,
+  canUpdate = false,
+  canDelete = false,
 }: Props) {
   const [tab, setTab] = useState<Tab>('select')
 
@@ -231,45 +237,56 @@ export function KeywordSetPickerDialog({
           </div>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Action',
-        size: 80,
-        enableSorting: false,
-        enableHiding: false,
-        mantineTableHeadCellProps: {
-          sx: { width: 80, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
-        },
-        mantineTableBodyCellProps: { style: { width: 80 } },
-        Cell: ({ row }) => (
-          <div className="flex justify-end gap-0.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.stopPropagation()
-                setEditTarget(row.original)
-              }}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-              onClick={(e) => {
-                e.stopPropagation()
-                setDeleteTarget(row.original)
-              }}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        ),
-      },
+      ...(canUpdate || canDelete
+        ? [
+            {
+              id: 'actions',
+              header: 'Action',
+              size: 80,
+              enableSorting: false,
+              enableHiding: false,
+              mantineTableHeadCellProps: {
+                sx: {
+                  width: 80,
+                  '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
+                },
+              },
+              mantineTableBodyCellProps: { style: { width: 80 } },
+              Cell: ({ row }: { row: { original: KeywordSet } }) => (
+                <div className="flex justify-end gap-0.5">
+                  {canUpdate && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setEditTarget(row.original)
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDeleteTarget(row.original)
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+              ),
+            } satisfies MRT_ColumnDef<KeywordSet>,
+          ]
+        : []),
     ],
-    [selectedItems, toggleItem],
+    [selectedItems, toggleItem, canUpdate, canDelete],
   )
 
   const table = useMantineReactTable({
@@ -325,10 +342,12 @@ export function KeywordSetPickerDialog({
               <TabsTrigger value="select" className="flex-1">
                 Select keyword sets
               </TabsTrigger>
-              <TabsTrigger value="create" className="flex-1">
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Create new
-              </TabsTrigger>
+              {canCreate && (
+                <TabsTrigger value="create" className="flex-1">
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Create new
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {/* ── Select tab ── */}
