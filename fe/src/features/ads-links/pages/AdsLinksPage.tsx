@@ -69,7 +69,7 @@ export function AdsLinksPage() {
 
   const editForm = useForm<AdsLinkUpdateFormValues>({
     resolver: zodResolver(adsLinkUpdateSchema),
-    defaultValues: { rac: '', fbid: '', googleid: '' },
+    defaultValues: { rac: '', keyword_set_id: null, fbid: '', googleid: '' },
   })
 
   const loadOptions = useCallback(async () => {
@@ -111,6 +111,7 @@ export function AdsLinksPage() {
     if (editRow) {
       editForm.reset({
         rac: editRow.rac,
+        keyword_set_id: editRow.keyword_set?.id ?? null,
         fbid: editRow.fbid?.join(',') ?? '',
         googleid: editRow.googleid?.join(',') ?? '',
       })
@@ -171,6 +172,7 @@ export function AdsLinksPage() {
       setSubmitting(true)
       await adsLinksApi.update(editRow.id, {
         rac: values.rac,
+        keyword_set_id: values.keyword_set_id ?? null,
         fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
       })
@@ -273,6 +275,7 @@ export function AdsLinksPage() {
       />
       <EditAdsLinkDialog
         adsLink={editRow}
+        posts={posts}
         onOpenChange={onEditOpenChange}
         formError={formError}
         form={editForm}

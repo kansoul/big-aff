@@ -23,7 +23,7 @@ class StoreAdsLinkRequest extends FormRequest
             'post_id' => ['required', 'integer', 'exists:posts,id'],
             'channel_code' => ['required', 'string', 'exists:channels,code'],
             'rac' => ['required', 'string'],
-            'keyword_set_id' => ['nullable', 'integer', 'exists:post_keyword_sets,id'],
+            'keyword_set_id' => ['nullable', 'integer', 'exists:keyword_sets,id'],
             'note' => ['nullable', 'string'],
             'fbid' => ['nullable', 'string'],
             'googleid' => ['nullable', 'string'],

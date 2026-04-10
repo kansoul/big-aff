@@ -2,11 +2,13 @@
 
 namespace App\Models\Traits\Relationship;
 
+use App\Models\KeywordSet;
+use App\Models\LinkData;
 use App\Models\Post;
-use App\Models\PostKeywordSet;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 trait AdsLinkRelationship
 {
@@ -27,11 +29,11 @@ trait AdsLinkRelationship
     }
 
     /**
-     * @return BelongsTo<PostKeywordSet, $this>
+     * @return BelongsTo<KeywordSet, $this>
      */
     public function keywordSet(): BelongsTo
     {
-        return $this->belongsTo(PostKeywordSet::class, 'keyword_set_id');
+        return $this->belongsTo(KeywordSet::class, 'keyword_set_id');
     }
 
     /**
@@ -48,5 +50,13 @@ trait AdsLinkRelationship
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * @return HasMany<LinkData>
+     */
+    public function linkDatas(): HasMany
+    {
+        return $this->hasMany(LinkData::class, 'ads_link_id', 'id');
     }
 }

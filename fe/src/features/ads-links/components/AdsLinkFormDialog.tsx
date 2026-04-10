@@ -214,8 +214,8 @@ export function CreateAdsLinkDialog({
                   <FormItem>
                     <FormLabel>Keyword Set</FormLabel>
                     <Select
-                      value={field.value ? String(field.value) : ''}
-                      onValueChange={(v) => field.onChange(v ? Number(v) : null)}
+                      value={field.value ? String(field.value) : '__none__'}
+                      onValueChange={(v) => field.onChange(v === '__none__' ? null : Number(v))}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -223,7 +223,7 @@ export function CreateAdsLinkDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="__none__">None</SelectItem>
                         {keywordSets.map((ks) => (
                           <SelectItem key={ks.id} value={String(ks.id)}>
                             {ks.name}
@@ -270,6 +270,7 @@ export function CreateAdsLinkDialog({
 
 type EditAdsLinkDialogProps = {
   adsLink: AdsLink | null
+  posts: PostOption[]
   onOpenChange: (open: boolean) => void
   formError: string | null
   form: UseFormReturn<AdsLinkUpdateFormValues>
@@ -279,6 +280,7 @@ type EditAdsLinkDialogProps = {
 
 export function EditAdsLinkDialog({
   adsLink,
+  posts,
   onOpenChange,
   formError,
   form,
@@ -286,6 +288,11 @@ export function EditAdsLinkDialog({
   onSubmit,
 }: EditAdsLinkDialogProps) {
   const open = adsLink !== null
+
+  const selectedPost = posts.find((p) => p.id === adsLink?.post?.id)
+  const keywordSets = selectedPost?.keyword_sets ?? (
+    adsLink?.keyword_set ? [adsLink.keyword_set] : []
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -316,6 +323,37 @@ export function EditAdsLinkDialog({
                 </FormItem>
               )}
             />
+
+            {keywordSets.length > 0 ? (
+              <FormField
+                control={form.control}
+                name="keyword_set_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Keyword Set</FormLabel>
+                    <Select
+                      value={field.value ? String(field.value) : '__none__'}
+                      onValueChange={(v) => field.onChange(v === '__none__' ? null : Number(v))}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="None" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="__none__">None</SelectItem>
+                        {keywordSets.map((ks) => (
+                          <SelectItem key={ks.id} value={String(ks.id)}>
+                            {ks.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
 
             <FormField
               control={form.control}

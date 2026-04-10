@@ -3,6 +3,7 @@
 namespace App\Services\Site;
 
 use App\Actions\Site\AssignSiteAction;
+use App\Actions\Site\ConfigSiteAction;
 use App\Actions\Site\CreateSiteAction;
 use App\Actions\Site\DeleteSiteAction;
 use App\Actions\Site\GetSiteOptionsAction;
@@ -20,7 +21,8 @@ class SiteService
         private readonly DeleteSiteAction $deleteSiteAction,
         private readonly ListSitesAction $listSitesAction,
         private readonly AssignSiteAction $assignSiteAction,
-        private readonly GetSiteOptionsAction $getSiteOptionsAction
+        private readonly GetSiteOptionsAction $getSiteOptionsAction,
+        private readonly ConfigSiteAction $configSiteAction
     ) {}
 
     /**
@@ -66,5 +68,10 @@ class SiteService
     public function assign(Site $site, array $userIds): void
     {
         $this->assignSiteAction->execute($site, $userIds);
+    }
+
+    public function config(string $domain): ?Site
+    {
+        return $this->configSiteAction->execute($domain);
     }
 }

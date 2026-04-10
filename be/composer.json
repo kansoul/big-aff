@@ -12,6 +12,8 @@
         "php": "^8.3",
         "aws/aws-sdk-php": "^3.322.9",
         "dedoc/scramble": "^0.13.17",
+        "facebook/php-business-sdk": "^25.0",
+        "googleads/google-ads-php": "^32.3",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",

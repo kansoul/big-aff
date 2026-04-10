@@ -42,6 +42,10 @@ class UpdateAdsLinkAction
             $payload['rac'] = $data['rac'];
         }
 
+        if (array_key_exists('keyword_set_id', $data)) {
+            $payload['keyword_set_id'] = $data['keyword_set_id'];
+        }
+
         $adsLink->update($payload);
 
         return $adsLink->fresh();

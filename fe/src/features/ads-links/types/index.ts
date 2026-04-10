@@ -64,6 +64,7 @@ export interface AdsLinkCreatePayload {
 
 export interface AdsLinkUpdatePayload {
   rac?: string
+  keyword_set_id?: number | null
   fbid?: string | null
   googleid?: string | null
 }
@@ -124,6 +125,7 @@ export const adsLinkCreateSchema = z
 export const adsLinkUpdateSchema = z
   .object({
     rac: z.string().min(1, 'RAC is required'),
+    keyword_set_id: z.number().nullable().optional(),
     fbid: z.string().nullable().optional(),
     googleid: z.string().nullable().optional(),
   })

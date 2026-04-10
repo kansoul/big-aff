@@ -22,6 +22,7 @@ class UpdateAdsLinkRequest extends FormRequest
     {
         return [
             'rac' => ['nullable', 'string'],
+            'keyword_set_id' => ['nullable', 'integer', 'exists:keyword_sets,id'],
             'fbid' => ['nullable', 'string'],
             'googleid' => ['nullable', 'string'],
         ];

@@ -4,6 +4,7 @@ namespace App\Services\Post;
 
 use App\Actions\Post\CreatePostAction;
 use App\Actions\Post\DeletePostAction;
+use App\Actions\Post\GetPostBySlugAction;
 use App\Actions\Post\GetPostOptionsAction;
 use App\Actions\Post\ListPostsAction;
 use App\Actions\Post\UpdatePostAction;
@@ -19,6 +20,7 @@ class PostService
         private readonly UpdatePostAction $updatePostAction,
         private readonly DeletePostAction $deletePostAction,
         private readonly GetPostOptionsAction $getPostOptionsAction,
+        private readonly GetPostBySlugAction $getPostBySlugAction,
     ) {}
 
     /**
@@ -56,5 +58,10 @@ class PostService
     public function options(): Collection
     {
         return $this->getPostOptionsAction->execute();
+    }
+
+    public function getPostBySlug(string $slug, ?string $campaignId, ?string $tt): ?Post
+    {
+        return $this->getPostBySlugAction->execute($slug, $campaignId, $tt);
     }
 }
