@@ -9,21 +9,14 @@ import { sitesApi } from '@/features/sites/api'
 import { siteCreateSchema, type SiteCreateFormValues } from '@/features/sites/types'
 import { SiteFormSections } from '@/features/sites/components/SiteFormSections'
 import { formatApiError } from '@/features/settings/components'
-import { mediaApi } from '@/features/media/api'
-import type { MediaFile } from '@/features/media/types'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { PATHS } from '@/constants/paths'
-import type { UploadMeta } from '@/components/common/MediaPickerDialog'
-
-const DEFAULT_META: UploadMeta = { alt_text: null, directory: null }
 
 export function CreateSitePage() {
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-  const [logoMeta, setLogoMeta] = useState<UploadMeta>(DEFAULT_META)
-  const [faviconMeta, setFaviconMeta] = useState<UploadMeta>(DEFAULT_META)
 
   const form = useForm<SiteCreateFormValues>({
     resolver: zodResolver(siteCreateSchema) as any, // TODO: fix zodResolver type
@@ -38,25 +31,12 @@ export function CreateSitePage() {
     },
   })
 
-  const resolveMediaId = async (
-    value: MediaFile | File | null | undefined,
-    meta: UploadMeta,
-  ): Promise<number | null> => {
-    if (value instanceof File) {
-      const res = await mediaApi.upload(value, meta)
-      return res.data.data.id
-    }
-    return (value as MediaFile | null)?.id ?? null
-  }
-
   const onSubmit = async (values: SiteCreateFormValues) => {
     try {
       setFormError(null)
       setSubmitting(true)
-      const [logo_id, favicon_id] = await Promise.all([
-        resolveMediaId(values.logo, logoMeta),
-        resolveMediaId(values.favicon, faviconMeta),
-      ])
+      const logo_id = values.logo?.id ?? null
+      const favicon_id = values.favicon?.id ?? null
       await sitesApi.create({ ...values, logo_id, favicon_id })
       toast.success('Site created successfully')
       void navigate(PATHS.settingsSites)
@@ -89,11 +69,7 @@ export function CreateSitePage() {
           }}
           className="flex flex-col gap-6"
         >
-          <SiteFormSections
-            control={form.control}
-            onLogoMeta={setLogoMeta}
-            onFaviconMeta={setFaviconMeta}
-          />
+          <SiteFormSections control={form.control} />
 
           {formError ? (
             <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">

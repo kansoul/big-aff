@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Loader2, Trash2 } from 'lucide-react'
 
 import { mediaApi } from '@/features/media/api'
+import { hasFullAccess } from '@/constants/permissions'
+import { useAuthStore } from '@/hooks/useAuthStore'
 import { MediaTableCard, UploadFileDialog } from '@/features/media/components'
 import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
 import type { MediaFile, MediaFilterParams, MediaOrderBy } from '@/features/media/types'
@@ -33,6 +35,9 @@ const DEFAULT_FILTERS: MediaFilterParams = {
 }
 
 export function MediaPage() {
+  const user = useAuthStore((s) => s.user)
+  const isAdmin = hasFullAccess(user?.permissions ?? [])
+
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [data, setData] = useState<MediaFile[]>([])
   const [rowCount, setRowCount] = useState(0)
@@ -190,6 +195,7 @@ export function MediaPage() {
         formError={uploadError}
         uploadProgress={uploadProgress}
         submitting={uploading}
+        isAdmin={isAdmin}
         onSubmit={onUploadSubmit}
       />
 

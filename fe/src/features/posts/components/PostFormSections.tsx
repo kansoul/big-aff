@@ -2,9 +2,10 @@ import { useEffect } from 'react'
 import type { Control, UseFormSetValue, UseFormWatch } from 'react-hook-form'
 
 import type { Category } from '@/features/categories/types'
-import type { PostFormValues } from '@/features/posts/types'
-import { MediaPickerField, type UploadMeta } from '@/components/common/MediaPickerDialog'
-import { TextEditorField, type TextEditorHandle } from '@/components/common/TextEditor'
+import type { KeywordSet, PostFormValues } from '@/features/posts/types'
+import { MediaPickerField } from '@/components/common/MediaPickerDialog'
+import { KeywordSetPickerField } from './KeywordSetPickerField'
+import { TextEditorField } from '@/components/common/TextEditor'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/date-picker'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -34,11 +35,9 @@ type PostFormSectionsProps = {
   watch: UseFormWatch<PostFormValues>
   setValue: UseFormSetValue<PostFormValues>
   categories?: Category[]
+  defaultKeywordSets?: KeywordSet[]
   /** When true, slug field is editable but auto-fill is disabled (edit mode) */
   disableAutoSlug?: boolean
-  onFeatureMediaMeta?: (meta: UploadMeta) => void
-  /** Ref forwarded to TextEditor — call editorRef.current.flushUploads() at submit time. */
-  editorRef?: React.Ref<TextEditorHandle>
 }
 
 export function PostFormSections({
@@ -46,9 +45,8 @@ export function PostFormSections({
   watch,
   setValue,
   categories = [],
+  defaultKeywordSets,
   disableAutoSlug = false,
-  onFeatureMediaMeta,
-  editorRef,
 }: PostFormSectionsProps) {
   const title = watch('title')
 
@@ -66,76 +64,39 @@ export function PostFormSections({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <FormField
-            control={control}
-            name="title"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Title <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input placeholder="Post title" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="slug"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Slug <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input placeholder="post-slug" {...field} value={field.value ?? ''} />
-                </FormControl>
-                <p className="text-xs text-muted-foreground">
-                  Auto-generated from title. You can edit manually.
-                </p>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Short description…"
-                    className="resize-none"
-                    rows={3}
-                    {...field}
-                    value={field.value ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <TextEditorField
-            editorRef={editorRef}
-            control={control}
-            name="content"
-            label="Content"
-            placeholder="Post content…"
-            minHeight="320px"
-          />
-        </CardContent>
-      </Card>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField
+              control={control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Title <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Post title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Slug <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value ?? ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-      <Card className="border-border shadow-none">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
               control={control}
@@ -233,6 +194,7 @@ export function PostFormSections({
                 </FormItem>
               )}
             />
+
             <FormField
               control={control}
               name="published_at"
@@ -251,42 +213,68 @@ export function PostFormSections({
                 </FormItem>
               )}
             />
+            {/* add keyword here field */}
           </div>
-          <FormField
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField
+              control={control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Short description…"
+                      className="resize-none"
+                      rows={3}
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name="note"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Note</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      maxLength={255}
+                      rows={3}
+                      className="resize-none"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <KeywordSetPickerField
             control={control}
-            name="note"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Note</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Internal note…"
-                    maxLength={255}
-                    {...field}
-                    value={field.value ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            name="keyword_set_ids"
+            defaultItems={defaultKeywordSets}
           />
-        </CardContent>
-      </Card>
-
-      <Card className="border-border shadow-none">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Feature Image
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
           <MediaPickerField
             control={control}
             name="feature_media"
             label="Feature Image"
             accept="image/*"
+            directory="media/posts"
             placeholder="Pick a feature image…"
-            onUploadMeta={onFeatureMediaMeta}
+          />
+          <TextEditorField
+            control={control}
+            name="content"
+            label="Content"
+            placeholder="Post content…"
+            minHeight="320px"
+            directory="media/posts"
           />
         </CardContent>
       </Card>
