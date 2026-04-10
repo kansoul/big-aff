@@ -15,6 +15,7 @@ class GetPostOptionsAction
     {
         $query = Post::query()
             ->select(['id', 'title', 'slug'])
+            ->with('keywordSets:id,name')
             ->orderBy('title');
 
         OwnershipFilter::forAuthUser()->applyTo($query);
@@ -24,6 +25,10 @@ class GetPostOptionsAction
                 'id' => $post->id,
                 'title' => $post->title,
                 'slug' => $post->slug,
+                'keyword_sets' => $post->keywordSets->map(fn ($keywordSet) => [
+                    'id' => $keywordSet->id,
+                    'name' => $keywordSet->name,
+                ]),
             ]);
     }
 }

@@ -7,10 +7,12 @@ use App\Http\Requests\Site\AssignSiteRequest;
 use App\Http\Requests\Site\ListSitesRequest;
 use App\Http\Requests\Site\StoreSiteRequest;
 use App\Http\Requests\Site\UpdateSiteRequest;
-use App\Http\Resources\SiteResource;
+use App\Http\Resources\Site\SiteConfigResource;
+use App\Http\Resources\Site\SiteResource;
 use App\Models\Site;
 use App\Services\Site\SiteService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -169,5 +171,28 @@ class SiteController extends BaseController
         $this->siteService->assign($site, $request->validated()['user_ids']);
 
         return $this->sendResponse(['message' => 'Users assigned successfully.']);
+    }
+
+    /**
+     * Return site config based on the client's Origin/Referer host.
+     *
+     * @response 200 {"data": {"id": 1, "name": "My Site", "url": "https://mysite.com", "description": "A description", "status": "active", "settings": {}, "logo": null, "favicon": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
+     * @response 404 {"message": "No query results for model [App\\Models\\Site] 1"}
+     * @response 400 {"message": "Unable to determine request origin"}
+     */
+    public function config(Request $request): JsonResponse
+    {
+        $domain = $request->header('x-internal-site');
+
+        if (! $domain) {
+            return $this->sendResponse(['message' => 'Unable to determine request origin'], 400);
+        }
+        $site = $this->siteService->config($domain);
+        if (! $site) {
+            return $this->sendResponse(['message' => 'Site not found or inactive'], 404);
+        }
+        $site->domain = $domain;
+
+        return $this->sendResponse(['data' => new SiteConfigResource($site)]);
     }
 }
