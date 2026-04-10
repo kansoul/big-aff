@@ -1,8 +1,10 @@
 <?php
 
 use App\Enums\Permission;
+use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AdsLinkController;
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\BusinessCenterController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\FileController;
@@ -167,5 +169,31 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::KeywordSetsUpdate->value);
         Route::delete('{keyword_set}', [KeywordSetController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::KeywordSetsDelete->value);
+    });
+
+    Route::prefix('business-centers')->group(function () {
+        Route::get('/', [BusinessCenterController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::BusinessCentersView->value);
+        Route::post('/', [BusinessCenterController::class, 'store'])
+            ->middleware('permission.scope:'.Permission::BusinessCentersCreate->value);
+        Route::get('{businessCenter}', [BusinessCenterController::class, 'show'])
+            ->middleware('permission.scope:'.Permission::BusinessCentersView->value);
+        Route::match(['put', 'patch'], '{businessCenter}', [BusinessCenterController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::BusinessCentersUpdate->value);
+        Route::delete('{businessCenter}', [BusinessCenterController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::BusinessCentersDelete->value);
+    });
+
+    Route::prefix('accounts')->group(function () {
+        Route::get('/', [AccountController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::AccountsView->value);
+        Route::post('/', [AccountController::class, 'store'])
+            ->middleware('permission.scope:'.Permission::AccountsCreate->value);
+        Route::get('{account}', [AccountController::class, 'show'])
+            ->middleware('permission.scope:'.Permission::AccountsView->value);
+        Route::match(['put', 'patch'], '{account}', [AccountController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::AccountsUpdate->value);
+        Route::delete('{account}', [AccountController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::AccountsDelete->value);
     });
 });
