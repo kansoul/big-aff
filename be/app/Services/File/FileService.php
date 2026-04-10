@@ -7,12 +7,10 @@ use App\Actions\File\ListFilesAction;
 use App\Actions\File\OptionsFileAction;
 use App\Actions\File\StoreFileAction;
 use App\Models\File;
-use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 
 class FileService
 {
@@ -28,9 +26,6 @@ class FileService
      */
     public function create(array $data): File
     {
-        $user = Auth::user();
-        $data['directory'] = $this->resolveCreateDirectory($user, $data['directory'] ?? null);
-
         return $this->storeFileAction->execute($data);
     }
 
@@ -58,26 +53,6 @@ class FileService
         $path = ltrim($file->path, '/');
 
         return $path === config('filesystems.uploads.directories.posts') || str_starts_with($path, config('filesystems.uploads.directories.posts').'/');
-    }
-
-    private function resolveCreateDirectory(User $user, ?string $requestedDirectory): string
-    {
-        if (! $user->is_full_access) {
-            return config('filesystems.uploads.directories.posts');
-        }
-
-        $normalized = trim((string) $requestedDirectory, '/');
-        if ($normalized === '') {
-            return config('filesystems.uploads.directories.posts');
-        }
-
-        if (! in_array($normalized, array_values(config('filesystems.uploads.directories')), true)) {
-            throw ValidationException::withMessages([
-                'directory' => ['Directory must be one of: '.implode(', ', array_values(config('filesystems.uploads.directories')))],
-            ]);
-        }
-
-        return $normalized;
     }
 
     /**

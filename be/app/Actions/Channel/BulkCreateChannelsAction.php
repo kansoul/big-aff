@@ -16,7 +16,7 @@ class BulkCreateChannelsAction
     {
         $lines = array_filter(
             array_map('trim', explode("\n", $data['lines'])),
-            fn(string $line): bool => $line !== '',
+            fn (string $line): bool => $line !== '',
         );
 
         $created = [];
