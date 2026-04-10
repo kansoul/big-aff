@@ -14,7 +14,6 @@ class Category extends Model
     protected $fillable = [
         'name',
         'description',
-        'feature_media_id',
         'created_by',
         'updated_by',
     ];
