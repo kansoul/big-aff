@@ -116,61 +116,56 @@ export function ViewPostPage() {
         <Card className="overflow-hidden border-border shadow-none">
           <CardContent className="p-6">
             <div className="grid gap-8">
-              {/* Feature image */}
-              {post.feature_media?.url && (
-                <button
-                  type="button"
-                  onClick={() => setPreviewImage(post.feature_media!.url)}
-                  className="group relative overflow-hidden rounded-lg border border-border bg-muted/30 transition-colors hover:bg-muted/50"
-                >
-                  <img
-                    src={post.feature_media.url}
-                    alt={post.title}
-                    className="max-h-64 w-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20">
-                    <ZoomIn className="size-6 text-white opacity-0 drop-shadow transition-opacity group-hover:opacity-100" />
-                  </div>
-                </button>
-              )}
-
-              {/* Status + visibility row */}
-              <div className="flex flex-wrap items-center gap-3">
-                {post.status && <StatusBadge status={post.status} />}
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
-                    post.is_hidden
-                      ? 'bg-amber-100 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:ring-amber-900'
-                      : 'bg-muted text-muted-foreground ring-border',
-                  )}
-                >
-                  {post.is_hidden ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
-                  {post.is_hidden ? 'Hidden' : 'Visible'}
-                </span>
-                {post.type && (
-                  <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
-                    {post.type}
-                  </span>
-                )}
-                {post.lang && (
-                  <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium uppercase text-muted-foreground ring-1 ring-inset ring-border">
-                    {post.lang}
-                  </span>
-                )}
+              {/* Title */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Title
+                </Label>
+                <p className="text-xl font-semibold text-foreground">{post.title}</p>
               </div>
 
-              {/* Core fields */}
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Title
-                  </Label>
-                  <p className="text-xl font-semibold text-foreground">{post.title}</p>
-                </div>
+              {/* Slug */}
+              <Field label="Slug">
+                <p className="font-mono text-sm text-muted-foreground">{post.slug}</p>
+              </Field>
 
-                <Field label="Slug">
-                  <p className="font-mono text-sm text-muted-foreground">{post.slug}</p>
+              {/* Status / visibility / type / lang */}
+              <div className="grid gap-6 sm:grid-cols-2">
+                <Field label="Status">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {post.status && <StatusBadge status={post.status} />}
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
+                        post.is_hidden
+                          ? 'bg-amber-100 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:ring-amber-900'
+                          : 'bg-muted text-muted-foreground ring-border',
+                      )}
+                    >
+                      {post.is_hidden ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
+                      {post.is_hidden ? 'Hidden' : 'Visible'}
+                    </span>
+                  </div>
+                </Field>
+
+                <Field label="Type">
+                  {post.type ? (
+                    <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
+                      {post.type}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground/50">—</span>
+                  )}
+                </Field>
+
+                <Field label="Language">
+                  {post.lang ? (
+                    <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium uppercase text-muted-foreground ring-1 ring-inset ring-border">
+                      {post.lang}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground/50">—</span>
+                  )}
                 </Field>
 
                 <Field label="Category">
@@ -183,17 +178,69 @@ export function ViewPostPage() {
                   )}
                 </Field>
 
+                {post.published_at && (
+                  <Field label="Published At">
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Calendar className="size-3.5 shrink-0" />
+                      <span>{new Date(post.published_at).toLocaleString()}</span>
+                    </div>
+                  </Field>
+                )}
+              </div>
+
+              {/* Description / Note */}
+              <div className="grid gap-6 sm:grid-cols-2">
                 {post.description && (
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Description
-                    </Label>
+                  <Field label="Description">
                     <p className="whitespace-pre-wrap text-sm text-foreground/80">
                       {post.description}
                     </p>
-                  </div>
+                  </Field>
+                )}
+                {post.note && (
+                  <Field label="Note">
+                    <p className="whitespace-pre-wrap text-sm text-foreground/80">{post.note}</p>
+                  </Field>
                 )}
               </div>
+
+              {/* Keyword Sets */}
+              {post.keyword_sets && post.keyword_sets.length > 0 && (
+                <Field label="Keyword Sets">
+                  <div className="flex flex-wrap gap-1.5">
+                    {post.keyword_sets.map((ks) => (
+                      <span
+                        key={ks.id}
+                        className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border"
+                      >
+                        {ks.name}
+                      </span>
+                    ))}
+                  </div>
+                </Field>
+              )}
+
+              {/* Feature image */}
+              {post.feature_media?.url && (
+                <>
+                  <Field label="Feature Image">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewImage(post.feature_media!.url)}
+                      className="group relative w-full cursor-pointer overflow-hidden mx-auto rounded-lg border border-border bg-muted/30 transition-colors hover:bg-muted/50"
+                    >
+                      <img
+                        src={post.feature_media.url}
+                        alt={post.title}
+                        className="max-h-64 w-full object-contain transition-transform duration-300 group-hover:scale-[1.01]"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20">
+                        <ZoomIn className="size-6 text-white opacity-0 drop-shadow transition-opacity group-hover:opacity-100" />
+                      </div>
+                    </button>
+                  </Field>
+                </>
+              )}
 
               {/* Content */}
               {post.content && (
@@ -214,15 +261,6 @@ export function ViewPostPage() {
               {/* Metadata */}
               <div className="h-px bg-border" />
               <div className="grid gap-6 sm:grid-cols-2 text-sm text-muted-foreground">
-                {post.published_at && (
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="size-3.5 shrink-0" />
-                    <div>
-                      <p className="font-medium text-foreground/70">Published</p>
-                      <p>{new Date(post.published_at).toLocaleString()}</p>
-                    </div>
-                  </div>
-                )}
                 <div className="space-y-1">
                   <p className="font-medium text-foreground/70">Created</p>
                   <p>{new Date(post.created_at).toLocaleString()}</p>
@@ -230,10 +268,6 @@ export function ViewPostPage() {
                 <div className="space-y-1">
                   <p className="font-medium text-foreground/70">Last Updated</p>
                   <p>{new Date(post.updated_at).toLocaleString()}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="font-medium text-foreground/70">ID</p>
-                  <p className="font-mono">{post.id}</p>
                 </div>
               </div>
             </div>

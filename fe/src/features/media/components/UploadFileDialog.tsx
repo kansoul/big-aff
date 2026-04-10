@@ -39,15 +39,18 @@ const uploadFormSchema = z.object({
 
 type UploadFormValues = z.infer<typeof uploadFormSchema>
 
+const USER_DEFAULT_DIRECTORY = 'media/posts'
+
 type UploadFileDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   formError: string | null
   uploadProgress: number
   submitting: boolean
+  isAdmin?: boolean
   onSubmit: (
     file: File,
-    options: { directory?: string | null; alt_text?: string | null },
+    options: { directory?: 'media' | 'media/site' | 'media/posts'; alt_text?: string | null },
   ) => Promise<void>
 }
 
@@ -57,6 +60,7 @@ export function UploadFileDialog({
   formError,
   uploadProgress,
   submitting,
+  isAdmin = false,
   onSubmit,
 }: UploadFileDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -101,7 +105,7 @@ export function UploadFileDialog({
     }
     try {
       await onSubmit(selectedFile, {
-        directory: values.directory || null,
+        directory: isAdmin ? values.directory || 'media' : USER_DEFAULT_DIRECTORY,
         alt_text: values.alt_text || null,
       })
       // Reset local state on success before dialog closes
@@ -179,30 +183,32 @@ export function UploadFileDialog({
               </div>
             ) : null}
 
-            <FormField
-              control={form.control}
-              name="directory"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Directory</FormLabel>
-                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Default (media)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {DIRECTORY_OPTIONS.map((dir) => (
-                        <SelectItem key={dir} value={dir}>
-                          {dir}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {isAdmin && (
+              <FormField
+                control={form.control}
+                name="directory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Directory</FormLabel>
+                    <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Default (media)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {DIRECTORY_OPTIONS.map((dir) => (
+                          <SelectItem key={dir} value={dir}>
+                            {dir}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

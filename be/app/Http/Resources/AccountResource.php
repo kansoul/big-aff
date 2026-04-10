@@ -19,12 +19,12 @@ class AccountResource extends JsonResource
         return [
             'id' => $this->id,
             'business_center_id' => $this->business_center_id,
-            'business_center' => $this->whenLoaded('businessCenter', fn () => [
+            'business_center' => $this->whenLoaded('businessCenter', fn() => [
                 'id' => $this->businessCenter?->id,
                 'name' => $this->businessCenter?->name,
             ]),
             'team_id' => $this->team_id,
-            'team' => $this->whenLoaded('team', fn () => [
+            'team' => $this->whenLoaded('team', fn() => [
                 'id' => $this->team?->id,
                 'name' => $this->team?->name,
             ]),
@@ -32,7 +32,7 @@ class AccountResource extends JsonResource
             'account_name' => $this->account_name,
             'ads_type' => $this->ads_type,
             'status' => $this->status,
-            'is_fetch' => $this->is_fetch,
+            'is_special' => $this->is_special,
             'sync_to_mcc' => $this->sync_to_mcc,
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,

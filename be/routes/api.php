@@ -25,6 +25,8 @@ Route::middleware('check.whitelist')->group(function () {
         Route::post('/subscribe', [FollowController::class, 'store']);
         Route::post('/unsubscribe', [FollowController::class, 'unsubscribe']);
     });
+    Route::get('/site/config', [SiteController::class, 'config']);
+    Route::get('/post/{slug}', [PostController::class, 'getPostBySlug']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {

@@ -2,14 +2,14 @@
 
 namespace App\Enums;
 
-enum AdsType: string
+enum TrafficType: string
 {
-    case FACEBOOK = 'facebook';
-    case GOOGLE = 'google';
-
-    case UNKNOWN = 'unknown';
+    case GOOGLE = 'gg';
+    case FACEBOOK = 'fb';
 
     /**
+     * Get the values of the enum.
+     *
      * @return array<string>
      */
     public static function values(): array

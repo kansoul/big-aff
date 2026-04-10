@@ -46,6 +46,7 @@ export const postsApi = {
       type: toNullable(values.type),
       category_id: values.category_id ?? null,
       published_at: toNullable(values.published_at),
+      keyword_set_ids: values.keyword_set_ids ?? null,
     }),
 
   getDetail: (id: number) => axiosInstance.get<{ data: Post }>(`/posts/${id}`),
@@ -64,6 +65,7 @@ export const postsApi = {
       type: toNullable(values.type),
       category_id: values.category_id ?? null,
       published_at: toNullable(values.published_at),
+      keyword_set_ids: values.keyword_set_ids ?? null,
     }),
 
   remove: (id: number) => axiosInstance.delete(`/posts/${id}`),

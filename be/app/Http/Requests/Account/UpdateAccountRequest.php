@@ -28,7 +28,7 @@ class UpdateAccountRequest extends FormRequest
             'business_center_id' => ['sometimes', 'nullable', 'integer', 'exists:business_centers,id'],
             'team_id' => ['sometimes', 'nullable', 'integer', 'exists:teams,id'],
             'status' => ['sometimes', 'nullable', 'string', 'max:50'],
-            'is_fetch' => ['sometimes', 'boolean'],
+            'is_special' => ['sometimes', 'boolean'],
             'sync_to_mcc' => ['sometimes', 'boolean'],
         ];
     }

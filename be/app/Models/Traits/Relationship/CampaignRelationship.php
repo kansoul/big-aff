@@ -3,27 +3,27 @@
 namespace App\Models\Traits\Relationship;
 
 use App\Models\Account;
-use App\Models\Team;
+use App\Models\LinkData;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
-trait BusinessCenterRelationship
+trait CampaignRelationship
 {
     /**
-     * @return BelongsTo<Team, $this>
+     * @return BelongsTo<Account, string>
      */
-    public function team(): BelongsTo
+    public function account(): BelongsTo
     {
-        return $this->belongsTo(Team::class);
+        return $this->belongsTo(Account::class, 'account_id', 'account_id');
     }
 
     /**
-     * @return HasMany<Account, $this>
+     * @return HasOne<LinkData>
      */
-    public function accounts(): HasMany
+    public function linkData(): HasOne
     {
-        return $this->hasMany(Account::class, 'business_center_id', 'id');
+        return $this->hasOne(LinkData::class, 'campaign_id', 'campaign_id');
     }
 
     /**

@@ -6,11 +6,20 @@ import {
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
 } from 'mantine-react-table'
-import { AlertCircle, CheckCircle2, ImageIcon, Pencil, Upload, X, ZoomIn } from 'lucide-react'
+import {
+  AlertCircle,
+  CheckCircle2,
+  ImageIcon,
+  Loader2,
+  Pencil,
+  Upload,
+  X,
+  ZoomIn,
+} from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import { hasFullAccess } from '@/constants/permissions'
-import { useAuthStore } from '@/hooks/useAuthStore'
+import { mediaApi } from '@/features/media/api'
+import type { MediaFile } from '@/features/media/types'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -22,16 +31,9 @@ import {
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Search } from 'lucide-react'
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { mediaApi } from '@/features/media/api'
-import type { MediaFile } from '@/features/media/types'
 import { ImagePreviewDialog } from './ImagePreviewDialog'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -44,17 +46,6 @@ type UploadState =
   | { status: 'idle' }
   | { status: 'selected'; file: File; previewUrl: string }
   | { status: 'error'; message: string }
-
-export type UploadMeta = {
-  alt_text: string | null
-  directory: string | null
-}
-
-const DIRECTORY_OPTIONS = ['media', 'media/site', 'media/posts'] as const
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MediaFileCell — thumbnail with click-to-preview
-// ─────────────────────────────────────────────────────────────────────────────
 
 function MediaFileCell({ media }: { media: MediaFile }) {
   const [preview, setPreview] = useState(false)
@@ -73,7 +64,7 @@ function MediaFileCell({ media }: { media: MediaFile }) {
         >
           <img
             src={media.url}
-            alt={media.original_name}
+            alt={media.alt_text || media.original_name}
             className="size-8 object-cover"
             loading="lazy"
           />
@@ -120,6 +111,7 @@ type RecentMediaTableProps = {
   open: boolean
   selected: MediaFile | null
   onSelect: (media: MediaFile | null) => void
+  directory: 'media' | 'media/site' | 'media/posts'
 }
 
 function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
@@ -130,6 +122,16 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
   // Start true so the skeleton shows immediately on mount
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [altTextSearch, setAltTextSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(altTextSearch)
+      setPageIndex(0)
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [altTextSearch])
 
   useEffect(() => {
     if (!open) return
@@ -143,7 +145,7 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
           user_id: null,
           order: null,
           order_by: null,
-          alt_text: null,
+          alt_text: debouncedSearch || null,
         })
         if (cancelled) return
         setData(res.data.data)
@@ -160,7 +162,7 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
     return () => {
       cancelled = true
     }
-  }, [open, pageIndex])
+  }, [open, pageIndex, debouncedSearch])
 
   const rowSelection: MRT_RowSelectionState = useMemo(
     () => (selected ? { [String(selected.id)]: true } : {}),
@@ -213,6 +215,7 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
     positionToolbarAlertBanner: 'none',
     initialState: { density: 'md' },
     mantineTableContainerProps: { sx: { maxHeight: 320, overflowY: 'auto' } },
+    mantineBottomToolbarProps: { sx: { '& .mantine-Select-root': { display: 'none' } } },
     renderTopToolbar: () => null,
     renderEmptyRowsFallback: () =>
       error ? (
@@ -228,7 +231,22 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
       ),
   })
 
-  return <MantineReactTable table={table} />
+  return (
+    <div className="flex flex-col">
+      <div className="border-b border-border px-3 py-2">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by name…"
+            value={altTextSearch}
+            onChange={(e) => setAltTextSearch(e.target.value)}
+            className="h-8 pl-8 text-sm"
+          />
+        </div>
+      </div>
+      <MantineReactTable table={table} />
+    </div>
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -238,9 +256,10 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
 type MediaPickerDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSelect: (media: MediaFile | File, meta: UploadMeta) => void
+  onSelect: (media: MediaFile) => void
   title?: string
   accept?: string
+  directory: 'media' | 'media/site' | 'media/posts'
 }
 
 export function MediaPickerDialog({
@@ -249,15 +268,13 @@ export function MediaPickerDialog({
   onSelect,
   title = 'Select media',
   accept = 'image/*',
+  directory = 'media',
 }: MediaPickerDialogProps) {
-  const user = useAuthStore((s) => s.user)
-  const isAdmin = hasFullAccess(user?.permissions ?? [])
-
   const [tab, setTab] = useState<Tab>('recent')
   const [selected, setSelected] = useState<MediaFile | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>({ status: 'idle' })
+  const [uploading, setUploading] = useState(false)
   const [altText, setAltText] = useState('')
-  const [directory, setDirectory] = useState<string>('')
   const [dragging, setDragging] = useState(false)
   // Increment on each open to remount RecentMediaTable with fresh state
   const [openKey, setOpenKey] = useState(0)
@@ -276,7 +293,6 @@ export function MediaPickerDialog({
           return { status: 'idle' }
         })
         setAltText('')
-        setDirectory('')
         setDragging(false)
         dragCounter.current = 0
       }
@@ -332,21 +348,31 @@ export function MediaPickerDialog({
     [handleFileSelect],
   )
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback(async () => {
     if (tab === 'recent' && selected) {
-      onSelect(selected, { alt_text: null, directory: null })
+      onSelect(selected)
       handleOpenChange(false)
     } else if (tab === 'upload' && uploadState.status === 'selected') {
-      onSelect(uploadState.file, {
-        alt_text: altText.trim() || null,
-        directory: directory || null,
-      })
-      handleOpenChange(false)
+      try {
+        setUploading(true)
+        const res = await mediaApi.upload(uploadState.file, {
+          alt_text: altText.trim() || null,
+          directory: directory || null,
+        })
+        onSelect(res.data.data)
+        handleOpenChange(false)
+      } catch {
+        setUploadState({ status: 'error', message: 'Upload failed. Please try again.' })
+      } finally {
+        setUploading(false)
+      }
     }
   }, [tab, selected, uploadState, altText, directory, onSelect, handleOpenChange])
 
   const confirmDisabled =
-    (tab === 'recent' && !selected) || (tab === 'upload' && uploadState.status !== 'selected')
+    uploading ||
+    (tab === 'recent' && !selected) ||
+    (tab === 'upload' && uploadState.status !== 'selected')
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -372,6 +398,7 @@ export function MediaPickerDialog({
               open={open && tab === 'recent'}
               selected={selected}
               onSelect={setSelected}
+              directory={directory}
             />
           </TabsContent>
 
@@ -415,27 +442,6 @@ export function MediaPickerDialog({
 
             {/* Upload metadata fields */}
             <div className="flex flex-col gap-3">
-              {isAdmin && (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="upload-directory">Directory</Label>
-                  <Select
-                    value={directory || '__default__'}
-                    onValueChange={(v) => setDirectory(v === '__default__' ? '' : v)}
-                  >
-                    <SelectTrigger id="upload-directory" className="w-full">
-                      <SelectValue placeholder="Default (media)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__default__">Default (media)</SelectItem>
-                      {DIRECTORY_OPTIONS.map((dir) => (
-                        <SelectItem key={dir} value={dir}>
-                          {dir}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="upload-alt-text">Alt text</Label>
                 <Input
@@ -454,8 +460,13 @@ export function MediaPickerDialog({
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="button" disabled={confirmDisabled} onClick={handleConfirm}>
-            {selected && tab === 'recent' ? (
+          <Button type="button" disabled={confirmDisabled} onClick={() => void handleConfirm()}>
+            {uploading ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                Uploading…
+              </>
+            ) : selected && tab === 'recent' ? (
               <>
                 <CheckCircle2 className="size-3.5" />
                 Use this
@@ -475,42 +486,29 @@ export function MediaPickerDialog({
 // ─────────────────────────────────────────────────────────────────────────────
 
 type MediaPickerInputProps = {
-  value?: MediaFile | File | null
-  onChange?: (media: MediaFile | File | null) => void
-  onUploadMeta?: (meta: UploadMeta) => void
+  value?: MediaFile | null
+  onChange?: (media: MediaFile | null) => void
   accept?: string
   placeholder?: string
   disabled?: boolean
+  directory: 'media' | 'media/site' | 'media/posts'
 }
 
 export function MediaPickerInput({
   value,
   onChange,
-  onUploadMeta,
   accept,
   placeholder = 'Pick an image…',
   disabled = false,
+  directory = 'media',
 }: MediaPickerInputProps) {
   const [open, setOpen] = useState(false)
 
-  // Derive preview URL without state to avoid setState-in-effect lint errors.
-  // useMemo creates the URL; the cleanup effect revokes it when it changes.
-  const filePreviewUrl = useMemo(
-    () => (value instanceof File ? URL.createObjectURL(value) : null),
-    [value],
-  )
-  useEffect(() => {
-    return () => {
-      if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl)
-    }
-  }, [filePreviewUrl])
-
   const handleSelect = useCallback(
-    (media: MediaFile | File, meta: UploadMeta) => {
+    (media: MediaFile) => {
       onChange?.(media)
-      if (media instanceof File) onUploadMeta?.(meta)
     },
-    [onChange, onUploadMeta],
+    [onChange],
   )
 
   const handleClear = useCallback(
@@ -521,35 +519,24 @@ export function MediaPickerInput({
     [onChange],
   )
 
-  const displayUrl = value instanceof File ? filePreviewUrl : (value?.url ?? null)
-  const displayName = value instanceof File ? value.name : (value?.original_name ?? null)
-  const displaySize = value instanceof File ? value.size : (value?.size ?? null)
-
   if (value) {
     return (
       <>
         <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 p-2">
-          {displayUrl ? (
+          {value.url ? (
             <img
-              src={displayUrl}
-              alt={displayName ?? ''}
+              src={value.url}
+              alt={value.original_name ?? ''}
               className="size-12 shrink-0 rounded object-cover"
             />
           ) : (
             <div className="size-12 shrink-0 rounded bg-muted" />
           )}
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <p className="truncate text-sm font-medium">{displayName}</p>
+            <p className="truncate text-sm font-medium">{value.original_name}</p>
             <div className="flex items-center gap-2">
-              {displaySize != null && (
-                <p className="text-xs text-muted-foreground">
-                  {(displaySize / 1024).toFixed(0)} KB
-                </p>
-              )}
-              {value instanceof File && (
-                <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
-                  Pending upload
-                </span>
+              {value.size != null && (
+                <p className="text-xs text-muted-foreground">{(value.size / 1024).toFixed(0)} KB</p>
               )}
             </div>
           </div>
@@ -583,6 +570,7 @@ export function MediaPickerInput({
           onOpenChange={setOpen}
           onSelect={handleSelect}
           accept={accept}
+          directory={directory}
         />
       </>
     )
@@ -609,6 +597,7 @@ export function MediaPickerInput({
         onOpenChange={setOpen}
         onSelect={handleSelect}
         accept={accept}
+        directory={directory}
       />
     </>
   )
@@ -624,7 +613,7 @@ type MediaPickerFieldProps<T extends FieldValues> = {
   label?: string
   accept?: string
   placeholder?: string
-  onUploadMeta?: (meta: UploadMeta) => void
+  directory: 'media' | 'media/site' | 'media/posts'
 }
 
 export function MediaPickerField<T extends FieldValues>({
@@ -633,7 +622,7 @@ export function MediaPickerField<T extends FieldValues>({
   label,
   accept,
   placeholder,
-  onUploadMeta,
+  directory,
 }: MediaPickerFieldProps<T>) {
   return (
     <FormField
@@ -644,11 +633,11 @@ export function MediaPickerField<T extends FieldValues>({
           {label ? <FormLabel>{label}</FormLabel> : null}
           <FormControl>
             <MediaPickerInput
-              value={field.value as MediaFile | File | null}
+              value={field.value as MediaFile | null}
               onChange={field.onChange}
-              onUploadMeta={onUploadMeta}
               accept={accept}
               placeholder={placeholder}
+              directory={directory}
             />
           </FormControl>
           <FormMessage />

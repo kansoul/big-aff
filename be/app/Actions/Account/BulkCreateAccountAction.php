@@ -21,7 +21,7 @@ class BulkCreateAccountAction
             'business_center_id',
             'team_id',
             'status',
-            'is_fetch',
+            'is_special',
             'sync_to_mcc',
         ])->toArray();
 

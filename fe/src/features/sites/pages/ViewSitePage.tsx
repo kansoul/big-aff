@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ExternalLink, Loader2, Trash2, ZoomIn } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Loader2, Pencil, Trash2, ZoomIn } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { sitesApi } from '@/features/sites/api'
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { PATHS } from '@/constants/paths'
+import { PATHS, siteEditPath } from '@/constants/paths'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
@@ -21,6 +21,7 @@ export function ViewSitePage() {
   const navigate = useNavigate()
 
   const user = useAuthStore((s) => s.user)
+  const canUpdate = hasPermission(user?.permissions ?? [], PermissionSlugs.SettingsSitesUpdate)
   const canDelete = hasPermission(user?.permissions ?? [], PermissionSlugs.SettingsSitesDelete)
 
   const [loading, setLoading] = useState(true)
@@ -78,6 +79,16 @@ export function ViewSitePage() {
             <ArrowLeft className="size-4" />
             Back to Sites
           </Button>
+          {canUpdate && detail ? (
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => void navigate(siteEditPath(detail.id))}
+            >
+              <Pencil className="size-4" />
+              Edit Site
+            </Button>
+          ) : null}
           {canDelete && detail ? (
             <Button
               variant="destructive"

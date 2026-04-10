@@ -18,20 +18,16 @@ class Account extends Model
         'account_name',
         'ads_type',
         'status',
-        'is_fetch',
+        'is_special',
         'sync_to_mcc',
         'created_by',
         'updated_by',
     ];
 
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'is_fetch' => 'boolean',
-            'sync_to_mcc' => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'ads_type' => 'string',
+        'status' => 'string',
+        'sync_to_mcc' => 'boolean',
+        'is_special' => 'boolean',
+    ];
 }

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\API\BaseController;
+use App\Http\Requests\Post\GetPostBySlugRequest;
 use App\Http\Requests\Post\ListPostsRequest;
 use App\Http\Requests\Post\StorePostRequest;
 use App\Http\Requests\Post\UpdatePostRequest;
+use App\Http\Resources\Post\PostBySlugResource;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Services\Post\PostService;
@@ -169,6 +171,25 @@ class PostController extends BaseController
     {
         return $this->sendResponse([
             'data' => $this->postService->options(),
+        ]);
+    }
+
+    /**
+     * Get post by slug
+     */
+    public function getPostBySlug(string $slug, GetPostBySlugRequest $request): PostResource|JsonResponse
+    {
+        $campaignId = $request->input('campaign_id');
+        $tt = $request->input('tt');
+
+        $post = $this->postService->getPostBySlug($slug, $campaignId, $tt);
+
+        if (! $post) {
+            return $this->sendResponse([], Response::HTTP_NOT_FOUND);
+        }
+
+        return $this->sendResponse([
+            'data' => new PostBySlugResource($post),
         ]);
     }
 }
