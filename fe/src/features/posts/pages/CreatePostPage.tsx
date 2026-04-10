@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
@@ -8,11 +8,7 @@ import { toast } from 'sonner'
 import { postsApi } from '@/features/posts/api'
 import { PostFormSections } from '@/features/posts/components'
 import { postFormSchema, type PostFormValues } from '@/features/posts/types'
-import type { UploadMeta } from '@/components/common/MediaPickerDialog'
-import type { TextEditorHandle } from '@/components/common/TextEditor'
 import { formatApiError } from '@/features/settings/components'
-import { mediaApi } from '@/features/media/api'
-import type { MediaFile } from '@/features/media/types'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { categoriesApi } from '@/features/categories/api'
@@ -24,11 +20,6 @@ export function CreatePostPage() {
   const [submitting, setSubmitting] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [formError, setFormError] = useState<string | null>(null)
-  const [featureMediaMeta, setFeatureMediaMeta] = useState<UploadMeta>({
-    alt_text: null,
-    directory: null,
-  })
-  const editorRef = useRef<TextEditorHandle>(null)
 
   useEffect(() => {
     void categoriesApi
@@ -58,6 +49,7 @@ export function CreatePostPage() {
       type: 'normal',
       category_id: null,
       published_at: null,
+      keyword_set_ids: null,
     },
   })
 
@@ -65,21 +57,9 @@ export function CreatePostPage() {
     try {
       setFormError(null)
       setSubmitting(true)
-      // Flush any pending blob-URL images in the editor before saving
-      const resolvedContent = editorRef.current
-        ? await editorRef.current.flushUploads()
-        : (values.content ?? '')
-      let resolvedMedia: MediaFile | null = null
-      if (values.feature_media instanceof File) {
-        const res = await mediaApi.upload(values.feature_media, featureMediaMeta)
-        resolvedMedia = res.data.data
-      } else {
-        resolvedMedia = values.feature_media ?? null
-      }
       await postsApi.create({
         ...values,
-        content: resolvedContent,
-        feature_media_id: resolvedMedia?.id ?? null,
+        feature_media_id: values.feature_media?.id ?? null,
       })
       toast.success('Post created successfully')
       void navigate(PATHS.posts)
@@ -117,8 +97,6 @@ export function CreatePostPage() {
             watch={form.watch}
             setValue={form.setValue}
             categories={categories}
-            onFeatureMediaMeta={setFeatureMediaMeta}
-            editorRef={editorRef}
           />
 
           {formError ? (

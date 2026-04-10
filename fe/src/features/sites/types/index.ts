@@ -27,8 +27,8 @@ export const siteCreateSchema = z.object({
     ),
   description: z.string().optional(),
   status: z.enum(['active', 'maintenance', 'suspended']).default('active'),
-  logo: z.union([z.custom<MediaFile>(), z.custom<File>()]).nullable().optional(),
-  favicon: z.union([z.custom<MediaFile>(), z.custom<File>()]).nullable().optional(),
+  logo: z.custom<MediaFile>().nullable().optional(),
+  favicon: z.custom<MediaFile>().nullable().optional(),
   settings: z.object({
     gtm: z.string().max(255).optional(),
     fb_pixel: z.string().max(255).optional(),

@@ -13,9 +13,6 @@ import {
   type CategoryUpdateFormValues,
 } from '@/features/categories/types'
 import { formatApiError } from '@/features/settings/components'
-import { mediaApi } from '@/features/media/api'
-import type { MediaFile } from '@/features/media/types'
-import { MediaPickerField } from '@/components/common/MediaPickerDialog'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -54,7 +51,7 @@ export function CategoryFormDialog({
   const [formError, setFormError] = useState<string | null>(null)
 
   const form = useForm<CategoryCreateFormValues>({
-    resolver: zodResolver(isEdit ? categoryUpdateSchema : categoryCreateSchema) as any,
+    resolver: zodResolver(isEdit ? categoryUpdateSchema : categoryCreateSchema),
     defaultValues: {
       name: '',
       description: null,
@@ -85,26 +82,11 @@ export function CategoryFormDialog({
     try {
       setFormError(null)
       setSubmitting(true)
-
-      // Resolve media: upload if new File, extract ID if existing MediaFile
-      let resolvedMediaId: number | null = null
-      if (values.feature_image instanceof File) {
-        const res = await mediaApi.upload(values.feature_image, {})
-        resolvedMediaId = res.data.data.id
-      } else if (
-        values.feature_image &&
-        typeof values.feature_image === 'object' &&
-        'id' in values.feature_image
-      ) {
-        resolvedMediaId = (values.feature_image as MediaFile).id
-      }
-
       if (isEdit && category) {
         await categoriesApi.update(category.id, {
           name: values.name,
           description: values.description,
           parent_id: values.parent_id,
-          feature_media_id: resolvedMediaId,
         })
         toast.success('Category updated successfully')
       } else {
@@ -112,7 +94,6 @@ export function CategoryFormDialog({
           name: values.name,
           description: values.description,
           parent_id: values.parent_id,
-          feature_media_id: resolvedMediaId,
         })
         toast.success('Category created successfully')
       }
@@ -173,13 +154,6 @@ export function CategoryFormDialog({
                   <FormMessage />
                 </FormItem>
               )}
-            />
-            <MediaPickerField
-              control={form.control}
-              name="feature_image"
-              label="Feature Image"
-              accept="image/*"
-              placeholder="Select feature image…"
             />
 
             {formError ? (

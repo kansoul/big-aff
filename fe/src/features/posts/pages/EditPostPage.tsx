@@ -1,23 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AlertCircle, ArrowLeft, Loader2, Save } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Eye, Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { postsApi } from '@/features/posts/api'
 import { PostFormSections } from '@/features/posts/components'
-import { postFormSchema, type PostFormValues } from '@/features/posts/types'
+import { postFormSchema, type PostFormValues, type KeywordSet } from '@/features/posts/types'
 import { formatApiError } from '@/features/settings/components'
-import type { TextEditorHandle } from '@/components/common/TextEditor'
-import { mediaApi } from '@/features/media/api'
-import type { UploadMeta } from '@/components/common/MediaPickerDialog'
-import type { MediaFile } from '@/features/media/types'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { categoriesApi } from '@/features/categories/api'
 import type { Category } from '@/features/categories/types'
-import { PATHS } from '@/constants/paths'
+import { PATHS, postViewPath } from '@/constants/paths'
 
 export function EditPostPage() {
   const { id } = useParams<{ id: string }>()
@@ -28,11 +24,7 @@ export function EditPostPage() {
   const [submitting, setSubmitting] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [formError, setFormError] = useState<string | null>(null)
-  const [featureMediaMeta, setFeatureMediaMeta] = useState<UploadMeta>({
-    alt_text: null,
-    directory: null,
-  })
-  const editorRef = useRef<TextEditorHandle>(null)
+  const [postKeywordSets, setPostKeywordSets] = useState<KeywordSet[]>([])
 
   useEffect(() => {
     void categoriesApi
@@ -73,6 +65,8 @@ export function EditPostPage() {
       .getDetail(Number(id))
       .then((res) => {
         const p = res.data.data
+        const kSets = p.keyword_sets ?? []
+        setPostKeywordSets(kSets)
         form.reset({
           title: p.title,
           slug: p.slug,
@@ -86,6 +80,7 @@ export function EditPostPage() {
           type: p.type ?? 'normal',
           category_id: p.category_id ?? null,
           published_at: p.published_at ? p.published_at.slice(0, 10) : null,
+          keyword_set_ids: kSets.length > 0 ? kSets.map((ks) => ks.id) : null,
         })
       })
       .catch((err) => {
@@ -101,24 +96,11 @@ export function EditPostPage() {
     try {
       setFormError(null)
       setSubmitting(true)
-      // Flush any pending blob-URL images in the editor before saving
-      const resolvedContent = editorRef.current
-        ? await editorRef.current.flushUploads()
-        : (values.content ?? '')
-      let resolvedMedia: MediaFile | null = null
-      if (values.feature_media instanceof File) {
-        const res = await mediaApi.upload(values.feature_media, featureMediaMeta)
-        resolvedMedia = res.data.data
-      } else {
-        resolvedMedia = values.feature_media ?? null
-      }
       await postsApi.update(Number(id), {
         ...values,
-        content: resolvedContent,
-        feature_media_id: resolvedMedia?.id ?? null,
+        feature_media_id: values.feature_media?.id ?? null,
       })
       toast.success('Post updated successfully')
-      void navigate(PATHS.posts)
     } catch (err) {
       setFormError(formatApiError(err))
     } finally {
@@ -146,17 +128,30 @@ export function EditPostPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => void navigate(PATHS.posts)}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <span className="text-sm text-muted-foreground">Back to Posts</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => void navigate(PATHS.posts)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm text-muted-foreground">Back to Posts</span>
+        </div>
+        {id ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void navigate(postViewPath(id))}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            View Detail
+          </Button>
+        ) : null}
       </div>
 
       <Form {...form}>
@@ -171,9 +166,8 @@ export function EditPostPage() {
             watch={form.watch}
             setValue={form.setValue}
             categories={categories}
+            defaultKeywordSets={postKeywordSets}
             disableAutoSlug
-            onFeatureMediaMeta={setFeatureMediaMeta}
-            editorRef={editorRef}
           />
 
           {formError ? (

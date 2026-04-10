@@ -6,7 +6,7 @@ import { channelsApi } from '@/features/channels/api'
 import { stylesApi } from '@/features/styles/api'
 import type { ChannelOption } from '@/features/channels/types'
 import type { StyleOption } from '@/features/styles/types'
-import { MediaPickerField, type UploadMeta } from '@/components/common/MediaPickerDialog'
+import { MediaPickerField } from '@/components/common/MediaPickerDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -21,11 +21,9 @@ import {
 
 type SiteFormSectionsProps = {
   control: Control<SiteCreateFormValues>
-  onLogoMeta?: (meta: UploadMeta) => void
-  onFaviconMeta?: (meta: UploadMeta) => void
 }
 
-export function SiteFormSections({ control, onLogoMeta, onFaviconMeta }: SiteFormSectionsProps) {
+export function SiteFormSections({ control }: SiteFormSectionsProps) {
   const [channels, setChannels] = useState<ChannelOption[]>([])
   const [styles, setStyles] = useState<StyleOption[]>([])
 
@@ -134,16 +132,16 @@ export function SiteFormSections({ control, onLogoMeta, onFaviconMeta }: SiteFor
             name="logo"
             label="Logo"
             accept="image/*"
+            directory="media/site"
             placeholder="Pick a logo…"
-            onUploadMeta={onLogoMeta}
           />
           <MediaPickerField
             control={control}
             name="favicon"
             label="Favicon"
+            directory="media"
             accept="image/png,image/x-icon,image/svg+xml"
             placeholder="Pick a favicon…"
-            onUploadMeta={onFaviconMeta}
           />
         </CardContent>
       </Card>
