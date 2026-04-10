@@ -44,6 +44,10 @@ export const PermissionSlugs = {
   ChannelsDelete: 'channels.delete',
   FollowsView: 'follows.view',
   FollowsDelete: 'follows.delete',
+  KeywordSetsView: 'keyword-sets.view',
+  KeywordSetsCreate: 'keyword-sets.create',
+  KeywordSetsUpdate: 'keyword-sets.update',
+  KeywordSetsDelete: 'keyword-sets.delete',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -369,6 +373,60 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           {
             key: 'ChannelsDelete',
             slug: PermissionSlugs.ChannelsDelete,
+            label: 'Delete',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'follows',
+    label: 'Follows',
+    screens: [
+      {
+        id: 'follows',
+        label: 'Follows',
+        permissions: [
+          {
+            key: 'FollowsView',
+            slug: PermissionSlugs.FollowsView,
+            label: 'View',
+          },
+          {
+            key: 'FollowsDelete',
+            slug: PermissionSlugs.FollowsDelete,
+            label: 'Delete',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'keyword-sets',
+    label: 'Keyword Sets',
+    screens: [
+      {
+        id: 'keyword-sets',
+        label: 'Keyword Sets',
+        permissions: [
+          {
+            key: 'KeywordSetsView',
+            slug: PermissionSlugs.KeywordSetsView,
+            label: 'View',
+          },
+          {
+            key: 'KeywordSetsCreate',
+            slug: PermissionSlugs.KeywordSetsCreate,
+            label: 'Create',
+          },
+          {
+            key: 'KeywordSetsUpdate',
+            slug: PermissionSlugs.KeywordSetsUpdate,
+            label: 'Update',
+          },
+          {
+            key: 'KeywordSetsDelete',
+            slug: PermissionSlugs.KeywordSetsDelete,
             label: 'Delete',
           },
         ],

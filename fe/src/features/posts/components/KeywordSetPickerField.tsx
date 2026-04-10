@@ -12,12 +12,18 @@ type Props<T extends FieldValues> = {
   control: Control<T>
   name: FieldPath<T>
   defaultItems?: KeywordSet[]
+  canCreate?: boolean
+  canUpdate?: boolean
+  canDelete?: boolean
 }
 
 export function KeywordSetPickerField<T extends FieldValues>({
   control,
   name,
   defaultItems,
+  canCreate = false,
+  canUpdate = false,
+  canDelete = false,
 }: Props<T>) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedItems, setSelectedItems] = useState<KeywordSet[]>(defaultItems ?? [])
@@ -95,6 +101,9 @@ export function KeywordSetPickerField<T extends FieldValues>({
               onOpenChange={setDialogOpen}
               defaultSelectedItems={selectedItems}
               onConfirm={handleConfirm}
+              canCreate={canCreate}
+              canUpdate={canUpdate}
+              canDelete={canDelete}
             />
           </FormItem>
         )

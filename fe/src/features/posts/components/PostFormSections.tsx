@@ -32,6 +32,9 @@ type PostFormSectionsProps = {
   defaultKeywordSets?: KeywordSet[]
   /** When true, slug field is editable but auto-fill is disabled (edit mode) */
   disableAutoSlug?: boolean
+  canCreateKeywordSet?: boolean
+  canUpdateKeywordSet?: boolean
+  canDeleteKeywordSet?: boolean
 }
 
 export function PostFormSections({
@@ -41,6 +44,9 @@ export function PostFormSections({
   categories = [],
   defaultKeywordSets,
   disableAutoSlug = false,
+  canCreateKeywordSet = false,
+  canUpdateKeywordSet = false,
+  canDeleteKeywordSet = false,
 }: PostFormSectionsProps) {
   const title = watch('title')
 
@@ -237,6 +243,9 @@ export function PostFormSections({
             control={control}
             name="keyword_set_ids"
             defaultItems={defaultKeywordSets}
+            canCreate={canCreateKeywordSet}
+            canUpdate={canUpdateKeywordSet}
+            canDelete={canDeleteKeywordSet}
           />
           <MediaPickerField
             control={control}
