@@ -1,19 +1,16 @@
-import { memo, useMemo, type Dispatch, type SetStateAction } from 'react'
+import { memo, useMemo } from 'react'
 import {
   MantineReactTable,
   useMantineReactTable,
   type MRT_ColumnDef,
-  type MRT_SortingState,
   MRT_ShowHideColumnsButton,
+  MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
 import { FolderOpen, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import type { Category, CategoryFilterParams } from '@/features/categories/types'
-
-type PaginationState = { pageIndex: number; pageSize: number }
 
 type ActionMeta = {
   canUpdate: boolean
@@ -103,11 +100,11 @@ type CategoriesTableCardProps = {
   data: Category[]
   rowCount: number
   loading: boolean
-  pagination: PaginationState
-  onPaginationChange: Dispatch<SetStateAction<PaginationState>>
   filters: CategoryFilterParams
-  onFilterChange: (field: keyof CategoryFilterParams, value: string | null) => void
-  onSortingChange: (sorting: MRT_SortingState) => void
+  onFilterChange: (patch: Partial<CategoryFilterParams>) => void
+  onFilterReset: () => void
+  onPaginationChange: (page: number, perPage: number) => void
+  onSortingChange: (orderBy: string | null, order: 'asc' | 'desc' | null) => void
   canCreate: boolean
   canUpdate: boolean
   canDelete: boolean
@@ -121,10 +118,10 @@ function CategoriesTableCardInner({
   data,
   rowCount,
   loading,
-  pagination,
-  onPaginationChange,
   filters,
   onFilterChange,
+  onFilterReset,
+  onPaginationChange,
   onSortingChange,
   canCreate,
   canUpdate,
@@ -139,7 +136,20 @@ function CategoriesTableCardInner({
     [canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow],
   )
 
-  const sorting: MRT_SortingState = useMemo(
+  const filterFields = useMemo<FilterFieldDef[]>(
+    () => [
+      {
+        field: 'query',
+        label: 'Keyword',
+        type: 'input',
+        value: filters.query ?? null,
+        placeholder: 'Search categories…',
+      },
+    ],
+    [filters.query],
+  )
+
+  const sorting = useMemo(
     () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
     [filters.order_by, filters.order],
   )
@@ -150,11 +160,6 @@ function CategoriesTableCardInner({
     manualPagination: true,
     manualSorting: true,
     rowCount,
-    onPaginationChange,
-    onSortingChange: (updater) => {
-      const next = typeof updater === 'function' ? updater(sorting) : updater
-      onSortingChange(next)
-    },
     enableColumnFilters: false,
     enableGlobalFilter: false,
     enableColumnPinning: true,
@@ -163,7 +168,30 @@ function CategoriesTableCardInner({
       columnVisibility: { created_at: false },
       columnPinning: { right: ['actions'] },
     },
-    state: { pagination, sorting, showLoadingOverlay: loading },
+    state: {
+      showLoadingOverlay: loading,
+      pagination: {
+        pageIndex: (filters.page ?? 1) - 1,
+        pageSize: filters.per_page ?? 30,
+      },
+      sorting,
+    },
+    onPaginationChange: (updater) => {
+      const current = {
+        pageIndex: (filters.page ?? 1) - 1,
+        pageSize: filters.per_page ?? 30,
+      }
+      const next = typeof updater === 'function' ? updater(current) : updater
+      onPaginationChange(next.pageIndex + 1, next.pageSize)
+    },
+    onSortingChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(sorting) : updater
+      if (next.length === 0) {
+        onSortingChange(null, null)
+      } else {
+        onSortingChange(next[0].id, next[0].desc ? 'desc' : 'asc')
+      }
+    },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
@@ -173,33 +201,31 @@ function CategoriesTableCardInner({
       sx: { cursor: 'pointer' },
     }),
     localization: { rowsPerPage: 'Per Page' },
-    renderTopToolbarCustomActions: () => (
-      <div className="flex flex-wrap items-end gap-3 py-1">
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Search</Label>
-          <Input
-            value={filters.query ?? ''}
-            onChange={(e) => onFilterChange('query', e.target.value || null)}
-            placeholder="Search categories…"
-            className="h-8 w-48 text-xs"
-          />
+    renderTopToolbar: ({ table: t }) => (
+      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
+        <div className="flex w-full items-center justify-end gap-2">
+          {canCreate ? (
+            <>
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                onClick={onAddClick}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Category
+              </Button>
+              <div className="mx-1 h-5 w-px bg-border" />
+            </>
+          ) : null}
+          <MRT_ToggleGlobalFilterButton table={t} />
+          <MRT_ShowHideColumnsButton table={t} />
         </div>
-      </div>
-    ),
-    renderToolbarInternalActions: ({ table: t }) => (
-      <div className="flex items-center gap-1">
-        {canCreate ? (
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-            onClick={onAddClick}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Category
-          </Button>
-        ) : null}
-        <div className="mx-1 h-5 w-px bg-border" />
-        <MRT_ShowHideColumnsButton table={t} />
+        <FilterPanel
+          fields={filterFields}
+          onReset={onFilterReset}
+          applyMode
+          onApply={onFilterChange}
+        />
       </div>
     ),
     renderEmptyRowsFallback: () => (

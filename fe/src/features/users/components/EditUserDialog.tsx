@@ -18,13 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchableSelect } from '@/components/common/SearchableSelect'
 import type { UserUpdateFormValues } from '@/features/users/types'
 import { RoleFormErrorAlert } from '@/features/settings/components/RoleFormErrorAlert'
 import type { ManagedUser, Role } from '@/shared/types'
@@ -119,23 +113,12 @@ export function EditUserDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role</FormLabel>
-                  <Select
-                    value={field.value ? String(field.value) : ''}
+                  <SearchableSelect
+                    value={field.value ? String(field.value) : undefined}
                     onValueChange={(v) => field.onChange(Number(v))}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {roles.map((r) => (
-                        <SelectItem key={r.id} value={String(r.id)}>
-                          {r.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    options={roles.map((r) => ({ label: r.name, value: String(r.id) }))}
+                    placeholder="Select role"
+                  />
                   <FormMessage />
                 </FormItem>
               )}

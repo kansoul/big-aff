@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { MRT_SortingState } from 'mantine-react-table'
 import { toast } from 'sonner'
 
 import { categoriesApi } from '@/features/categories/api'
@@ -10,17 +9,9 @@ import {
   DeleteCategoryDialog,
 } from '@/features/categories/components'
 import { formatApiError } from '@/features/settings/components'
-import type { Category, CategoryFilterParams, CategoryOrderBy } from '@/features/categories/types'
+import type { Category, CategoryFilterParams } from '@/features/categories/types'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
-
-type PaginationState = { pageIndex: number; pageSize: number }
-
-const DEFAULT_FILTERS: CategoryFilterParams = {
-  query: null,
-  order_by: null,
-  order: null,
-}
 
 export function CategoriesPage() {
   const user = useAuthStore((s) => s.user)
@@ -33,8 +24,7 @@ export function CategoriesPage() {
   const [data, setData] = useState<Category[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
-  const [filters, setFilters] = useState<CategoryFilterParams>(DEFAULT_FILTERS)
+  const [filters, setFilters] = useState<CategoryFilterParams>({ page: 1, per_page: 30 })
 
   // dialog state
   const [viewTarget, setViewTarget] = useState<Category | null>(null)
@@ -42,52 +32,42 @@ export function CategoriesPage() {
   const [editTarget, setEditTarget] = useState<Category | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null)
 
-  const [refreshSignal, setRefreshSignal] = useState(0)
-
-  const loadData = useCallback(() => {
-    setRefreshSignal((s) => s + 1)
+  const loadData = useCallback(async (activeFilters: CategoryFilterParams) => {
+    try {
+      setLoading(true)
+      const res = await categoriesApi.list(activeFilters)
+      setData(res.data.data)
+      setRowCount(res.data.pagination.total)
+    } catch (err) {
+      toast.error(formatApiError(err))
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    let ignore = false
+    void loadData(filters)
+  }, [loadData, filters])
 
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        const res = await categoriesApi.list(pagination.pageIndex + 1, pagination.pageSize, filters)
-        if (!ignore) {
-          setData(res.data.data)
-          setRowCount(res.data.pagination.total)
-        }
-      } catch (err) {
-        if (!ignore) {
-          toast.error(formatApiError(err))
-        }
-      } finally {
-        if (!ignore) setLoading(false)
-      }
-    }
-
-    void fetchData()
-
-    return () => {
-      ignore = true
-    }
-  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
-
-  const onFilterChange = useCallback((field: keyof CategoryFilterParams, value: string | null) => {
-    setFilters((prev) => ({ ...prev, [field]: value }))
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  const onFilterChange = useCallback((patch: Partial<CategoryFilterParams>) => {
+    setFilters((prev) => ({ ...prev, ...patch, page: 1 }))
   }, [])
 
-  const onSortingChange = useCallback((sorting: MRT_SortingState) => {
-    const first = sorting[0] ?? null
+  const onFilterReset = useCallback(() => {
+    setFilters({ page: 1, per_page: 30 })
+  }, [])
+
+  const onPaginationChange = useCallback((page: number, perPage: number) => {
+    setFilters((prev) => ({ ...prev, page, per_page: perPage }))
+  }, [])
+
+  const onSortingChange = useCallback((orderBy: string | null, order: 'asc' | 'desc' | null) => {
     setFilters((prev) => ({
       ...prev,
-      order_by: first ? (first.id as CategoryOrderBy) : null,
-      order: first ? (first.desc ? 'desc' : 'asc') : null,
+      order_by: (orderBy as CategoryFilterParams['order_by']) ?? undefined,
+      order: order ?? undefined,
+      page: 1,
     }))
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
   }, [])
 
   const onAddClick = useCallback(() => {
@@ -121,16 +101,20 @@ export function CategoriesPage() {
     if (!open) setDeleteTarget(null)
   }, [])
 
+  const onSuccess = useCallback(() => {
+    void loadData(filters)
+  }, [loadData, filters])
+
   return (
     <div className="flex flex-col gap-8">
       <CategoriesTableCard
         data={data}
         rowCount={rowCount}
         loading={loading}
-        pagination={pagination}
-        onPaginationChange={setPagination}
         filters={filters}
         onFilterChange={onFilterChange}
+        onFilterReset={onFilterReset}
+        onPaginationChange={onPaginationChange}
         onSortingChange={onSortingChange}
         canCreate={canCreate}
         canUpdate={canUpdate}
@@ -147,13 +131,13 @@ export function CategoriesPage() {
         open={formOpen}
         onOpenChange={onFormOpenChange}
         category={editTarget}
-        onSuccess={loadData}
+        onSuccess={onSuccess}
       />
 
       <DeleteCategoryDialog
         category={deleteTarget}
         onOpenChange={onDeleteOpenChange}
-        onSuccess={loadData}
+        onSuccess={onSuccess}
       />
     </div>
   )

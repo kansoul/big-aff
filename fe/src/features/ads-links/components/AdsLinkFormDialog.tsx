@@ -17,13 +17,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchableSelect } from '@/components/common/SearchableSelect'
+
 import { Textarea } from '@/components/ui/textarea'
 import { RoleFormErrorAlert } from '@/features/settings/components/RoleFormErrorAlert'
 import type {
@@ -86,23 +81,12 @@ export function CreateAdsLinkDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Site *</FormLabel>
-                  <Select
-                    value={field.value ? String(field.value) : ''}
+                  <SearchableSelect
+                    value={field.value ? String(field.value) : undefined}
                     onValueChange={(v) => field.onChange(Number(v))}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select site" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {sites.map((s) => (
-                        <SelectItem key={s.id} value={String(s.id)}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    options={sites.map((s) => ({ label: s.name, value: String(s.id) }))}
+                    placeholder="Select site"
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -114,26 +98,15 @@ export function CreateAdsLinkDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Post *</FormLabel>
-                  <Select
-                    value={field.value ? String(field.value) : ''}
+                  <SearchableSelect
+                    value={field.value ? String(field.value) : undefined}
                     onValueChange={(v) => {
                       field.onChange(Number(v))
                       form.setValue('keyword_set_id', null)
                     }}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select post" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {posts.map((p) => (
-                        <SelectItem key={p.id} value={String(p.id)}>
-                          {p.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    options={posts.map((p) => ({ label: p.title, value: String(p.id) }))}
+                    placeholder="Select post"
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -145,20 +118,12 @@ export function CreateAdsLinkDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Channel *</FormLabel>
-                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select channel" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {channels.map((c) => (
-                        <SelectItem key={c.code} value={c.code}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={field.value ?? undefined}
+                    onValueChange={field.onChange}
+                    options={channels.map((c) => ({ label: c.name, value: c.code }))}
+                    placeholder="Select channel"
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -213,24 +178,15 @@ export function CreateAdsLinkDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Keyword Set</FormLabel>
-                    <Select
+                    <SearchableSelect
                       value={field.value ? String(field.value) : '__none__'}
                       onValueChange={(v) => field.onChange(v === '__none__' ? null : Number(v))}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="None" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="__none__">None</SelectItem>
-                        {keywordSets.map((ks) => (
-                          <SelectItem key={ks.id} value={String(ks.id)}>
-                            {ks.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        { label: 'None', value: '__none__' },
+                        ...keywordSets.map((ks) => ({ label: ks.name, value: String(ks.id) })),
+                      ]}
+                      placeholder="None"
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -290,9 +246,8 @@ export function EditAdsLinkDialog({
   const open = adsLink !== null
 
   const selectedPost = posts.find((p) => p.id === adsLink?.post?.id)
-  const keywordSets = selectedPost?.keyword_sets ?? (
-    adsLink?.keyword_set ? [adsLink.keyword_set] : []
-  )
+  const keywordSets =
+    selectedPost?.keyword_sets ?? (adsLink?.keyword_set ? [adsLink.keyword_set] : [])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -331,24 +286,15 @@ export function EditAdsLinkDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Keyword Set</FormLabel>
-                    <Select
+                    <SearchableSelect
                       value={field.value ? String(field.value) : '__none__'}
                       onValueChange={(v) => field.onChange(v === '__none__' ? null : Number(v))}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="None" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="__none__">None</SelectItem>
-                        {keywordSets.map((ks) => (
-                          <SelectItem key={ks.id} value={String(ks.id)}>
-                            {ks.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        { label: 'None', value: '__none__' },
+                        ...keywordSets.map((ks) => ({ label: ks.name, value: String(ks.id) })),
+                      ]}
+                      placeholder="None"
+                    />
                     <FormMessage />
                   </FormItem>
                 )}

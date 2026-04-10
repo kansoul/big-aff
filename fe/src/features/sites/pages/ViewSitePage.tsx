@@ -8,10 +8,10 @@ import type { SiteDetail } from '@/features/sites/types'
 import { formatApiError } from '@/features/settings/components'
 import { Button } from '@/components/ui/button'
 import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { PATHS, siteEditPath } from '@/constants/paths'
-import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { DeleteSiteDialog } from '@/features/sites/components'
@@ -114,33 +114,17 @@ export function ViewSitePage() {
             <div className="grid gap-8">
               {/* Basic Info */}
               <div className="grid gap-6 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">ID</Label>
-                  <p className="font-medium">{detail.id}</p>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">Status</Label>
-                  <div>
-                    <span
-                      className={cn(
-                        'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset capitalize',
-                        {
-                          'bg-primary/10 text-primary ring-primary/20': detail.status === 'active',
-                          'bg-muted text-muted-foreground ring-border':
-                            detail.status === 'maintenance',
-                          'bg-destructive/10 text-destructive ring-destructive/20':
-                            detail.status === 'suspended',
-                        },
-                      )}
-                    >
-                      {detail.status}
-                    </span>
-                  </div>
-                </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label className="text-muted-foreground">Name</Label>
                   <p className="font-medium text-lg">{detail.name}</p>
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Status</Label>
+                  <div>
+                    <StatusBadge status={detail.status} />
+                  </div>
+                </div>
+
                 <div className="space-y-2 sm:col-span-2">
                   <Label className="text-muted-foreground">URL</Label>
                   <div className="flex items-center gap-2">

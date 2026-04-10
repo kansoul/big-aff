@@ -10,14 +10,8 @@ import { DateRangePickerPresets } from '@/components/ui/date-range-picker-preset
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { SearchableSelect } from '@/components/common/SearchableSelect'
 
 // ─── Field type definitions ───────────────────────────────────────────────────
 
@@ -104,23 +98,18 @@ type FieldRendererProps<T extends FilterFieldDef = FilterFieldDef> = {
 
 function SelectFieldRenderer({ field, onChange }: FieldRendererProps<SelectFilterField>) {
   const hasAll = !field.hideAllOption
-  // When no all option and value is null, undefined tells Select there's no selection
+  const allOption = hasAll ? [{ label: field.placeholder ?? 'All', value: '__all__' }] : []
+  const options = [...allOption, ...field.options]
   const val = field.value ?? (hasAll ? '__all__' : undefined)
 
   return (
-    <Select value={val} onValueChange={(v) => onChange(v === '__all__' ? null : v)}>
-      <SelectTrigger className={cn('h-8 w-full text-xs', field.className)}>
-        <SelectValue placeholder={field.placeholder ?? 'Select...'} />
-      </SelectTrigger>
-      <SelectContent>
-        {hasAll && <SelectItem value="__all__">{field.placeholder ?? 'All'}</SelectItem>}
-        {field.options.map((opt) => (
-          <SelectItem key={opt.value} value={opt.value}>
-            {opt.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <SearchableSelect
+      value={val}
+      onValueChange={(v) => onChange(v === '__all__' ? null : v)}
+      options={options}
+      placeholder={field.placeholder ?? 'Select...'}
+      className={cn('h-8 text-xs', field.className)}
+    />
   )
 }
 

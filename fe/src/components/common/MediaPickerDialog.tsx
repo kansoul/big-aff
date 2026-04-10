@@ -9,6 +9,10 @@ import {
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   ImageIcon,
   Loader2,
   Pencil,
@@ -31,6 +35,7 @@ import {
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { SearchableSelect } from '@/components/common/SearchableSelect'
 import { Search } from 'lucide-react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -114,12 +119,13 @@ type RecentMediaTableProps = {
   directory: 'media' | 'media/site' | 'media/posts'
 }
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50]
+
 function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
   const [data, setData] = useState<MediaFile[]>([])
   const [rowCount, setRowCount] = useState(0)
-  // pageIndex starts at 0; reset via key remount when dialog reopens
   const [pageIndex, setPageIndex] = useState(0)
-  // Start true so the skeleton shows immediately on mount
+  const [pageSize, setPageSize] = useState(10)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [altTextSearch, setAltTextSearch] = useState('')
@@ -139,7 +145,7 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
 
     const doFetch = async () => {
       try {
-        const res = await mediaApi.list(pageIndex + 1, 10, {
+        const res = await mediaApi.list(pageIndex + 1, pageSize, {
           created_from: null,
           created_to: null,
           user_id: null,
@@ -162,7 +168,9 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
     return () => {
       cancelled = true
     }
-  }, [open, pageIndex, debouncedSearch])
+  }, [open, pageIndex, pageSize, debouncedSearch])
+
+  const totalPages = Math.max(1, Math.ceil(rowCount / pageSize))
 
   const rowSelection: MRT_RowSelectionState = useMemo(
     () => (selected ? { [String(selected.id)]: true } : {}),
@@ -193,16 +201,11 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
     }),
     state: {
       rowSelection,
-      pagination: { pageIndex, pageSize: 10 },
+      pagination: { pageIndex, pageSize },
       showLoadingOverlay: loading,
     },
     manualPagination: true,
     rowCount,
-    onPaginationChange: (updater) => {
-      const next = typeof updater === 'function' ? updater({ pageIndex, pageSize: 10 }) : updater
-      setLoading(true)
-      setPageIndex(next.pageIndex)
-    },
     enableColumnFilters: false,
     enableGlobalFilter: false,
     enableSorting: false,
@@ -210,13 +213,85 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
     enableFullScreenToggle: false,
     enableDensityToggle: false,
     enableHiding: false,
-    enablePagination: true,
-    paginationDisplayMode: 'pages',
+    enablePagination: false,
     positionToolbarAlertBanner: 'none',
     initialState: { density: 'md' },
     mantineTableContainerProps: { sx: { maxHeight: 320, overflowY: 'auto' } },
-    mantineBottomToolbarProps: { sx: { '& .mantine-Select-root': { display: 'none' } } },
     renderTopToolbar: () => null,
+    renderBottomToolbar: () => (
+      <div className="flex items-center justify-between border-t border-border px-3 py-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Rows per page</span>
+          <SearchableSelect
+            value={String(pageSize)}
+            onValueChange={(v) => {
+              setPageSize(Number(v))
+              setPageIndex(0)
+              setLoading(true)
+            }}
+            options={PAGE_SIZE_OPTIONS.map((n) => ({ label: String(n), value: String(n) }))}
+            className="h-7 w-16 text-xs"
+          />
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="mr-1 text-xs text-muted-foreground">
+            {pageIndex + 1} / {totalPages}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            disabled={pageIndex === 0}
+            onClick={() => {
+              setLoading(true)
+              setPageIndex(0)
+            }}
+          >
+            <ChevronsLeft className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            disabled={pageIndex === 0}
+            onClick={() => {
+              setLoading(true)
+              setPageIndex((p) => p - 1)
+            }}
+          >
+            <ChevronLeft className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            disabled={pageIndex >= totalPages - 1}
+            onClick={() => {
+              setLoading(true)
+              setPageIndex((p) => p + 1)
+            }}
+          >
+            <ChevronRight className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            disabled={pageIndex >= totalPages - 1}
+            onClick={() => {
+              setLoading(true)
+              setPageIndex(totalPages - 1)
+            }}
+          >
+            <ChevronsRight className="size-3.5" />
+          </Button>
+        </div>
+      </div>
+    ),
     renderEmptyRowsFallback: () =>
       error ? (
         <div className="flex items-center gap-2 p-4 text-sm text-destructive">

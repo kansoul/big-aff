@@ -277,7 +277,7 @@ export const Header = React.memo(function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="flex h-12 items-center justify-between px-4 md:px-8">
+      <div className="flex h-14 items-center justify-between px-4 md:px-8">
         <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-8">
           <Button
             type="button"

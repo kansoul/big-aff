@@ -10,13 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/date-picker'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchableSelect } from '@/components/common/SearchableSelect'
 import { Textarea } from '@/components/ui/textarea'
 
 function slugify(text: string): string {
@@ -106,18 +100,16 @@ export function PostFormSections({
                   <FormLabel>
                     Status <span className="text-destructive">*</span>
                   </FormLabel>
-                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="published">Published</SelectItem>
-                      <SelectItem value="trash">Trash</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={field.value ?? ''}
+                    onValueChange={field.onChange}
+                    options={[
+                      { label: 'Draft', value: 'draft' },
+                      { label: 'Published', value: 'published' },
+                      { label: 'Trash', value: 'trash' },
+                    ]}
+                    placeholder="Select status"
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -128,22 +120,17 @@ export function PostFormSections({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Type</FormLabel>
-                  <Select
+                  <SearchableSelect
                     value={field.value ?? '__none__'}
                     onValueChange={(v) => field.onChange(v === '__none__' ? null : v)}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="__none__">None</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="ai">AI</SelectItem>
-                      <SelectItem value="wordpress">WordPress</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      { label: 'No type', value: '__none__' },
+                      { label: 'Normal', value: 'normal' },
+                      { label: 'AI', value: 'ai' },
+                      { label: 'WordPress', value: 'wordpress' },
+                    ]}
+                    placeholder="Select type"
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -172,24 +159,15 @@ export function PostFormSections({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select
+                  <SearchableSelect
                     value={field.value ? String(field.value) : '__none__'}
                     onValueChange={(v) => field.onChange(v === '__none__' ? null : Number(v))}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="__none__">No category</SelectItem>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={String(cat.id)}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      { label: 'No category', value: '__none__' },
+                      ...categories.map((cat) => ({ label: cat.name, value: String(cat.id) })),
+                    ]}
+                    placeholder="Select category"
+                  />
                   <FormMessage />
                 </FormItem>
               )}

@@ -9,11 +9,11 @@ import type {
 } from '@/features/categories/types'
 
 export const categoriesApi = {
-  list: (page: number, perPage: number, filters: CategoryFilterParams) =>
+  list: (filters: CategoryFilterParams) =>
     axiosInstance.get<CategoryListResponse>('/categories', {
       params: {
-        page,
-        per_page: perPage,
+        page: filters.page ?? 1,
+        per_page: filters.per_page ?? 15,
         ...(filters.query ? { query: filters.query } : {}),
         ...(!isNil(filters.parent_id) ? { parent_id: filters.parent_id } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),
