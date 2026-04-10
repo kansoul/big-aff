@@ -2,6 +2,7 @@
 
 namespace App\Actions\Post;
 
+use App\Enums\AdsType;
 use App\Enums\PostStatus;
 use App\Enums\TrafficType;
 use App\Models\AdsLink;
@@ -25,12 +26,10 @@ class GetPostBySlugAction
 
             $post = null;
             if (! $isAdsLink) {
-                $post = Post::with('featureMedia')
+                return Post::with('featureMedia')
                     ->where('status', PostStatus::PUBLISHED)
                     ->where('slug', $cleanSlug)
                     ->first();
-
-                return $post;
             }
 
             $adsLink = null;
@@ -95,7 +94,7 @@ class GetPostBySlugAction
         $trackingIds = is_array($adsLink->tracking_ids) ? $adsLink->tracking_ids : (json_decode($adsLink->tracking_ids ?? '{}', true) ?: []);
         $accountId = null;
         $campaignName = null;
-        $adsType = $trafficType === TrafficType::GOOGLE ? 'google' : ($trafficType === TrafficType::FACEBOOK ? 'facebook' : 'unknown');
+        $adsType = $trafficType === TrafficType::GOOGLE ? AdsType::GOOGLE : ($trafficType === TrafficType::FACEBOOK ? AdsType::FACEBOOK : AdsType::UNKNOWN);
 
         if ($trafficType === TrafficType::GOOGLE) {
             $googleIds = $trackingIds['googleid'] ?? [];
@@ -116,7 +115,7 @@ class GetPostBySlugAction
 
         $now = now();
 
-        Campaign::updateOrCreate(
+        return Campaign::updateOrCreate(
             [
                 'campaign_id' => $campaignId,
             ],
@@ -127,8 +126,6 @@ class GetPostBySlugAction
                 'updated_at' => $now,
             ]
         );
-
-        return Campaign::where('campaign_id', $campaignId)->first();
     }
 
     /**

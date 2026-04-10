@@ -16,13 +16,14 @@ class BulkCreateStylesAction
     {
         $lines = array_filter(
             array_map('trim', explode("\n", $data['lines'])),
-            fn (string $line): bool => $line !== '',
+            fn(string $line): bool => $line !== '',
         );
 
         $created = [];
         $errors = [];
         $userId = Auth::id();
 
+        $parsedLines = [];
         foreach ($lines as $index => $line) {
             $lineNumber = $index + 1;
             $parts = array_map('trim', explode('|', $line));
@@ -33,9 +34,19 @@ class BulkCreateStylesAction
                 continue;
             }
 
-            [$name, $code] = $parts;
+            $parsedLines[] = ['lineNumber' => $lineNumber, 'name' => $parts[0], 'code' => $parts[1]];
+        }
 
-            if (Style::withTrashed()->where('code', $code)->exists()) {
+        $inputCodes = array_column($parsedLines, 'code');
+        $existingCodes = Style::withTrashed()
+            ->whereIn('code', $inputCodes)
+            ->pluck('code')
+            ->flip();
+
+        foreach ($parsedLines as $parsed) {
+            ['lineNumber' => $lineNumber, 'name' => $name, 'code' => $code] = $parsed;
+
+            if ($existingCodes->has($code)) {
                 $errors[] = "Line {$lineNumber}: Code '{$code}' already exists.";
 
                 continue;
@@ -50,6 +61,7 @@ class BulkCreateStylesAction
                 ]);
             });
 
+            $existingCodes[$code] = true;
             $created[] = $style;
         }
 
