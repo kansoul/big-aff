@@ -16,7 +16,6 @@ class StoreCategoryRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'feature_media_id' => ['nullable', 'integer', 'exists:files,id'],
         ];
     }
 }

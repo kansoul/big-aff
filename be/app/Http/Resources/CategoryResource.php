@@ -13,8 +13,6 @@ class CategoryResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
-            'feature_media_id' => $this->feature_media_id,
-            'feature_media' => new FileResource($this->whenLoaded('featureMedia')),
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
             'created_at' => $this->created_at,

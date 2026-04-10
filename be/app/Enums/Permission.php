@@ -12,12 +12,12 @@ enum Permission: string
 {
     public const FULL_ACCESS_SENTINEL = '-1';
 
-    // —— Report ——
+        // —— Report ——
     case ReportOverviewView = 'report.overview.view';       // bit 0  →  1
 
     case ReportExport = 'report.export';                     // bit 1  →  2
 
-    // —— Settings → Users ——
+        // —— Settings → Users ——
     case SettingsUsersView = 'settings.users.view';          // bit 2  →  4
 
     case SettingsUsersCreate = 'settings.users.create';      // bit 3  →  8
@@ -26,7 +26,7 @@ enum Permission: string
 
     case SettingsUsersDelete = 'settings.users.delete';      // bit 5  →  32
 
-    // —— Settings → Roles ——
+        // —— Settings → Roles ——
     case SettingsRolesView = 'settings.roles.view';          // bit 6  →  64
 
     case SettingsRolesCreate = 'settings.roles.create';      // bit 7  →  128
@@ -37,7 +37,7 @@ enum Permission: string
 
     case SettingsRolesAssign = 'settings.roles.assign';      // bit 10 →  1024
 
-    // —— Settings → Sites ——
+        // —— Settings → Sites ——
     case SettingsSitesView = 'settings.sites.view';          // bit 11 →  2048
 
     case SettingsSitesCreate = 'settings.sites.create';      // bit 12 →  4096
@@ -48,14 +48,14 @@ enum Permission: string
 
     case SettingsSitesAssign = 'settings.sites.assign';      // bit 15 →  32768
 
-    // —— Ads Links ——
+        // —— Ads Links ——
     case AdsLinksView = 'ads-links.view';                    // bit 16 →  65536
 
     case AdsLinksCreate = 'ads-links.create';                // bit 17 →  131072
 
     case AdsLinksUpdate = 'ads-links.update';                // bit 18 →  262144
 
-    // —— Posts ——
+        // —— Posts ——
     case PostsView = 'posts.view';                           // bit 19 →  524288
 
     case PostsCreate = 'posts.create';                       // bit 20 →  1048576
@@ -64,7 +64,7 @@ enum Permission: string
 
     case PostsDelete = 'posts.delete';                       // bit 22 →  4194304
 
-    // —— Files ——
+        // —— Files ——
     case FilesView = 'files.view';                           // bit 23 →  8388608
 
     case FilesCreate = 'files.create';                       // bit 24 →  16777216
@@ -73,7 +73,7 @@ enum Permission: string
 
     case FilesDelete = 'files.delete';                       // bit 26 →  67108864
 
-    // —— Categories ——
+        // —— Categories ——
     case CategoriesView = 'categories.view';                 // bit 27 →  134217728
 
     case CategoriesCreate = 'categories.create';             // bit 28 →  268435456
@@ -82,21 +82,21 @@ enum Permission: string
 
     case CategoriesDelete = 'categories.delete';             // bit 30 →  1073741824
 
-    // —— Follows ——
+        // —— Follows ——
     case FollowsView = 'follows.view';                       // bit 31 →  2147483648
     case FollowsDelete = 'follows.delete';                   // bit 32 →  4294967296
 
-    // —— Styles ——
+        // —— Styles ——
     case StylesView = 'styles.view';                         // bit 33 →  8589934592
     case StylesCreate = 'styles.create';                     // bit 34 →  17179869184
     case StylesDelete = 'styles.delete';                     // bit 35 →  34359738368
 
-    // —— Channels ——
+        // —— Channels ——
     case ChannelsView = 'channels.view';                     // bit 36 →  68719476736
     case ChannelsCreate = 'channels.create';                 // bit 37 →  137438953472
     case ChannelsDelete = 'channels.delete';                 // bit 38 →  274877906944
 
-    // —— Keyword Sets ——
+        // —— Keyword Sets ——
     case KeywordSetsView = 'keyword-sets.view';              // bit 39 →  549755813888
     case KeywordSetsCreate = 'keyword-sets.create';          // bit 40 →  1099511627776
     case KeywordSetsUpdate = 'keyword-sets.update';          // bit 41 →  2199023255552
@@ -125,7 +125,7 @@ enum Permission: string
      */
     public static function values(): array
     {
-        return ['*', self::FULL_ACCESS_SENTINEL, ...array_map(static fn (self $p) => $p->value, self::cases())];
+        return ['*', self::FULL_ACCESS_SENTINEL, ...array_map(static fn(self $p) => $p->value, self::cases())];
     }
 
     /**
@@ -219,6 +219,6 @@ enum Permission: string
     {
         $parts = array_map('trim', explode('|', $pipeSeparated));
 
-        return array_values(array_filter($parts, fn (string $s): bool => $s !== ''));
+        return array_values(array_filter($parts, fn(string $s): bool => $s !== ''));
     }
 }
