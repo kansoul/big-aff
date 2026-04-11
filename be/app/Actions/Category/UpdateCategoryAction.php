@@ -20,9 +20,7 @@ class UpdateCategoryAction
         $data['updated_by'] = Auth::id();
 
         return DB::transaction(function () use ($category, $data) {
-            $category->update($data);
-
-            return $category->fresh(['featureMedia']);
+            return $category->update($data);
         });
     }
 }

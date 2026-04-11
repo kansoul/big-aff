@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\StyleController;
+use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserParentChildController;
 use Illuminate\Support\Facades\Route;
@@ -174,6 +175,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('business-centers')->group(function () {
+        Route::get('options', [BusinessCenterController::class, 'options'])
+            ->middleware('permission.scope:'.Permission::BusinessCentersView->value);
         Route::get('/', [BusinessCenterController::class, 'index'])
             ->middleware('permission.scope:'.Permission::BusinessCentersView->value);
         Route::post('/', [BusinessCenterController::class, 'store'])
@@ -197,5 +200,22 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::AccountsUpdate->value);
         Route::delete('{account}', [AccountController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::AccountsDelete->value);
+    });
+
+    Route::prefix('teams')->group(function () {
+        Route::get('/', [TeamController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::TeamsView->value);
+        Route::post('/', [TeamController::class, 'store'])
+            ->middleware('permission.scope:'.Permission::TeamsCreate->value);
+        Route::get('{team}', [TeamController::class, 'show'])
+            ->middleware('permission.scope:'.Permission::TeamsView->value);
+        Route::match(['put', 'patch'], '{team}', [TeamController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::TeamsUpdate->value);
+        Route::delete('{team}', [TeamController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::TeamsDelete->value);
+        Route::get('{team}/user-options', [TeamController::class, 'userOptions'])
+            ->middleware('permission.scope:'.Permission::TeamsAssign->value);
+        Route::post('{team}/assign-users', [TeamController::class, 'assignUsers'])
+            ->middleware('permission.scope:'.Permission::TeamsAssign->value);
     });
 });

@@ -1,44 +1,37 @@
 <?php
 
-namespace App\Actions\Category;
+namespace App\Actions\Team;
 
-use App\Http\Requests\Category\ListCategoriesRequest;
-use App\Models\Category;
+use App\Models\Team;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
-class ListCategoriesAction
+class ListTeamsAction
 {
     /**
-     * Columns allowed for `order_by` (must match {@see ListCategoriesRequest} rules).
-     *
      * @var array<int, string>
      */
     public const ORDERABLE_COLUMNS = [
         'id',
         'name',
         'created_at',
-        'updated_at',
     ];
 
     /**
-     * @param  array{query?: string|null, per_page?: int|null, page?: int|null, order_by?: string|null, order?: string|null}  $filters
+     * @param  array<string, mixed>  $filters
      */
     public function execute(array $filters): LengthAwarePaginator
     {
         $ownership = OwnershipFilter::forAuthUser();
 
-        $query = Category::query();
+        $query = Team::query();
         $ownership->applyTo($query);
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];
-            $query->where(function ($builder) use ($queryString): void {
-                $builder->where('name', 'like', "%{$queryString}%")
-                    ->orWhere('description', 'like', "%{$queryString}%");
-            });
+            $query->where('name', 'like', "%{$queryString}%");
         }
 
         SortInput::fromValidatedArray(

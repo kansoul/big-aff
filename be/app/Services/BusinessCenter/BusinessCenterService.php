@@ -4,10 +4,12 @@ namespace App\Services\BusinessCenter;
 
 use App\Actions\BusinessCenter\CreateBusinessCenterAction;
 use App\Actions\BusinessCenter\DeleteBusinessCenterAction;
+use App\Actions\BusinessCenter\GetBusinessCenterOptionsAction;
 use App\Actions\BusinessCenter\ListBusinessCentersAction;
 use App\Actions\BusinessCenter\UpdateBusinessCenterAction;
 use App\Models\BusinessCenter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class BusinessCenterService
 {
@@ -16,6 +18,7 @@ class BusinessCenterService
         private readonly CreateBusinessCenterAction $createBusinessCenterAction,
         private readonly UpdateBusinessCenterAction $updateBusinessCenterAction,
         private readonly DeleteBusinessCenterAction $deleteBusinessCenterAction,
+        private readonly GetBusinessCenterOptionsAction $getBusinessCenterOptionsAction,
     ) {}
 
     /**
@@ -45,5 +48,13 @@ class BusinessCenterService
     public function delete(BusinessCenter $businessCenter): void
     {
         $this->deleteBusinessCenterAction->execute($businessCenter);
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string}>
+     */
+    public function options(): Collection
+    {
+        return $this->getBusinessCenterOptionsAction->execute();
     }
 }
