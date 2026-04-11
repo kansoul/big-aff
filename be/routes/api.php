@@ -55,6 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::SettingsUsersUpdate->value);
         Route::delete('{user}', [UserController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::SettingsUsersDelete->value);
+        Route::post('{user}/assign-accounts', [UserController::class, 'assignAccounts'])
+            ->middleware('permission.scope:'.Permission::AccountsAssign->value);
     });
 
     Route::prefix('files')->middleware('ensure.app.user')->group(function () {
@@ -190,6 +192,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('accounts')->group(function () {
+        Route::get('options', [AccountController::class, 'options'])
+            ->middleware('permission.scope:'.Permission::AccountsView->value);
         Route::get('/', [AccountController::class, 'index'])
             ->middleware('permission.scope:'.Permission::AccountsView->value);
         Route::post('/', [AccountController::class, 'store'])

@@ -131,6 +131,9 @@ enum Permission: string
 
     case TeamsAssign = 'teams.assign';                       // bit 55 →  36028797018963968
 
+    // —— Accounts (assign) ——
+    case AccountsAssign = 'accounts.assign';                 // bit 56 →  72057594037927936
+
     /**
      * Bit value for this permission (1 << declaration index).
      */
