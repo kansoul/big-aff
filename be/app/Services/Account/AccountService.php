@@ -4,6 +4,7 @@ namespace App\Services\Account;
 
 use App\Actions\Account\BulkCreateAccountAction;
 use App\Actions\Account\DeleteAccountAction;
+use App\Actions\Account\GetAccountOptionsAction;
 use App\Actions\Account\ListAccountsAction;
 use App\Actions\Account\UpdateAccountAction;
 use App\Models\Account;
@@ -17,7 +18,16 @@ class AccountService
         private readonly BulkCreateAccountAction $bulkCreateAccountAction,
         private readonly UpdateAccountAction $updateAccountAction,
         private readonly DeleteAccountAction $deleteAccountAction,
+        private readonly GetAccountOptionsAction $getAccountOptionsAction,
     ) {}
+
+    /**
+     * @return Collection<int, array{id: int, account_id: string, account_name: string|null}>
+     */
+    public function options(): Collection
+    {
+        return $this->getAccountOptionsAction->execute();
+    }
 
     /**
      * @param  array<string, mixed>  $filters

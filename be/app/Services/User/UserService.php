@@ -2,6 +2,7 @@
 
 namespace App\Services\User;
 
+use App\Actions\Account\AssignAccountAction;
 use App\Actions\User\CreateUserAction;
 use App\Actions\User\DeleteUserAction;
 use App\Actions\User\ListUsersAction;
@@ -16,6 +17,7 @@ class UserService
         private readonly CreateUserAction $createUserAction,
         private readonly UpdateUserAction $updateUserAction,
         private readonly DeleteUserAction $deleteUserAction,
+        private readonly AssignAccountAction $assignAccountAction,
     ) {}
 
     /**
@@ -45,5 +47,13 @@ class UserService
     public function delete(User $user): void
     {
         $this->deleteUserAction->execute($user);
+    }
+
+    /**
+     * @param  array<int>  $accountIds
+     */
+    public function assignAccounts(User $user, array $accountIds): void
+    {
+        $this->assignAccountAction->execute($user, $accountIds);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\API\BaseController;
+use App\Http\Requests\Account\AssignAccountRequest;
 use App\Http\Requests\User\ListUsersRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
@@ -112,5 +113,26 @@ class UserController extends BaseController
         $this->userService->delete($user);
 
         return $this->sendResponse([], Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Assign accounts to user
+     *
+     * Assign one or more accounts to a user. Existing assignments are preserved (additive).
+     *
+     * @urlParam user integer required The user ID. Example: 1
+     *
+     * @bodyParam account_ids integer[] required List of account IDs to assign. Example: [1, 2, 3]
+     *
+     * @response 200 {"data": []}
+     * @response 403 {"message": "This action is unauthorized."}
+     * @response 404 {"message": "No query results for model [App\\Models\\User] 1"}
+     * @response 422 {"message": "The account_ids field is required.", "errors": {"account_ids": ["The account_ids field is required."]}}
+     */
+    public function assignAccounts(AssignAccountRequest $request, User $user): JsonResponse
+    {
+        $this->userService->assignAccounts($user, $request->validated('account_ids'));
+
+        return $this->sendResponse([]);
     }
 }

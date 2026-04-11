@@ -23,6 +23,18 @@ class AccountController extends BaseController
     ) {}
 
     /**
+     * Account options
+     *
+     * Return a lightweight list of accounts for use in select/dropdown inputs.
+     *
+     * @response 200 {"data": [{"id": 1, "account_id": "123456", "account_name": "My Account"}]}
+     */
+    public function options(): JsonResponse
+    {
+        return $this->sendResponse(['data' => $this->accountService->options()]);
+    }
+
+    /**
      * List accounts
      *
      * Return paginated list of accounts.
