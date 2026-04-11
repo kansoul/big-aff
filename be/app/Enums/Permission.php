@@ -102,6 +102,24 @@ enum Permission: string
     case KeywordSetsUpdate = 'keyword-sets.update';          // bit 41 →  2199023255552
     case KeywordSetsDelete = 'keyword-sets.delete';          // bit 42 →  4398046511104
 
+        // —— Business Centers ——
+    case BusinessCentersView = 'business-centers.view';      // bit 43 →  8796093022208
+
+    case BusinessCentersCreate = 'business-centers.create';  // bit 44 →  17592186044416
+
+    case BusinessCentersUpdate = 'business-centers.update';  // bit 45 →  35184372088832
+
+    case BusinessCentersDelete = 'business-centers.delete';  // bit 46 →  70368744177664
+
+        // —— Accounts ——
+    case AccountsView = 'accounts.view';                     // bit 47 →  140737488355328
+
+    case AccountsCreate = 'accounts.create';                 // bit 48 →  281474976710656
+
+    case AccountsUpdate = 'accounts.update';                 // bit 49 →  562949953421312
+
+    case AccountsDelete = 'accounts.delete';                 // bit 50 →  1125899906842624
+
     /**
      * Bit value for this permission (1 << declaration index).
      */
