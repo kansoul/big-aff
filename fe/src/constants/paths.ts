@@ -24,6 +24,10 @@ export const PATHS = {
   follows: '/follows',
   teams: '/teams',
   adsLinks: '/ads-links',
+  businessCenters: '/business-centers',
+  businessCentersCreate: '/business-centers/create',
+  businessCentersEdit: '/business-centers/:id/edit',
+  accounts: '/accounts',
 } as const
 
 export const postViewPath = (id: number | string) => `/posts/${id}`
@@ -31,6 +35,8 @@ export const postEditPath = (id: number | string) => `/posts/${id}/edit`
 
 export const siteViewPath = (id: number | string) => `/sites/${id}`
 export const siteEditPath = (id: number | string) => `/sites/${id}/edit`
+
+export const businessCenterEditPath = (id: number | string) => `/business-centers/${id}/edit`
 
 /** Identifies a top-level nav group; set on route `handle.navSection` and optional `NavItem.navSection`. */
 export const NAV_SECTIONS = {

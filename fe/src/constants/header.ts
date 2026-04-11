@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react'
 import { PATHS, type NavSectionId } from '@/constants/paths'
 import { PermissionSlugs } from '@/constants/permissions'
 import {
+  Building2,
   FileText,
   FolderOpen,
   GitBranch,
@@ -16,6 +17,7 @@ import {
   UserCog,
   Users,
   UsersRound,
+  Wallet,
 } from 'lucide-react'
 
 export type NavSubItem = {
@@ -124,6 +126,18 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         href: PATHS.settingsSites,
         icon: Globe,
         requiredPermission: PermissionSlugs.SettingsSitesView,
+      },
+      {
+        name: 'Business Centers',
+        href: PATHS.businessCenters,
+        icon: Building2,
+        requiredPermission: PermissionSlugs.BusinessCentersView,
+      },
+      {
+        name: 'Accounts',
+        href: PATHS.accounts,
+        icon: Wallet,
+        requiredPermission: PermissionSlugs.AccountsView,
       },
     ],
   },
