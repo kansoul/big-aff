@@ -143,6 +143,16 @@ export const router = createBrowserRouter([
             handle: { title: 'Users & Child Users', navSection: NAV_SECTIONS.settings },
           },
           {
+            path: routeSegment(PATHS.teams),
+            lazy: async () => {
+              const { TeamsPage } = await import('@/features/teams/pages/TeamsPage')
+              return {
+                Component: withPermission(TeamsPage, PermissionSlugs.TeamsView),
+              }
+            },
+            handle: { title: 'Teams' },
+          },
+          {
             path: routeSegment(PATHS.channels),
             lazy: async () => {
               const { ChannelsPage } = await import('@/features/channels/pages/ChannelsPage')

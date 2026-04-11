@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 
 import { accountsApi } from '@/features/accounts/api'
 import { businessCentersApi } from '@/features/business-centers/api'
+import { teamsApi } from '@/features/teams/api'
 import {
   AccountsTableCard,
   CreateAccountDialog,
@@ -14,7 +15,7 @@ import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { formatApiError } from '@/features/settings/components'
 import type { SearchableSelectOption } from '@/components/common/SearchableSelect'
-import type { BusinessCenter } from '@/features/business-centers/types'
+import type { Team } from '@/features/teams/types'
 
 const DEFAULT_FILTERS: AccountFilterParams = {
   page: 1,
@@ -44,6 +45,7 @@ export function AccountsPage() {
 
   const [data, setData] = useState<Account[]>([])
   const [businessCenterOptions, setBusinessCenterOptions] = useState<SearchableSelectOption[]>([])
+  const [teamOptions, setTeamOptions] = useState<SearchableSelectOption[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [filters, setFilters] = useState<AccountFilterParams>(DEFAULT_FILTERS)
@@ -71,14 +73,10 @@ export function AccountsPage() {
 
   const loadBusinessCenterOptions = useCallback(async () => {
     try {
-      const { data } = await businessCentersApi.list(1, 100, {
-        query: null,
-        order: null,
-        order_by: null,
-      })
+      const { data } = await businessCentersApi.listOptions()
 
       setBusinessCenterOptions(
-        data.data.map((businessCenter: BusinessCenter) => ({
+        data.data.map((businessCenter) => ({
           value: String(businessCenter.id),
           label: businessCenter.name,
         })),
@@ -91,6 +89,24 @@ export function AccountsPage() {
   useEffect(() => {
     void loadBusinessCenterOptions()
   }, [loadBusinessCenterOptions])
+
+  const loadTeamOptions = useCallback(async () => {
+    try {
+      const { data } = await teamsApi.listOptions()
+      setTeamOptions(
+        data.data.map((team: Pick<Team, 'id' | 'name'>) => ({
+          value: String(team.id),
+          label: team.name,
+        })),
+      )
+    } catch (err) {
+      toast.error(formatApiError(err))
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadTeamOptions()
+  }, [loadTeamOptions])
 
   const onFilterChange = useCallback((patch: Partial<AccountFilterParams>) => {
     const hasBusinessCenterId = Object.prototype.hasOwnProperty.call(patch, 'business_center_id')
@@ -157,6 +173,7 @@ export function AccountsPage() {
       <AccountsTableCard
         data={data}
         businessCenterOptions={businessCenterOptions}
+        teamOptions={teamOptions}
         rowCount={rowCount}
         loading={loading}
         filters={filters}
@@ -177,6 +194,7 @@ export function AccountsPage() {
         onOpenChange={setCreateOpen}
         onSuccess={onSuccess}
         businessCenterOptions={businessCenterOptions}
+        teamOptions={teamOptions}
       />
 
       <EditAccountDialog
@@ -184,6 +202,7 @@ export function AccountsPage() {
         onOpenChange={onEditOpenChange}
         onSuccess={onSuccess}
         businessCenterOptions={businessCenterOptions}
+        teamOptions={teamOptions}
       />
 
       <DeleteAccountDialog

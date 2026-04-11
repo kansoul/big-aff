@@ -56,6 +56,11 @@ export const PermissionSlugs = {
   AccountsCreate: 'accounts.create',
   AccountsUpdate: 'accounts.update',
   AccountsDelete: 'accounts.delete',
+  TeamsView: 'teams.view',
+  TeamsCreate: 'teams.create',
+  TeamsUpdate: 'teams.update',
+  TeamsDelete: 'teams.delete',
+  TeamsAssign: 'teams.assign',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -500,6 +505,43 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
             key: 'AccountsDelete',
             slug: PermissionSlugs.AccountsDelete,
             label: 'Delete',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'teams',
+    label: 'Teams',
+    screens: [
+      {
+        id: 'teams',
+        label: 'Teams',
+        permissions: [
+          {
+            key: 'TeamsView',
+            slug: PermissionSlugs.TeamsView,
+            label: 'View',
+          },
+          {
+            key: 'TeamsCreate',
+            slug: PermissionSlugs.TeamsCreate,
+            label: 'Create',
+          },
+          {
+            key: 'TeamsUpdate',
+            slug: PermissionSlugs.TeamsUpdate,
+            label: 'Update',
+          },
+          {
+            key: 'TeamsDelete',
+            slug: PermissionSlugs.TeamsDelete,
+            label: 'Delete',
+          },
+          {
+            key: 'TeamsAssign',
+            slug: PermissionSlugs.TeamsAssign,
+            label: 'Assign users',
           },
         ],
       },
