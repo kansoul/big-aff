@@ -2,15 +2,32 @@
 
 namespace App\Models\Traits\Relationship;
 
-use App\Models\TeamUser;
-use App\Models\User;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Account;
 use App\Models\BusinessCenter;
+use App\Models\TeamUser;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 trait TeamRelationship
 {
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
     /**
      * @return BelongsToMany<User, $this>
      */
