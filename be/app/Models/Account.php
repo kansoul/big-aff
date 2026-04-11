@@ -13,6 +13,7 @@ class Account extends Model
 
     protected $fillable = [
         'business_center_id',
+        'team_id',
         'account_id',
         'account_name',
         'ads_type',

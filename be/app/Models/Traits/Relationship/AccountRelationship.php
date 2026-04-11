@@ -5,14 +5,17 @@ namespace App\Models\Traits\Relationship;
 use App\Models\BusinessCenter;
 use App\Models\Campaign;
 use App\Models\Conversion;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 trait AccountRelationship
 {
     /**
+     * @return BelongsTo<BusinessCenter, $this>
      * @return HasMany<Campaign>
      */
     public function campaigns(): HasMany
@@ -26,6 +29,22 @@ trait AccountRelationship
     public function businessCenter(): BelongsTo
     {
         return $this->belongsTo(BusinessCenter::class);
+    }
+
+    /**
+     * @return BelongsTo<Team, $this>
+     */
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
+    }
+
+    /**
+     * @return BelongsToMany<User, $this>
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
     }
 
     /**
