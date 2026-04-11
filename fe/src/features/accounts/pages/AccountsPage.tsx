@@ -1,10 +1,196 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
+
+import { accountsApi } from '@/features/accounts/api'
+import { businessCentersApi } from '@/features/business-centers/api'
+import {
+  AccountsTableCard,
+  CreateAccountDialog,
+  DeleteAccountDialog,
+  EditAccountDialog,
+} from '@/features/accounts/components'
+import type { Account, AccountFilterParams } from '@/features/accounts/types'
+import { PermissionSlugs, hasPermission } from '@/constants/permissions'
+import { useAuthStore } from '@/hooks/useAuthStore'
+import { formatApiError } from '@/features/settings/components'
+import type { SearchableSelectOption } from '@/components/common/SearchableSelect'
+import type { BusinessCenter } from '@/features/business-centers/types'
+
+const DEFAULT_FILTERS: AccountFilterParams = {
+  page: 1,
+  per_page: 15,
+}
+
+function normalizeNumber(value: unknown): number | null | undefined {
+  if (value == null || value === '') {
+    return undefined
+  }
+
+  const parsed = Number(value)
+  if (Number.isNaN(parsed)) {
+    return undefined
+  }
+
+  return parsed
+}
+
 export function AccountsPage() {
+  const user = useAuthStore((s) => s.user)
+  const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
+
+  const canCreate = useMemo(() => hasPermission(perms, PermissionSlugs.AccountsCreate), [perms])
+  const canUpdate = useMemo(() => hasPermission(perms, PermissionSlugs.AccountsUpdate), [perms])
+  const canDelete = useMemo(() => hasPermission(perms, PermissionSlugs.AccountsDelete), [perms])
+
+  const [data, setData] = useState<Account[]>([])
+  const [businessCenterOptions, setBusinessCenterOptions] = useState<SearchableSelectOption[]>([])
+  const [rowCount, setRowCount] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [filters, setFilters] = useState<AccountFilterParams>(DEFAULT_FILTERS)
+
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Account | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Account | null>(null)
+
+  const loadData = useCallback(async (activeFilters: AccountFilterParams) => {
+    try {
+      setLoading(true)
+      const { data } = await accountsApi.list(activeFilters)
+      setData(data.data)
+      setRowCount(data.pagination.total)
+    } catch (err) {
+      toast.error(formatApiError(err))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadData(filters)
+  }, [loadData, filters])
+
+  const loadBusinessCenterOptions = useCallback(async () => {
+    try {
+      const { data } = await businessCentersApi.list(1, 100, {
+        query: null,
+        order: null,
+        order_by: null,
+      })
+
+      setBusinessCenterOptions(
+        data.data.map((businessCenter: BusinessCenter) => ({
+          value: String(businessCenter.id),
+          label: businessCenter.name,
+        })),
+      )
+    } catch (err) {
+      toast.error(formatApiError(err))
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadBusinessCenterOptions()
+  }, [loadBusinessCenterOptions])
+
+  const onFilterChange = useCallback((patch: Partial<AccountFilterParams>) => {
+    const hasBusinessCenterId = Object.prototype.hasOwnProperty.call(patch, 'business_center_id')
+    const hasTeamId = Object.prototype.hasOwnProperty.call(patch, 'team_id')
+
+    setFilters((prev) => ({
+      ...prev,
+      ...patch,
+      business_center_id: hasBusinessCenterId
+        ? normalizeNumber(patch.business_center_id)
+        : prev.business_center_id,
+      team_id: hasTeamId ? normalizeNumber(patch.team_id) : prev.team_id,
+      page: 1,
+    }))
+  }, [])
+
+  const onFilterReset = useCallback(() => {
+    setFilters(DEFAULT_FILTERS)
+  }, [])
+
+  const onPaginationChange = useCallback((page: number, perPage: number) => {
+    setFilters((prev) => ({ ...prev, page, per_page: perPage }))
+  }, [])
+
+  const onSortingChange = useCallback((orderBy: string | null, order: 'asc' | 'desc' | null) => {
+    setFilters((prev) => ({
+      ...prev,
+      order_by: (orderBy as AccountFilterParams['order_by']) ?? undefined,
+      order: order ?? undefined,
+      page: 1,
+    }))
+  }, [])
+
+  const onAddClick = useCallback(() => {
+    setCreateOpen(true)
+  }, [])
+
+  const onEditRow = useCallback((row: Account) => {
+    setEditTarget(row)
+  }, [])
+
+  const onDeleteRow = useCallback((row: Account) => {
+    setDeleteTarget(row)
+  }, [])
+
+  const onEditOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      setEditTarget(null)
+    }
+  }, [])
+
+  const onDeleteOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      setDeleteTarget(null)
+    }
+  }, [])
+
+  const onSuccess = useCallback(() => {
+    void loadData(filters)
+  }, [loadData, filters])
+
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Accounts</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage accounts.</p>
-      </div>
+    <div className="flex flex-col gap-8">
+      <AccountsTableCard
+        data={data}
+        businessCenterOptions={businessCenterOptions}
+        rowCount={rowCount}
+        loading={loading}
+        filters={filters}
+        onFilterChange={onFilterChange}
+        onFilterReset={onFilterReset}
+        onPaginationChange={onPaginationChange}
+        onSortingChange={onSortingChange}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+        onAddClick={onAddClick}
+        onEditRow={onEditRow}
+        onDeleteRow={onDeleteRow}
+      />
+
+      <CreateAccountDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSuccess={onSuccess}
+        businessCenterOptions={businessCenterOptions}
+      />
+
+      <EditAccountDialog
+        account={editTarget}
+        onOpenChange={onEditOpenChange}
+        onSuccess={onSuccess}
+        businessCenterOptions={businessCenterOptions}
+      />
+
+      <DeleteAccountDialog
+        account={deleteTarget}
+        onOpenChange={onDeleteOpenChange}
+        onSuccess={onSuccess}
+      />
     </div>
   )
 }
