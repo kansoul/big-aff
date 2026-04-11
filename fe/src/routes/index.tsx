@@ -231,6 +231,55 @@ export const router = createBrowserRouter([
             },
             handle: { title: 'Edit Site', navSection: NAV_SECTIONS.settings },
           },
+          {
+            path: routeSegment(PATHS.businessCenters),
+            lazy: async () => {
+              const { BusinessCentersPage } =
+                await import('@/features/business-centers/pages/BusinessCentersPage')
+              return {
+                Component: withPermission(BusinessCentersPage, PermissionSlugs.BusinessCentersView),
+              }
+            },
+            handle: { title: 'Business Centers' },
+          },
+          {
+            path: routeSegment(PATHS.businessCentersCreate),
+            lazy: async () => {
+              const { CreateBusinessCenterPage } =
+                await import('@/features/business-centers/pages/CreateBusinessCenterPage')
+              return {
+                Component: withPermission(
+                  CreateBusinessCenterPage,
+                  PermissionSlugs.BusinessCentersCreate,
+                ),
+              }
+            },
+            handle: { title: 'Create Business Center' },
+          },
+          {
+            path: routeSegment(PATHS.businessCentersEdit),
+            lazy: async () => {
+              const { EditBusinessCenterPage } =
+                await import('@/features/business-centers/pages/EditBusinessCenterPage')
+              return {
+                Component: withPermission(
+                  EditBusinessCenterPage,
+                  PermissionSlugs.BusinessCentersUpdate,
+                ),
+              }
+            },
+            handle: { title: 'Edit Business Center' },
+          },
+          {
+            path: routeSegment(PATHS.accounts),
+            lazy: async () => {
+              const { AccountsPage } = await import('@/features/accounts/pages/AccountsPage')
+              return {
+                Component: withPermission(AccountsPage, PermissionSlugs.AccountsView),
+              }
+            },
+            handle: { title: 'Accounts' },
+          },
         ],
       },
     ],

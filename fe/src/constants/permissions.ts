@@ -48,6 +48,14 @@ export const PermissionSlugs = {
   KeywordSetsCreate: 'keyword-sets.create',
   KeywordSetsUpdate: 'keyword-sets.update',
   KeywordSetsDelete: 'keyword-sets.delete',
+  BusinessCentersView: 'business-centers.view',
+  BusinessCentersCreate: 'business-centers.create',
+  BusinessCentersUpdate: 'business-centers.update',
+  BusinessCentersDelete: 'business-centers.delete',
+  AccountsView: 'accounts.view',
+  AccountsCreate: 'accounts.create',
+  AccountsUpdate: 'accounts.update',
+  AccountsDelete: 'accounts.delete',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -427,6 +435,70 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           {
             key: 'KeywordSetsDelete',
             slug: PermissionSlugs.KeywordSetsDelete,
+            label: 'Delete',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'business-centers',
+    label: 'Business Centers',
+    screens: [
+      {
+        id: 'business-centers',
+        label: 'Business Centers',
+        permissions: [
+          {
+            key: 'BusinessCentersView',
+            slug: PermissionSlugs.BusinessCentersView,
+            label: 'View',
+          },
+          {
+            key: 'BusinessCentersCreate',
+            slug: PermissionSlugs.BusinessCentersCreate,
+            label: 'Create',
+          },
+          {
+            key: 'BusinessCentersUpdate',
+            slug: PermissionSlugs.BusinessCentersUpdate,
+            label: 'Update',
+          },
+          {
+            key: 'BusinessCentersDelete',
+            slug: PermissionSlugs.BusinessCentersDelete,
+            label: 'Delete',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'accounts',
+    label: 'Accounts',
+    screens: [
+      {
+        id: 'accounts',
+        label: 'Accounts',
+        permissions: [
+          {
+            key: 'AccountsView',
+            slug: PermissionSlugs.AccountsView,
+            label: 'View',
+          },
+          {
+            key: 'AccountsCreate',
+            slug: PermissionSlugs.AccountsCreate,
+            label: 'Create',
+          },
+          {
+            key: 'AccountsUpdate',
+            slug: PermissionSlugs.AccountsUpdate,
+            label: 'Update',
+          },
+          {
+            key: 'AccountsDelete',
+            slug: PermissionSlugs.AccountsDelete,
             label: 'Delete',
           },
         ],
