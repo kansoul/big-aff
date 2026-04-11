@@ -2,6 +2,7 @@
 
 use App\Enums\Permission;
 use App\Http\Controllers\Api\AccountController;
+use App\Http\Controllers\Api\AdClientController;
 use App\Http\Controllers\Api\AdsLinkController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\BusinessCenterController;
@@ -223,5 +224,18 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::TeamsAssign->value);
         Route::post('{team}/assign-users', [TeamController::class, 'assignUsers'])
             ->middleware('permission.scope:'.Permission::TeamsAssign->value);
+    });
+
+    Route::prefix('ad-clients')->group(function () {
+        Route::get('/', [AdClientController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::AdClientsView->value);
+        Route::post('/', [AdClientController::class, 'store'])
+            ->middleware('permission.scope:'.Permission::AdClientsCreate->value);
+        Route::get('{ad_client}', [AdClientController::class, 'show'])
+            ->middleware('permission.scope:'.Permission::AdClientsView->value);
+        Route::match(['put', 'patch'], '{ad_client}', [AdClientController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::AdClientsUpdate->value);
+        Route::delete('{ad_client}', [AdClientController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::AdClientsDelete->value);
     });
 });

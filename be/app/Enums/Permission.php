@@ -134,6 +134,15 @@ enum Permission: string
     // —— Accounts (assign) ——
     case AccountsAssign = 'accounts.assign';                 // bit 56 →  72057594037927936
 
+    // —— Ad Clients ——
+    case AdClientsView = 'ad-clients.view';                  // bit 57 →  144115188075855872
+
+    case AdClientsCreate = 'ad-clients.create';              // bit 58 →  288230376151711744
+
+    case AdClientsUpdate = 'ad-clients.update';              // bit 59 →  576460752303423488
+
+    case AdClientsDelete = 'ad-clients.delete';              // bit 60 →  1152921504606846976
+
     /**
      * Bit value for this permission (1 << declaration index).
      */
