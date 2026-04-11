@@ -6,7 +6,9 @@ use App\Models\File;
 use App\Models\Role;
 use App\Models\Site;
 use App\Models\Style;
+use App\Models\Team;
 use App\Models\User;
+use App\Models\UserCampaignRuleSetting;
 use App\Models\UserParentChild;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -75,5 +77,25 @@ trait UserRelationship
         return $this->belongsToMany(Site::class, 'user_sites')
             ->withTimestamps()
             ->withPivot('deleted_at');
+    }
+
+    /**
+     * Teams this user belongs to.
+     *
+     * @return BelongsToMany<Team, $this>
+     */
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(Team::class, 'team_user')
+            ->withPivot(['joined_at', 'team_role'])
+            ->withTimestamps();
+    }
+
+    /**
+     * @return HasOne<UserCampaignRuleSetting>
+     */
+    public function campaignRuleSetting(): HasOne
+    {
+        return $this->hasOne(UserCampaignRuleSetting::class);
     }
 }

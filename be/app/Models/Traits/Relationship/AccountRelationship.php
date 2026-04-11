@@ -4,11 +4,13 @@ namespace App\Models\Traits\Relationship;
 
 use App\Models\BusinessCenter;
 use App\Models\Campaign;
+use App\Models\Conversion;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 trait AccountRelationship
 {
@@ -59,5 +61,13 @@ trait AccountRelationship
     public function updatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * @return HasOne<Conversion>
+     */
+    public function conversion(): HasOne
+    {
+        return $this->hasOne(Conversion::class);
     }
 }
