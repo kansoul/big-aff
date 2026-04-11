@@ -58,8 +58,8 @@ export function MediaPage() {
 
   useEffect(() => {
     void usersApi
-      .list(1, 100, { order: null, order_by: null })
-      .then((res) => setUsers(res.data.data))
+      .listOptions()
+      .then((res) => setUsers(res.data.data as ManagedUser[]))
       .catch(() => {
         console.log('Failed to load users for media page filter')
       })

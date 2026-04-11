@@ -45,6 +45,7 @@ type CreateAccountDialogProps = {
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
   businessCenterOptions: SearchableSelectOption[]
+  teamOptions: SearchableSelectOption[]
 }
 
 export function CreateAccountDialog({
@@ -52,6 +53,7 @@ export function CreateAccountDialog({
   onOpenChange,
   onSuccess,
   businessCenterOptions,
+  teamOptions,
 }: CreateAccountDialogProps) {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -174,17 +176,16 @@ export function CreateAccountDialog({
               name="team_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Team ID</FormLabel>
+                  <FormLabel>Team</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Enter team ID"
-                      value={field.value ?? ''}
+                    <SearchableSelect
+                      value={field.value != null ? String(field.value) : '__none__'}
+                      onValueChange={(value) =>
+                        field.onChange(value === '__none__' ? null : Number(value))
+                      }
+                      options={[{ value: '__none__', label: 'None' }, ...teamOptions]}
+                      placeholder="Select team"
                       disabled={submitting}
-                      onChange={(e) => {
-                        const nextValue = e.target.value
-                        field.onChange(nextValue === '' ? null : Number(nextValue))
-                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -315,6 +316,7 @@ type EditAccountDialogProps = {
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
   businessCenterOptions: SearchableSelectOption[]
+  teamOptions: SearchableSelectOption[]
 }
 
 export function EditAccountDialog({
@@ -322,6 +324,7 @@ export function EditAccountDialog({
   onOpenChange,
   onSuccess,
   businessCenterOptions,
+  teamOptions,
 }: EditAccountDialogProps) {
   const open = account !== null
   const [submitting, setSubmitting] = useState(false)
@@ -492,17 +495,16 @@ export function EditAccountDialog({
               name="team_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Team ID</FormLabel>
+                  <FormLabel>Team</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Enter team ID"
-                      value={field.value ?? ''}
+                    <SearchableSelect
+                      value={field.value != null ? String(field.value) : '__none__'}
+                      onValueChange={(value) =>
+                        field.onChange(value === '__none__' ? null : Number(value))
+                      }
+                      options={[{ value: '__none__', label: 'None' }, ...teamOptions]}
+                      placeholder="Select team"
                       disabled={submitting}
-                      onChange={(e) => {
-                        const nextValue = e.target.value
-                        field.onChange(nextValue === '' ? null : Number(nextValue))
-                      }}
                     />
                   </FormControl>
                   <FormMessage />

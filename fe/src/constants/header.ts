@@ -109,6 +109,7 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         name: 'Teams',
         href: PATHS.teams,
         icon: UsersRound,
+        requiredPermission: PermissionSlugs.TeamsView,
       },
       {
         name: 'Roles',

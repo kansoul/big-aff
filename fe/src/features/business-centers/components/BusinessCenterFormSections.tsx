@@ -1,16 +1,52 @@
+import { useEffect, useState } from 'react'
 import type { Control } from 'react-hook-form'
+import { toast } from 'sonner'
 
 import type { BusinessCenterCreateFormValues } from '@/features/business-centers/types'
+import { teamsApi } from '@/features/teams/api'
+import type { Team } from '@/features/teams/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { SearchableSelect } from '@/components/common/SearchableSelect'
+import { SearchableSelect, type SearchableSelectOption } from '@/components/common/SearchableSelect'
+import { formatApiError } from '@/features/settings/components'
 
 type BusinessCenterFormSectionsProps = {
   control: Control<BusinessCenterCreateFormValues>
 }
 
 export function BusinessCenterFormSections({ control }: BusinessCenterFormSectionsProps) {
+  const [teamOptions, setTeamOptions] = useState<SearchableSelectOption[]>([])
+
+  useEffect(() => {
+    let ignore = false
+
+    const loadTeamOptions = async () => {
+      try {
+        const response = await teamsApi.listOptions()
+        const teams = (response.data as { data: Pick<Team, 'id' | 'name'>[] }).data
+        if (!ignore) {
+          setTeamOptions(
+            teams.map((team) => ({
+              value: String(team.id),
+              label: team.name,
+            })),
+          )
+        }
+      } catch (err) {
+        if (!ignore) {
+          toast.error(formatApiError(err))
+        }
+      }
+    }
+
+    void loadTeamOptions()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
   return (
     <Card className="border-border shadow-none">
       <CardHeader className="pb-4">
@@ -83,14 +119,13 @@ export function BusinessCenterFormSections({ control }: BusinessCenterFormSectio
             <FormItem>
               <FormLabel>Team ID</FormLabel>
               <FormControl>
-                <Input
-                  type="number"
-                  placeholder="Enter team ID (optional)"
-                  value={field.value ?? ''}
-                  onChange={(e) => {
-                    const val = e.target.value
-                    field.onChange(val === '' ? null : Number(val))
-                  }}
+                <SearchableSelect
+                  placeholder="Select team (optional)"
+                  value={field.value == null ? '__none__' : String(field.value)}
+                  onValueChange={(value) =>
+                    field.onChange(value === '__none__' ? null : Number(value))
+                  }
+                  options={[{ value: '__none__', label: 'No team' }, ...teamOptions]}
                 />
               </FormControl>
               <FormMessage />

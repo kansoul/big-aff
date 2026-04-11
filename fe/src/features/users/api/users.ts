@@ -50,4 +50,6 @@ export const usersApi = {
     )
     return response.data.data
   },
+
+  listOptions: () => axiosInstance.get<{ data: { id: number; name: string }[] }>('/users/options'),
 }

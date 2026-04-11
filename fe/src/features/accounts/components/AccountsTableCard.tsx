@@ -168,6 +168,7 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
 type AccountsTableCardProps = {
   data: Account[]
   businessCenterOptions: SearchableSelectOption[]
+  teamOptions: SearchableSelectOption[]
   rowCount: number
   loading: boolean
   filters: AccountFilterParams
@@ -186,6 +187,7 @@ type AccountsTableCardProps = {
 function AccountsTableCardInner({
   data,
   businessCenterOptions,
+  teamOptions,
   rowCount,
   loading,
   filters,
@@ -242,13 +244,14 @@ function AccountsTableCardInner({
       },
       {
         field: 'team_id',
-        label: 'Team ID',
-        type: 'input',
+        label: 'Team',
+        type: 'select',
         value: filters.team_id != null ? String(filters.team_id) : null,
-        placeholder: 'e.g. 3',
+        options: teamOptions,
+        placeholder: 'All teams',
       },
     ],
-    [filters, businessCenterOptions],
+    [filters, businessCenterOptions, teamOptions],
   )
 
   const sorting = useMemo(
