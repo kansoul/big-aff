@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 
 import { dashboardApi } from '@/features/dashboard/api'
 import { useAuthStore } from '@/hooks/useAuthStore'
+import { PATHS } from '@/constants/paths'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser)
@@ -13,6 +14,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initAuth = async () => {
       try {
         setLoading(true)
+
+        if (window.location.pathname === PATHS.login) {
+          return
+        }
+
         const user = await dashboardApi.getMe()
         setUser(user)
       } catch {
