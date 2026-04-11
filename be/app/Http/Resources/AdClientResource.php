@@ -1,15 +1,11 @@
 <?php
 
-namespace App\Http\Resources\Team;
+namespace App\Http\Resources;
 
-use App\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/**
- * @mixin Team
- */
-class TeamResource extends JsonResource
+class AdClientResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -18,11 +14,9 @@ class TeamResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
-            'description' => $this->description,
-            'users_count' => $this->users_count,
-            'created_by' => $this->created_by,
-            'updated_by' => $this->updated_by,
+            'ad_client_id' => $this->ad_client_id,
+            'product_code' => $this->product_code,
+            'product_name' => $this->product_name,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

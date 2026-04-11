@@ -26,7 +26,7 @@ class ListTeamsAction
     {
         $ownership = OwnershipFilter::forAuthUser();
 
-        $query = Team::query();
+        $query = Team::query()->withCount('users');
         $ownership->applyTo($query);
 
         if (! empty($filters['query'])) {
