@@ -21,7 +21,10 @@ class AssignTeamAction
         $ownership = OwnershipFilter::forAuthUser();
         $ownership->authorize($team->created_by);
 
-        $userIds = array_values(array_intersect($data['user_ids'], $ownership->allowedUserIds()));
+        // Admins may assign any user; others are limited to their allowed subtree.
+        $userIds = $ownership->isAdmin()
+            ? $data['user_ids']
+            : array_values(array_intersect($data['user_ids'], $ownership->allowedUserIds()));
         $teamRole = $data['team_role'] ?? TeamRole::MEMBER->value;
         DB::transaction(function () use ($team, $userIds, $teamRole): void {
             $existing = TeamUser::query()
