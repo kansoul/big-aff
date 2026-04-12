@@ -114,6 +114,17 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     ],
   },
   {
+    name: 'Adsense',
+    items: [
+      {
+        name: 'Ad Clients',
+        href: PATHS.adClients,
+        icon: UserCog,
+        requiredPermission: PermissionSlugs.AdClientsView,
+      },
+    ],
+  },
+  {
     name: 'System',
     items: [
       {

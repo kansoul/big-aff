@@ -3,6 +3,7 @@ import {
   MantineReactTable,
   useMantineReactTable,
   type MRT_ColumnDef,
+  type MRT_RowSelectionState,
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
 } from 'mantine-react-table'
@@ -165,6 +166,10 @@ type MediaTableCardProps = {
   users: ManagedUser[]
   onUploadClick: () => void
   onDeleteFile: (file: MediaFile) => void
+  canDelete: boolean
+  selectedIds: Set<number>
+  onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
+  onBulkDeleteClick: () => void
 }
 
 function MediaTableCardInner({
@@ -180,6 +185,10 @@ function MediaTableCardInner({
   users,
   onUploadClick,
   onDeleteFile,
+  canDelete,
+  selectedIds,
+  onSelectionChange,
+  onBulkDeleteClick,
 }: MediaTableCardProps) {
   const [previewFile, setPreviewFile] = useState<MediaFile | null>(null)
 
@@ -191,6 +200,10 @@ function MediaTableCardInner({
   const sorting: MRT_SortingState = useMemo(
     () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
     [filters.order_by, filters.order],
+  )
+  const rowSelection = useMemo<MRT_RowSelectionState>(
+    () => Object.fromEntries(data.map((row) => [String(row.id), selectedIds.has(row.id)])),
+    [data, selectedIds],
   )
 
   const filterFields = useMemo<FilterFieldDef[]>(
@@ -227,6 +240,7 @@ function MediaTableCardInner({
   const table = useMantineReactTable({
     data,
     columns,
+    getRowId: (row) => String(row.id),
     manualPagination: true,
     manualSorting: true,
     rowCount,
@@ -238,12 +252,25 @@ function MediaTableCardInner({
     enableColumnFilters: false,
     enableGlobalFilter: false,
     enableColumnPinning: true,
+    enableRowSelection: canDelete,
     initialState: {
       density: 'md',
       columnVisibility: { user_id: false },
       columnPinning: { right: ['actions'] },
     },
-    state: { pagination, sorting, showLoadingOverlay: loading },
+    state: { pagination, sorting, showLoadingOverlay: loading, rowSelection },
+    onRowSelectionChange: (updater) => {
+      const newPageSelection: MRT_RowSelectionState =
+        typeof updater === 'function' ? updater(rowSelection) : updater
+      onSelectionChange((prev) => {
+        const next = new Set(prev)
+        for (const row of data) next.delete(row.id)
+        for (const [idStr, checked] of Object.entries(newPageSelection)) {
+          if (checked) next.add(Number(idStr))
+        }
+        return next
+      })
+    },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
@@ -252,6 +279,20 @@ function MediaTableCardInner({
     renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
         <div className="flex w-full items-center justify-end gap-2">
+          {canDelete && selectedIds.size > 0 ? (
+            <>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                onClick={onBulkDeleteClick}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete ({selectedIds.size})
+              </Button>
+              <div className="mx-1 h-5 w-px bg-border" />
+            </>
+          ) : null}
           <Button
             size="sm"
             className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"

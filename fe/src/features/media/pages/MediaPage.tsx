@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Loader2, Trash2 } from 'lucide-react'
 
+import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { mediaApi } from '@/features/media/api'
 import { hasFullAccess } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
@@ -55,6 +56,9 @@ export function MediaPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<MediaFile | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   useEffect(() => {
     void usersApi
@@ -158,6 +162,14 @@ export function MediaPage() {
     setDeleteTarget(file)
   }, [])
 
+  const onBulkDeleteClick = useCallback(() => {
+    setBulkDeleteOpen(true)
+  }, [])
+
+  const onBulkDeleteOpenChange = useCallback((open: boolean) => {
+    setBulkDeleteOpen(open)
+  }, [])
+
   const onConfirmDelete = useCallback(async () => {
     if (!deleteTarget) return
     try {
@@ -172,6 +184,39 @@ export function MediaPage() {
       setDeleting(false)
     }
   }, [deleteTarget, loadData])
+
+  const onConfirmBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+
+    try {
+      setBulkDeleting(true)
+      const results = await Promise.allSettled(ids.map((id) => mediaApi.delete(id)))
+      const failedIds = new Set<number>()
+      let firstError: unknown = null
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          failedIds.add(ids[index])
+          if (!firstError) firstError = result.reason
+        }
+      })
+
+      const deletedCount = ids.length - failedIds.size
+      if (deletedCount > 0) {
+        toast.success(`Deleted ${deletedCount} file${deletedCount > 1 ? 's' : ''} successfully`)
+      }
+      if (firstError) {
+        toast.error(formatApiError(firstError))
+      }
+
+      setSelectedIds(failedIds)
+      setBulkDeleteOpen(false)
+      loadData()
+    } finally {
+      setBulkDeleting(false)
+    }
+  }, [selectedIds, loadData])
 
   return (
     <div className="flex flex-col gap-8">
@@ -188,6 +233,10 @@ export function MediaPage() {
         users={users}
         onUploadClick={onUploadClick}
         onDeleteFile={onDeleteFile}
+        canDelete
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        onBulkDeleteClick={onBulkDeleteClick}
       />
       <UploadFileDialog
         open={uploadOpen}
@@ -242,6 +291,15 @@ export function MediaPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BulkDeleteDialog
+        open={bulkDeleteOpen}
+        onOpenChange={onBulkDeleteOpenChange}
+        count={selectedIds.size}
+        itemLabel="file"
+        deleting={bulkDeleting}
+        onConfirm={onConfirmBulkDelete}
+      />
     </div>
   )
 }

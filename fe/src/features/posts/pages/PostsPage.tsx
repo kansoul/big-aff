@@ -3,6 +3,7 @@ import type { MRT_SortingState } from 'mantine-react-table'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { postsApi } from '@/features/posts/api'
 import { PostsTableCard, DeletePostDialog } from '@/features/posts/components'
 import { formatApiError } from '@/features/settings/components'
@@ -44,6 +45,9 @@ export function PostsPage() {
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
   const [filters, setFilters] = useState<PostFilterParams>(DEFAULT_FILTERS)
   const [deleteTarget, setDeleteTarget] = useState<Post | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   const [refreshSignal, setRefreshSignal] = useState(0)
   const loadData = useCallback(() => {
@@ -119,33 +123,76 @@ export function PostsPage() {
     setDeleteTarget(row)
   }, [])
 
+  const onBulkDeleteClick = useCallback(() => {
+    setBulkDeleteOpen(true)
+  }, [])
+
   const onDeleteOpenChange = useCallback((open: boolean) => {
     if (!open) setDeleteTarget(null)
   }, [])
 
+  const onBulkDeleteOpenChange = useCallback((open: boolean) => {
+    setBulkDeleteOpen(open)
+  }, [])
+
   const onToggleHidden = useCallback(
-    async (row: Post) => {
-      try {
-        await postsApi.update(row.id, {
-          title: row.title,
-          slug: row.slug,
-          lang: row.lang,
-          note: row.note,
-          description: row.description,
-          content: row.content,
-          status: row.status,
-          type: row.type ?? 'normal',
-          category_id: row.category_id,
-          is_hidden: !row.is_hidden,
-        })
-        toast.success(row.is_hidden ? 'Post unhidden successfully' : 'Post hidden successfully')
-        loadData()
-      } catch (err) {
-        toast.error(formatApiError(err))
-      }
+    (row: Post) => {
+      void (async () => {
+        try {
+          await postsApi.update(row.id, {
+            title: row.title,
+            slug: row.slug,
+            lang: row.lang,
+            note: row.note,
+            description: row.description,
+            content: row.content,
+            status: row.status,
+            type: row.type ?? 'normal',
+            category_id: row.category_id,
+            is_hidden: !row.is_hidden,
+          })
+          toast.success(row.is_hidden ? 'Post unhidden successfully' : 'Post hidden successfully')
+          loadData()
+        } catch (err) {
+          toast.error(formatApiError(err))
+        }
+      })()
     },
     [loadData],
   )
+
+  const onConfirmBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+
+    try {
+      setBulkDeleting(true)
+      const results = await Promise.allSettled(ids.map((id) => postsApi.remove(id)))
+      const failedIds = new Set<number>()
+      let firstError: unknown = null
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          failedIds.add(ids[index])
+          if (!firstError) firstError = result.reason
+        }
+      })
+
+      const deletedCount = ids.length - failedIds.size
+      if (deletedCount > 0) {
+        toast.success(`Deleted ${deletedCount} post${deletedCount > 1 ? 's' : ''} successfully`)
+      }
+      if (firstError) {
+        toast.error(formatApiError(firstError))
+      }
+
+      setSelectedIds(failedIds)
+      setBulkDeleteOpen(false)
+      loadData()
+    } finally {
+      setBulkDeleting(false)
+    }
+  }, [selectedIds, loadData])
 
   return (
     <div className="flex flex-col gap-8">
@@ -167,12 +214,24 @@ export function PostsPage() {
         onEditRow={onEditRow}
         onDeleteRow={onDeleteRow}
         onToggleHidden={onToggleHidden}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        onBulkDeleteClick={onBulkDeleteClick}
       />
 
       <DeletePostDialog
         post={deleteTarget}
         onOpenChange={onDeleteOpenChange}
         onSuccess={() => void loadData()}
+      />
+
+      <BulkDeleteDialog
+        open={bulkDeleteOpen}
+        onOpenChange={onBulkDeleteOpenChange}
+        count={selectedIds.size}
+        itemLabel="post"
+        deleting={bulkDeleting}
+        onConfirm={onConfirmBulkDelete}
       />
     </div>
   )

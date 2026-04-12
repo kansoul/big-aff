@@ -3,6 +3,7 @@ import {
   MantineReactTable,
   useMantineReactTable,
   type MRT_ColumnDef,
+  type MRT_RowSelectionState,
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
   MRT_ToggleGlobalFilterButton,
@@ -134,6 +135,9 @@ type SettingsUsersTableCardProps = {
   onAddClick: () => void
   onEditRow: (row: ManagedUser) => void
   onDeleteRow: (row: ManagedUser) => void
+  selectedIds: Set<number>
+  onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
+  onBulkDeleteClick: () => void
 }
 
 function SettingsUsersTableCardInner({
@@ -151,6 +155,9 @@ function SettingsUsersTableCardInner({
   onAddClick,
   onEditRow,
   onDeleteRow,
+  selectedIds,
+  onSelectionChange,
+  onBulkDeleteClick,
 }: SettingsUsersTableCardProps) {
   const columns = useMemo(
     () => getUsersColumns({ currentUserId, canUpdate, canDelete, onEditRow, onDeleteRow }),
@@ -161,10 +168,15 @@ function SettingsUsersTableCardInner({
     () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
     [filters.order_by, filters.order],
   )
+  const rowSelection = useMemo<MRT_RowSelectionState>(
+    () => Object.fromEntries(users.map((row) => [String(row.id), selectedIds.has(row.id)])),
+    [users, selectedIds],
+  )
 
   const table = useMantineReactTable({
     data: users,
     columns,
+    getRowId: (row) => String(row.id),
     manualPagination: true,
     manualSorting: true,
     rowCount,
@@ -176,18 +188,35 @@ function SettingsUsersTableCardInner({
     enableColumnFilters: false,
     enableGlobalFilter: false,
     enableColumnPinning: true,
+    enableRowSelection: (row) => canDelete && row.original.id !== currentUserId,
     initialState: {
       density: 'md',
       columnVisibility: { parent: false, role: false },
       columnPinning: { right: ['actions'] },
     },
-    state: { pagination, sorting, showLoadingOverlay: loading },
+    state: { pagination, sorting, showLoadingOverlay: loading, rowSelection },
+    onRowSelectionChange: (updater) => {
+      const newPageSelection: MRT_RowSelectionState =
+        typeof updater === 'function' ? updater(rowSelection) : updater
+      onSelectionChange((prev) => {
+        const next = new Set(prev)
+        for (const row of users) next.delete(row.id)
+        for (const [idStr, checked] of Object.entries(newPageSelection)) {
+          if (checked) next.add(Number(idStr))
+        }
+        return next
+      })
+    },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
     mantineTableBodyRowProps: ({ row }) => ({
-      onClick: () => onEditRow(row.original),
+      onClick: (event) => {
+        const target = event.target as HTMLElement
+        if (target.closest('button,input,a,[role="checkbox"]')) return
+        onEditRow(row.original)
+      },
       sx: { cursor: 'pointer' },
     }),
     localization: {
@@ -195,6 +224,20 @@ function SettingsUsersTableCardInner({
     },
     renderToolbarInternalActions: ({ table: t }) => (
       <div className="flex items-center gap-1">
+        {canDelete && selectedIds.size > 0 ? (
+          <>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+              onClick={onBulkDeleteClick}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete ({selectedIds.size})
+            </Button>
+            <div className="mx-1 h-5 w-px bg-border" />
+          </>
+        ) : null}
         {canCreate ? (
           <Button
             size="sm"

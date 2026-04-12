@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { MRT_SortingState } from 'mantine-react-table'
 import { toast } from 'sonner'
 
+import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { businessCentersApi } from '@/features/business-centers/api'
 import { BusinessCentersTableCard } from '@/features/business-centers/components/BusinessCentersTableCard'
 import { DeleteBusinessCenterDialog } from '@/features/business-centers/components/DeleteBusinessCenterDialog'
@@ -114,8 +115,18 @@ export function BusinessCentersPage() {
 
   const [deletingItem, setDeletingItem] = useState<BusinessCenter | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   const onDeleteClick = useCallback((bc: BusinessCenter) => setDeletingItem(bc), [])
+  const onBulkDeleteClick = useCallback(() => {
+    setBulkDeleteOpen(true)
+  }, [])
+
+  const onBulkDeleteOpenChange = useCallback((open: boolean) => {
+    setBulkDeleteOpen(open)
+  }, [])
   const onDeleteDialogChange = useCallback((open: boolean) => {
     if (!open) setDeletingItem(null)
   }, [])
@@ -135,6 +146,41 @@ export function BusinessCentersPage() {
     }
   }, [deletingItem, loadData])
 
+  const onConfirmBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+
+    try {
+      setBulkDeleting(true)
+      const results = await Promise.allSettled(ids.map((id) => businessCentersApi.delete(id)))
+      const failedIds = new Set<number>()
+      let firstError: unknown = null
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          failedIds.add(ids[index])
+          if (!firstError) firstError = result.reason
+        }
+      })
+
+      const deletedCount = ids.length - failedIds.size
+      if (deletedCount > 0) {
+        toast.success(
+          `Deleted ${deletedCount} business center${deletedCount > 1 ? 's' : ''} successfully`,
+        )
+      }
+      if (firstError) {
+        toast.error(formatApiError(firstError))
+      }
+
+      setSelectedIds(failedIds)
+      setBulkDeleteOpen(false)
+      loadData()
+    } finally {
+      setBulkDeleting(false)
+    }
+  }, [selectedIds, loadData])
+
   return (
     <div className="flex flex-col gap-8">
       <BusinessCentersTableCard
@@ -153,12 +199,23 @@ export function BusinessCentersPage() {
         onEditClick={onEditClick}
         canDelete={canDelete}
         onDeleteClick={onDeleteClick}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        onBulkDeleteClick={onBulkDeleteClick}
       />
       <DeleteBusinessCenterDialog
         businessCenter={deletingItem}
         onOpenChange={onDeleteDialogChange}
         deleting={deleting}
         onConfirmDelete={onConfirmDelete}
+      />
+      <BulkDeleteDialog
+        open={bulkDeleteOpen}
+        onOpenChange={onBulkDeleteOpenChange}
+        count={selectedIds.size}
+        itemLabel="business center"
+        deleting={bulkDeleting}
+        onConfirm={onConfirmBulkDelete}
       />
     </div>
   )

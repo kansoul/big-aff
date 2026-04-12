@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
+import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { accountsApi } from '@/features/accounts/api'
 import { businessCentersApi } from '@/features/business-centers/api'
 import { teamsApi } from '@/features/teams/api'
@@ -53,6 +54,9 @@ export function AccountsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Account | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Account | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   const loadData = useCallback(async (activeFilters: AccountFilterParams) => {
     try {
@@ -164,6 +168,47 @@ export function AccountsPage() {
     }
   }, [])
 
+  const onBulkDeleteClick = useCallback(() => {
+    setBulkDeleteOpen(true)
+  }, [])
+
+  const onBulkDeleteOpenChange = useCallback((open: boolean) => {
+    setBulkDeleteOpen(open)
+  }, [])
+
+  const onConfirmBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+
+    try {
+      setBulkDeleting(true)
+      const results = await Promise.allSettled(ids.map((id) => accountsApi.remove(id)))
+      const failedIds = new Set<number>()
+      let firstError: unknown = null
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          failedIds.add(ids[index])
+          if (!firstError) firstError = result.reason
+        }
+      })
+
+      const deletedCount = ids.length - failedIds.size
+      if (deletedCount > 0) {
+        toast.success(`Deleted ${deletedCount} account${deletedCount > 1 ? 's' : ''} successfully`)
+      }
+      if (firstError) {
+        toast.error(formatApiError(firstError))
+      }
+
+      setSelectedIds(failedIds)
+      setBulkDeleteOpen(false)
+      void loadData(filters)
+    } finally {
+      setBulkDeleting(false)
+    }
+  }, [selectedIds, loadData, filters])
+
   const onSuccess = useCallback(() => {
     void loadData(filters)
   }, [loadData, filters])
@@ -187,6 +232,9 @@ export function AccountsPage() {
         onAddClick={onAddClick}
         onEditRow={onEditRow}
         onDeleteRow={onDeleteRow}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        onBulkDeleteClick={onBulkDeleteClick}
       />
 
       <CreateAccountDialog
@@ -209,6 +257,15 @@ export function AccountsPage() {
         account={deleteTarget}
         onOpenChange={onDeleteOpenChange}
         onSuccess={onSuccess}
+      />
+
+      <BulkDeleteDialog
+        open={bulkDeleteOpen}
+        onOpenChange={onBulkDeleteOpenChange}
+        count={selectedIds.size}
+        itemLabel="account"
+        deleting={bulkDeleting}
+        onConfirm={onConfirmBulkDelete}
       />
     </div>
   )

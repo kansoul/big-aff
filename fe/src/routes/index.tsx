@@ -301,6 +301,16 @@ export const router = createBrowserRouter([
             },
             handle: { title: 'Accounts' },
           },
+          {
+            path: routeSegment(PATHS.adClients),
+            lazy: async () => {
+              const { AdClientsPage } = await import('@/features/ad-clients/pages/AdClientsPage')
+              return {
+                Component: withPermission(AdClientsPage, PermissionSlugs.AdClientsView),
+              }
+            },
+            handle: { title: 'Ad Clients' },
+          },
         ],
       },
     ],

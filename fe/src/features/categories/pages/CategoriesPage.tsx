@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
+import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { categoriesApi } from '@/features/categories/api'
 import {
   CategoriesTableCard,
@@ -31,6 +32,9 @@ export function CategoriesPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Category | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   const loadData = useCallback(async (activeFilters: CategoryFilterParams) => {
     try {
@@ -88,6 +92,10 @@ export function CategoriesPage() {
     setDeleteTarget(row)
   }, [])
 
+  const onBulkDeleteClick = useCallback(() => {
+    setBulkDeleteOpen(true)
+  }, [])
+
   const onFormOpenChange = useCallback((open: boolean) => {
     setFormOpen(open)
     if (!open) setEditTarget(null)
@@ -100,6 +108,45 @@ export function CategoriesPage() {
   const onDeleteOpenChange = useCallback((open: boolean) => {
     if (!open) setDeleteTarget(null)
   }, [])
+
+  const onBulkDeleteOpenChange = useCallback((open: boolean) => {
+    setBulkDeleteOpen(open)
+  }, [])
+
+  const onConfirmBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+
+    try {
+      setBulkDeleting(true)
+      const results = await Promise.allSettled(ids.map((id) => categoriesApi.remove(id)))
+      const failedIds = new Set<number>()
+      let firstError: unknown = null
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          failedIds.add(ids[index])
+          if (!firstError) firstError = result.reason
+        }
+      })
+
+      const deletedCount = ids.length - failedIds.size
+      if (deletedCount > 0) {
+        toast.success(
+          `Deleted ${deletedCount} categor${deletedCount > 1 ? 'ies' : 'y'} successfully`,
+        )
+      }
+      if (firstError) {
+        toast.error(formatApiError(firstError))
+      }
+
+      setSelectedIds(failedIds)
+      setBulkDeleteOpen(false)
+      void loadData(filters)
+    } finally {
+      setBulkDeleting(false)
+    }
+  }, [selectedIds, loadData, filters])
 
   const onSuccess = useCallback(() => {
     void loadData(filters)
@@ -123,6 +170,9 @@ export function CategoriesPage() {
         onViewRow={onViewRow}
         onEditRow={onEditRow}
         onDeleteRow={onDeleteRow}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        onBulkDeleteClick={onBulkDeleteClick}
       />
 
       <CategoryDetailDialog category={viewTarget} onOpenChange={onDetailOpenChange} />
@@ -138,6 +188,15 @@ export function CategoriesPage() {
         category={deleteTarget}
         onOpenChange={onDeleteOpenChange}
         onSuccess={onSuccess}
+      />
+
+      <BulkDeleteDialog
+        open={bulkDeleteOpen}
+        onOpenChange={onBulkDeleteOpenChange}
+        count={selectedIds.size}
+        itemLabel="category"
+        deleting={bulkDeleting}
+        onConfirm={onConfirmBulkDelete}
       />
     </div>
   )

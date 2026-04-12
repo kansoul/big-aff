@@ -3,6 +3,7 @@ import {
   MantineReactTable,
   useMantineReactTable,
   type MRT_ColumnDef,
+  type MRT_RowSelectionState,
   MRT_ShowHideColumnsButton,
 } from 'mantine-react-table'
 import { Mail, Trash2 } from 'lucide-react'
@@ -129,6 +130,9 @@ type FollowsTableCardProps = {
   onSortingChange: (orderBy: string | null, order: 'asc' | 'desc' | null) => void
   canDelete: boolean
   onDeleteRow: (row: Follow) => void
+  selectedIds: Set<number>
+  onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
+  onBulkDeleteClick: () => void
 }
 
 function FollowsTableCardInner({
@@ -140,6 +144,9 @@ function FollowsTableCardInner({
   onSortingChange,
   canDelete,
   onDeleteRow,
+  selectedIds,
+  onSelectionChange,
+  onBulkDeleteClick,
 }: FollowsTableCardProps) {
   const columns = useMemo(() => getColumns({ canDelete, onDeleteRow }), [canDelete, onDeleteRow])
 
@@ -147,16 +154,22 @@ function FollowsTableCardInner({
     () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
     [filters.order_by, filters.order],
   )
+  const rowSelection = useMemo<MRT_RowSelectionState>(
+    () => Object.fromEntries(data.map((row) => [String(row.id), selectedIds.has(row.id)])),
+    [data, selectedIds],
+  )
 
   const table = useMantineReactTable({
     data,
     columns,
+    getRowId: (row) => String(row.id),
     manualPagination: true,
     manualSorting: true,
     rowCount,
     enableColumnFilters: false,
     enableGlobalFilter: false,
     enableColumnPinning: true,
+    enableRowSelection: canDelete,
     initialState: {
       density: 'md',
       columnVisibility: { created_at: false },
@@ -169,6 +182,19 @@ function FollowsTableCardInner({
         pageSize: filters.per_page ?? 15,
       },
       sorting,
+      rowSelection,
+    },
+    onRowSelectionChange: (updater) => {
+      const newPageSelection: MRT_RowSelectionState =
+        typeof updater === 'function' ? updater(rowSelection) : updater
+      onSelectionChange((prev) => {
+        const next = new Set(prev)
+        for (const row of data) next.delete(row.id)
+        for (const [idStr, checked] of Object.entries(newPageSelection)) {
+          if (checked) next.add(Number(idStr))
+        }
+        return next
+      })
     },
     onPaginationChange: (updater) => {
       const current = {
@@ -193,6 +219,20 @@ function FollowsTableCardInner({
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full items-center justify-end gap-2 rounded-md border bg-muted/20 p-4">
+        {canDelete && selectedIds.size > 0 ? (
+          <>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+              onClick={onBulkDeleteClick}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete ({selectedIds.size})
+            </Button>
+            <div className="mx-1 h-5 w-px bg-border" />
+          </>
+        ) : null}
         <MRT_ShowHideColumnsButton table={t} />
       </div>
     ),

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { MRT_SortingState } from 'mantine-react-table'
 import { toast } from 'sonner'
 
+import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { rolesApi } from '@/features/settings/api/roles'
 import { formatApiError } from '@/features/settings/components'
 import { usersApi } from '@/features/users/api/users'
@@ -58,9 +59,12 @@ export function SettingsUsersPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editUser, setEditUser] = useState<ManagedUser | null>(null)
   const [deleteUserRow, setDeleteUserRow] = useState<ManagedUser | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   const createForm = useForm<UserCreateFormValues>({
     resolver: zodResolver(userCreateSchema),
@@ -250,6 +254,48 @@ export function SettingsUsersPage() {
     }
   }, [])
 
+  const onBulkDeleteClick = useCallback(() => {
+    setBulkDeleteOpen(true)
+  }, [])
+
+  const onBulkDeleteOpenChange = useCallback((open: boolean) => {
+    setBulkDeleteOpen(open)
+  }, [])
+
+  const onConfirmBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+
+    try {
+      setBulkDeleting(true)
+      setFormError(null)
+      const results = await Promise.allSettled(ids.map((id) => usersApi.remove(id)))
+      const failedIds = new Set<number>()
+      let firstError: unknown = null
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          failedIds.add(ids[index])
+          if (!firstError) firstError = result.reason
+        }
+      })
+
+      const deletedCount = ids.length - failedIds.size
+      if (deletedCount > 0) {
+        toast.success(`Deleted ${deletedCount} user${deletedCount > 1 ? 's' : ''} successfully`)
+      }
+      if (firstError) {
+        setFormError(formatApiError(firstError))
+      }
+
+      setSelectedIds(failedIds)
+      setBulkDeleteOpen(false)
+      loadData()
+    } finally {
+      setBulkDeleting(false)
+    }
+  }, [selectedIds, loadData])
+
   return (
     <div className="flex flex-col gap-8">
       <SettingsUsersTableCard
@@ -267,6 +313,9 @@ export function SettingsUsersPage() {
         onAddClick={onAddClick}
         onEditRow={onEditRow}
         onDeleteRow={onDeleteRow}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        onBulkDeleteClick={onBulkDeleteClick}
       />
       <CreateUserDialog
         open={createOpen}
@@ -292,6 +341,14 @@ export function SettingsUsersPage() {
         formError={formError}
         deleting={deleting}
         onConfirmDelete={onConfirmDelete}
+      />
+      <BulkDeleteDialog
+        open={bulkDeleteOpen}
+        onOpenChange={onBulkDeleteOpenChange}
+        count={selectedIds.size}
+        itemLabel="user"
+        deleting={bulkDeleting}
+        onConfirm={onConfirmBulkDelete}
       />
     </div>
   )
