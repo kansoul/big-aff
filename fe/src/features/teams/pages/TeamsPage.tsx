@@ -10,7 +10,7 @@ import { useAuthStore } from '@/hooks/useAuthStore'
 
 const DEFAULT_FILTERS: TeamFilterParams = {
   page: 1,
-  per_page: 15,
+  per_page: 30,
 }
 
 export function TeamsPage() {

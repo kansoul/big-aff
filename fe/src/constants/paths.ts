@@ -23,6 +23,7 @@ export const PATHS = {
   styles: '/styles',
   follows: '/follows',
   teams: '/teams',
+  teamsAssignUsers: '/teams-assign-users',
   adsLinks: '/ads-links',
   businessCenters: '/business-centers',
   businessCentersCreate: '/business-centers/create',

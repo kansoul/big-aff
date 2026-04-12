@@ -53,6 +53,17 @@ export const teamUpdateSchema = z.object({
 
 export type TeamUpdateFormValues = z.infer<typeof teamUpdateSchema>
 
+export interface TeamUserOption {
+  id: number
+  name: string
+  email: string
+}
+
+export interface TeamUserOptionsResponse {
+  data: TeamUserOption[]
+  selected_ids: number[]
+}
+
 export type TeamCreatePayload = {
   name: string
   description?: string | null

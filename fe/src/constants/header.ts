@@ -106,12 +106,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         requiredPermission: PermissionSlugs.SettingsUsersView,
       },
       {
-        name: 'Teams',
-        href: PATHS.teams,
-        icon: UsersRound,
-        requiredPermission: PermissionSlugs.TeamsView,
-      },
-      {
         name: 'Roles',
         href: PATHS.settingsRoles,
         icon: UserCog,
@@ -139,6 +133,18 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         href: PATHS.accounts,
         icon: Wallet,
         requiredPermission: PermissionSlugs.AccountsView,
+      },
+      {
+        name: 'Teams',
+        href: PATHS.teams,
+        icon: UsersRound,
+        requiredPermission: PermissionSlugs.TeamsView,
+      },
+      {
+        name: 'Assign Teams',
+        href: PATHS.teamsAssignUsers,
+        icon: UsersRound,
+        requiredPermission: PermissionSlugs.TeamsAssign,
       },
     ],
   },
