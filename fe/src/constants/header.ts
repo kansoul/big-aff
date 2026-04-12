@@ -13,6 +13,7 @@ import {
   Link2,
   Palette,
   Radio,
+  SlidersHorizontal,
   UserCheck,
   UserCog,
   Users,
@@ -144,6 +145,12 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         href: PATHS.accounts,
         icon: Wallet,
         requiredPermission: PermissionSlugs.AccountsView,
+      },
+      {
+        name: 'Campaign Rules',
+        href: PATHS.campaignRuleSettings,
+        icon: SlidersHorizontal,
+        requiredPermission: PermissionSlugs.CampaignRuleSettingsView,
       },
       {
         name: 'Teams',

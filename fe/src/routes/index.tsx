@@ -302,6 +302,20 @@ export const router = createBrowserRouter([
             handle: { title: 'Accounts' },
           },
           {
+            path: routeSegment(PATHS.campaignRuleSettings),
+            lazy: async () => {
+              const { CampaignRuleSettingsPage } =
+                await import('@/features/campaign-rule-settings/pages/CampaignRuleSettingsPage')
+              return {
+                Component: withPermission(
+                  CampaignRuleSettingsPage,
+                  PermissionSlugs.CampaignRuleSettingsView,
+                ),
+              }
+            },
+            handle: { title: 'Manage Campaign Rule Settings' },
+          },
+          {
             path: routeSegment(PATHS.adClients),
             lazy: async () => {
               const { AdClientsPage } = await import('@/features/ad-clients/pages/AdClientsPage')
