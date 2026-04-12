@@ -3,6 +3,7 @@ import {
   MantineReactTable,
   useMantineReactTable,
   type MRT_ColumnDef,
+  type MRT_RowSelectionState,
   MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
 import { AlertCircle, Plus, Trash2 } from 'lucide-react'
@@ -18,6 +19,9 @@ type StylesTableCardProps = {
   canDelete: boolean
   onAddClick: () => void
   onDeleteRow: (row: Style) => void
+  selectedIds: Set<number>
+  onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
+  onBulkDeleteClick: () => void
 }
 
 function getColumns(meta: {
@@ -87,17 +91,37 @@ function StylesTableCardInner({
   canDelete,
   onAddClick,
   onDeleteRow,
+  selectedIds,
+  onSelectionChange,
+  onBulkDeleteClick,
 }: StylesTableCardProps) {
   const columns = useMemo(() => getColumns({ canDelete, onDeleteRow }), [canDelete, onDeleteRow])
+  const rowSelection = useMemo<MRT_RowSelectionState>(
+    () => Object.fromEntries(styles.map((row) => [String(row.id), selectedIds.has(row.id)])),
+    [styles, selectedIds],
+  )
 
   const table = useMantineReactTable({
     data: styles,
     columns,
+    getRowId: (row) => String(row.id),
     enableColumnFilters: false,
     enableGlobalFilter: true,
     positionGlobalFilter: 'left',
+    enableRowSelection: canDelete,
     initialState: { showGlobalFilter: true, density: 'md' },
-    state: { showLoadingOverlay: loading },
+    state: { showLoadingOverlay: loading, rowSelection },
+    onRowSelectionChange: (updater) => {
+      const newSelection: MRT_RowSelectionState =
+        typeof updater === 'function' ? updater(rowSelection) : updater
+      onSelectionChange(() => {
+        const next = new Set<number>()
+        for (const [idStr, checked] of Object.entries(newSelection)) {
+          if (checked) next.add(Number(idStr))
+        }
+        return next
+      })
+    },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
@@ -109,6 +133,20 @@ function StylesTableCardInner({
     localization: { rowsPerPage: 'Per Page' },
     renderToolbarInternalActions: ({ table: t }) => (
       <div className="flex items-center gap-1">
+        {canDelete && selectedIds.size > 0 ? (
+          <>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+              onClick={onBulkDeleteClick}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete ({selectedIds.size})
+            </Button>
+            <div className="mx-1 h-5 w-px bg-border" />
+          </>
+        ) : null}
         {canCreate ? (
           <Button
             size="sm"

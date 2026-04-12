@@ -7,173 +7,116 @@ import {
   type MRT_RowSelectionState,
   useMantineReactTable,
 } from 'mantine-react-table'
-import { Pencil, Plus, Trash2, Wallet } from 'lucide-react'
+import { CreditCard, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
-import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
-import type { Account, AccountFilterParams } from '@/features/accounts/types'
-import type { SearchableSelectOption } from '@/components/common/SearchableSelect'
+import type { AdClient, AdClientFilterParams } from '@/features/ad-clients/types'
 
 type ActionMeta = {
   canUpdate: boolean
   canDelete: boolean
-  onEditRow: (row: Account) => void
-  onDeleteRow: (row: Account) => void
+  onEditRow: (row: AdClient) => void
+  onDeleteRow: (row: AdClient) => void
 }
 
-function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
+function getColumns(meta: ActionMeta): MRT_ColumnDef<AdClient>[] {
   const { canUpdate, canDelete, onEditRow, onDeleteRow } = meta
 
   return [
     {
-      accessorKey: 'account_id',
-      header: 'Account ID',
-      size: 180,
+      accessorKey: 'ad_client_id',
+      header: 'Ad Client ID',
+      size: 220,
       Cell: ({ row }) => (
         <span className="font-mono text-xs font-medium text-foreground">
-          {row.original.account_id}
+          {row.original.ad_client_id}
         </span>
       ),
     },
     {
-      accessorKey: 'account_name',
-      header: 'Account Name',
-      size: 220,
+      accessorKey: 'product_code',
+      header: 'Product Code',
+      size: 160,
       Cell: ({ row }) => {
-        const accountName = row.original.account_name
-        if (!accountName) return <span className="text-muted-foreground/50">-</span>
-        return <span className="font-medium text-foreground">{accountName}</span>
+        const val = row.original.product_code
+        if (!val) return <span className="text-muted-foreground/50">—</span>
+        return (
+          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
+            {val}
+          </span>
+        )
       },
     },
     {
-      accessorKey: 'business_center',
-      header: 'Business Center',
-      size: 180,
-      enableSorting: false,
+      accessorKey: 'product_name',
+      header: 'Product Name',
+      size: 200,
       Cell: ({ row }) => {
-        const businessCenter = row.original.business_center
-        if (!businessCenter) return <span className="text-muted-foreground/50">-</span>
-        return <span className="text-muted-foreground">{businessCenter.name}</span>
+        const val = row.original.product_name
+        if (!val) return <span className="text-muted-foreground/50">—</span>
+        return <span className="text-muted-foreground">{val}</span>
       },
-    },
-    {
-      accessorKey: 'team',
-      header: 'Team',
-      size: 150,
-      enableSorting: false,
-      Cell: ({ row }) => {
-        const team = row.original.team
-        if (!team) return <span className="text-muted-foreground/50">-</span>
-        return <span className="text-muted-foreground">{team.name}</span>
-      },
-    },
-    {
-      accessorKey: 'ads_type',
-      header: 'Ads Type',
-      size: 110,
-      Cell: ({ row }) => {
-        const adsType = row.original.ads_type
-        return <span className="capitalize text-muted-foreground">{adsType}</span>
-      },
-    },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      size: 120,
-      Cell: ({ row }) => {
-        const status = row.original.status
-        if (!status) return <span className="text-muted-foreground/50">-</span>
-        return <StatusBadge status={status} label={status} />
-      },
-    },
-    {
-      accessorKey: 'is_special',
-      header: 'Special',
-      size: 90,
-      enableSorting: false,
-      Cell: ({ row }) =>
-        row.original.is_special ? (
-          <StatusBadge status="active" label="Yes" />
-        ) : (
-          <span className="text-muted-foreground">No</span>
-        ),
-    },
-    {
-      accessorKey: 'sync_to_mcc',
-      header: 'Sync MCC',
-      size: 100,
-      enableSorting: false,
-      Cell: ({ row }) =>
-        row.original.sync_to_mcc ? (
-          <StatusBadge status="active" label="On" />
-        ) : (
-          <span className="text-muted-foreground">Off</span>
-        ),
     },
     {
       accessorKey: 'created_at',
       header: 'Created At',
       size: 170,
       Cell: ({ row }) => {
-        const createdAt = row.original.created_at
-        if (!createdAt) return <span className="text-muted-foreground/50">-</span>
-        return <span className="text-muted-foreground">{new Date(createdAt).toLocaleString()}</span>
+        const val = row.original.created_at
+        if (!val) return <span className="text-muted-foreground/50">—</span>
+        return <span className="text-muted-foreground">{new Date(val).toLocaleString()}</span>
       },
     },
     {
       id: 'actions',
-      header: 'Actions',
-      size: 170,
+      header: 'Action',
+      size: 80,
       enableSorting: false,
       enableGlobalFilter: false,
       enableHiding: false,
       mantineTableHeadCellProps: {
-        sx: { width: 170, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+        sx: { width: 80, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
       },
-      mantineTableBodyCellProps: { style: { width: 170 } },
-      Cell: ({ row }: { row: { original: Account } }) => (
+      mantineTableBodyCellProps: { style: { width: 80 } },
+      Cell: ({ row }: { row: { original: AdClient } }) => (
         <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
           {canUpdate ? (
             <Button
               type="button"
               variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-              aria-label={`Edit ${row.original.account_id}`}
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              aria-label={`Edit ${row.original.ad_client_id}`}
               onClick={() => onEditRow(row.original)}
             >
               <Pencil className="h-3.5 w-3.5" />
-              Edit
             </Button>
           ) : null}
           {canDelete ? (
             <Button
               type="button"
               variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-              aria-label={`Delete ${row.original.account_id}`}
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              aria-label={`Delete ${row.original.ad_client_id}`}
               onClick={() => onDeleteRow(row.original)}
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Delete
             </Button>
           ) : null}
         </div>
       ),
-    } satisfies MRT_ColumnDef<Account>,
+    } satisfies MRT_ColumnDef<AdClient>,
   ]
 }
 
-type AccountsTableCardProps = {
-  data: Account[]
-  businessCenterOptions: SearchableSelectOption[]
-  teamOptions: SearchableSelectOption[]
+type AdClientsTableCardProps = {
+  data: AdClient[]
   rowCount: number
   loading: boolean
-  filters: AccountFilterParams
-  onFilterChange: (patch: Partial<AccountFilterParams>) => void
+  filters: AdClientFilterParams
+  onFilterChange: (patch: Partial<AdClientFilterParams>) => void
   onFilterReset: () => void
   onPaginationChange: (page: number, perPage: number) => void
   onSortingChange: (orderBy: string | null, order: 'asc' | 'desc' | null) => void
@@ -181,17 +124,15 @@ type AccountsTableCardProps = {
   canUpdate: boolean
   canDelete: boolean
   onAddClick: () => void
-  onEditRow: (row: Account) => void
-  onDeleteRow: (row: Account) => void
+  onEditRow: (row: AdClient) => void
+  onDeleteRow: (row: AdClient) => void
   selectedIds: Set<number>
   onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
   onBulkDeleteClick: () => void
 }
 
-function AccountsTableCardInner({
+function AdClientsTableCardInner({
   data,
-  businessCenterOptions,
-  teamOptions,
   rowCount,
   loading,
   filters,
@@ -208,7 +149,7 @@ function AccountsTableCardInner({
   selectedIds,
   onSelectionChange,
   onBulkDeleteClick,
-}: AccountsTableCardProps) {
+}: AdClientsTableCardProps) {
   const columns = useMemo(
     () => getColumns({ canUpdate, canDelete, onEditRow, onDeleteRow }),
     [canUpdate, canDelete, onEditRow, onDeleteRow],
@@ -221,50 +162,19 @@ function AccountsTableCardInner({
         label: 'Keyword',
         type: 'input',
         value: filters.query ?? null,
-        placeholder: 'Search account id/name…',
-      },
-      {
-        field: 'ads_type',
-        label: 'Ads Type',
-        type: 'select',
-        value: filters.ads_type ?? null,
-        options: [
-          { value: 'facebook', label: 'Facebook' },
-          { value: 'google', label: 'Google' },
-          { value: 'unknown', label: 'Unknown' },
-        ],
-      },
-      {
-        field: 'status',
-        label: 'Status',
-        type: 'input',
-        value: filters.status ?? null,
-        placeholder: 'e.g. active',
-      },
-      {
-        field: 'business_center_id',
-        label: 'Business Center ID',
-        type: 'select',
-        value: filters.business_center_id != null ? String(filters.business_center_id) : null,
-        options: businessCenterOptions,
-        placeholder: 'All business centers',
-      },
-      {
-        field: 'team_id',
-        label: 'Team',
-        type: 'select',
-        value: filters.team_id != null ? String(filters.team_id) : null,
-        options: teamOptions,
-        placeholder: 'All teams',
+        placeholder: 'Search by ID, code or name…',
       },
     ],
-    [filters, businessCenterOptions, teamOptions],
+    [filters],
   )
 
   const sorting = useMemo(
     () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
     [filters.order_by, filters.order],
   )
+
+  // Derive MRT rowSelection from the global selectedIds for the current page only.
+  // Keys are string row IDs (ad client `id`); true = selected.
   const rowSelection = useMemo<MRT_RowSelectionState>(
     () => Object.fromEntries(data.map((row) => [String(row.id), selectedIds.has(row.id)])),
     [data, selectedIds],
@@ -272,29 +182,8 @@ function AccountsTableCardInner({
 
   const onApplyFilters = useCallback(
     (values: Record<string, unknown>) => {
-      const parseNullableId = (value: unknown): number | null | undefined => {
-        if (value == null || value === '') {
-          return undefined
-        }
-        if (typeof value !== 'string') {
-          return undefined
-        }
-
-        const parsed = Number(value)
-        return Number.isNaN(parsed) ? undefined : parsed
-      }
-
       onFilterChange({
         query: typeof values.query === 'string' ? values.query : undefined,
-        ads_type:
-          values.ads_type === 'facebook' ||
-          values.ads_type === 'google' ||
-          values.ads_type === 'unknown'
-            ? values.ads_type
-            : undefined,
-        status: typeof values.status === 'string' ? values.status : undefined,
-        business_center_id: parseNullableId(values.business_center_id),
-        team_id: parseNullableId(values.team_id),
       })
     },
     [onFilterChange],
@@ -311,15 +200,10 @@ function AccountsTableCardInner({
     enableGlobalFilter: false,
     enableColumnPinning: true,
     enableRowSelection: canDelete,
+    positionToolbarAlertBanner: 'none',
     initialState: {
       density: 'md',
       columnPinning: { right: ['actions'] },
-      columnVisibility: {
-        business_center: false,
-        team: false,
-        is_special: false,
-        sync_to_mcc: false,
-      },
     },
     state: {
       showLoadingOverlay: loading,
@@ -335,6 +219,7 @@ function AccountsTableCardInner({
         typeof updater === 'function' ? updater(rowSelection) : updater
       onSelectionChange((prev) => {
         const next = new Set(prev)
+        // Remove all current-page IDs, then re-add the ones still selected
         for (const row of data) next.delete(row.id)
         for (const [idStr, checked] of Object.entries(newPageSelection)) {
           if (checked) next.add(Number(idStr))
@@ -388,7 +273,7 @@ function AccountsTableCardInner({
                 onClick={onAddClick}
               >
                 <Plus className="h-3.5 w-3.5" />
-                Add Account
+                Add Ad Client
               </Button>
               <div className="mx-1 h-5 w-px bg-border" />
             </>
@@ -406,8 +291,8 @@ function AccountsTableCardInner({
     ),
     renderEmptyRowsFallback: () => (
       <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <Wallet className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No accounts found.</p>
+        <CreditCard className="h-8 w-8 text-muted-foreground/30" />
+        <p className="text-sm text-muted-foreground">No ad clients found.</p>
       </div>
     ),
   })
@@ -415,4 +300,4 @@ function AccountsTableCardInner({
   return <MantineReactTable table={table} />
 }
 
-export const AccountsTableCard = memo(AccountsTableCardInner)
+export const AdClientsTableCard = memo(AdClientsTableCardInner)

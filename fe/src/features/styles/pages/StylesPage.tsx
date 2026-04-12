@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
+import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { formatApiError } from '@/features/settings/components'
 import { stylesApi } from '@/features/styles/api'
 import {
@@ -33,8 +34,11 @@ export function StylesPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
   const [importErrors, setImportErrors] = useState<string[]>([])
   const [importSuccessCount, setImportSuccessCount] = useState(0)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
 
   const createForm = useForm<StyleBulkCreateFormValues>({
     resolver: zodResolver(styleBulkCreateSchema),
@@ -94,6 +98,14 @@ export function StylesPage() {
     setDeleteRow(row)
   }, [])
 
+  const onBulkDeleteClick = useCallback(() => {
+    setBulkDeleteOpen(true)
+  }, [])
+
+  const onBulkDeleteOpenChange = useCallback((open: boolean) => {
+    setBulkDeleteOpen(open)
+  }, [])
+
   const onDeleteOpenChange = useCallback((open: boolean) => {
     if (!open) {
       setDeleteRow(null)
@@ -117,6 +129,39 @@ export function StylesPage() {
     }
   }
 
+  const onBulkDeleteConfirm = useCallback(async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+
+    try {
+      setBulkDeleting(true)
+      const results = await Promise.allSettled(ids.map((id) => stylesApi.remove(id)))
+      const failedIds = new Set<number>()
+      let firstError: unknown = null
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          failedIds.add(ids[index])
+          if (!firstError) firstError = result.reason
+        }
+      })
+
+      const deletedCount = ids.length - failedIds.size
+      if (deletedCount > 0) {
+        setDeleteError(null)
+      }
+      if (firstError) {
+        setDeleteError(formatApiError(firstError))
+      }
+
+      setSelectedIds(failedIds)
+      setBulkDeleteOpen(false)
+      await loadData()
+    } finally {
+      setBulkDeleting(false)
+    }
+  }, [selectedIds, loadData])
+
   const onAddClick = useCallback(() => {
     setFormError(null)
     setImportErrors([])
@@ -134,6 +179,9 @@ export function StylesPage() {
         canDelete={canDelete}
         onAddClick={onAddClick}
         onDeleteRow={onDeleteRow}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        onBulkDeleteClick={onBulkDeleteClick}
       />
       <BulkCreateStyleDialog
         open={createOpen}
@@ -151,6 +199,14 @@ export function StylesPage() {
         submitting={submitting}
         error={deleteError}
         onConfirm={onDeleteConfirm}
+      />
+      <BulkDeleteDialog
+        open={bulkDeleteOpen}
+        onOpenChange={onBulkDeleteOpenChange}
+        count={selectedIds.size}
+        itemLabel="style"
+        deleting={bulkDeleting}
+        onConfirm={onBulkDeleteConfirm}
       />
     </div>
   )
