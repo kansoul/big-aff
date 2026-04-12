@@ -74,7 +74,7 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
       size: 110,
       Cell: ({ row }) => {
         const adsType = row.original.ads_type
-        return <span className="capitalize text-muted-foreground">{adsType}</span>
+        return <StatusBadge status={adsType} label={adsType} className="capitalize" />
       },
     },
     {

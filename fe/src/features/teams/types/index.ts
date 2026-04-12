@@ -2,11 +2,14 @@ import { z } from 'zod'
 
 export type TeamOrderBy = 'id' | 'name' | 'created_at'
 export type TeamOrder = 'asc' | 'desc'
+export type TeamRole = 'manager' | 'leader' | 'member'
 
 export interface Team {
   id: number
   name: string
   description: string | null
+  users_count?: number
+  users?: TeamUserOption[]
   created_by: number | null
   updated_by: number | null
   created_at: string | null
@@ -72,4 +75,9 @@ export type TeamCreatePayload = {
 export type TeamUpdatePayload = {
   name?: string
   description?: string | null
+}
+
+export type TeamAssignUsersPayload = {
+  user_ids: number[]
+  team_role: TeamRole | null
 }

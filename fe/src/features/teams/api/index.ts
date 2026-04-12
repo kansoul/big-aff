@@ -1,6 +1,7 @@
 import { axiosInstance } from '@/shared/api/axios'
 import { isNil } from '@/lib/utils'
 import type {
+  TeamAssignUsersPayload,
   Team,
   TeamCreatePayload,
   TeamFilterParams,
@@ -38,8 +39,8 @@ export const teamsApi = {
   userOptions: (teamId: number) =>
     axiosInstance.get<TeamUserOptionsResponse>(`/teams/${teamId}/user-options`),
 
-  assignUsers: (teamId: number, userIds: number[]) =>
-    axiosInstance.post(`/teams/${teamId}/assign-users`, { user_ids: userIds }),
+  assignUsers: (teamId: number, payload: TeamAssignUsersPayload) =>
+    axiosInstance.post(`/teams/${teamId}/assign-users`, payload),
 
   remove: (id: number) => axiosInstance.delete(`/teams/${id}`),
 }

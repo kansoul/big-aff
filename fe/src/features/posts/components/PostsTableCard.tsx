@@ -29,6 +29,11 @@ type ActionMeta = {
 
 function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
   const { canUpdate, canDelete, onEditRow, onDeleteRow, onToggleHidden } = meta
+  const typeLabels: Record<string, string> = {
+    normal: 'Normal',
+    ai: 'AI',
+    wordpress: 'WordPress',
+  }
 
   return [
     {
@@ -52,11 +57,7 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
       Cell: ({ row }) => {
         const t = row.original.type
         if (!t) return <span className="text-muted-foreground/50">—</span>
-        return (
-          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
-            {t}
-          </span>
-        )
+        return <StatusBadge status={t} label={typeLabels[t] ?? t} />
       },
     },
     {
