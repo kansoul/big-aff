@@ -8,6 +8,7 @@ use App\Http\Requests\User\ListUsersRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Resources\ManagedUserResource;
+use App\Http\Resources\User\UserOptionResource;
 use App\Models\User;
 use App\Services\User\UserService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -94,10 +95,7 @@ class UserController extends BaseController
             ->get();
 
         return $this->sendResponse([
-            'data' => $users->map(fn (User $user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-            ]),
+            'data' => UserOptionResource::collection($users),
         ]);
     }
 
