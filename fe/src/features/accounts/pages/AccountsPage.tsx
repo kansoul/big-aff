@@ -19,7 +19,7 @@ import type { Team } from '@/features/teams/types'
 
 const DEFAULT_FILTERS: AccountFilterParams = {
   page: 1,
-  per_page: 15,
+  per_page: 30,
 }
 
 function normalizeNumber(value: unknown): number | null | undefined {

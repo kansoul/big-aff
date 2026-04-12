@@ -153,6 +153,17 @@ export const router = createBrowserRouter([
             handle: { title: 'Teams' },
           },
           {
+            path: routeSegment(PATHS.teamsAssignUsers),
+            lazy: async () => {
+              const { AssignTeamUsersPage } =
+                await import('@/features/teams/pages/AssignTeamUsersPage')
+              return {
+                Component: withPermission(AssignTeamUsersPage, PermissionSlugs.TeamsAssign),
+              }
+            },
+            handle: { title: 'Assign Team Users' },
+          },
+          {
             path: routeSegment(PATHS.channels),
             lazy: async () => {
               const { ChannelsPage } = await import('@/features/channels/pages/ChannelsPage')

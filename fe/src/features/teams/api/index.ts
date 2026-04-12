@@ -6,6 +6,7 @@ import type {
   TeamFilterParams,
   TeamListResponse,
   TeamUpdatePayload,
+  TeamUserOptionsResponse,
 } from '@/features/teams/types'
 
 export const teamsApi = {
@@ -33,6 +34,12 @@ export const teamsApi = {
     }),
 
   listOptions: () => axiosInstance.get<{ data: { id: number; name: string }[] }>('/teams/options'),
+
+  userOptions: (teamId: number) =>
+    axiosInstance.get<TeamUserOptionsResponse>(`/teams/${teamId}/user-options`),
+
+  assignUsers: (teamId: number, userIds: number[]) =>
+    axiosInstance.post(`/teams/${teamId}/assign-users`, { user_ids: userIds }),
 
   remove: (id: number) => axiosInstance.delete(`/teams/${id}`),
 }
