@@ -28,14 +28,14 @@ class AssignTeamAction
                 ->where('team_id', $team->id)
                 ->whereIn('user_id', $userIds)
                 ->pluck('user_id')
-                ->map(fn($id) => (int) $id)
+                ->map(fn ($id) => (int) $id)
                 ->all();
 
             $toInsert = array_diff($userIds, $existing);
 
             if (! empty($toInsert)) {
                 $now = now();
-                $rows = array_map(fn(int $userId) => [
+                $rows = array_map(fn (int $userId) => [
                     'team_id' => $team->id,
                     'user_id' => $userId,
                     'team_role' => $teamRole,
