@@ -57,6 +57,12 @@ export function AccountsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [updatingToggleKeys, setUpdatingToggleKeys] = useState<Set<string>>(new Set())
+
+  const getToggleKey = useCallback(
+    (id: number, field: 'is_special' | 'sync_to_mcc') => `${id}:${field}`,
+    [],
+  )
 
   const loadData = useCallback(async (activeFilters: AccountFilterParams) => {
     try {
@@ -156,6 +162,51 @@ export function AccountsPage() {
     setDeleteTarget(row)
   }, [])
 
+  const onToggleField = useCallback(
+    async (row: Account, field: 'is_special' | 'sync_to_mcc', checked: boolean) => {
+      const key = getToggleKey(row.id, field)
+
+      setUpdatingToggleKeys((prev) => {
+        const next = new Set(prev)
+        next.add(key)
+        return next
+      })
+
+      try {
+        const { data: response } = await accountsApi.update(row.id, {
+          account_id: row.account_id,
+          account_name: row.account_name,
+          ads_type: row.ads_type,
+          business_center_id: row.business_center_id,
+          team_id: row.team_id,
+          status: row.status,
+          is_special: field === 'is_special' ? checked : row.is_special,
+          sync_to_mcc: field === 'sync_to_mcc' ? checked : row.sync_to_mcc,
+        })
+
+        setData((prev) => prev.map((item) => (item.id === row.id ? response.data : item)))
+        toast.success(
+          `${field === 'is_special' ? 'Special' : 'Sync to MCC'} updated to ${checked ? 'On' : 'Off'}`,
+        )
+      } catch (err) {
+        toast.error(formatApiError(err))
+      } finally {
+        setUpdatingToggleKeys((prev) => {
+          const next = new Set(prev)
+          next.delete(key)
+          return next
+        })
+      }
+    },
+    [getToggleKey],
+  )
+
+  const isFieldUpdating = useCallback(
+    (rowId: number, field: 'is_special' | 'sync_to_mcc') =>
+      updatingToggleKeys.has(getToggleKey(rowId, field)),
+    [getToggleKey, updatingToggleKeys],
+  )
+
   const onEditOpenChange = useCallback((open: boolean) => {
     if (!open) {
       setEditTarget(null)
@@ -232,6 +283,8 @@ export function AccountsPage() {
         onAddClick={onAddClick}
         onEditRow={onEditRow}
         onDeleteRow={onDeleteRow}
+        onToggleField={onToggleField}
+        isFieldUpdating={isFieldUpdating}
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         onBulkDeleteClick={onBulkDeleteClick}

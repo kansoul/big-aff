@@ -9,10 +9,9 @@ import { rolesApi } from '@/features/settings/api/roles'
 import { formatApiError } from '@/features/settings/components'
 import { usersApi } from '@/features/users/api/users'
 import {
-  CreateUserDialog,
   DeleteUserDialog,
-  EditUserDialog,
   SettingsUsersTableCard,
+  UserFormDialog,
 } from '@/features/users/components'
 import {
   userCreateSchema,
@@ -317,7 +316,7 @@ export function SettingsUsersPage() {
         onSelectionChange={setSelectedIds}
         onBulkDeleteClick={onBulkDeleteClick}
       />
-      <CreateUserDialog
+      <UserFormDialog
         open={createOpen}
         onOpenChange={onCreateOpenChange}
         formError={formError}
@@ -326,9 +325,10 @@ export function SettingsUsersPage() {
         submitting={submitting}
         onSubmit={onCreateSubmit}
       />
-      <EditUserDialog
-        userRow={editUser}
+      <UserFormDialog
+        open={!!editUser}
         onOpenChange={onEditOpenChange}
+        user={editUser}
         formError={formError}
         form={editForm}
         roles={roles}

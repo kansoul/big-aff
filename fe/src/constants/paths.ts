@@ -30,6 +30,7 @@ export const PATHS = {
   businessCentersEdit: '/business-centers/:id/edit',
   accounts: '/accounts',
   adClients: '/ad-clients',
+  campaignRuleSettings: '/campaign-rule-settings',
 } as const
 
 export const postViewPath = (id: number | string) => `/posts/${id}`

@@ -12,18 +12,23 @@ import { Pencil, Plus, Trash2, Wallet } from 'lucide-react'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import type { Account, AccountFilterParams } from '@/features/accounts/types'
 import type { SearchableSelectOption } from '@/components/common/SearchableSelect'
+
+type ToggleField = 'is_special' | 'sync_to_mcc'
 
 type ActionMeta = {
   canUpdate: boolean
   canDelete: boolean
   onEditRow: (row: Account) => void
   onDeleteRow: (row: Account) => void
+  onToggleField: (row: Account, field: ToggleField, checked: boolean) => void | Promise<void>
+  isFieldUpdating: (rowId: number, field: ToggleField) => boolean
 }
 
 function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
-  const { canUpdate, canDelete, onEditRow, onDeleteRow } = meta
+  const { canUpdate, canDelete, onEditRow, onDeleteRow, onToggleField, isFieldUpdating } = meta
 
   return [
     {
@@ -90,26 +95,38 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
     {
       accessorKey: 'is_special',
       header: 'Special',
-      size: 90,
+      size: 110,
       enableSorting: false,
-      Cell: ({ row }) =>
-        row.original.is_special ? (
-          <StatusBadge status="active" label="Yes" />
-        ) : (
-          <span className="text-muted-foreground">No</span>
-        ),
+      Cell: ({ row }) => (
+        <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+          <Switch
+            checked={row.original.is_special}
+            disabled={!canUpdate || isFieldUpdating(row.original.id, 'is_special')}
+            aria-label={`Toggle special for ${row.original.account_id}`}
+            onCheckedChange={(checked) => {
+              void onToggleField(row.original, 'is_special', checked)
+            }}
+          />
+        </div>
+      ),
     },
     {
       accessorKey: 'sync_to_mcc',
       header: 'Sync MCC',
-      size: 100,
+      size: 120,
       enableSorting: false,
-      Cell: ({ row }) =>
-        row.original.sync_to_mcc ? (
-          <StatusBadge status="active" label="On" />
-        ) : (
-          <span className="text-muted-foreground">Off</span>
-        ),
+      Cell: ({ row }) => (
+        <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+          <Switch
+            checked={row.original.sync_to_mcc}
+            disabled={!canUpdate || isFieldUpdating(row.original.id, 'sync_to_mcc')}
+            aria-label={`Toggle sync to MCC for ${row.original.account_id}`}
+            onCheckedChange={(checked) => {
+              void onToggleField(row.original, 'sync_to_mcc', checked)
+            }}
+          />
+        </div>
+      ),
     },
     {
       accessorKey: 'created_at',
@@ -183,6 +200,8 @@ type AccountsTableCardProps = {
   onAddClick: () => void
   onEditRow: (row: Account) => void
   onDeleteRow: (row: Account) => void
+  onToggleField: (row: Account, field: ToggleField, checked: boolean) => void | Promise<void>
+  isFieldUpdating: (rowId: number, field: ToggleField) => boolean
   selectedIds: Set<number>
   onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
   onBulkDeleteClick: () => void
@@ -205,13 +224,23 @@ function AccountsTableCardInner({
   onAddClick,
   onEditRow,
   onDeleteRow,
+  onToggleField,
+  isFieldUpdating,
   selectedIds,
   onSelectionChange,
   onBulkDeleteClick,
 }: AccountsTableCardProps) {
   const columns = useMemo(
-    () => getColumns({ canUpdate, canDelete, onEditRow, onDeleteRow }),
-    [canUpdate, canDelete, onEditRow, onDeleteRow],
+    () =>
+      getColumns({
+        canUpdate,
+        canDelete,
+        onEditRow,
+        onDeleteRow,
+        onToggleField,
+        isFieldUpdating,
+      }),
+    [canUpdate, canDelete, onEditRow, onDeleteRow, onToggleField, isFieldUpdating],
   )
 
   const filterFields = useMemo<FilterFieldDef[]>(
@@ -317,8 +346,6 @@ function AccountsTableCardInner({
       columnVisibility: {
         business_center: false,
         team: false,
-        is_special: false,
-        sync_to_mcc: false,
       },
     },
     state: {

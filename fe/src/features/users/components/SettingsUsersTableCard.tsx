@@ -10,6 +10,7 @@ import {
 } from 'mantine-react-table'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 
+import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
 import type { UserFilterParams } from '@/features/users/types'
 import type { ManagedUser } from '@/shared/types'
@@ -41,28 +42,34 @@ function getUsersColumns(meta: ActionMeta): MRT_ColumnDef<ManagedUser>[] {
       Cell: ({ row }) => <span className="text-muted-foreground">{row.original.email}</span>,
     },
     {
-      accessorKey: 'role',
+      id: 'role_id',
       header: 'Role',
-      size: 140,
-      enableSorting: false,
+      size: 110,
+      accessorFn: (row) => row.role?.name ?? '',
       Cell: ({ row }) => {
-        const name = row.original.role?.name
-        if (!name) return <span className="text-muted-foreground/50">—</span>
-        return (
-          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
-            {name}
-          </span>
-        )
+        const roleName = row.original.role?.name
+        if (!roleName) return <span className="text-muted-foreground/50">—</span>
+        return <StatusBadge status={roleName.toLowerCase()} label={roleName} />
       },
     },
     {
-      accessorKey: 'parent',
-      header: 'Parent',
+      accessorKey: 'created_at',
+      header: 'Created At',
       size: 160,
-      enableSorting: false,
       Cell: ({ row }) => {
-        const name = row.original.parent?.name
-        return <span className="text-muted-foreground">{name ?? '—'}</span>
+        const createdAt = row.original.created_at
+        if (!createdAt) return <span className="text-muted-foreground/50">—</span>
+        return <span className="text-muted-foreground">{new Date(createdAt).toLocaleString()}</span>
+      },
+    },
+    {
+      accessorKey: 'updated_at',
+      header: 'Updated At',
+      size: 160,
+      Cell: ({ row }) => {
+        const updatedAt = row.original.updated_at
+        if (!updatedAt) return <span className="text-muted-foreground/50">—</span>
+        return <span className="text-muted-foreground">{new Date(updatedAt).toLocaleString()}</span>
       },
     },
     ...(canUpdate || canDelete
@@ -185,13 +192,13 @@ function SettingsUsersTableCardInner({
       const next = typeof updater === 'function' ? updater(sorting) : updater
       onSortingChange(next)
     },
-    enableColumnFilters: false,
-    enableGlobalFilter: false,
+    enableColumnFilters: true,
+    enableGlobalFilter: true,
     enableColumnPinning: true,
     enableRowSelection: (row) => canDelete && row.original.id !== currentUserId,
     initialState: {
       density: 'md',
-      columnVisibility: { parent: false, role: false },
+      columnVisibility: {},
       columnPinning: { right: ['actions'] },
     },
     state: { pagination, sorting, showLoadingOverlay: loading, rowSelection },

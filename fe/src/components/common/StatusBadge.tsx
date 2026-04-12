@@ -57,7 +57,7 @@ export function StatusBadge({ status, label, className }: StatusBadgeProps) {
   }
 
   return (
-    <Badge variant={config.variant} className={className}>
+    <Badge variant={config.variant} className={cn('capitalize', className)}>
       {label || config.label}
     </Badge>
   )
