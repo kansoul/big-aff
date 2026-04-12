@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Requests\BusinessCenter;
+namespace App\Http\Requests\CampaignRuleSetting;
 
-use App\Actions\BusinessCenter\ListBusinessCentersAction;
+use App\Actions\CampaignRuleSetting\ListCampaignRuleSettingsAction;
 use App\Http\Requests\Concerns\ValidatesPaginationQuery;
 use App\Http\Requests\Concerns\ValidatesSortQuery;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ListBusinessCentersRequest extends FormRequest
+class ListCampaignRuleSettingsRequest extends FormRequest
 {
     use ValidatesPaginationQuery;
     use ValidatesSortQuery;
@@ -25,10 +25,7 @@ class ListBusinessCentersRequest extends FormRequest
     {
         return array_merge(
             $this->paginationRules(),
-            $this->sortRules(ListBusinessCentersAction::ORDERABLE_COLUMNS),
-            [
-                'query' => ['nullable', 'string', 'max:255'],
-            ],
+            $this->sortRules(ListCampaignRuleSettingsAction::ORDERABLE_COLUMNS),
         );
     }
 }

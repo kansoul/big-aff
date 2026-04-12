@@ -19,12 +19,12 @@ class AccountResource extends JsonResource
         return [
             'id' => $this->id,
             'business_center_id' => $this->business_center_id,
-            'business_center' => $this->whenLoaded('businessCenter', fn() => [
+            'business_center' => $this->whenLoaded('businessCenter', fn () => [
                 'id' => $this->businessCenter?->id,
                 'name' => $this->businessCenter?->name,
             ]),
             'team_id' => $this->team_id,
-            'team' => $this->whenLoaded('team', fn() => [
+            'team' => $this->whenLoaded('team', fn () => [
                 'id' => $this->team?->id,
                 'name' => $this->team?->name,
             ]),

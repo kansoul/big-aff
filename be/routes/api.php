@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AdClientController;
 use App\Http\Controllers\Api\AdsLinkController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\BusinessCenterController;
+use App\Http\Controllers\Api\CampaignRuleSettingController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\FileController;
@@ -237,5 +238,12 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::AdClientsUpdate->value);
         Route::delete('{ad_client}', [AdClientController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::AdClientsDelete->value);
+    });
+
+    Route::prefix('campaign-rule-settings')->group(function () {
+        Route::get('/', [CampaignRuleSettingController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::CampaignRuleSettingsView->value);
+        Route::match(['put', 'patch'], '{user}', [CampaignRuleSettingController::class, 'save'])
+            ->middleware('permission.scope:'.Permission::CampaignRuleSettingsUpdate->value);
     });
 });

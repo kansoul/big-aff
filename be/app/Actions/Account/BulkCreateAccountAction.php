@@ -33,7 +33,7 @@ class BulkCreateAccountAction
         $linesStr = $data['lines'] ?? '';
         $lines = array_filter(
             array_map('trim', explode("\n", $linesStr)),
-            fn(string $line): bool => $line !== '',
+            fn (string $line): bool => $line !== '',
         );
 
         $parsedAccounts = [];
@@ -47,6 +47,7 @@ class BulkCreateAccountAction
 
             if ($accountId === '') {
                 $errors[] = "Line {$lineNumber}: Invalid format. Expected: account_id|account_name (account_name is optional)";
+
                 continue;
             }
 
@@ -60,7 +61,7 @@ class BulkCreateAccountAction
         // Pre-fetch existing account IDs for optimization
         $requestedAccountIds = array_column($parsedAccounts, 'account_id');
         $existingAccountIds = [];
-        if (!empty($requestedAccountIds)) {
+        if (! empty($requestedAccountIds)) {
             $existingAccountIds = Account::withTrashed()
                 ->whereIn('account_id', $requestedAccountIds)
                 ->pluck('account_id')
@@ -74,6 +75,7 @@ class BulkCreateAccountAction
 
             if (isset($existingAccountIds[$accountId])) {
                 $errors[] = "Line {$lineNumber}: Account ID '{$accountId}' already exists.";
+
                 continue;
             }
 

@@ -143,6 +143,11 @@ enum Permission: string
 
     case AdClientsDelete = 'ad-clients.delete';              // bit 60 →  1152921504606846976
 
+    // —— Campaign Rule Settings ——
+    case CampaignRuleSettingsView = 'campaign-rule-settings.view';    // bit 61 →  2305843009213693952
+
+    case CampaignRuleSettingsUpdate = 'campaign-rule-settings.update'; // bit 62 →  4611686018427387904
+
     /**
      * Bit value for this permission (1 << declaration index).
      */
