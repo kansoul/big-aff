@@ -11,6 +11,7 @@ import { Building2, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import { StatusBadge } from '@/components/common/StatusBadge'
 import type { BusinessCenter, BusinessCenterFilterParams } from '@/features/business-centers/types'
 
 type PaginationState = { pageIndex: number; pageSize: number }
@@ -50,11 +51,7 @@ function getBusinessCentersColumns(meta: ActionMeta): MRT_ColumnDef<BusinessCent
       enableSorting: false,
       Cell: ({ row }) => {
         const label = ADS_TYPE_LABELS[row.original.ads_type] ?? row.original.ads_type
-        return (
-          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
-            {label}
-          </span>
-        )
+        return <StatusBadge status={row.original.ads_type} label={label} />
       },
     },
     {

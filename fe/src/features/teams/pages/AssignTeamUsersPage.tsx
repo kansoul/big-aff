@@ -1,18 +1,32 @@
-import { useCallback, useEffect, useState } from 'react'
-import { AlertCircle, Loader2, Save, UsersRound } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AlertCircle, Loader2, Pencil, UserPlus, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { teamsApi } from '@/features/teams/api'
-import type { Team } from '@/features/teams/types'
+import type { Team, TeamRole } from '@/features/teams/types'
 import {
   AssignUsersChildrenPicker,
   type AssignChildOption,
 } from '@/features/users/components/AssignUsersChildrenPicker'
+import { SearchableSelect, type SearchableSelectOption } from '@/components/common/SearchableSelect'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { formatApiError } from '@/features/settings/components'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
+
+const USER_ROLE_OPTIONS: SearchableSelectOption[] = [
+  { label: 'Manager', value: 'manager' },
+  { label: 'Leader', value: 'leader' },
+  { label: 'Member', value: 'member' },
+]
 
 export function AssignTeamUsersPage() {
   const user = useAuthStore((s) => s.user)
@@ -25,10 +39,16 @@ export function AssignTeamUsersPage() {
 
   const [teamOptions, setTeamOptions] = useState<Record<number, AssignChildOption[]>>({})
   const [teamOptionsLoading, setTeamOptionsLoading] = useState<Record<number, boolean>>({})
-  const [drafts, setDrafts] = useState<Record<number, number[]>>({})
-  const [savedDrafts, setSavedDrafts] = useState<Record<number, number[]>>({})
+  const [savedUserIdsByTeam, setSavedUserIdsByTeam] = useState<Record<number, number[]>>({})
+  const [savedUserRolesByTeam, setSavedUserRolesByTeam] = useState<
+    Record<number, Record<number, TeamRole>>
+  >({})
 
-  const [savingRowId, setSavingRowId] = useState<number | null>(null)
+  const [editingTeamId, setEditingTeamId] = useState<number | null>(null)
+  const [modalUserIds, setModalUserIds] = useState<number[]>([])
+  const [modalUserRoles, setModalUserRoles] = useState<Record<number, TeamRole>>({})
+
+  const [savingTeamId, setSavingTeamId] = useState<number | null>(null)
   const [flashError, setFlashError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -39,7 +59,22 @@ export function AssignTeamUsersPage() {
         setPageLoading(true)
         const { data } = await teamsApi.list({ page: 1, per_page: 100 })
         if (!ignore) {
-          setTeams(data.data)
+          const nextTeams = data.data
+          const initialUserIdsByTeam = Object.fromEntries(
+            nextTeams.map((team) => [team.id, (team.users ?? []).map((u) => u.id)]),
+          )
+          const initialUserRolesByTeam = Object.fromEntries(
+            nextTeams.map((team) => [
+              team.id,
+              (team.users ?? []).reduce<Record<number, TeamRole>>((acc, u) => {
+                acc[u.id] = 'member'
+                return acc
+              }, {}),
+            ]),
+          )
+          setTeams(nextTeams)
+          setSavedUserIdsByTeam(initialUserIdsByTeam)
+          setSavedUserRolesByTeam(initialUserRolesByTeam)
         }
       } catch (err) {
         if (!ignore) {
@@ -62,19 +97,27 @@ export function AssignTeamUsersPage() {
   useEffect(() => {
     if (teams.length === 0) return
 
-    const loadOptionsForTeam = async (teamId: number) => {
+    const loadOptionsForTeam = async (team: Team) => {
+      const teamId = team.id
+      if (teamOptions[teamId]) return
       setTeamOptionsLoading((prev) => ({ ...prev, [teamId]: true }))
       try {
         const { data } = await teamsApi.userOptions(teamId)
-        const options: AssignChildOption[] = data.data.map((u) => ({
+        const existingMembers: AssignChildOption[] = (team.users ?? []).map((u) => ({
           id: u.id,
           name: u.name,
           email: u.email,
         }))
-        const selectedIds: number[] = data.selected_ids ?? []
-        setTeamOptions((prev) => ({ ...prev, [teamId]: options }))
-        setDrafts((prev) => ({ ...prev, [teamId]: selectedIds }))
-        setSavedDrafts((prev) => ({ ...prev, [teamId]: selectedIds }))
+        const candidateUsers: AssignChildOption[] = data.data.map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+        }))
+        const merged = new Map<number, AssignChildOption>()
+        ;[...existingMembers, ...candidateUsers].forEach((option) => {
+          merged.set(option.id, option)
+        })
+        setTeamOptions((prev) => ({ ...prev, [teamId]: Array.from(merged.values()) }))
       } catch (err) {
         toast.error(formatApiError(err))
       } finally {
@@ -83,38 +126,121 @@ export function AssignTeamUsersPage() {
     }
 
     teams.forEach((team) => {
-      void loadOptionsForTeam(team.id)
+      void loadOptionsForTeam(team)
     })
-  }, [teams])
+  }, [teams, teamOptions])
 
-  const onDraftChange = useCallback((teamId: number, userIds: number[]) => {
-    setDrafts((prev) => ({ ...prev, [teamId]: userIds }))
+  const activeTeam = useMemo(
+    () => teams.find((team) => team.id === editingTeamId) ?? null,
+    [teams, editingTeamId],
+  )
+
+  const openEditor = useCallback(
+    (team: Team) => {
+      const initialUserIds = savedUserIdsByTeam[team.id] ?? (team.users ?? []).map((u) => u.id)
+      const existingRoles = savedUserRolesByTeam[team.id] ?? {}
+      const initialUserRoles = Object.fromEntries(
+        initialUserIds.map((userId) => [userId, existingRoles[userId] ?? 'member']),
+      ) as Record<number, TeamRole>
+      setFlashError(null)
+      setEditingTeamId(team.id)
+      setModalUserIds(initialUserIds)
+      setModalUserRoles(initialUserRoles)
+    },
+    [savedUserIdsByTeam, savedUserRolesByTeam],
+  )
+
+  const closeEditor = useCallback(() => {
+    if (savingTeamId !== null) return
+    setEditingTeamId(null)
+    setModalUserIds([])
+    setModalUserRoles({})
+  }, [savingTeamId])
+
+  const onModalUsersChange = useCallback(
+    (nextIds: number[]) => {
+      setModalUserIds(nextIds)
+      setModalUserRoles((prev) => {
+        const savedTeamRoles = activeTeam ? (savedUserRolesByTeam[activeTeam.id] ?? {}) : {}
+        const nextRoles: Record<number, TeamRole> = {}
+        nextIds.forEach((id) => {
+          nextRoles[id] = prev[id] ?? savedTeamRoles[id] ?? 'member'
+        })
+        return nextRoles
+      })
+    },
+    [activeTeam, savedUserRolesByTeam],
+  )
+
+  const onModalUserRoleChange = useCallback((userId: number, role: TeamRole) => {
+    setModalUserRoles((prev) => ({ ...prev, [userId]: role }))
   }, [])
 
-  const saveRowAsync = useCallback(
-    async (teamId: number) => {
-      const userIds = drafts[teamId] ?? []
-      try {
-        setFlashError(null)
-        setSavingRowId(teamId)
-        await teamsApi.assignUsers(teamId, userIds)
-        setSavedDrafts((prev) => ({ ...prev, [teamId]: userIds }))
-        toast.success('Saved successfully')
-      } catch (err) {
-        setFlashError(formatApiError(err))
-      } finally {
-        setSavingRowId(null)
-      }
-    },
-    [drafts],
-  )
+  const saveEditorAsync = useCallback(async () => {
+    if (!activeTeam) return
+    if (modalUserIds.length === 0) {
+      setFlashError('Please select at least one user before saving.')
+      return
+    }
+    const groupedByRole: Record<TeamRole, number[]> = {
+      manager: [],
+      leader: [],
+      member: [],
+    }
+    modalUserIds.forEach((userId) => {
+      const role = modalUserRoles[userId] ?? 'member'
+      groupedByRole[role].push(userId)
+    })
 
-  const onSaveRow = useCallback(
-    (teamId: number) => {
-      void saveRowAsync(teamId)
-    },
-    [saveRowAsync],
+    try {
+      setFlashError(null)
+      setSavingTeamId(activeTeam.id)
+      const tasks = (Object.keys(groupedByRole) as TeamRole[])
+        .map((role) => ({ role, ids: groupedByRole[role] }))
+        .filter((group) => group.ids.length > 0)
+      for (const task of tasks) {
+        await teamsApi.assignUsers(activeTeam.id, {
+          user_ids: task.ids,
+          team_role: task.role,
+        })
+      }
+
+      setSavedUserIdsByTeam((prev) => ({ ...prev, [activeTeam.id]: modalUserIds }))
+      const normalizedRoles = Object.fromEntries(
+        modalUserIds.map((userId) => [userId, modalUserRoles[userId] ?? 'member']),
+      ) as Record<number, TeamRole>
+      setSavedUserRolesByTeam((prev) => ({ ...prev, [activeTeam.id]: normalizedRoles }))
+      setTeams((prev) =>
+        prev.map((team) => {
+          if (team.id !== activeTeam.id) return team
+          const options = teamOptions[activeTeam.id] ?? []
+          const selectedUsers = options.filter((opt) => modalUserIds.includes(opt.id))
+          return {
+            ...team,
+            users_count: modalUserIds.length,
+            users: selectedUsers,
+          }
+        }),
+      )
+      toast.success('Saved successfully')
+      closeEditor()
+    } catch (err) {
+      setFlashError(formatApiError(err))
+    } finally {
+      setSavingTeamId(null)
+    }
+  }, [activeTeam, closeEditor, modalUserIds, modalUserRoles, teamOptions])
+
+  const activeTeamOptions = useMemo(
+    () => (activeTeam ? (teamOptions[activeTeam.id] ?? []) : []),
+    [activeTeam, teamOptions],
   )
+  const activeTeamOptionsLoading = activeTeam ? (teamOptionsLoading[activeTeam.id] ?? false) : false
+  const activeTeamOptionById = useMemo(
+    () => new Map(activeTeamOptions.map((option) => [option.id, option])),
+    [activeTeamOptions],
+  )
+  const isSavingEditor = activeTeam ? savingTeamId === activeTeam.id : false
 
   if (pageLoading) {
     return (
@@ -137,8 +263,9 @@ export function AssignTeamUsersPage() {
   return (
     <div className="flex flex-col gap-6">
       <p className="text-sm text-muted-foreground">
-        Assign users to each team. Press <span className="font-medium text-foreground">Save</span>{' '}
-        on a row to apply changes.
+        Manage members for each team. Click{' '}
+        <span className="font-medium text-foreground">Add members</span> or{' '}
+        <span className="font-medium text-foreground">Edit members</span> to open the popup editor.
       </p>
 
       {flashError ? (
@@ -156,23 +283,23 @@ export function AssignTeamUsersPage() {
           </div>
         ) : (
           teams.map((team) => {
-            const draft = drafts[team.id] ?? []
-            const saved = savedDrafts[team.id] ?? []
-            const dirty =
-              draft.length !== saved.length ||
-              draft.some((id) => !saved.includes(id)) ||
-              saved.some((id) => !draft.includes(id))
-            const options = teamOptions[team.id] ?? []
+            const savedUserIds = savedUserIdsByTeam[team.id] ?? (team.users ?? []).map((u) => u.id)
+            const savedRoles = savedUserRolesByTeam[team.id] ?? {}
+            const roleCounts = savedUserIds.reduce(
+              (acc, userId) => {
+                const role = savedRoles[userId] ?? 'member'
+                acc[role] += 1
+                return acc
+              },
+              { manager: 0, leader: 0, member: 0 },
+            )
+            const isEmpty = savedUserIds.length === 0
             const optionsLoading = teamOptionsLoading[team.id] ?? false
-            const isSaving = savingRowId === team.id
 
             return (
               <div
                 key={team.id}
-                className={cn(
-                  'rounded-xl border bg-card px-4 py-4 shadow-sm transition-[border-color] sm:px-5 sm:py-5',
-                  dirty ? 'border-primary/40' : 'border-border',
-                )}
+                className="rounded-xl border border-border bg-card px-4 py-4 shadow-sm sm:px-5 sm:py-5"
               >
                 <div className="grid gap-5 sm:grid-cols-[1fr_2fr] sm:gap-8">
                   <div className="min-w-0">
@@ -194,52 +321,51 @@ export function AssignTeamUsersPage() {
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                         Users
                       </p>
-                      {draft.length > 0 ? (
+                      {(team.users_count ?? savedUserIds.length) > 0 ? (
                         <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
-                          {draft.length}
-                        </span>
-                      ) : null}
-                      {dirty ? (
-                        <span className="ml-auto text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                          Unsaved changes
+                          {team.users_count ?? savedUserIds.length}
                         </span>
                       ) : null}
                     </div>
                     <div className="mt-1.5 space-y-2.5">
-                      {optionsLoading ? (
-                        <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">
-                          <Loader2 className="size-3.5 animate-spin" />
-                          <span>Loading users…</span>
-                        </div>
-                      ) : (
-                        <AssignUsersChildrenPicker
-                          disabled={!canAssign}
-                          value={draft}
-                          onChange={(next) => onDraftChange(team.id, next)}
-                          options={options}
-                        />
-                      )}
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        {roleCounts.manager > 0 ? (
+                          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                            Manager {roleCounts.manager}
+                          </span>
+                        ) : null}
+                        {roleCounts.leader > 0 ? (
+                          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                            Leader {roleCounts.leader}
+                          </span>
+                        ) : null}
+                        {roleCounts.member > 0 ? (
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                            Member {roleCounts.member}
+                          </span>
+                        ) : null}
+                        {optionsLoading ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                            <Loader2 className="size-3 animate-spin" />
+                            Loading users...
+                          </span>
+                        ) : null}
+                      </div>
                       {canAssign ? (
                         <div className="flex justify-end">
                           <Button
                             type="button"
                             size="sm"
-                            variant={dirty ? 'default' : 'secondary'}
+                            variant={isEmpty ? 'default' : 'secondary'}
                             className="gap-1.5 font-medium"
-                            disabled={!dirty || savingRowId !== null}
-                            onClick={() => onSaveRow(team.id)}
+                            onClick={() => openEditor(team)}
                           >
-                            {isSaving ? (
-                              <>
-                                <Loader2 className="size-3.5 animate-spin" />
-                                Saving…
-                              </>
+                            {isEmpty ? (
+                              <UserPlus className="size-3.5" />
                             ) : (
-                              <>
-                                <Save className="size-3.5" />
-                                Save
-                              </>
+                              <Pencil className="size-3.5" />
                             )}
+                            {isEmpty ? 'Add members' : 'Edit members'}
                           </Button>
                         </div>
                       ) : null}
@@ -251,6 +377,103 @@ export function AssignTeamUsersPage() {
           })
         )}
       </div>
+
+      <Dialog
+        open={editingTeamId !== null}
+        onOpenChange={(open) => (!open ? closeEditor() : undefined)}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              {activeTeam ? `Manage Members · ${activeTeam.name}` : 'Manage Members'}
+            </DialogTitle>
+            <DialogDescription>
+              Select users, then set role for each selected member.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex flex-col gap-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Users
+              </p>
+              {activeTeamOptionsLoading ? (
+                <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">
+                  <Loader2 className="size-3.5 animate-spin" />
+                  <span>Loading users…</span>
+                </div>
+              ) : (
+                <AssignUsersChildrenPicker
+                  disabled={!canAssign || isSavingEditor}
+                  value={modalUserIds}
+                  onChange={onModalUsersChange}
+                  options={activeTeamOptions}
+                />
+              )}
+            </div>
+
+            {modalUserIds.length > 0 ? (
+              <div className="space-y-2 rounded-lg border border-border p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Member Roles
+                </p>
+                <div className="space-y-2">
+                  {modalUserIds.map((userId) => {
+                    const user = activeTeamOptionById.get(userId)
+                    return (
+                      <div
+                        key={userId}
+                        className="flex flex-col gap-2 rounded-md border border-border/70 px-2.5 py-2 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {user?.name ?? `User #${userId}`}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {user?.email ?? `ID: ${userId}`}
+                          </p>
+                        </div>
+                        <div className="w-full sm:w-[170px]">
+                          <SearchableSelect
+                            disabled={!canAssign || isSavingEditor}
+                            value={modalUserRoles[userId] ?? 'member'}
+                            onValueChange={(value) =>
+                              onModalUserRoleChange(userId, value as TeamRole)
+                            }
+                            options={USER_ROLE_OPTIONS}
+                            placeholder="Select role"
+                            searchPlaceholder="Search role..."
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={closeEditor} disabled={isSavingEditor}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void saveEditorAsync()}
+              disabled={
+                !canAssign ||
+                isSavingEditor ||
+                activeTeamOptionsLoading ||
+                modalUserIds.length === 0
+              }
+              className="gap-1.5"
+            >
+              {isSavingEditor ? <Loader2 className="size-3.5 animate-spin" /> : null}
+              {isSavingEditor ? 'Saving…' : 'Save members'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

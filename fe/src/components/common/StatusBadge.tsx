@@ -1,16 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
-export type StatusType =
-  | 'active'
-  | 'published'
-  | 'draft'
-  | 'maintenance'
-  | 'suspended'
-  | 'trash'
-  | 'hidden'
-  | 'visible'
-  | string
+export type StatusType = string
 
 interface StatusBadgeProps {
   status: StatusType | boolean | number | null | undefined
@@ -34,6 +25,12 @@ const DEFAULT_STATUS_MAP: Record<
   error: { variant: 'destructive', label: 'Error' },
   failed: { variant: 'destructive', label: 'Failed' },
   hidden: { variant: 'warning', label: 'Hidden' },
+  normal: { variant: 'secondary', label: 'Normal' },
+  ai: { variant: 'warning', label: 'AI' },
+  wordpress: { variant: 'success', label: 'WordPress' },
+  facebook: { variant: 'success', label: 'Facebook' },
+  google: { variant: 'warning', label: 'Google' },
+  unknown: { variant: 'default', label: 'Unknown' },
 }
 
 export function StatusBadge({ status, label, className }: StatusBadgeProps) {
@@ -42,7 +39,7 @@ export function StatusBadge({ status, label, className }: StatusBadgeProps) {
   }
 
   // Handle boolean/number (e.g. is_hidden)
-  let normalizedStatus = String(status).toLowerCase()
+  const normalizedStatus = String(status).toLowerCase()
   if (status === true || status === 1 || status === '1' || status === 'true') {
     // This is ambiguous, but in the context of is_hidden, true means 'hidden'
     // We'll handle is_hidden mapping in the caller or here if we detect the prop name,
