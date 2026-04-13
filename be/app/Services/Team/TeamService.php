@@ -5,11 +5,13 @@ namespace App\Services\Team;
 use App\Actions\Team\AssignTeamAction;
 use App\Actions\Team\CreateTeamAction;
 use App\Actions\Team\DeleteTeamAction;
+use App\Actions\Team\GetTeamLeadersAction;
 use App\Actions\Team\GetTeamOptionsAction;
 use App\Actions\Team\GetTeamUserOptionsAction;
 use App\Actions\Team\ListTeamsAction;
 use App\Actions\Team\UpdateTeamAction;
 use App\Models\Team;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -23,6 +25,7 @@ class TeamService
         private readonly AssignTeamAction $assignTeamAction,
         private readonly GetTeamUserOptionsAction $getTeamUserOptionsAction,
         private readonly GetTeamOptionsAction $getTeamOptionsAction,
+        private readonly GetTeamLeadersAction $getTeamLeadersAction,
     ) {}
 
     /**
@@ -56,10 +59,11 @@ class TeamService
 
     /**
      * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
      */
-    public function assign(Team $team, array $data): void
+    public function assign(Team $team, array $data): array
     {
-        $this->assignTeamAction->execute($team, $data);
+        return $this->assignTeamAction->execute($team, $data);
     }
 
     /**
@@ -76,5 +80,13 @@ class TeamService
     public function options(): Collection
     {
         return $this->getTeamOptionsAction->execute();
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string, email: string}>
+     */
+    public function leaders(Team $team): Collection
+    {
+        return $this->getTeamLeadersAction->execute($team);
     }
 }

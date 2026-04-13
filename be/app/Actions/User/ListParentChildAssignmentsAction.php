@@ -2,6 +2,8 @@
 
 namespace App\Actions\User;
 
+use App\Enums\TeamRole;
+use App\Models\TeamUser;
 use App\Models\User;
 use App\Models\UserParentChild;
 use App\Support\OwnershipFilter\OwnershipFilter;
@@ -13,6 +15,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListParentChildAssignmentsAction
 {
+    public const array ORDERABLE_COLUMNS = ['id', 'name', 'email', 'created_at'];
+
     /**
      * @param  array<string, mixed>  $filters
      * @return array{assignments: LengthAwarePaginator, user_options: Paginator}
@@ -20,11 +24,12 @@ class ListParentChildAssignmentsAction
     public function execute(array $filters): array
     {
         $ownership = OwnershipFilter::forAuthUser();
-        $assignmentsQuery = $this->usersVisibleToUserQuery($ownership);
+
+        $assignmentsQuery = $this->leaderUsersQuery($ownership);
 
         SortInput::fromValidatedArray(
             $filters,
-            ListUsersAction::ORDERABLE_COLUMNS,
+            self::ORDERABLE_COLUMNS,
             defaultColumn: 'name',
             defaultDirection: 'asc',
         )->applyTo($assignmentsQuery);
@@ -33,50 +38,49 @@ class ListParentChildAssignmentsAction
 
         $parentIds = collect($assignmentsPaginator->items())->pluck('id')->all();
 
-        /** @var array<int, list<int>> $byParent */
-        $byParent = [];
+        // Load all child links for the current page of parents in one query.
+        /** @var array<int, list<int>> $childrenByParent */
+        $childrenByParent = [];
         if ($parentIds !== []) {
             $rows = UserParentChild::query()
                 ->whereIn('parent_user_id', $parentIds)
                 ->get(['parent_user_id', 'child_user_id']);
+
             foreach ($rows as $row) {
                 $pid = (int) $row->parent_user_id;
-                $byParent[$pid] ??= [];
-                $byParent[$pid][] = (int) $row->child_user_id;
+                $childrenByParent[$pid] ??= [];
+                $childrenByParent[$pid][] = (int) $row->child_user_id;
             }
         }
 
-        $assignmentsPaginator = $assignmentsPaginator->through(function (User $user) use ($byParent): array {
+        $assignmentsPaginator = $assignmentsPaginator->through(function (User $user) use ($childrenByParent): array {
             return [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'can_be_parent' => true,
-                'child_user_ids' => array_values($byParent[$user->id] ?? []),
+                'child_user_ids' => array_values($childrenByParent[$user->id] ?? []),
             ];
         });
 
-        /** @var list<int> $childIdsSet */
-        $childIdsSet = UserParentChild::query()
+        // Options: all visible users who are a leader or member in a team (eligible to be children).
+        $assignedChildIds = UserParentChild::query()
             ->pluck('child_user_id')
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->all();
 
-        $optionsQuery = $this->usersVisibleToUserQuery($ownership)
+        $optionsQuery = $this->teamMemberUsersQuery($ownership)
             ->orderBy('name')
             ->orderBy('id');
 
-        $optionsPagination = PaginationInput::fromValidatedArray($filters, prefix: 'options_');
-        $optionsPaginator = $optionsPagination->simplePaginateQuery($optionsQuery, pageName: 'options_page');
+        $optionsPaginator = PaginationInput::fromValidatedArray($filters, prefix: 'options_')
+            ->simplePaginateQuery($optionsQuery, pageName: 'options_page');
 
-        $optionsPaginator = $optionsPaginator->through(function (User $user) use ($childIdsSet): array {
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'is_assigned_child' => in_array($user->id, $childIdsSet, true),
-            ];
-        });
+        $optionsPaginator = $optionsPaginator->through(fn(User $user) => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'is_assigned_child' => \in_array($user->id, $assignedChildIds, true),
+        ]);
 
         return [
             'assignments' => $assignmentsPaginator,
@@ -85,14 +89,40 @@ class ListParentChildAssignmentsAction
     }
 
     /**
+     * Users who are leaders in at least one team — the only users who can be parents.
+     *
      * @return Builder<User>
      */
-    private function usersVisibleToUserQuery(OwnershipFilter $ownership): Builder
+    private function leaderUsersQuery(OwnershipFilter $ownership): Builder
     {
-        $query = User::query()
-            ->with(['role', 'assignedParentLink.parentUser']);
+        $leaderUserIds = TeamUser::query()
+            ->where('team_role', TeamRole::LEADER->value)
+            ->select('user_id');
 
-        // Admin → no restriction; others → transitive subtree + manager team members.
+        $query = User::query()
+            ->with(['role', 'assignedParentLink.parentUser'])
+            ->whereIn('id', $leaderUserIds);
+
+        if (! $ownership->isAdmin()) {
+            $query->whereIn('id', $ownership->allowedUserIds());
+        }
+
+        return $query;
+    }
+
+    /**
+     * Users who are a leader or member in any team — eligible to be assigned as children.
+     *
+     * @return Builder<User>
+     */
+    private function teamMemberUsersQuery(OwnershipFilter $ownership): Builder
+    {
+        $memberUserIds = TeamUser::query()
+            ->whereIn('team_role', [TeamRole::LEADER->value, TeamRole::MEMBER->value])
+            ->select('user_id');
+
+        $query = User::query()->whereIn('id', $memberUserIds);
+
         if (! $ownership->isAdmin()) {
             $query->whereIn('id', $ownership->allowedUserIds());
         }

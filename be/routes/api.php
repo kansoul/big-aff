@@ -221,10 +221,14 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::TeamsUpdate->value);
         Route::delete('{team}', [TeamController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::TeamsDelete->value);
+        Route::get('{team}/leaders', [TeamController::class, 'leaders'])
+            ->middleware('permission.scope:'.Permission::TeamsView->value);
         Route::get('{team}/user-options', [TeamController::class, 'userOptions'])
             ->middleware('permission.scope:'.Permission::TeamsAssign->value);
         Route::post('{team}/assign-users', [TeamController::class, 'assignUsers'])
             ->middleware('permission.scope:'.Permission::TeamsAssign->value);
+        Route::get('{team}/parent-child-options', [UserParentChildController::class, 'teamMemberOptions'])
+            ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
     });
 
     Route::prefix('ad-clients')->group(function () {

@@ -21,6 +21,6 @@ class UpdateTeamAction
         $data['updated_by'] = Auth::id();
         $team->update($data);
 
-        return $team->fresh();
+        return $team->fresh(['users']);
     }
 }

@@ -2,19 +2,21 @@
 
 namespace App\Services\User;
 
-use App\Actions\User\BuildParentChildAssignmentsPayloadAction;
+use App\Actions\User\GetUserTeamMemberOptionsAction;
 use App\Actions\User\ListParentChildAssignmentsAction;
 use App\Actions\User\SyncUserParentChildrenAction;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
+use Illuminate\Support\Collection;
 
 class UserParentChildService
 {
     public function __construct(
-        private readonly BuildParentChildAssignmentsPayloadAction $buildParentChildAssignmentsPayloadAction,
         private readonly ListParentChildAssignmentsAction $listParentChildAssignmentsAction,
         private readonly SyncUserParentChildrenAction $syncUserParentChildrenAction,
+        private readonly GetUserTeamMemberOptionsAction $getUserTeamMemberOptionsAction,
     ) {}
 
     /**
@@ -27,17 +29,6 @@ class UserParentChildService
     }
 
     /**
-     * @param  array<string, mixed>  $filters
-     * @return array<string, mixed>
-     */
-    public function listAssignmentsPayload(array $filters): array
-    {
-        return $this->buildParentChildAssignmentsPayloadAction->execute(
-            $this->listAssignments($filters),
-        );
-    }
-
-    /**
      * @param  list<int>|null  $childIds
      */
     public function syncChildren(User $parent, ?array $childIds): void
@@ -46,13 +37,10 @@ class UserParentChildService
     }
 
     /**
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
+     * @return Collection<int, array{id: int, name: string, email: string, is_assigned_child: bool}>
      */
-    public function syncChildrenAndListAssignmentsPayload(User $user, array $data): array
+    public function teamMemberOptions(Team $team): Collection
     {
-        $this->syncChildren($user, $data['child_ids'] ?? null);
-
-        return $this->listAssignmentsPayload($data);
+        return $this->getUserTeamMemberOptionsAction->execute($team);
     }
 }

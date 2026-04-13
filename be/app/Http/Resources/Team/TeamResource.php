@@ -2,8 +2,6 @@
 
 namespace App\Http\Resources\Team;
 
-use App\Http\Resources\User\UserOptionResource;
-use App\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -24,7 +22,12 @@ class TeamResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'users_count' => $users->count(),
-            'users' => UserOptionResource::collection($users),
+            'users' => $users->map(fn ($user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'team_role' => $user->pivot?->team_role,
+            ]),
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
             'created_at' => $this->created_at,
