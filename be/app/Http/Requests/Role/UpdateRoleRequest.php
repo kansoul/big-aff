@@ -12,27 +12,6 @@ class UpdateRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->user();
-
-        if ($user === null) {
-            return false;
-        }
-
-        $wantsName = $this->has('name');
-        $wantsPermissions = $this->has('permissions');
-
-        if (! $wantsName && ! $wantsPermissions) {
-            return false;
-        }
-
-        if ($wantsName && ! $user->hasPermissionFlag(Permission::SettingsRolesUpdate)) {
-            return false;
-        }
-
-        if ($wantsPermissions && ! $user->hasPermissionFlag(Permission::SettingsRolesAssign)) {
-            return false;
-        }
-
         return true;
     }
 
@@ -54,7 +33,27 @@ class UpdateRoleRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
             'permissions' => ['sometimes', 'array', 'max:500'],
-            'permissions.*' => ['string', 'max:191', Rule::in(Permission::values())],
+            'permissions.*' => ['string', 'max:191', Rule::in($this->allowedPermissionValues())],
         ];
+    }
+
+    /**
+     * Returns allowed permission values for this user.
+     * Admin users may assign any permission; others are limited to their own permissions.
+     *
+     * @return list<string>
+     */
+    private function allowedPermissionValues(): array
+    {
+        $user = $this->user();
+
+        if ($user->is_admin) {
+            return Permission::values();
+        }
+
+        $user->loadMissing('role');
+        $mask = $user->role?->getPermissionMask() ?? '0';
+
+        return Permission::maskToSlugs($mask);
     }
 }

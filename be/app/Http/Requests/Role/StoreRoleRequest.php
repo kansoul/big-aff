@@ -11,9 +11,7 @@ class StoreRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->user();
-
-        return $user !== null && $user->hasPermissionFlag(Permission::SettingsRolesCreate);
+        return true;
     }
 
     /**
@@ -24,7 +22,27 @@ class StoreRoleRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:100', Rule::unique('roles', 'name')->whereNull('deleted_at')],
             'permissions' => ['sometimes', 'array', 'max:500'],
-            'permissions.*' => ['string', 'max:191', Rule::in(Permission::values())],
+            'permissions.*' => ['string', 'max:191', Rule::in($this->allowedPermissionValues())],
         ];
+    }
+
+    /**
+     * Returns allowed permission values for this user.
+     * Admin users may assign any permission; others are limited to their own permissions.
+     *
+     * @return list<string>
+     */
+    private function allowedPermissionValues(): array
+    {
+        $user = $this->user();
+
+        if ($user->is_admin) {
+            return Permission::values();
+        }
+
+        $user->loadMissing('role');
+        $mask = $user->role?->getPermissionMask() ?? '0';
+
+        return Permission::maskToSlugs($mask);
     }
 }
