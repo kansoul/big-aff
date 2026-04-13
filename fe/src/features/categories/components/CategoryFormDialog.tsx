@@ -40,6 +40,12 @@ type CategoryFormDialogProps = {
   onSuccess: () => void
 }
 
+const CATEGORY_CREATE_DEFAULT_VALUES: CategoryCreateFormValues = {
+  name: '',
+  description: null,
+  feature_image: null,
+}
+
 export function CategoryFormDialog({
   open,
   onOpenChange,
@@ -52,11 +58,7 @@ export function CategoryFormDialog({
 
   const form = useForm<CategoryCreateFormValues>({
     resolver: zodResolver(isEdit ? categoryUpdateSchema : categoryCreateSchema),
-    defaultValues: {
-      name: '',
-      description: null,
-      feature_image: null,
-    },
+    defaultValues: CATEGORY_CREATE_DEFAULT_VALUES,
   })
 
   useEffect(() => {
@@ -69,16 +71,17 @@ export function CategoryFormDialog({
           feature_image: category.feature_media,
         })
       } else {
-        form.reset({
-          name: '',
-          description: null,
-          feature_image: null,
-        })
+        form.reset(CATEGORY_CREATE_DEFAULT_VALUES)
       }
     }
   }, [open, category, form])
 
-  const onSubmit = async (values: CategoryCreateFormValues | CategoryUpdateFormValues) => {
+  const onSubmit = async (
+    values: CategoryCreateFormValues | CategoryUpdateFormValues,
+    options?: {
+      createAnother?: boolean
+    },
+  ) => {
     try {
       setFormError(null)
       setSubmitting(true)
@@ -97,7 +100,12 @@ export function CategoryFormDialog({
         })
         toast.success('Category created successfully')
       }
-      onOpenChange(false)
+
+      if (!isEdit && options?.createAnother) {
+        form.reset(CATEGORY_CREATE_DEFAULT_VALUES)
+      } else {
+        onOpenChange(false)
+      }
       onSuccess()
     } catch (err) {
       setFormError(formatApiError(err))
@@ -116,7 +124,7 @@ export function CategoryFormDialog({
         <Form {...form}>
           <form
             onSubmit={(e) => {
-              void form.handleSubmit(onSubmit)(e)
+              void form.handleSubmit((values) => onSubmit(values, { createAnother: false }))(e)
             }}
             className="flex flex-col gap-4"
           >
@@ -172,6 +180,18 @@ export function CategoryFormDialog({
               >
                 Cancel
               </Button>
+              {!isEdit ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={submitting}
+                  onClick={() => {
+                    void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
+                  }}
+                >
+                  Create & Create Another
+                </Button>
+              ) : null}
               <Button type="submit" disabled={submitting} className="gap-1.5">
                 {submitting ? (
                   <>

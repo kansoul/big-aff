@@ -41,7 +41,12 @@ type CreateAdsLinkDialogProps = {
   posts: PostOption[]
   channels: ChannelOption[]
   submitting: boolean
-  onSubmit: (values: AdsLinkCreateFormValues) => void | Promise<void>
+  onSubmit: (
+    values: AdsLinkCreateFormValues,
+    options?: {
+      createAnother?: boolean
+    },
+  ) => void | Promise<void>
 }
 
 export function CreateAdsLinkDialog({
@@ -71,7 +76,7 @@ export function CreateAdsLinkDialog({
         <Form {...form}>
           <form
             onSubmit={(e) => {
-              void form.handleSubmit(onSubmit)(e)
+              void form.handleSubmit((values) => onSubmit(values, { createAnother: false }))(e)
             }}
             className="space-y-4"
           >
@@ -210,6 +215,16 @@ export function CreateAdsLinkDialog({
             <DialogFooter className="mt-2 shrink-0 gap-2 border-0 bg-transparent sm:justify-end">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={() => {
+                  void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
+                }}
+              >
+                Create & Create Another
               </Button>
               <Button type="submit" disabled={submitting}>
                 {submitting ? 'Creating…' : 'Create'}

@@ -125,7 +125,12 @@ export function SettingsRolesPage() {
     }
   }, [])
 
-  const onCreateSubmit = async (values: RoleNameFormValues) => {
+  const onCreateSubmit = async (
+    values: RoleNameFormValues,
+    options?: {
+      createAnother?: boolean
+    },
+  ) => {
     try {
       setFormError(null)
       setSubmitting(true)
@@ -133,8 +138,11 @@ export function SettingsRolesPage() {
         name: values.name,
         ...(canAssign ? { permissions: createPermissions } : {}),
       })
-      setCreateOpen(false)
       createForm.reset({ name: '' })
+      setCreatePermissions([])
+      if (!options?.createAnother) {
+        setCreateOpen(false)
+      }
       loadData()
     } catch (err) {
       setFormError(formatApiError(err))

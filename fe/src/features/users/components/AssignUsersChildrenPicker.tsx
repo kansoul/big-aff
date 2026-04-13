@@ -22,6 +22,8 @@ type AssignUsersChildrenPickerProps = {
   onChange: (next: number[]) => void
   options: AssignChildOption[]
   className?: string
+  placeholder?: string
+  tagClassName?: string
 }
 
 function AssignUsersChildrenPickerInner({
@@ -30,6 +32,8 @@ function AssignUsersChildrenPickerInner({
   onChange,
   options,
   className,
+  placeholder = 'Select users…',
+  tagClassName = 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400',
 }: AssignUsersChildrenPickerProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -80,7 +84,7 @@ function AssignUsersChildrenPickerInner({
           onClick={onFieldSurfaceClick}
         >
           {value.length === 0 ? (
-            <span className="select-none text-sm text-muted-foreground">Select users…</span>
+            <span className="select-none text-sm text-muted-foreground">{placeholder}</span>
           ) : (
             value.map((id) => {
               const opt = optionById.get(id)
@@ -88,7 +92,10 @@ function AssignUsersChildrenPickerInner({
               return (
                 <span
                   key={id}
-                  className="inline-flex max-w-full items-center gap-1 rounded-md bg-red-100 px-2 py-1.5 text-xs font-medium text-red-800 shadow-sm dark:bg-red-950/40 dark:text-red-400"
+                  className={cn(
+                    'inline-flex max-w-full items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium shadow-sm',
+                    tagClassName,
+                  )}
                 >
                   <span
                     className="min-w-0 truncate"

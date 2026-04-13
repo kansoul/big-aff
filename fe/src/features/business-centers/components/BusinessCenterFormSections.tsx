@@ -103,7 +103,6 @@ export function BusinessCenterFormSections({ control }: BusinessCenterFormSectio
                   options={[
                     { value: 'facebook', label: 'Facebook' },
                     { value: 'google', label: 'Google' },
-                    { value: 'unknown', label: 'Unknown' },
                   ]}
                 />
               </FormControl>

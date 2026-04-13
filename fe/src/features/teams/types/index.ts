@@ -60,6 +60,7 @@ export interface TeamUserOption {
   id: number
   name: string
   email: string
+  team_role?: TeamRole | null
 }
 
 export interface TeamUserOptionsResponse {
@@ -80,4 +81,25 @@ export type TeamUpdatePayload = {
 export type TeamAssignUsersPayload = {
   user_ids: number[]
   team_role: TeamRole | null
+}
+
+export interface TeamLeaderOption {
+  id: number
+  name: string
+  email: string
+}
+
+export interface TeamLeadersResponse {
+  data: TeamLeaderOption[]
+}
+
+export interface TeamParentChildOption {
+  id: number
+  name: string
+  email: string
+  is_assigned_child: boolean
+}
+
+export interface TeamParentChildOptionsResponse {
+  data: TeamParentChildOption[]
 }

@@ -32,7 +32,12 @@ type UserFormDialogProps = {
   form: UseFormReturn<UserFormValues>
   roles: Role[]
   submitting: boolean
-  onSubmit: (values: UserFormValues) => void | Promise<void>
+  onSubmit: (
+    values: UserFormValues,
+    options?: {
+      createAnother?: boolean
+    },
+  ) => void | Promise<void>
 }
 
 export function UserFormDialog({
@@ -57,7 +62,7 @@ export function UserFormDialog({
         <Form {...form}>
           <form
             onSubmit={(e) => {
-              void form.handleSubmit(onSubmit)(e)
+              void form.handleSubmit((values) => onSubmit(values, { createAnother: false }))(e)
             }}
             className="flex flex-col gap-4"
           >
@@ -165,6 +170,18 @@ export function UserFormDialog({
               >
                 Cancel
               </Button>
+              {!isEdit ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={submitting || roles.length === 0}
+                  onClick={() => {
+                    void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
+                  }}
+                >
+                  Create & Create Another
+                </Button>
+              ) : null}
               <Button type="submit" disabled={submitting || roles.length === 0} className="gap-1.5">
                 {submitting ? (
                   <>

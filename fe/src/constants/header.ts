@@ -164,6 +164,12 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         icon: UsersRound,
         requiredPermission: PermissionSlugs.TeamsAssign,
       },
+      {
+        name: 'Assign Leader Members',
+        href: PATHS.teamsAssignLeaderMembers,
+        icon: UsersRound,
+        requiredPermission: PermissionSlugs.TeamsAssign,
+      },
     ],
   },
 ]

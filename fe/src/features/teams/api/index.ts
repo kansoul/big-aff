@@ -5,7 +5,9 @@ import type {
   Team,
   TeamCreatePayload,
   TeamFilterParams,
+  TeamLeadersResponse,
   TeamListResponse,
+  TeamParentChildOptionsResponse,
   TeamUpdatePayload,
   TeamUserOptionsResponse,
 } from '@/features/teams/types'
@@ -41,6 +43,11 @@ export const teamsApi = {
 
   assignUsers: (teamId: number, payload: TeamAssignUsersPayload) =>
     axiosInstance.post(`/teams/${teamId}/assign-users`, payload),
+
+  leaders: (teamId: number) => axiosInstance.get<TeamLeadersResponse>(`/teams/${teamId}/leaders`),
+
+  parentChildOptions: (teamId: number) =>
+    axiosInstance.get<TeamParentChildOptionsResponse>(`/teams/${teamId}/parent-child-options`),
 
   remove: (id: number) => axiosInstance.delete(`/teams/${id}`),
 }
