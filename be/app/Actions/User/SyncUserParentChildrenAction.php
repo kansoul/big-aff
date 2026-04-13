@@ -2,6 +2,8 @@
 
 namespace App\Actions\User;
 
+use App\Enums\TeamRole;
+use App\Models\TeamUser;
 use App\Models\User;
 use App\Models\UserParentChild;
 use App\Support\OwnershipFilter\OwnershipFilter;
@@ -11,13 +13,21 @@ use Illuminate\Validation\ValidationException;
 class SyncUserParentChildrenAction
 {
     /**
-     * @param  list<int>|null  $childIds  When null or empty, the user is no longer a parent (all child links removed).
+     * Replace the list of children assigned to the given parent user.
+     *
+     * Rules:
+     *  - The parent must be a leader in a team (when assigning children).
+     *  - Each child must be in the same team as the parent (leader or member role).
+     *  - Passing null or an empty array removes all existing child links.
+     *
+     * @param  list<int>|null  $childIds
+     *
+     * @throws ValidationException
      */
     public function execute(User $parent, ?array $childIds): void
     {
         $ownership = OwnershipFilter::forAuthUser();
 
-        // Auth user must be allowed to manage the parent user.
         if (! $ownership->isAdmin() && ! \in_array($parent->id, $ownership->allowedUserIds(), true)) {
             throw ValidationException::withMessages([
                 'parent' => [__('You cannot change assignments for this user.')],
@@ -35,34 +45,15 @@ class SyncUserParentChildrenAction
         }
 
         if ($childIds !== []) {
-            $allowedIds = $ownership->isAdmin() ? null : $ownership->allowedUserIds();
-
-            // Bulk-load all target users in one query to avoid N+1.
-            $foundIds = User::query()
-                ->whereIn('id', $childIds)
-                ->pluck('id')
-                ->map(fn ($id) => (int) $id)
-                ->all();
-
-            foreach ($childIds as $childId) {
-                if (! \in_array($childId, $foundIds, true)
-                    || ($allowedIds !== null && ! \in_array($childId, $allowedIds, true))) {
-                    throw ValidationException::withMessages([
-                        'child_ids' => [__('Invalid child user.')],
-                    ]);
-                }
-            }
+            $this->validateParentIsLeaderAndChildrenInSameTeam($parent, $childIds, $ownership);
         }
 
         DB::transaction(function () use ($parent, $childIds): void {
-            // Remove all existing children of this parent in one query.
             UserParentChild::query()->where('parent_user_id', $parent->id)->delete();
 
             if ($childIds !== []) {
-                // Remove any existing parent links for the new children in one query.
                 UserParentChild::query()->whereIn('child_user_id', $childIds)->delete();
 
-                // Bulk insert instead of one INSERT per child.
                 $now = now();
                 UserParentChild::insert(
                     array_map(fn (int $childId) => [
@@ -74,5 +65,52 @@ class SyncUserParentChildrenAction
                 );
             }
         });
+    }
+
+    /**
+     * @param  list<int>  $childIds
+     *
+     * @throws ValidationException
+     */
+    private function validateParentIsLeaderAndChildrenInSameTeam(
+        User $parent,
+        array $childIds,
+        OwnershipFilter $ownership,
+    ): void {
+        $parentMembership = TeamUser::query()
+            ->where('user_id', $parent->id)
+            ->where('team_role', TeamRole::LEADER->value)
+            ->first(['team_id']);
+
+        if ($parentMembership === null) {
+            throw ValidationException::withMessages([
+                'parent' => [__('The parent user must be a leader in a team.')],
+            ]);
+        }
+
+        $teamId = (int) $parentMembership->team_id;
+        $allowedIds = $ownership->isAdmin() ? null : $ownership->allowedUserIds();
+
+        $validChildIds = TeamUser::query()
+            ->where('team_id', $teamId)
+            ->whereIn('user_id', $childIds)
+            ->whereIn('team_role', [TeamRole::LEADER->value, TeamRole::MEMBER->value])
+            ->pluck('user_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        foreach ($childIds as $childId) {
+            if ($allowedIds !== null && ! \in_array($childId, $allowedIds, true)) {
+                throw ValidationException::withMessages([
+                    'child_ids' => [__('Invalid child user.')],
+                ]);
+            }
+
+            if (! \in_array($childId, $validChildIds, true)) {
+                throw ValidationException::withMessages([
+                    'child_ids' => [__('All child users must be in the same team as the parent leader.')],
+                ]);
+            }
+        }
     }
 }

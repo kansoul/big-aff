@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\User;
 
-use App\Actions\User\ListUsersAction;
+use App\Actions\User\ListParentChildAssignmentsAction;
 use App\Http\Requests\Concerns\ValidatesPaginationQuery;
 use App\Http\Requests\Concerns\ValidatesSortQuery;
 use App\Support\PaginationInput\PaginationInput;
@@ -26,7 +26,7 @@ class ListParentChildAssignmentsRequest extends FormRequest
     {
         return array_merge(
             $this->paginationRules(),
-            $this->sortRules(ListUsersAction::ORDERABLE_COLUMNS),
+            $this->sortRules(ListParentChildAssignmentsAction::ORDERABLE_COLUMNS),
             [
                 'options_page' => ['nullable', 'integer', 'min:1'],
                 'options_per_page' => ['nullable', 'integer', 'min:1', 'max:'.PaginationInput::MAX_PER_PAGE],

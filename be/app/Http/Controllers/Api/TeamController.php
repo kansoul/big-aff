@@ -9,6 +9,7 @@ use App\Http\Requests\Team\StoreTeamRequest;
 use App\Http\Requests\Team\UpdateTeamRequest;
 use App\Http\Resources\Team\TeamResource;
 use App\Models\Team;
+use App\Models\User;
 use App\Services\Team\TeamService;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -78,6 +79,8 @@ class TeamController extends BaseController
      */
     public function show(Team $team): JsonResponse
     {
+        $team->loadMissing('users');
+
         return $this->sendResponse(
             ['data' => new TeamResource($team)]
         );
@@ -169,10 +172,34 @@ class TeamController extends BaseController
         return $this->sendResponse(['data' => $this->teamService->options()]);
     }
 
+    /**
+     * List team leaders
+     *
+     * Return all users with the leader role in a team.
+     *
+     * @urlParam team integer required The team ID. Example: 1
+     *
+     * @response 200 {"data": [{"id": 1, "name": "John Doe", "email": "john@example.com"}]}
+     * @response 403 {"message": "This action is unauthorized."}
+     * @response 404 {"message": "No query results for model [App\\Models\\Team] 1"}
+     */
+    public function leaders(Team $team): JsonResponse
+    {
+        return $this->sendResponse([
+            'data' => $this->teamService->leaders($team),
+        ]);
+    }
+
     public function assignUsers(AssignTeamRequest $request, Team $team): JsonResponse
     {
-        $this->teamService->assign($team, $request->validated());
+        $result = $this->teamService->assign($team, $request->validated());
 
-        return $this->sendResponse(['message' => 'Users assigned successfully.']);
+        $response = ['message' => 'Users assigned successfully.'];
+
+        if (! empty($result['conflicts'])) {
+            $response['conflicts'] = $result['conflicts'];
+        }
+
+        return $this->sendResponse($response);
     }
 }

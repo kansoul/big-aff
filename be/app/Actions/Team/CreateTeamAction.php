@@ -14,6 +14,6 @@ class CreateTeamAction
     {
         $data['created_by'] = Auth::id();
 
-        return Team::create($data);
+        return Team::create($data)->load('users');
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Actions\Team;
 
+use App\Enums\TeamRole;
 use App\Models\Team;
+use App\Models\TeamUser;
 use App\Models\User;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Support\Collection;
@@ -18,9 +20,16 @@ class GetTeamUserOptionsAction
 
         $assignedUserIds = $team->users()->pluck('users.id');
 
+        // Users already in another team as leader/member cannot be assigned again.
+        $occupiedUserIds = TeamUser::query()
+            ->whereNotIn('team_id', [$team->id])
+            ->whereIn('team_role', [TeamRole::LEADER->value, TeamRole::MEMBER->value])
+            ->pluck('user_id');
+
         $query = User::query()
             ->select(['id', 'name', 'email'])
             ->whereNotIn('id', $assignedUserIds)
+            ->whereNotIn('id', $occupiedUserIds)
             ->orderBy('name');
 
         $ownership->applyTo($query);
