@@ -4,12 +4,12 @@ namespace App\Actions\User;
 
 use App\Models\User;
 use App\Models\UserParentChild;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
 
 class ListParentChildAssignmentsAction
 {
@@ -19,9 +19,8 @@ class ListParentChildAssignmentsAction
      */
     public function execute(array $filters): array
     {
-        $user = Auth::user();
-        $assignmentsQuery = $this->usersVisibleToUserQuery($user)
-            ->whereNotIn('id', UserParentChild::query()->select('child_user_id'));
+        $ownership = OwnershipFilter::forAuthUser();
+        $assignmentsQuery = $this->usersVisibleToUserQuery($ownership);
 
         SortInput::fromValidatedArray(
             $filters,
@@ -63,7 +62,7 @@ class ListParentChildAssignmentsAction
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        $optionsQuery = $this->usersVisibleToUserQuery($user)
+        $optionsQuery = $this->usersVisibleToUserQuery($ownership)
             ->orderBy('name')
             ->orderBy('id');
 
@@ -88,13 +87,14 @@ class ListParentChildAssignmentsAction
     /**
      * @return Builder<User>
      */
-    private function usersVisibleToUserQuery(User $user): Builder
+    private function usersVisibleToUserQuery(OwnershipFilter $ownership): Builder
     {
         $query = User::query()
             ->with(['role', 'assignedParentLink.parentUser']);
 
-        if (! $user->managesAllUsers()) {
-            $query->whereIn('id', $user->manageableUserIds());
+        // Admin → no restriction; others → transitive subtree + manager team members.
+        if (! $ownership->isAdmin()) {
+            $query->whereIn('id', $ownership->allowedUserIds());
         }
 
         return $query;

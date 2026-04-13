@@ -20,16 +20,19 @@ class AssignAccountAction
     {
         $ownership = OwnershipFilter::forAuthUser();
 
-        // Auth user must be allowed to manage the target user
-        if (! in_array($user->id, $ownership->allowedUserIds(), true)) {
+        if (! $ownership->isAdmin() && ! \in_array($user->id, $ownership->allowedUserIds(), true)) {
             throw new AuthorizationException;
         }
 
-        // Only assign accounts that the auth user owns
-        $allowedAccountIds = DB::table('accounts')
+        $accountQuery = DB::table('accounts')
             ->whereIn('id', $accountIds)
-            ->whereIn('created_by', $ownership->allowedUserIds())
-            ->whereNull('deleted_at')
+            ->whereNull('deleted_at');
+
+        if (! $ownership->isAdmin()) {
+            $accountQuery->whereIn('created_by', $ownership->allowedUserIds());
+        }
+
+        $allowedAccountIds = $accountQuery
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();

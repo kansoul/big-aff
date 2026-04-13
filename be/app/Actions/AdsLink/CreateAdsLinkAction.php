@@ -5,6 +5,8 @@ namespace App\Actions\AdsLink;
 use App\Models\AdsLink;
 use App\Models\Post;
 use App\Models\Site;
+use App\Support\OwnershipFilter\OwnershipFilter;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,18 +16,22 @@ class CreateAdsLinkAction
 {
     /**
      * @param  array<string, mixed>  $data
+     *
+     * @throws AuthorizationException
      */
     public function execute(array $data): AdsLink
     {
         $user = Auth::user();
-        $styleCode = $user?->style?->style_code;
 
-        if (empty($styleCode)) {
-            $site = Site::query()->find($data['site_id']);
-            $styleCode = $site?->settings['default_style'] ?? null;
-        }
+        $ownership = OwnershipFilter::forAuthUser();
+
+        $site = Site::query()->findOrFail($data['site_id']);
+        $ownership->authorize($site->created_by);
 
         $post = Post::query()->findOrFail($data['post_id']);
+        $ownership->authorize($post->created_by);
+
+        $styleCode = $user?->style?->style_code ?? $site->settings['default_style'] ?? null;
         $baseSlug = $post->slug;
 
         $trackingIds = [];

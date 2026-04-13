@@ -20,7 +20,10 @@ class AssignSiteAction
         $ownership = OwnershipFilter::forAuthUser();
         $ownership->authorize($site->created_by);
 
-        $userIds = array_values(array_intersect($userIds, $ownership->allowedUserIds()));
+        // Admins may assign any user; others are limited to their allowed subtree.
+        if (! $ownership->isAdmin()) {
+            $userIds = array_values(array_intersect($userIds, $ownership->allowedUserIds()));
+        }
 
         DB::transaction(function () use ($site, $userIds): void {
             // Restore soft-deleted pivots for users that were previously removed

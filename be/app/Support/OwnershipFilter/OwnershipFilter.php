@@ -2,6 +2,8 @@
 
 namespace App\Support\OwnershipFilter;
 
+use App\Enums\TeamRole;
+use App\Models\TeamUser;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
@@ -12,8 +14,11 @@ use Illuminate\Support\Facades\Auth;
  * Resolves the set of user IDs the authenticated user is allowed to act on behalf of,
  * and provides helpers to apply that constraint to Eloquent queries or guard single records.
  *
- * - Admin users → no restriction applied (full access)
- * - Regular users → themselves + their child users (via `user_parent_child`)
+ * Access rules (non-admin):
+ * - Self + all transitive descendants via `user_parent_child` (BFS):
+ *   if A → B → C then A can access C's resources.
+ * - Manager in a team → also accesses all leaders and members in that team.
+ * - Admin users → no restriction applied (full access).
  */
 final readonly class OwnershipFilter
 {
@@ -30,10 +35,31 @@ final readonly class OwnershipFilter
         /** @var User $user */
         $user = Auth::user();
 
-        return new self(
-            isAdmin: $user->is_admin,
-            allowedUserIds: array_merge([$user->id], $user->child_user_ids),
-        );
+        if ($user->is_admin) {
+            return new self(isAdmin: true, allowedUserIds: []);
+        }
+
+        // BFS transitive descendants (self + all children recursively via user_parent_child).
+        $allowedIds = $user->manageableUserIds();
+
+        // Managers can also access all leaders and members in their teams.
+        $managerTeamIds = TeamUser::query()
+            ->where('user_id', $user->id)
+            ->where('team_role', TeamRole::MANAGER->value)
+            ->pluck('team_id')
+            ->all();
+
+        if ($managerTeamIds !== []) {
+            $teamMemberIds = TeamUser::query()
+                ->whereIn('team_id', $managerTeamIds)
+                ->whereIn('team_role', [TeamRole::LEADER->value, TeamRole::MEMBER->value])
+                ->pluck('user_id')
+                ->all();
+
+            $allowedIds = array_values(array_unique(array_merge($allowedIds, $teamMemberIds)));
+        }
+
+        return new self(isAdmin: false, allowedUserIds: $allowedIds);
     }
 
     /**
@@ -93,9 +119,31 @@ final readonly class OwnershipFilter
         $query->whereIn($column, $subquery($this->allowedUserIds));
     }
 
-    /** @return array<int, int> */
+    public function isAdmin(): bool
+    {
+        return $this->isAdmin;
+    }
+
+    /**
+     * Returns the resolved set of allowed user IDs for non-admin users.
+     *
+     * Do NOT call this for admin users — admins have unrestricted access and there
+     * is no meaningful "allowed list". Guard with `isAdmin()` first:
+     *
+     *   if (! $ownership->isAdmin()) {
+     *       $userIds = array_intersect($userIds, $ownership->allowedUserIds());
+     *   }
+     *
+     * @return array<int, int>
+     *
+     * @throws \LogicException if called for an admin user
+     */
     public function allowedUserIds(): array
     {
+        if ($this->isAdmin) {
+            throw new \LogicException('allowedUserIds() must not be called for admin users — they have unrestricted access. Guard with isAdmin() first.');
+        }
+
         return $this->allowedUserIds;
     }
 }

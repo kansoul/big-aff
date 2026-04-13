@@ -30,19 +30,31 @@ trait UserMethod
     /**
      * Self plus every descendant user id (BFS). Used when the user is not a full-access admin.
      *
+     * Loads the entire `user_parent_child` table once and traverses in memory
+     * to avoid N+1 queries.
+     *
      * @return list<int>
      */
     public function manageableUserIds(): array
     {
+        // One query: fetch all parent→child pairs and build an adjacency map in memory.
+        /** @var array<int, list<int>> $childrenOf */
+        $childrenOf = [];
+        UserParentChild::query()
+            ->get(['parent_user_id', 'child_user_id'])
+            ->each(function (UserParentChild $row) use (&$childrenOf): void {
+                $childrenOf[(int) $row->parent_user_id][] = (int) $row->child_user_id;
+            });
+
+        // BFS over the in-memory map.
         $ids = [];
         $queue = [$this->id];
 
         while ($queue !== []) {
             $id = array_shift($queue);
             $ids[] = $id;
-            $childIds = UserParentChild::query()->where('parent_user_id', $id)->pluck('child_user_id')->all();
-            foreach ($childIds as $cid) {
-                $queue[] = (int) $cid;
+            foreach ($childrenOf[$id] ?? [] as $cid) {
+                $queue[] = $cid;
             }
         }
 
