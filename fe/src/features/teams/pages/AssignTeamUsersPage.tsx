@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AlertCircle, Loader2, Pencil, UserPlus, UsersRound } from 'lucide-react'
+import { AlertCircle, Loader2, Network, Pencil, UserPlus, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { teamsApi } from '@/features/teams/api'
-import type { Team, TeamRole } from '@/features/teams/types'
+import type {
+  Team,
+  TeamLeaderOption,
+  TeamParentChildOption,
+  TeamRole,
+} from '@/features/teams/types'
 import {
   AssignUsersChildrenPicker,
   type AssignChildOption,
 } from '@/features/users/components/AssignUsersChildrenPicker'
+import { usersApi } from '@/features/users/api/users'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -44,6 +50,20 @@ export function AssignTeamUsersPage() {
 
   const [savingTeamId, setSavingTeamId] = useState<number | null>(null)
   const [flashError, setFlashError] = useState<string | null>(null)
+
+  // ── Leader-assignment dialog ──────────────────────────────────────────────
+  const [leaderAssignTeamId, setLeaderAssignTeamId] = useState<number | null>(null)
+  const [leadersForTeam, setLeadersForTeam] = useState<Record<number, TeamLeaderOption[]>>({})
+  const [leadersForTeamLoading, setLeadersForTeamLoading] = useState<Record<number, boolean>>({})
+  const [leaderModalChildIds, setLeaderModalChildIds] = useState<Record<number, number[]>>({})
+  const [savingLeaderAssign, setSavingLeaderAssign] = useState(false)
+  const [leaderFlashError, setLeaderFlashError] = useState<string | null>(null)
+  const [parentChildOptionsForTeam, setParentChildOptionsForTeam] = useState<
+    Record<number, TeamParentChildOption[]>
+  >({})
+  const [parentChildOptionsLoading, setParentChildOptionsLoading] = useState<
+    Record<number, boolean>
+  >({})
 
   useEffect(() => {
     let ignore = false
@@ -211,6 +231,18 @@ export function AssignTeamUsersPage() {
           }
         }),
       )
+      // Invalidate leader-assignment caches — roles may have changed (e.g. a leader was removed)
+      setLeadersForTeam((prev) => {
+        const next = { ...prev }
+        delete next[activeTeam.id]
+        return next
+      })
+      setParentChildOptionsForTeam((prev) => {
+        const next = { ...prev }
+        delete next[activeTeam.id]
+        return next
+      })
+
       toast.success('Saved successfully')
       closeEditor()
     } catch (err) {
@@ -260,6 +292,176 @@ export function AssignTeamUsersPage() {
   )
 
   const modalTotalCount = modalManagerIds.length + modalLeaderIds.length + modalMemberIds.length
+
+  // ── Leader-assignment dialog helpers ─────────────────────────────────────
+  const leaderAssignTeam = useMemo(
+    () => teams.find((t) => t.id === leaderAssignTeamId) ?? null,
+    [teams, leaderAssignTeamId],
+  )
+
+  const leaderAssignLeaders = useMemo(
+    () => (leaderAssignTeam ? (leadersForTeam[leaderAssignTeam.id] ?? []) : []),
+    [leaderAssignTeam, leadersForTeam],
+  )
+
+  const isLeadersLoading = leaderAssignTeam
+    ? (leadersForTeamLoading[leaderAssignTeam.id] ?? false)
+    : false
+
+  const isParentChildOptionsLoading = leaderAssignTeam
+    ? (parentChildOptionsLoading[leaderAssignTeam.id] ?? false)
+    : false
+
+  const getPickerOptionsForLeader = useCallback(
+    (leader: TeamLeaderOption): AssignChildOption[] => {
+      if (!leaderAssignTeam) return []
+      const options = parentChildOptionsForTeam[leaderAssignTeam.id] ?? []
+
+      // IDs currently selected by OTHER leaders in this dialog session
+      const selectedByOtherLeaders = new Set(
+        Object.entries(leaderModalChildIds)
+          .filter(([leaderId]) => Number(leaderId) !== leader.id)
+          .flatMap(([, ids]) => ids),
+      )
+
+      // IDs originally assigned to ANY leader in this team (within-team assignments)
+      // These are safe to reassign within the dialog even if is_assigned_child = true
+      const managedByThisDialog = new Set(
+        (leadersForTeam[leaderAssignTeam.id] ?? []).flatMap((l) =>
+          (l.assigned_users ?? []).map((u) => u.id),
+        ),
+      )
+
+      return options
+        .filter(
+          (u) =>
+            u.team_role === 'member' &&
+            !selectedByOtherLeaders.has(u.id) &&
+            (!u.is_assigned_child || managedByThisDialog.has(u.id)),
+        )
+        .map((u) => ({ id: u.id, name: u.name, email: u.email }))
+    },
+    [leaderAssignTeam, parentChildOptionsForTeam, leaderModalChildIds, leadersForTeam],
+  )
+
+  const openLeaderAssignDialog = useCallback(
+    async (team: Team) => {
+      setLeaderFlashError(null)
+      setLeaderModalChildIds({})
+      setLeaderAssignTeamId(team.id)
+
+      const needsLeaders = !leadersForTeam[team.id] && !leadersForTeamLoading[team.id]
+      const needsOptions =
+        !parentChildOptionsForTeam[team.id] && !parentChildOptionsLoading[team.id]
+
+      if (needsLeaders) setLeadersForTeamLoading((prev) => ({ ...prev, [team.id]: true }))
+      if (needsOptions) setParentChildOptionsLoading((prev) => ({ ...prev, [team.id]: true }))
+
+      try {
+        const [leadersRes, optionsRes] = await Promise.all([
+          needsLeaders ? teamsApi.leaders(team.id) : null,
+          needsOptions ? teamsApi.parentChildOptions(team.id) : null,
+        ])
+
+        if (leadersRes) {
+          const leaders = leadersRes.data.data
+          setLeadersForTeam((prev) => ({ ...prev, [team.id]: leaders }))
+          const initial: Record<number, number[]> = {}
+          for (const l of leaders) {
+            initial[l.id] = (l.assigned_users ?? []).map((u) => u.id)
+          }
+          setLeaderModalChildIds(initial)
+        } else if (leadersForTeam[team.id]) {
+          const initial: Record<number, number[]> = {}
+          for (const l of leadersForTeam[team.id]) {
+            initial[l.id] = (l.assigned_users ?? []).map((u) => u.id)
+          }
+          setLeaderModalChildIds(initial)
+        }
+
+        if (optionsRes) {
+          setParentChildOptionsForTeam((prev) => ({ ...prev, [team.id]: optionsRes.data.data }))
+        }
+      } catch (err) {
+        toast.error(formatApiError(err))
+      } finally {
+        if (needsLeaders) setLeadersForTeamLoading((prev) => ({ ...prev, [team.id]: false }))
+        if (needsOptions) setParentChildOptionsLoading((prev) => ({ ...prev, [team.id]: false }))
+      }
+    },
+    [leadersForTeam, leadersForTeamLoading, parentChildOptionsForTeam, parentChildOptionsLoading],
+  )
+
+  const closeLeaderAssignDialog = useCallback(() => {
+    if (savingLeaderAssign) return
+    setLeaderAssignTeamId(null)
+    setLeaderModalChildIds({})
+    setLeaderFlashError(null)
+  }, [savingLeaderAssign])
+
+  const setLeaderChildIds = useCallback((leaderId: number, ids: number[]) => {
+    setLeaderModalChildIds((prev) => ({ ...prev, [leaderId]: ids }))
+  }, [])
+
+  const saveLeaderAssignAsync = useCallback(async () => {
+    if (!leaderAssignTeam) return
+    const leaders = leadersForTeam[leaderAssignTeam.id] ?? []
+
+    const setsEqual = (a: number[], b: number[]) => {
+      if (a.length !== b.length) return false
+      const setB = new Set(b)
+      return a.every((id) => setB.has(id))
+    }
+
+    const changed = leaders.filter((leader) => {
+      const savedIds = (leader.assigned_users ?? []).map((u) => u.id)
+      const modalIds = leaderModalChildIds[leader.id] ?? []
+      return !setsEqual(savedIds, modalIds)
+    })
+
+    if (changed.length === 0) {
+      setLeaderFlashError('No changes detected.')
+      return
+    }
+
+    try {
+      setLeaderFlashError(null)
+      setSavingLeaderAssign(true)
+      for (const leader of changed) {
+        await usersApi.syncParentChildren(leader.id, leaderModalChildIds[leader.id] ?? [])
+      }
+
+      const currentOptions = parentChildOptionsForTeam[leaderAssignTeam.id] ?? []
+      const updatedLeaders = leaders.map((leader) => {
+        if (!changed.find((c) => c.id === leader.id)) return leader
+        const newIds = leaderModalChildIds[leader.id] ?? []
+        const assigned = currentOptions
+          .filter((u) => newIds.includes(u.id))
+          .map((u) => ({ id: u.id, name: u.name, email: u.email }))
+        return { ...leader, assigned_users: assigned }
+      })
+      setLeadersForTeam((prev) => ({ ...prev, [leaderAssignTeam.id]: updatedLeaders }))
+      // Invalidate parent-child options cache so next open fetches fresh is_assigned_child state
+      setParentChildOptionsForTeam((prev) => {
+        const next = { ...prev }
+        delete next[leaderAssignTeam.id]
+        return next
+      })
+
+      toast.success('Saved successfully')
+      closeLeaderAssignDialog()
+    } catch (err) {
+      setLeaderFlashError(formatApiError(err))
+    } finally {
+      setSavingLeaderAssign(false)
+    }
+  }, [
+    leaderAssignTeam,
+    leadersForTeam,
+    leaderModalChildIds,
+    parentChildOptionsForTeam,
+    closeLeaderAssignDialog,
+  ])
 
   if (pageLoading) {
     return (
@@ -364,7 +566,7 @@ export function AssignTeamUsersPage() {
                         ) : null}
                       </div>
                       {canAssign ? (
-                        <div className="flex justify-end">
+                        <div className="flex flex-wrap justify-end gap-2">
                           <Button
                             type="button"
                             size="sm"
@@ -378,6 +580,16 @@ export function AssignTeamUsersPage() {
                               <Pencil className="size-3.5" />
                             )}
                             {isEmpty ? 'Add members' : 'Edit members'}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5 font-medium"
+                            onClick={() => void openLeaderAssignDialog(team)}
+                          >
+                            <Network className="size-3.5" />
+                            Assign to leaders
                           </Button>
                         </div>
                       ) : null}
@@ -514,6 +726,92 @@ export function AssignTeamUsersPage() {
             >
               {isSavingEditor ? <Loader2 className="size-3.5 animate-spin" /> : null}
               {isSavingEditor ? 'Saving…' : 'Save members'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Leader-assignment dialog */}
+      <Dialog
+        open={leaderAssignTeamId !== null}
+        onOpenChange={(open) => (!open ? closeLeaderAssignDialog() : undefined)}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              {leaderAssignTeam
+                ? `Assign to Leaders · ${leaderAssignTeam.name}`
+                : 'Assign to Leaders'}
+            </DialogTitle>
+            <DialogDescription>Select members to assign under each leader.</DialogDescription>
+          </DialogHeader>
+
+          {isLeadersLoading ? (
+            <div className="flex h-24 items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              <span>Loading…</span>
+            </div>
+          ) : leaderAssignLeaders.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-8 text-center">
+              <UsersRound className="size-8 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">No leaders in this team</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {leaderAssignLeaders.map((leader) => (
+                <div
+                  key={leader.id}
+                  className="rounded-lg border border-border border-l-2 border-l-amber-300 p-3 dark:border-l-amber-700"
+                >
+                  <div className="mb-2">
+                    <p className="text-sm font-medium text-foreground">{leader.name}</p>
+                    <p className="text-xs text-muted-foreground">{leader.email}</p>
+                  </div>
+                  {isParentChildOptionsLoading ? (
+                    <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">
+                      <Loader2 className="size-3.5 animate-spin" />
+                      <span>Loading members…</span>
+                    </div>
+                  ) : (
+                    <AssignUsersChildrenPicker
+                      disabled={!canAssign || savingLeaderAssign}
+                      value={leaderModalChildIds[leader.id] ?? []}
+                      onChange={(ids) => setLeaderChildIds(leader.id, ids)}
+                      options={getPickerOptionsForLeader(leader)}
+                      placeholder="Select members…"
+                      tagClassName="bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {leaderFlashError ? (
+            <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <p>{leaderFlashError}</p>
+            </div>
+          ) : null}
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeLeaderAssignDialog}
+              disabled={savingLeaderAssign}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void saveLeaderAssignAsync()}
+              disabled={
+                !canAssign || savingLeaderAssign || isLeadersLoading || isParentChildOptionsLoading
+              }
+              className="gap-1.5"
+            >
+              {savingLeaderAssign ? <Loader2 className="size-3.5 animate-spin" /> : null}
+              {savingLeaderAssign ? 'Saving…' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>

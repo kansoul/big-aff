@@ -83,10 +83,17 @@ export type TeamAssignUsersPayload = {
   team_role: TeamRole | null
 }
 
+export interface TeamLeaderAssignedUser {
+  id: number
+  name: string
+  email: string
+}
+
 export interface TeamLeaderOption {
   id: number
   name: string
   email: string
+  assigned_users?: TeamLeaderAssignedUser[]
 }
 
 export interface TeamLeadersResponse {
@@ -97,6 +104,7 @@ export interface TeamParentChildOption {
   id: number
   name: string
   email: string
+  team_role: TeamRole
   is_assigned_child: boolean
 }
 

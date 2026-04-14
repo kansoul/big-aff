@@ -24,7 +24,6 @@ export const PATHS = {
   follows: '/follows',
   teams: '/teams',
   teamsAssignUsers: '/teams-assign-users',
-  teamsAssignLeaderMembers: '/teams-assign-leader-members',
   adsLinks: '/ads-links',
   businessCenters: '/business-centers',
   businessCentersCreate: '/business-centers/create',
