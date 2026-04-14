@@ -53,7 +53,7 @@ export function KeywordSetEditDialog({ open, onOpenChange, item, onSuccess }: Pr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Keyword Set</DialogTitle>
         </DialogHeader>

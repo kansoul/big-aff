@@ -37,8 +37,23 @@ import { formatApiError } from '@/features/settings/components'
 const ADS_TYPE_OPTIONS = [
   { value: 'facebook', label: 'Facebook' },
   { value: 'google', label: 'Google' },
-  { value: 'unknown', label: 'Unknown' },
 ] as const
+
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'die', label: 'Die' },
+]
+
+const ACCOUNT_CREATE_DEFAULT_VALUES: AccountCreateFormValues = {
+  ads_type: 'facebook',
+  business_center_id: null,
+  team_id: null,
+  status: null,
+  is_special: false,
+  sync_to_mcc: false,
+  lines: '',
+}
 
 type CreateAccountDialogProps = {
   open: boolean
@@ -60,15 +75,7 @@ export function CreateAccountDialog({
 
   const form = useForm<AccountCreateFormValues>({
     resolver: zodResolver(accountCreateSchema),
-    defaultValues: {
-      ads_type: 'facebook',
-      business_center_id: null,
-      team_id: null,
-      status: null,
-      is_special: false,
-      sync_to_mcc: false,
-      lines: '',
-    },
+    defaultValues: ACCOUNT_CREATE_DEFAULT_VALUES,
   })
 
   useEffect(() => {
@@ -76,18 +83,15 @@ export function CreateAccountDialog({
       return
     }
     setFormError(null)
-    form.reset({
-      ads_type: 'facebook',
-      business_center_id: null,
-      team_id: null,
-      status: null,
-      is_special: false,
-      sync_to_mcc: false,
-      lines: '',
-    })
+    form.reset(ACCOUNT_CREATE_DEFAULT_VALUES)
   }, [open, form])
 
-  const onSubmit = async (values: AccountCreateFormValues) => {
+  const onSubmit = async (
+    values: AccountCreateFormValues,
+    options?: {
+      createAnother?: boolean
+    },
+  ) => {
     try {
       setFormError(null)
       setSubmitting(true)
@@ -101,7 +105,11 @@ export function CreateAccountDialog({
         lines: values.lines,
       })
       toast.success('Account created successfully')
-      onOpenChange(false)
+      if (options?.createAnother) {
+        form.reset(ACCOUNT_CREATE_DEFAULT_VALUES)
+      } else {
+        onOpenChange(false)
+      }
       onSuccess()
     } catch (err) {
       setFormError(formatApiError(err))
@@ -112,7 +120,7 @@ export function CreateAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Accounts</DialogTitle>
         </DialogHeader>
@@ -120,7 +128,7 @@ export function CreateAccountDialog({
         <Form {...form}>
           <form
             onSubmit={(e) => {
-              void form.handleSubmit(onSubmit)(e)
+              void form.handleSubmit((values) => onSubmit(values, { createAnother: false }))(e)
             }}
             className="flex flex-col gap-4"
           >
@@ -200,11 +208,12 @@ export function CreateAccountDialog({
                 <FormItem>
                   <FormLabel>Status</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="e.g. active"
-                      value={field.value ?? ''}
+                    <SearchableSelect
+                      value={field.value ?? undefined}
+                      onValueChange={field.onChange}
+                      options={STATUS_OPTIONS}
+                      placeholder="Select status"
                       disabled={submitting}
-                      onChange={(e) => field.onChange(e.target.value || null)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -263,7 +272,8 @@ export function CreateAccountDialog({
                   <FormControl>
                     <Textarea
                       rows={7}
-                      placeholder="Each line is one account payload"
+                      placeholder={`123456789|My Account Name\n1234123123|Another Account\n---\nMain Team IDs:\n(none available)
+                        `}
                       value={field.value}
                       disabled={submitting}
                       onChange={field.onChange}
@@ -289,6 +299,16 @@ export function CreateAccountDialog({
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={() => {
+                  void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
+                }}
+              >
+                Create & Create Another
               </Button>
               <Button type="submit" disabled={submitting} className="gap-1.5">
                 {submitting ? (
@@ -396,7 +416,7 @@ export function EditAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Account</DialogTitle>
         </DialogHeader>
@@ -519,11 +539,12 @@ export function EditAccountDialog({
                 <FormItem>
                   <FormLabel>Status</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="e.g. active"
-                      value={field.value ?? ''}
+                    <SearchableSelect
+                      value={field.value ?? undefined}
+                      onValueChange={(value) => field.onChange(value === '__none__' ? null : value)}
+                      options={[...STATUS_OPTIONS]}
+                      placeholder="Select status"
                       disabled={submitting}
-                      onChange={(e) => field.onChange(e.target.value || null)}
                     />
                   </FormControl>
                   <FormMessage />

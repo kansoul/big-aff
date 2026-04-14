@@ -163,7 +163,12 @@ export function SettingsUsersPage() {
     }
   }, [editUser, editForm, roles])
 
-  const onCreateSubmit = async (values: UserCreateFormValues) => {
+  const onCreateSubmit = async (
+    values: UserCreateFormValues,
+    options?: {
+      createAnother?: boolean
+    },
+  ) => {
     try {
       setFormError(null)
       setSubmitting(true)
@@ -173,7 +178,16 @@ export function SettingsUsersPage() {
         password: values.password,
         role_id: values.role_id,
       })
-      setCreateOpen(false)
+      const firstRoleId = roles[0]?.id ?? 0
+      createForm.reset({
+        name: '',
+        email: '',
+        password: '',
+        role_id: firstRoleId,
+      })
+      if (!options?.createAnother) {
+        setCreateOpen(false)
+      }
       loadData()
     } catch (err) {
       setFormError(formatApiError(err))

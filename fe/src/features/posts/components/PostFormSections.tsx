@@ -6,6 +6,7 @@ import type { KeywordSet, PostFormValues } from '@/features/posts/types'
 import { MediaPickerField } from '@/components/common/MediaPickerDialog'
 import { KeywordSetPickerField } from './KeywordSetPickerField'
 import { TextEditorField } from '@/components/common/TextEditor'
+import { LANGUAGE_OPTIONS } from '@/constants/languages'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/date-picker'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -130,7 +131,6 @@ export function PostFormSections({
                     value={field.value ?? '__none__'}
                     onValueChange={(v) => field.onChange(v === '__none__' ? null : v)}
                     options={[
-                      { label: 'No type', value: '__none__' },
                       { label: 'Normal', value: 'normal' },
                       { label: 'AI', value: 'ai' },
                       { label: 'WordPress', value: 'wordpress' },
@@ -147,14 +147,13 @@ export function PostFormSections({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Language</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g. en, vi"
-                      maxLength={10}
-                      {...field}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
+                  <SearchableSelect
+                    value={field.value ?? undefined}
+                    onValueChange={(v) => field.onChange(v)}
+                    options={LANGUAGE_OPTIONS}
+                    placeholder="Select language"
+                    searchPlaceholder="Search language…"
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -169,7 +168,6 @@ export function PostFormSections({
                     value={field.value ? String(field.value) : '__none__'}
                     onValueChange={(v) => field.onChange(v === '__none__' ? null : Number(v))}
                     options={[
-                      { label: 'No category', value: '__none__' },
                       ...categories.map((cat) => ({ label: cat.name, value: String(cat.id) })),
                     ]}
                     placeholder="Select category"

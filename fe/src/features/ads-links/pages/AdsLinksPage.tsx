@@ -31,6 +31,17 @@ import {
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 
+const createDefaultValues: AdsLinkCreateFormValues = {
+  site_id: 0,
+  post_id: 0,
+  channel_code: '',
+  rac: '',
+  keyword_set_id: null,
+  note: '',
+  fbid: '',
+  googleid: '',
+}
+
 export function AdsLinksPage() {
   const user = useAuthStore((s) => s.user)
   const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
@@ -55,16 +66,7 @@ export function AdsLinksPage() {
 
   const createForm = useForm<AdsLinkCreateFormValues>({
     resolver: zodResolver(adsLinkCreateSchema),
-    defaultValues: {
-      site_id: 0,
-      post_id: 0,
-      channel_code: '',
-      rac: '',
-      keyword_set_id: null,
-      note: '',
-      fbid: '',
-      googleid: '',
-    },
+    defaultValues: createDefaultValues,
   })
 
   const editForm = useForm<AdsLinkUpdateFormValues>({
@@ -123,16 +125,7 @@ export function AdsLinksPage() {
       setCreateOpen(open)
       if (open) {
         setFormError(null)
-        createForm.reset({
-          site_id: 0,
-          post_id: 0,
-          channel_code: '',
-          rac: '',
-          keyword_set_id: null,
-          note: '',
-          fbid: '',
-          googleid: '',
-        })
+        createForm.reset(createDefaultValues)
       } else {
         setFormError(null)
       }
@@ -140,7 +133,12 @@ export function AdsLinksPage() {
     [createForm],
   )
 
-  const onCreateSubmit = async (values: AdsLinkCreateFormValues) => {
+  const onCreateSubmit = async (
+    values: AdsLinkCreateFormValues,
+    options?: {
+      createAnother?: boolean
+    },
+  ) => {
     try {
       setFormError(null)
       setSubmitting(true)
@@ -154,7 +152,10 @@ export function AdsLinksPage() {
         fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
       })
-      setCreateOpen(false)
+      createForm.reset(createDefaultValues)
+      if (!options?.createAnother) {
+        setCreateOpen(false)
+      }
       await loadData(filters)
     } catch (err) {
       setFormError(formatApiError(err))

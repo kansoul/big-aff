@@ -32,17 +32,19 @@ type CreateAdClientDialogProps = {
   onSuccess: () => void
 }
 
+const AD_CLIENT_CREATE_DEFAULT_VALUES: AdClientFormValues = {
+  ad_client_id: '',
+  product_code: null,
+  product_name: null,
+}
+
 export function CreateAdClientDialog({ open, onOpenChange, onSuccess }: CreateAdClientDialogProps) {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
   const form = useForm<AdClientFormValues>({
     resolver: zodResolver(adClientSchema),
-    defaultValues: {
-      ad_client_id: '',
-      product_code: null,
-      product_name: null,
-    },
+    defaultValues: AD_CLIENT_CREATE_DEFAULT_VALUES,
   })
 
   useEffect(() => {
@@ -50,10 +52,15 @@ export function CreateAdClientDialog({ open, onOpenChange, onSuccess }: CreateAd
       return
     }
     setFormError(null)
-    form.reset({ ad_client_id: '', product_code: null, product_name: null })
+    form.reset(AD_CLIENT_CREATE_DEFAULT_VALUES)
   }, [open, form])
 
-  const onSubmit = async (values: AdClientFormValues) => {
+  const onSubmit = async (
+    values: AdClientFormValues,
+    options?: {
+      createAnother?: boolean
+    },
+  ) => {
     try {
       setFormError(null)
       setSubmitting(true)
@@ -63,7 +70,11 @@ export function CreateAdClientDialog({ open, onOpenChange, onSuccess }: CreateAd
         product_name: values.product_name,
       })
       toast.success('Ad client created successfully')
-      onOpenChange(false)
+      if (options?.createAnother) {
+        form.reset(AD_CLIENT_CREATE_DEFAULT_VALUES)
+      } else {
+        onOpenChange(false)
+      }
       onSuccess()
     } catch (err) {
       setFormError(formatApiError(err))
@@ -74,7 +85,7 @@ export function CreateAdClientDialog({ open, onOpenChange, onSuccess }: CreateAd
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create Ad Client</DialogTitle>
         </DialogHeader>
@@ -82,7 +93,7 @@ export function CreateAdClientDialog({ open, onOpenChange, onSuccess }: CreateAd
         <Form {...form}>
           <form
             onSubmit={(e) => {
-              void form.handleSubmit(onSubmit)(e)
+              void form.handleSubmit((values) => onSubmit(values, { createAnother: false }))(e)
             }}
             className="flex flex-col gap-4"
           >
@@ -155,6 +166,16 @@ export function CreateAdClientDialog({ open, onOpenChange, onSuccess }: CreateAd
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={() => {
+                  void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
+                }}
+              >
+                Create & Create Another
               </Button>
               <Button type="submit" disabled={submitting} className="gap-1.5">
                 {submitting ? (
@@ -234,7 +255,7 @@ export function EditAdClientDialog({ adClient, onOpenChange, onSuccess }: EditAd
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Ad Client</DialogTitle>
         </DialogHeader>

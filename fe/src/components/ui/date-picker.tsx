@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import dayjs from 'dayjs'
 import { CalendarIcon, X } from 'lucide-react'
 
@@ -20,10 +21,21 @@ export function DatePicker({
   placeholder = 'Pick a date',
   className,
 }: DatePickerProps) {
+  const [open, setOpen] = useState(false)
   const selected = value ? dayjs(value).toDate() : undefined
 
+  const handleSelect = (date: Date | undefined) => {
+    onChange(date ? dayjs(date).format('YYYY-MM-DD') : null)
+    setOpen(false)
+  }
+
+  const handleSelectToday = () => {
+    onChange(dayjs().format('YYYY-MM-DD'))
+    setOpen(false)
+  }
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -51,11 +63,17 @@ export function DatePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={selected}
-          onSelect={(date) => onChange(date ? dayjs(date).format('YYYY-MM-DD') : null)}
-        />
+        <Calendar mode="single" selected={selected} onSelect={handleSelect} />
+        <div className="border-t border-border p-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-full text-xs"
+            onClick={handleSelectToday}
+          >
+            Today
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   )

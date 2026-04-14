@@ -12,6 +12,7 @@ import { EyeOff, FileText, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { LANGUAGE_OPTIONS } from '@/constants/languages'
 import { userOptionsApi } from '@/features/posts/api'
 import { categoriesApi } from '@/features/categories/api'
 import type { Post, PostFilterParams } from '@/features/posts/types'
@@ -275,9 +276,9 @@ function PostsTableCardInner({
       {
         field: 'lang',
         label: 'Language',
-        type: 'input',
+        type: 'select',
         value: filters.lang ?? null,
-        placeholder: 'Language code',
+        options: LANGUAGE_OPTIONS,
       },
       {
         field: 'category_id',

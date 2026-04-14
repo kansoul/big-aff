@@ -43,7 +43,7 @@ export function BulkCreateChannelDialog({
 }: BulkCreateChannelDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-black tracking-tight uppercase text-base">
             Create Channels

@@ -41,7 +41,12 @@ type CreateAdsLinkDialogProps = {
   posts: PostOption[]
   channels: ChannelOption[]
   submitting: boolean
-  onSubmit: (values: AdsLinkCreateFormValues) => void | Promise<void>
+  onSubmit: (
+    values: AdsLinkCreateFormValues,
+    options?: {
+      createAnother?: boolean
+    },
+  ) => void | Promise<void>
 }
 
 export function CreateAdsLinkDialog({
@@ -61,7 +66,7 @@ export function CreateAdsLinkDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-black tracking-tight uppercase text-base">
             New Ads Link
@@ -71,7 +76,7 @@ export function CreateAdsLinkDialog({
         <Form {...form}>
           <form
             onSubmit={(e) => {
-              void form.handleSubmit(onSubmit)(e)
+              void form.handleSubmit((values) => onSubmit(values, { createAnother: false }))(e)
             }}
             className="space-y-4"
           >
@@ -211,6 +216,16 @@ export function CreateAdsLinkDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={() => {
+                  void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
+                }}
+              >
+                Create & Create Another
+              </Button>
               <Button type="submit" disabled={submitting}>
                 {submitting ? 'Creating…' : 'Create'}
               </Button>
@@ -251,7 +266,7 @@ export function EditAdsLinkDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-black tracking-tight uppercase text-base">
             Edit Ads Link

@@ -264,34 +264,6 @@ export const router = createBrowserRouter([
             handle: { title: 'Business Centers' },
           },
           {
-            path: routeSegment(PATHS.businessCentersCreate),
-            lazy: async () => {
-              const { CreateBusinessCenterPage } =
-                await import('@/features/business-centers/pages/CreateBusinessCenterPage')
-              return {
-                Component: withPermission(
-                  CreateBusinessCenterPage,
-                  PermissionSlugs.BusinessCentersCreate,
-                ),
-              }
-            },
-            handle: { title: 'Create Business Center' },
-          },
-          {
-            path: routeSegment(PATHS.businessCentersEdit),
-            lazy: async () => {
-              const { EditBusinessCenterPage } =
-                await import('@/features/business-centers/pages/EditBusinessCenterPage')
-              return {
-                Component: withPermission(
-                  EditBusinessCenterPage,
-                  PermissionSlugs.BusinessCentersUpdate,
-                ),
-              }
-            },
-            handle: { title: 'Edit Business Center' },
-          },
-          {
             path: routeSegment(PATHS.accounts),
             lazy: async () => {
               const { AccountsPage } = await import('@/features/accounts/pages/AccountsPage')

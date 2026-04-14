@@ -94,7 +94,7 @@ export function CreateBusinessCenterPage() {
               ) : (
                 <>
                   <Save className="h-3.5 w-3.5" />
-                  Create Business Center
+                  Create
                 </>
               )}
             </Button>

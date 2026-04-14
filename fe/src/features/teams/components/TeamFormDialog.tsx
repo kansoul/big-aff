@@ -39,6 +39,11 @@ type TeamFormDialogProps = {
   onSuccess: () => void
 }
 
+const TEAM_CREATE_DEFAULT_VALUES: TeamCreateFormValues = {
+  name: '',
+  description: null,
+}
+
 export function TeamFormDialog({ open, onOpenChange, team, onSuccess }: TeamFormDialogProps) {
   const isEdit = !!team
   const [submitting, setSubmitting] = useState(false)
@@ -46,10 +51,7 @@ export function TeamFormDialog({ open, onOpenChange, team, onSuccess }: TeamForm
 
   const form = useForm<TeamCreateFormValues>({
     resolver: zodResolver(isEdit ? teamUpdateSchema : teamCreateSchema),
-    defaultValues: {
-      name: '',
-      description: null,
-    },
+    defaultValues: TEAM_CREATE_DEFAULT_VALUES,
   })
 
   useEffect(() => {
@@ -61,15 +63,17 @@ export function TeamFormDialog({ open, onOpenChange, team, onSuccess }: TeamForm
           description: team.description ?? null,
         })
       } else {
-        form.reset({
-          name: '',
-          description: null,
-        })
+        form.reset(TEAM_CREATE_DEFAULT_VALUES)
       }
     }
   }, [open, team, form])
 
-  const onSubmit = async (values: TeamCreateFormValues | TeamUpdateFormValues) => {
+  const onSubmit = async (
+    values: TeamCreateFormValues | TeamUpdateFormValues,
+    options?: {
+      createAnother?: boolean
+    },
+  ) => {
     try {
       setFormError(null)
       setSubmitting(true)
@@ -88,7 +92,11 @@ export function TeamFormDialog({ open, onOpenChange, team, onSuccess }: TeamForm
         toast.success('Team created successfully')
       }
 
-      onOpenChange(false)
+      if (!isEdit && options?.createAnother) {
+        form.reset(TEAM_CREATE_DEFAULT_VALUES)
+      } else {
+        onOpenChange(false)
+      }
       onSuccess()
     } catch (err) {
       setFormError(formatApiError(err))
@@ -99,7 +107,7 @@ export function TeamFormDialog({ open, onOpenChange, team, onSuccess }: TeamForm
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit Team' : 'Add Team'}</DialogTitle>
         </DialogHeader>
@@ -107,7 +115,7 @@ export function TeamFormDialog({ open, onOpenChange, team, onSuccess }: TeamForm
         <Form {...form}>
           <form
             onSubmit={(e) => {
-              void form.handleSubmit(onSubmit)(e)
+              void form.handleSubmit((values) => onSubmit(values, { createAnother: false }))(e)
             }}
             className="flex flex-col gap-4"
           >
@@ -163,6 +171,18 @@ export function TeamFormDialog({ open, onOpenChange, team, onSuccess }: TeamForm
               >
                 Cancel
               </Button>
+              {!isEdit ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={submitting}
+                  onClick={() => {
+                    void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
+                  }}
+                >
+                  Create & Create Another
+                </Button>
+              ) : null}
               <Button type="submit" disabled={submitting} className="gap-1.5">
                 {submitting ? (
                   <>

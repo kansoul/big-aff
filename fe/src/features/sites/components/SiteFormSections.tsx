@@ -92,10 +92,9 @@ export function SiteFormSections({ control }: SiteFormSectionsProps) {
                   Status<span className="text-destructive">*</span>
                 </FormLabel>
                 <SearchableSelect
-                  value={field.value ?? '__none__'}
-                  onValueChange={(v) => field.onChange(v === '__none__' ? undefined : v)}
+                  value={field.value ?? undefined}
+                  onValueChange={field.onChange}
                   options={[
-                    { label: 'No status', value: '__none__' },
                     { label: 'Active', value: 'active' },
                     { label: 'Maintenance', value: 'maintenance' },
                     { label: 'Suspended', value: 'suspended' },

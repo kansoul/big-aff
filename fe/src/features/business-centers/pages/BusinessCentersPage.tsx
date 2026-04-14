@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import type { MRT_SortingState } from 'mantine-react-table'
 import { toast } from 'sonner'
 
@@ -7,6 +6,8 @@ import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { businessCentersApi } from '@/features/business-centers/api'
 import { BusinessCentersTableCard } from '@/features/business-centers/components/BusinessCentersTableCard'
 import { DeleteBusinessCenterDialog } from '@/features/business-centers/components/DeleteBusinessCenterDialog'
+import { CreateBusinessCenterDialog } from '@/features/business-centers/components/CreateBusinessCenterDialog'
+import { EditBusinessCenterDialog } from '@/features/business-centers/components/EditBusinessCenterDialog'
 import type {
   BusinessCenter,
   BusinessCenterFilterParams,
@@ -14,7 +15,6 @@ import type {
 } from '@/features/business-centers/types'
 import { formatApiError } from '@/features/settings/components'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
-import { PATHS, businessCenterEditPath } from '@/constants/paths'
 import { useAuthStore } from '@/hooks/useAuthStore'
 
 type PaginationState = { pageIndex: number; pageSize: number }
@@ -26,7 +26,6 @@ const DEFAULT_FILTERS: BusinessCenterFilterParams = {
 }
 
 export function BusinessCentersPage() {
-  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
   const canCreate = useMemo(
@@ -42,11 +41,11 @@ export function BusinessCentersPage() {
     [perms],
   )
 
-  const onCreateClick = useCallback(() => void navigate(PATHS.businessCentersCreate), [navigate])
-  const onEditClick = useCallback(
-    (bc: BusinessCenter) => void navigate(businessCenterEditPath(bc.id), { state: bc }),
-    [navigate],
-  )
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<BusinessCenter | null>(null)
+
+  const onCreateClick = useCallback(() => setCreateOpen(true), [])
+  const onEditClick = useCallback((bc: BusinessCenter) => setEditingItem(bc), [])
 
   const [data, setData] = useState<BusinessCenter[]>([])
   const [rowCount, setRowCount] = useState(0)
@@ -202,6 +201,16 @@ export function BusinessCentersPage() {
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         onBulkDeleteClick={onBulkDeleteClick}
+      />
+      <CreateBusinessCenterDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSuccess={loadData}
+      />
+      <EditBusinessCenterDialog
+        businessCenter={editingItem}
+        onOpenChange={(open) => { if (!open) setEditingItem(null) }}
+        onSuccess={loadData}
       />
       <DeleteBusinessCenterDialog
         businessCenter={deletingItem}

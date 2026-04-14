@@ -114,7 +114,7 @@ export function UploadFileDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[min(92vh,640px)] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[min(92vh,640px)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-black tracking-tight uppercase text-base">
             Upload File

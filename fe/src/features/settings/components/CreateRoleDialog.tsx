@@ -33,7 +33,12 @@ type CreateRoleDialogProps = {
   createPermissions: string[]
   setCreatePermissions: Dispatch<SetStateAction<string[]>>
   submitting: boolean
-  onSubmit: (values: RoleNameFormValues) => void | Promise<void>
+  onSubmit: (
+    values: RoleNameFormValues,
+    options?: {
+      createAnother?: boolean
+    },
+  ) => void | Promise<void>
 }
 
 export function CreateRoleDialog({
@@ -70,7 +75,9 @@ export function CreateRoleDialog({
         <Form {...createForm}>
           <form
             onSubmit={(e) => {
-              void createForm.handleSubmit(onSubmit)(e)
+              void createForm.handleSubmit((values) => onSubmit(values, { createAnother: false }))(
+                e,
+              )
             }}
             className={canAssign ? 'flex min-h-0 flex-1 flex-col gap-3' : 'space-y-4'}
           >
@@ -105,6 +112,18 @@ export function CreateRoleDialog({
             >
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={() => {
+                  void createForm.handleSubmit((values) =>
+                    onSubmit(values, { createAnother: true }),
+                  )()
+                }}
+              >
+                Create & Create Another
               </Button>
               <Button type="submit" disabled={submitting}>
                 {submitting ? 'Saving…' : 'Create role'}

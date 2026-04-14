@@ -123,8 +123,8 @@ function CampaignRuleSettingRow({
 
   return (
     <Card className="bg-card/90">
-      <CardContent className="pt-4 md:pt-5">
-        <div className="grid gap-4 md:grid-cols-[minmax(220px,1.2fr)_minmax(220px,1fr)_minmax(280px,1.25fr)_minmax(260px,1.2fr)]">
+      <CardContent className="pt-4 sm:pt-5">
+        <div className="grid gap-4 sm:gap-5 lg:grid-cols-2 xl:grid-cols-[minmax(220px,1.2fr)_minmax(220px,1fr)_minmax(280px,1.25fr)_minmax(260px,1.2fr)]">
           <div className="space-y-1.5">
             <p className="text-xs font-semibold tracking-wide text-muted-foreground">Email</p>
             <p className="break-all font-medium text-foreground">{user.email}</p>
@@ -228,8 +228,8 @@ export function CampaignRuleSettingsList({
           <CardTitle>Users & Campaign Rule Settings</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[auto_auto_1fr] xl:items-center">
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
               <span className="text-xs font-medium text-muted-foreground">Sort by</span>
               <Select
                 value={orderBy}
@@ -240,7 +240,7 @@ export function CampaignRuleSettingsList({
                   })
                 }
               >
-                <SelectTrigger className="h-8 w-[160px]">
+                <SelectTrigger className="h-8 w-full sm:w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -253,7 +253,7 @@ export function CampaignRuleSettingsList({
               </Select>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
               <span className="text-xs font-medium text-muted-foreground">Order</span>
               <Select
                 value={order}
@@ -264,7 +264,7 @@ export function CampaignRuleSettingsList({
                   })
                 }
               >
-                <SelectTrigger className="h-8 w-[120px]">
+                <SelectTrigger className="h-8 w-full sm:w-[120px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -274,7 +274,7 @@ export function CampaignRuleSettingsList({
               </Select>
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2 xl:justify-self-end">
               <span className="text-xs font-medium text-muted-foreground">Per page</span>
               <Select
                 value={String(perPage)}
@@ -286,7 +286,7 @@ export function CampaignRuleSettingsList({
                   })
                 }}
               >
-                <SelectTrigger className="h-8 w-[96px]">
+                <SelectTrigger className="h-8 w-full sm:w-[96px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -327,16 +327,17 @@ export function CampaignRuleSettingsList({
       ) : null}
 
       <Card>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+        <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-xs text-muted-foreground">
             Page {page} / {totalPages}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <Button
               type="button"
               variant="outline"
               size="sm"
+              className="w-full sm:w-auto"
               disabled={loading || page <= 1}
               onClick={() => onFilterChange({ page: page - 1 })}
             >
@@ -347,6 +348,7 @@ export function CampaignRuleSettingsList({
               type="button"
               variant="outline"
               size="sm"
+              className="w-full sm:w-auto"
               disabled={loading || page >= totalPages}
               onClick={() => onFilterChange({ page: page + 1 })}
             >
