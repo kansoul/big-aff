@@ -85,7 +85,7 @@ export function CreateAdClientDialog({ open, onOpenChange, onSuccess }: CreateAd
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create Ad Client</DialogTitle>
         </DialogHeader>
@@ -255,7 +255,7 @@ export function EditAdClientDialog({ adClient, onOpenChange, onSuccess }: EditAd
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Ad Client</DialogTitle>
         </DialogHeader>
