@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
+
 use App\Http\Requests\AdClient\ListAdClientsRequest;
 use App\Http\Requests\AdClient\StoreAdClientRequest;
 use App\Http\Requests\AdClient\UpdateAdClientRequest;

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
+
 use App\Http\Requests\Style\BulkStoreStyleRequest;
 use App\Http\Requests\Style\ListStylesRequest;
 use App\Http\Resources\StyleResource;
@@ -73,7 +73,7 @@ class StyleController extends BaseController
             ->get();
 
         return $this->sendResponse([
-            'data' => $styles->map(fn (Style $style) => [
+            'data' => $styles->map(fn(Style $style) => [
                 'code' => $style->code,
                 'name' => $style->name,
             ]),

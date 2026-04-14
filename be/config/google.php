@@ -24,4 +24,6 @@ return [
         'https://www.googleapis.com/auth/adsense.readonly',
         'https://www.googleapis.com/auth/analytics.readonly',
     ],
+    'vnd_account_id' => env('ACCOUNT_ID_VND', '[]'),
+    'traffic_accounts' => env('TRAFFIC_ACCOUNTS', '[]'),
 ];

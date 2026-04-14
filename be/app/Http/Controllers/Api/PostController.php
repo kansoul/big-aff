@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
+
 use App\Http\Requests\Post\GetPostBySlugRequest;
 use App\Http\Requests\Post\ListPostsRequest;
+use App\Http\Requests\Post\SearchPostRequest;
 use App\Http\Requests\Post\StorePostRequest;
 use App\Http\Requests\Post\UpdatePostRequest;
 use App\Http\Resources\Post\PostBySlugResource;
-use App\Http\Resources\PostResource;
+use App\Http\Resources\Post\PostResource;
 use App\Models\Post;
 use App\Services\Post\PostService;
 use Illuminate\Http\JsonResponse;
@@ -176,20 +177,29 @@ class PostController extends BaseController
 
     /**
      * Get post by slug
+     *
+     * @urlParam slug string required The post slug. Example: my-post
      */
-    public function getPostBySlug(string $slug, GetPostBySlugRequest $request): PostResource|JsonResponse
+    public function getPostBySlug(string $slug, GetPostBySlugRequest $request): JsonResponse
     {
-        $campaignId = $request->input('campaign_id');
-        $tt = $request->input('tt');
-
-        $post = $this->postService->getPostBySlug($slug, $campaignId, $tt);
+        $post = $this->postService->getPostBySlug($slug, $request->validated());
 
         if (! $post) {
-            return $this->sendResponse([], Response::HTTP_NOT_FOUND);
+            return $this->sendError('Post not found', [], Response::HTTP_NOT_FOUND);
         }
 
         return $this->sendResponse([
             'data' => new PostBySlugResource($post),
         ]);
+    }
+
+    /**
+     * Search posts
+     */
+    public function searchPosts(SearchPostRequest $request): JsonResponse
+    {
+        $results = $this->postService->searchPosts($request->validated());
+
+        return $results->response();
     }
 }

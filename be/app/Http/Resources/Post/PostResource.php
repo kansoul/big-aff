@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Post;
 
+use App\Http\Resources\FileResource;
+use App\Http\Resources\KeywordSetResource;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -30,7 +32,7 @@ class PostResource extends JsonResource
             'is_hidden' => $this->is_hidden,
             'type' => $this->type,
             'category_id' => $this->category_id,
-            'category' => $this->whenLoaded('category', fn () => [
+            'category' => $this->whenLoaded('category', fn() => [
                 'id' => $this->category?->id,
                 'name' => $this->category?->name,
             ]),

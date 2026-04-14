@@ -89,7 +89,7 @@ return [
             'handler_with' => [
                 'host' => env('PAPERTRAIL_URL'),
                 'port' => env('PAPERTRAIL_PORT'),
-                'connectionString' => 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT'),
+                'connectionString' => 'tls://' . env('PAPERTRAIL_URL') . ':' . env('PAPERTRAIL_PORT'),
             ],
             'processors' => [PsrLogMessageProcessor::class],
         ],
@@ -143,6 +143,21 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'sync_reports' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/sync_reports.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
+
+        'tracking_events' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/tracking_events.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_TRACKING_EVENTS_DAYS', 30),
+            'replace_placeholders' => true,
+        ],
     ],
 
 ];

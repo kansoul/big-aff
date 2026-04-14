@@ -2,25 +2,27 @@
 
 namespace App\Actions\Post;
 
-use App\Enums\AdsType;
 use App\Enums\PostStatus;
 use App\Enums\TrafficType;
 use App\Models\AdsLink;
 use App\Models\Campaign;
 use App\Models\LinkData;
 use App\Models\Post;
-use App\Services\Google\GoogleAdsService;
-use Illuminate\Auth\Access\AuthorizationException;
+use App\Services\Integrations\Facebook\FacebookAdsService;
+use App\Services\Integrations\Google\GoogleAdsService;
 use Illuminate\Support\Facades\Log;
 
 class GetPostBySlugAction
 {
     /**
-     * @throws AuthorizationException
+     * Get post by slug
      */
-    public function execute(string $slug, ?string $campaignId, ?string $tt): ?Post
+    public function execute(string $slug, array $filters): ?Post
     {
         try {
+            $campaignId = $filters['campaign_id'] ?? null;
+            $tt = $filters['tt'] ?? null;
+
             $isAdsLink = (bool) preg_match('/-\d{5}$/', $slug);
             $cleanSlug = preg_replace('/-\d{5}$/', '', $slug);
 
@@ -66,6 +68,9 @@ class GetPostBySlugAction
                     $post->channel = $linkData->channel_code;
                 }
                 $post->campaign_id = $campaign->campaign_id;
+                if ($trafficType === TrafficType::GOOGLE) {
+                    $post->account_id = $campaign->account_id;
+                }
             }
 
             return $post;
@@ -91,26 +96,26 @@ class GetPostBySlugAction
             return $campaign;
         }
 
+        $campaignData = null;
+
         $trackingIds = is_array($adsLink->tracking_ids) ? $adsLink->tracking_ids : (json_decode($adsLink->tracking_ids ?? '{}', true) ?: []);
-        $accountId = null;
-        $campaignName = null;
-        $adsType = $trafficType === TrafficType::GOOGLE ? AdsType::GOOGLE : ($trafficType === TrafficType::FACEBOOK ? AdsType::FACEBOOK : AdsType::UNKNOWN);
 
         if ($trafficType === TrafficType::GOOGLE) {
             $googleIds = $trackingIds['googleid'] ?? [];
             if (! empty($googleIds)) {
                 $googleAdsService = app(GoogleAdsService::class);
-                $googleCampaignData = $googleAdsService->verifyCampaign($campaignId, $googleIds);
-
-                if ($googleCampaignData) {
-                    $accountId = $googleCampaignData['account_id'];
-                    $campaignName = $googleCampaignData['name'];
-                } else {
-                    return null;
-                }
+                $campaignData = $googleAdsService->verifyCampaign($campaignId, $googleIds);
             } else {
                 return null;
             }
+        }
+        if ($trafficType === TrafficType::FACEBOOK) {
+            $facebookAdsService = app(FacebookAdsService::class);
+            $campaignData = $facebookAdsService->verifyCampaign($campaignId, true, $adsLink);
+        }
+
+        if (! $campaignData) {
+            return null;
         }
 
         $now = now();
@@ -120,9 +125,14 @@ class GetPostBySlugAction
                 'campaign_id' => $campaignId,
             ],
             [
-                'account_id' => $accountId,
-                'campaign_name' => $campaignName,
-                'ads_type' => $adsType,
+                'account_id' => $campaignData['account_id'],
+                'campaign_name' => $campaignData['name'],
+                'ads_type' => $campaignData['ads_type'],
+                'start_time' => $campaignData['start_time'],
+                'stop_time' => $campaignData['stop_time'],
+                'daily_budget' => $campaignData['daily_budget'],
+                'lifetime_budget' => $campaignData['lifetime_budget'],
+                'status' => $campaignData['status'],
                 'updated_at' => $now,
             ]
         );
