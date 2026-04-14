@@ -2,7 +2,24 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+// Flush Redis-buffered tracking counts into tracking_daily every minute.
+// withoutOverlapping() prevents stacking if a flush takes longer than 60 s.
+// onOneServer() ensures only one instance runs across horizontally scaled workers.
+Schedule::command('tracking:flush-daily')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->runInBackground();
+
+// Nightly reconciliation at 02:00 AM — re-aggregates yesterday's raw event data
+// and overwrites tracking_daily to fix any drift from Redis drops or queue errors.
+Schedule::command('tracking:reconcile')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->onOneServer();

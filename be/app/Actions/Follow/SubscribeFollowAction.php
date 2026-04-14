@@ -13,14 +13,12 @@ class SubscribeFollowAction
     {
         return Follow::updateOrCreate(
             [
-                'site_id' => $data['site_id'],
                 'email' => $data['email'],
             ],
             [
                 'post_id' => $data['post_id'] ?? null,
-                'ads_link_id' => $data['ads_link_id'] ?? null,
-                'style_code' => $data['style_code'] ?? null,
-                'channel_code' => $data['channel_code'] ?? null,
+                'style_code' => $data['style'] ?? null,
+                'channel_code' => $data['channel'] ?? null,
             ]
         );
     }

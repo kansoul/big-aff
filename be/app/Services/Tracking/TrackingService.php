@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Services\Tracking;
+
+use App\Actions\Tracking\StoreAdsConversionAction;
+use App\Actions\Tracking\StoreTrackingLogAction;
+
+class TrackingService
+{
+    public function __construct(
+        protected StoreTrackingLogAction $storeTrackingLogAction,
+        protected StoreAdsConversionAction $storeAdsConversionAction,
+    ) {}
+
+    /**
+     * @param  array<string, mixed>  $validatedData
+     */
+    public function handleLog(array $validatedData): string
+    {
+        return $this->storeTrackingLogAction->execute($validatedData);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validatedData
+     */
+    public function storeAdsConversion(array $validatedData): void
+    {
+        $this->storeAdsConversionAction->execute($validatedData);
+    }
+}

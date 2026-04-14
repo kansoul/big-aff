@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\StyleController;
 use App\Http\Controllers\Api\StyleReportRangeController;
 use App\Http\Controllers\Api\TeamController;
+use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserParentChildController;
 use App\Http\Controllers\Api\UserTablePreferenceController;
@@ -40,6 +41,8 @@ Route::middleware('check.whitelist')->group(function () {
     Route::get('/site/config', [SiteController::class, 'config']);
     Route::get('/post/{slug}', [PostController::class, 'getPostBySlug']);
     Route::get('/posts/search', [PostController::class, 'searchPosts']);
+    Route::post('/tracking/log', [TrackingController::class, 'storeLog']);
+    Route::post('/tracking/ads-conversion', [TrackingController::class, 'storeAdsConversion']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
