@@ -83,7 +83,7 @@ class TeamService
     }
 
     /**
-     * @return Collection<int, array{id: int, name: string, email: string}>
+     * @return Collection
      */
     public function leaders(Team $team): Collection
     {

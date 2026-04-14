@@ -7,6 +7,7 @@ use App\Http\Requests\Team\AssignTeamRequest;
 use App\Http\Requests\Team\ListTeamsRequest;
 use App\Http\Requests\Team\StoreTeamRequest;
 use App\Http\Requests\Team\UpdateTeamRequest;
+use App\Http\Resources\Team\TeamLeaderResource;
 use App\Http\Resources\Team\TeamResource;
 use App\Models\Team;
 use App\Models\User;
@@ -175,18 +176,19 @@ class TeamController extends BaseController
     /**
      * List team leaders
      *
-     * Return all users with the leader role in a team.
+     * Return all users with the leader role in a team, including their assigned child users.
      *
      * @urlParam team integer required The team ID. Example: 1
      *
-     * @response 200 {"data": [{"id": 1, "name": "John Doe", "email": "john@example.com"}]}
+     * @response 200 {"data": [{"id": 1, "name": "John Doe", "email": "john@example.com", "assigned_users": [{"id": 3, "name": "Alice", "email": "alice@example.com"}]}]}
      * @response 403 {"message": "This action is unauthorized."}
      * @response 404 {"message": "No query results for model [App\\Models\\Team] 1"}
      */
     public function leaders(Team $team): JsonResponse
     {
+        $leaders = $this->teamService->leaders($team);
         return $this->sendResponse([
-            'data' => $this->teamService->leaders($team),
+            'data' => TeamLeaderResource::collection($leaders),
         ]);
     }
 

@@ -3,25 +3,22 @@
 namespace App\Actions\Team;
 
 use App\Enums\TeamRole;
+use App\Http\Resources\Team\TeamLeaderResource;
 use App\Models\Team;
 use Illuminate\Support\Collection;
 
 class GetTeamLeadersAction
 {
     /**
-     * @return Collection<int, array{id: int, name: string, email: string}>
+     * @return Collection
      */
     public function execute(Team $team): Collection
     {
         return $team->users()
             ->wherePivot('team_role', TeamRole::LEADER->value)
+            ->with(['children:id,name,email'])
             ->select(['users.id', 'users.name', 'users.email'])
             ->orderBy('users.name')
-            ->get()
-            ->map(fn ($user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ]);
+            ->get();
     }
 }

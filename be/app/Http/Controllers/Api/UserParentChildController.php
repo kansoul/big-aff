@@ -40,8 +40,6 @@ class UserParentChildController extends BaseController
                 'assignments' => $result['assignments']->items(),
                 'user_options' => $result['user_options']->items(),
             ],
-            'pagination' => $this->parsePagination($result['assignments']),
-            'options_pagination' => $this->parseSimplePagination($result['user_options']),
         ]);
     }
 
