@@ -2,14 +2,14 @@
 
 namespace App\Console\Commands;
 
-use App\Models\TrackingDaily;
+use App\Models\RealtimeReport;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
-class FlushTrackingDailyCommand extends Command
+class FlushRealtimeReportCommand extends Command
 {
     protected $signature = 'tracking:flush-daily';
 
@@ -35,7 +35,7 @@ class FlushTrackingDailyCommand extends Command
             $this->upsertChunk($chunk);
         }
 
-        $this->line('Flushed '.count($rows).' tracking_daily rows from Redis.');
+        $this->line('Flushed ' . count($rows) . ' tracking_daily rows from Redis.');
     }
 
     /**
@@ -116,7 +116,7 @@ class FlushTrackingDailyCommand extends Command
     private function upsertChunk(array $rows): void
     {
         try {
-            TrackingDaily::upsert(
+            RealtimeReport::upsert(
                 $rows,
                 uniqueBy: ['event_time', 'link_data_id'],
                 update: [
@@ -128,7 +128,7 @@ class FlushTrackingDailyCommand extends Command
                 ],
             );
         } catch (Exception $e) {
-            Log::channel('tracking_events')->error('FlushTrackingDailyCommand upsert failed', [
+            Log::channel('tracking_events')->error('FlushRealtimeReportCommand upsert failed', [
                 'error' => $e->getMessage(),
                 'rows' => count($rows),
             ]);

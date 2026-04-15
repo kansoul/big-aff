@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\TrackingDailySyncService;
+use App\Services\RealtimeReportSyncService;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -21,7 +21,7 @@ use Throwable;
  * increment in SaveTrackingLogJob). Use this job for scheduled nightly
  * reconciliation or manual backfills to correct any drift.
  */
-class SyncTrackingDailyJob implements ShouldBeUnique, ShouldQueue
+class SyncRealtimeReportJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -49,9 +49,9 @@ class SyncTrackingDailyJob implements ShouldBeUnique, ShouldQueue
     public function handle(): void
     {
         try {
-            TrackingDailySyncService::syncLinkDataForDate($this->dateOnly, $this->linkDataId);
+            RealtimeReportSyncService::syncLinkDataForDate($this->dateOnly, $this->linkDataId);
         } catch (Exception $e) {
-            Log::channel('tracking_events')->warning('TrackingDaily reconciliation failed', [
+            Log::channel('tracking_events')->warning('RealtimeReport reconciliation failed', [
                 'timestamp' => now(),
                 'link_data_id' => $this->linkDataId,
                 'date' => $this->dateOnly,
@@ -64,7 +64,7 @@ class SyncTrackingDailyJob implements ShouldBeUnique, ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        Log::channel('tracking_events')->critical('SyncTrackingDailyJob failed after all retries', [
+        Log::channel('tracking_events')->critical('SyncRealtimeReportJob failed after all retries', [
             'timestamp' => now(),
             'link_data_id' => $this->linkDataId,
             'date' => $this->dateOnly,

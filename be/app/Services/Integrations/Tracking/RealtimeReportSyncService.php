@@ -4,12 +4,12 @@ namespace App\Services;
 
 use App\Models\EventClick;
 use App\Models\EventView;
-use App\Models\TrackingDaily;
+use App\Models\RealtimeReport;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
-class TrackingDailySyncService
+class RealtimeReportSyncService
 {
     /**
      * Sync event data from the three event tables to tracking_daily table
@@ -38,7 +38,7 @@ class TrackingDailySyncService
                     $errorCount += $result['error_count'];
                 } catch (Exception $e) {
                     $errorCount++;
-                    $logger->error('[TrackingDailySync] Date processing failed', [
+                    $logger->error('[RealtimeReportSync] Date processing failed', [
                         'date' => $dateString,
                         'error' => $e->getMessage(),
                     ]);
@@ -54,7 +54,7 @@ class TrackingDailySyncService
                 'message' => "Successfully synced {$syncedCount} records with {$errorCount} errors",
             ];
         } catch (Exception $e) {
-            $logger->error('[TrackingDailySync] Fatal error', [
+            $logger->error('[RealtimeReportSync] Fatal error', [
                 'error' => $e->getMessage(),
                 'stack_trace' => $e->getTraceAsString(),
             ]);
@@ -63,7 +63,7 @@ class TrackingDailySyncService
                 'success' => false,
                 'synced_count' => $syncedCount,
                 'error_count' => $errorCount + 1,
-                'message' => 'Sync failed: '.$e->getMessage(),
+                'message' => 'Sync failed: ' . $e->getMessage(),
             ];
         }
     }
@@ -100,7 +100,7 @@ class TrackingDailySyncService
                 $syncedCount++;
             } catch (Exception $e) {
                 $errorCount++;
-                Log::channel('sync_reports')->error('[TrackingDailySync] Link data sync failed', [
+                Log::channel('sync_reports')->error('[RealtimeReportSync] Link data sync failed', [
                     'date' => $date,
                     'link_data_id' => $linkDataId,
                     'error' => $e->getMessage(),
@@ -142,7 +142,7 @@ class TrackingDailySyncService
 
         $now = now();
 
-        TrackingDaily::upsert(
+        RealtimeReport::upsert(
             [[
                 'event_time' => $date,
                 'link_data_id' => $linkDataId,

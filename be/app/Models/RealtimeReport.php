@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
-use App\Models\Traits\Relationship\TrackingDailyRelationship;
+use App\Models\Traits\Relationship\RealtimeReportRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TrackingDaily extends Model
+class RealtimeReport extends Model
 {
-    use HasFactory, TrackingDailyRelationship;
+    use HasFactory, RealtimeReportRelationship;
 
-    protected $table = 'tracking_daily';
+    protected $table = 'realtime_reports';
 
     protected $fillable = [
         'event_time',

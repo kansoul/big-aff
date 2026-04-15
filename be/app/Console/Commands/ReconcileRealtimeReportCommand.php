@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
-use App\Services\TrackingDailySyncService;
+use App\Services\RealtimeReportSyncService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
-class ReconcileTrackingDailyCommand extends Command
+class ReconcileRealtimeReportCommand extends Command
 {
     protected $signature = 'tracking:reconcile
         {--date=        : Reconcile a single date (Y-m-d). Defaults to yesterday.}
@@ -21,7 +21,7 @@ class ReconcileTrackingDailyCommand extends Command
 
         $this->info("Reconciling tracking_daily from {$startDate} to {$endDate}…");
 
-        $result = TrackingDailySyncService::sync([
+        $result = RealtimeReportSyncService::sync([
             'start_date' => $startDate,
             'end_date' => $endDate,
         ]);
