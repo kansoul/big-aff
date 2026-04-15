@@ -1,0 +1,1 @@
+export { StyleReportTableCard } from './StyleReportTableCard'

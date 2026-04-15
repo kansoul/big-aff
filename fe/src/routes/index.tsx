@@ -297,6 +297,30 @@ export const router = createBrowserRouter([
             },
             handle: { title: 'Ad Clients' },
           },
+          {
+            path: routeSegment(PATHS.adsReport),
+            lazy: async () => {
+              const { AdsReportPage } = await import('@/features/ads-report/pages/AdsReportPage')
+              return {
+                Component: withPermission(AdsReportPage, PermissionSlugs.ReportOverviewView),
+              }
+            },
+            handle: { title: 'Ads Report' },
+          },
+          {
+            path: routeSegment(PATHS.styleReport),
+            lazy: async () => {
+              const { StyleReportPage } =
+                await import('@/features/style-report/pages/StyleReportPage')
+              return {
+                Component: withPermission(
+                  StyleReportPage as ComponentType,
+                  PermissionSlugs.AdClientsView,
+                ),
+              }
+            },
+            handle: { title: 'Style Report' },
+          },
         ],
       },
     ],
