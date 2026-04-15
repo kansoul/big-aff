@@ -1,4 +1,4 @@
-export type AdsenseStyleReportOrderBy =
+export type StyleReportOrderBy =
   | 'date'
   | 'style_name'
   | 'channel_name'
@@ -7,9 +7,9 @@ export type AdsenseStyleReportOrderBy =
   | 'earnings'
   | 'cpc'
 
-export type AdsenseStyleReportOrder = 'asc' | 'desc'
+export type StyleReportOrder = 'asc' | 'desc'
 
-export interface AdsenseStyleReportRow {
+export interface StyleReportRow {
   id: number
   date: string
   style_name: string
@@ -20,7 +20,7 @@ export interface AdsenseStyleReportRow {
   cpc: number
 }
 
-export interface AdsenseStyleReportPagination {
+export interface StyleReportPagination {
   current_page: number
   from: number | null
   to: number | null
@@ -33,15 +33,15 @@ export interface AdsenseStyleReportPagination {
   total: number
 }
 
-export interface AdsenseStyleReportListResponse {
-  data: AdsenseStyleReportRow[]
-  pagination: AdsenseStyleReportPagination
+export interface StyleReportListResponse {
+  data: StyleReportRow[]
+  pagination: StyleReportPagination
 }
 
-export interface AdsenseStyleReportFilterParams {
+export interface StyleReportFilterParams {
   query?: string | null
-  order_by?: AdsenseStyleReportOrderBy | null
-  order?: AdsenseStyleReportOrder | null
+  order_by?: StyleReportOrderBy | null
+  order?: StyleReportOrder | null
   page?: number
   per_page?: number
 }

@@ -11,12 +11,12 @@ import { BarChart3 } from 'lucide-react'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { Badge } from '@/components/ui/badge'
 import type {
-  AdsenseStyleReportFilterParams,
-  AdsenseStyleReportOrder,
-  AdsenseStyleReportRow,
-} from '@/features/adsense-style-report/types'
+  StyleReportFilterParams,
+  StyleReportOrder,
+  StyleReportRow,
+} from '@/features/style-report/types'
 
-function getColumns(): MRT_ColumnDef<AdsenseStyleReportRow>[] {
+function getColumns(): MRT_ColumnDef<StyleReportRow>[] {
   return [
     {
       accessorKey: 'date',
@@ -73,18 +73,18 @@ function getColumns(): MRT_ColumnDef<AdsenseStyleReportRow>[] {
   ]
 }
 
-type AdsenseStyleReportTableCardProps = {
-  data: AdsenseStyleReportRow[]
+type StyleReportTableCardProps = {
+  data: StyleReportRow[]
   rowCount: number
   loading: boolean
-  filters: AdsenseStyleReportFilterParams
-  onFilterChange: (patch: Partial<AdsenseStyleReportFilterParams>) => void
+  filters: StyleReportFilterParams
+  onFilterChange: (patch: Partial<StyleReportFilterParams>) => void
   onFilterReset: () => void
   onPaginationChange: (page: number, perPage: number) => void
-  onSortingChange: (orderBy: string | null, order: AdsenseStyleReportOrder | null) => void
+  onSortingChange: (orderBy: string | null, order: StyleReportOrder | null) => void
 }
 
-function AdsenseStyleReportTableCardInner({
+function StyleReportTableCardInner({
   data,
   rowCount,
   loading,
@@ -93,7 +93,7 @@ function AdsenseStyleReportTableCardInner({
   onFilterReset,
   onPaginationChange,
   onSortingChange,
-}: AdsenseStyleReportTableCardProps) {
+}: StyleReportTableCardProps) {
   const columns = useMemo(() => getColumns(), [])
 
   const filterFields = useMemo<FilterFieldDef[]>(
@@ -189,4 +189,4 @@ function AdsenseStyleReportTableCardInner({
   return <MantineReactTable table={table} />
 }
 
-export const AdsenseStyleReportTableCard = memo(AdsenseStyleReportTableCardInner)
+export const StyleReportTableCard = memo(StyleReportTableCardInner)

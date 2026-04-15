@@ -1,12 +1,12 @@
 import { axiosInstance } from '@/shared/api/axios'
 import type {
-  AdsenseStyleReportFilterParams,
-  AdsenseStyleReportListResponse,
-} from '@/features/adsense-style-report/types'
+  StyleReportFilterParams,
+  StyleReportListResponse,
+} from '@/features/style-report/types'
 
-export const adsenseStyleReportApi = {
-  list: (filters: AdsenseStyleReportFilterParams) =>
-    axiosInstance.get<AdsenseStyleReportListResponse>('/adsense-style-report', {
+export const styleReportApi = {
+  list: (filters: StyleReportFilterParams) =>
+    axiosInstance.get<StyleReportListResponse>('/style-report', {
       params: {
         page: filters.page ?? 1,
         per_page: filters.per_page ?? 15,

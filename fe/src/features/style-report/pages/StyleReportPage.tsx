@@ -1,22 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { adsenseStyleReportApi } from '@/features/adsense-style-report/api'
-import { AdsenseStyleReportTableCard } from '@/features/adsense-style-report/components'
+import { styleReportApi } from '@/features/style-report/api'
+import { StyleReportTableCard } from '@/features/style-report/components'
 import type {
-  AdsenseStyleReportFilterParams,
-  AdsenseStyleReportListResponse,
-  AdsenseStyleReportOrderBy,
-  AdsenseStyleReportRow,
-} from '@/features/adsense-style-report/types'
+  StyleReportFilterParams,
+  StyleReportListResponse,
+  StyleReportOrderBy,
+  StyleReportRow,
+} from '@/features/style-report/types'
 
-const DEFAULT_FILTERS: AdsenseStyleReportFilterParams = {
+const DEFAULT_FILTERS: StyleReportFilterParams = {
   page: 1,
   per_page: 10,
   order_by: 'date',
   order: 'desc',
 }
 
-const MOCK_ROWS: AdsenseStyleReportRow[] = [
+const MOCK_ROWS: StyleReportRow[] = [
   {
     id: 1,
     date: '2026-04-15',
@@ -139,11 +139,7 @@ const MOCK_ROWS: AdsenseStyleReportRow[] = [
   },
 ]
 
-function compareByOrder(
-  rowA: AdsenseStyleReportRow,
-  rowB: AdsenseStyleReportRow,
-  orderBy: AdsenseStyleReportOrderBy,
-) {
+function compareByOrder(rowA: StyleReportRow, rowB: StyleReportRow, orderBy: StyleReportOrderBy) {
   switch (orderBy) {
     case 'date':
       return rowA.date.localeCompare(rowB.date)
@@ -164,7 +160,7 @@ function compareByOrder(
   }
 }
 
-function getMockResponse(filters: AdsenseStyleReportFilterParams): AdsenseStyleReportListResponse {
+function getMockResponse(filters: StyleReportFilterParams): StyleReportListResponse {
   const query = filters.query?.trim().toLowerCase()
   const orderBy = filters.order_by ?? 'date'
   const order = filters.order ?? 'desc'
@@ -198,7 +194,7 @@ function getMockResponse(filters: AdsenseStyleReportFilterParams): AdsenseStyleR
       last_page: Math.max(1, Math.ceil(total / perPage)),
       last_page_url: null,
       next_page_url: null,
-      path: '/adsense-style-report',
+      path: '/style-report',
       per_page: perPage,
       prev_page_url: null,
       total,
@@ -206,16 +202,16 @@ function getMockResponse(filters: AdsenseStyleReportFilterParams): AdsenseStyleR
   }
 }
 
-export function AdsenseStyleReportPage() {
-  const [data, setData] = useState<AdsenseStyleReportRow[]>([])
+export function StyleReportPage() {
+  const [data, setData] = useState<StyleReportRow[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState<AdsenseStyleReportFilterParams>(DEFAULT_FILTERS)
+  const [filters, setFilters] = useState<StyleReportFilterParams>(DEFAULT_FILTERS)
 
-  const loadData = useCallback(async (activeFilters: AdsenseStyleReportFilterParams) => {
+  const loadData = useCallback(async (activeFilters: StyleReportFilterParams) => {
     try {
       setLoading(true)
-      const { data: response } = await adsenseStyleReportApi.list(activeFilters)
+      const { data: response } = await styleReportApi.list(activeFilters)
       setData(response.data)
       setRowCount(response.pagination.total)
     } catch {
@@ -231,7 +227,7 @@ export function AdsenseStyleReportPage() {
     void loadData(filters)
   }, [loadData, filters])
 
-  const onFilterChange = useCallback((patch: Partial<AdsenseStyleReportFilterParams>) => {
+  const onFilterChange = useCallback((patch: Partial<StyleReportFilterParams>) => {
     setFilters((prev) => ({ ...prev, ...patch, page: 1 }))
   }, [])
 
@@ -246,14 +242,14 @@ export function AdsenseStyleReportPage() {
   const onSortingChange = useCallback((orderBy: string | null, order: 'asc' | 'desc' | null) => {
     setFilters((prev) => ({
       ...prev,
-      order_by: (orderBy as AdsenseStyleReportOrderBy | null) ?? undefined,
+      order_by: (orderBy as StyleReportOrderBy | null) ?? undefined,
       order: order ?? undefined,
       page: 1,
     }))
   }, [])
 
   return (
-    <AdsenseStyleReportTableCard
+    <StyleReportTableCard
       data={data}
       rowCount={rowCount}
       loading={loading}

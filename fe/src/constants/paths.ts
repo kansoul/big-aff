@@ -30,7 +30,8 @@ export const PATHS = {
   businessCentersEdit: '/business-centers/:id/edit',
   accounts: '/accounts',
   adClients: '/ad-clients',
-  adsenseStyleReport: '/adsense-style-report',
+  adsReport: '/ads-report',
+  styleReport: '/style-report',
   campaignRuleSettings: '/campaign-rule-settings',
 } as const
 

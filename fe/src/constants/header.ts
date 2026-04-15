@@ -130,8 +130,14 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     name: 'Report',
     items: [
       {
+        name: 'Ads Report',
+        href: PATHS.adsReport,
+        icon: BarChart3,
+        requiredPermission: PermissionSlugs.ReportOverviewView,
+      },
+      {
         name: 'Style Report',
-        href: PATHS.adsenseStyleReport,
+        href: PATHS.styleReport,
         icon: BarChart3,
         requiredPermission: PermissionSlugs.AdClientsView,
       },
