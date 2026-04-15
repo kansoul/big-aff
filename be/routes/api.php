@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\FollowController;
+use App\Http\Controllers\Api\GoogleConversionController;
 use App\Http\Controllers\Api\KeywordSetController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\RoleController;
@@ -249,5 +250,16 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::CampaignRuleSettingsView->value);
         Route::match(['put', 'patch'], '{user}', [CampaignRuleSettingController::class, 'save'])
             ->middleware('permission.scope:'.Permission::CampaignRuleSettingsUpdate->value);
+    });
+
+    Route::prefix('google-conversions')->group(function () {
+        Route::get('/', [GoogleConversionController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::GoogleConversionsView->value);
+        Route::match(['put', 'patch'], '{account}', [GoogleConversionController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::GoogleConversionsUpdate->value);
+        Route::post('bulk-update', [GoogleConversionController::class, 'bulkUpdate'])
+            ->middleware('permission.scope:'.Permission::GoogleConversionsUpdate->value);
+        Route::post('bulk-import', [GoogleConversionController::class, 'import'])
+            ->middleware('permission.scope:'.Permission::GoogleConversionsCreate->value);
     });
 });

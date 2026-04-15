@@ -148,6 +148,13 @@ enum Permission: string
 
     case CampaignRuleSettingsUpdate = 'campaign-rule-settings.update'; // bit 62 →  4611686018427387904
 
+    // —— Google Conversions ——
+    case GoogleConversionsView = 'google-conversions.view';    // bit 63 →  9223372036854775808
+
+    case GoogleConversionsUpdate = 'google-conversions.update'; // bit 64 →  18446744073709551616
+
+    case GoogleConversionsCreate = 'google-conversions.create'; // bit 65 →  36893488147419103232
+
     /**
      * Bit value for this permission (1 << declaration index).
      */
