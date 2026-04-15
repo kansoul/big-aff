@@ -1,0 +1,73 @@
+<?php
+
+namespace App\Actions\GoogleConversion;
+
+use App\Models\Account;
+use Illuminate\Support\Facades\DB;
+
+class ImportGoogleConversionsAction
+{
+    /**
+     * @var array<string, string>
+     */
+    private const CONVERSION_MAPPING = [
+        'OutboundClickU' => 'search_click',
+        'ArticleViewU' => 'article_view',
+        'SearchViewU' => 'search_view',
+        'RSUClickU' => 'rsu_click',
+    ];
+
+    /**
+     * @return array{processed: int, skipped: int}
+     */
+    public function execute(string $rawData): array
+    {
+        $lines = explode("\n", $rawData);
+        $processed = 0;
+        $skipped = 0;
+
+        DB::transaction(function () use ($lines, &$processed, &$skipped): void {
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (empty($line)) {
+                    continue;
+                }
+
+                $parts = explode('|', $line);
+                if (count($parts) !== 3) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                [$customerId, $convName, $convId] = $parts;
+                $customerId = trim($customerId);
+                $convName = trim($convName);
+                $convId = trim($convId);
+
+                if (! isset(self::CONVERSION_MAPPING[$convName])) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                $field = self::CONVERSION_MAPPING[$convName];
+                $account = Account::where('account_id', $customerId)->first();
+
+                if (! $account) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                $account->conversion()->updateOrCreate(
+                    ['account_id' => $account->id],
+                    [$field => $convId]
+                );
+                $processed++;
+            }
+        });
+
+        return ['processed' => $processed, 'skipped' => $skipped];
+    }
+}
