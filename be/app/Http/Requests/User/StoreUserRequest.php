@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\User;
 
+use App\Enums\TeamRole;
+use App\Models\TeamUser;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -32,6 +34,7 @@ class StoreUserRequest extends FormRequest
                 'integer',
                 'exists:users,id',
             ],
+            'team_id' => ['nullable', 'integer', 'exists:teams,id'],
         ];
     }
 
@@ -62,6 +65,32 @@ class StoreUserRequest extends FormRequest
                     $allowed = $auth->manageableUserIds();
                     if (! in_array($parentId, $allowed, true)) {
                         $validator->errors()->add('parent_id', __('validation.in', ['attribute' => 'parent id']));
+                    }
+                }
+            },
+            function (Validator $validator): void {
+                $auth = $this->user();
+                if ($auth === null || $auth->managesAllUsers()) {
+                    return;
+                }
+
+                // If auth user is a manager of multiple teams, team_id is required
+                $managerTeamIds = TeamUser::query()
+                    ->where('user_id', $auth->id)
+                    ->where('team_role', TeamRole::MANAGER)
+                    ->pluck('team_id')
+                    ->all();
+
+                if (count($managerTeamIds) > 1) {
+                    $teamId = $this->input('team_id');
+                    if ($teamId === null || $teamId === '') {
+                        $validator->errors()->add('team_id', __('validation.required', ['attribute' => 'team id']));
+
+                        return;
+                    }
+
+                    if (! in_array((int) $teamId, $managerTeamIds, true)) {
+                        $validator->errors()->add('team_id', __('validation.in', ['attribute' => 'team id']));
                     }
                 }
             },

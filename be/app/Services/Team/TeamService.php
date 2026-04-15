@@ -8,9 +8,11 @@ use App\Actions\Team\DeleteTeamAction;
 use App\Actions\Team\GetTeamLeadersAction;
 use App\Actions\Team\GetTeamOptionsAction;
 use App\Actions\Team\GetTeamUserOptionsAction;
+use App\Actions\Team\GetUserTeamOptionsAction;
 use App\Actions\Team\ListTeamsAction;
 use App\Actions\Team\UpdateTeamAction;
 use App\Models\Team;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -25,6 +27,7 @@ class TeamService
         private readonly GetTeamUserOptionsAction $getTeamUserOptionsAction,
         private readonly GetTeamOptionsAction $getTeamOptionsAction,
         private readonly GetTeamLeadersAction $getTeamLeadersAction,
+        private readonly GetUserTeamOptionsAction $getUserTeamOptionsAction,
     ) {}
 
     /**
@@ -84,5 +87,13 @@ class TeamService
     public function leaders(Team $team): Collection
     {
         return $this->getTeamLeadersAction->execute($team);
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string, team_role: string}>
+     */
+    public function userTeamOptions(User $user): Collection
+    {
+        return $this->getUserTeamOptionsAction->execute($user);
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Resources\ManagedUserResource;
 use App\Http\Resources\User\UserOptionResource;
 use App\Models\User;
+use App\Services\Team\TeamService;
 use App\Services\User\UserService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +25,7 @@ class UserController extends BaseController
 
     public function __construct(
         private readonly UserService $userService,
+        private readonly TeamService $teamService,
     ) {}
 
     /**
@@ -96,6 +98,23 @@ class UserController extends BaseController
 
         return $this->sendResponse([
             'data' => UserOptionResource::collection($users),
+        ]);
+    }
+
+    /**
+     * User team options
+     *
+     * Return the teams a user belongs to, for use in select/dropdown inputs.
+     *
+     * @urlParam user integer required The user ID. Example: 1
+     *
+     * @response 200 {"data": [{"id": 1, "name": "Marketing", "team_role": "manager"}]}
+     * @response 404 {"message": "No query results for model [App\\Models\\User] 1"}
+     */
+    public function teamOptions(User $user): JsonResponse
+    {
+        return $this->sendResponse([
+            'data' => $this->teamService->userTeamOptions($user),
         ]);
     }
 

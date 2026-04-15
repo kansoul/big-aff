@@ -26,8 +26,8 @@ class UserResource extends JsonResource
     {
         /** @var User $user */
         $user = $this->resource;
-        $user->loadMissing('role');
-
+        $user->loadMissing(['role', 'teams']);
+        $roles = $user->teams->pluck('team_role')->toArray();
         $permissions = $user->role?->getPermissionSlugs() ?? [];
 
         return [
@@ -36,6 +36,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'permissions' => $permissions,
             'is_admin' => $this->is_admin,
+            'roles' => $roles,
         ];
     }
 }
