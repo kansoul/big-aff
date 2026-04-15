@@ -6,6 +6,7 @@ use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Models\TeamUser;
 use App\Models\User;
+use App\Models\UserParentChild;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,22 @@ class AssignTeamAction
         $teamRole = $data['team_role'] ?? TeamRole::MEMBER->value;
 
         return DB::transaction(function () use ($team, $userIds, $teamRole): array {
+            if ($teamRole === TeamRole::LEADER->value) {
+                $removedLeaderIds = TeamUser::query()
+                    ->where('team_id', $team->id)
+                    ->where('team_role', TeamRole::LEADER->value)
+                    ->whereNotIn('user_id', $userIds)
+                    ->pluck('user_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+
+                if (! empty($removedLeaderIds)) {
+                    UserParentChild::query()
+                        ->whereIn('parent_user_id', $removedLeaderIds)
+                        ->delete();
+                }
+            }
+
             TeamUser::query()
                 ->where('team_id', $team->id)
                 ->where('team_role', $teamRole)
@@ -40,7 +57,7 @@ class AssignTeamAction
                 ->where('team_id', $team->id)
                 ->whereIn('user_id', $userIds)
                 ->pluck('user_id')
-                ->map(fn($id) => (int) $id)
+                ->map(fn ($id) => (int) $id)
                 ->all();
 
             $candidates = array_diff($userIds, $alreadyInThisTeam);
@@ -55,7 +72,7 @@ class AssignTeamAction
                     ->whereIn('user_id', $candidates)
                     ->whereIn('team_role', [TeamRole::LEADER->value, TeamRole::MEMBER->value])
                     ->get(['user_id', 'team_id', 'team_role']);
-                $conflictUserIds = $conflictRows->pluck('user_id')->map(fn($id) => (int) $id)->all();
+                $conflictUserIds = $conflictRows->pluck('user_id')->map(fn ($id) => (int) $id)->all();
                 $toInsert = array_values(array_diff($candidates, $conflictUserIds));
                 info(array_values(array_diff($candidates, $conflictUserIds)));
 
@@ -77,7 +94,7 @@ class AssignTeamAction
             if (! empty($toInsert)) {
                 $now = now();
                 $isSingleTeamRole = in_array($teamRole, [TeamRole::LEADER->value, TeamRole::MEMBER->value], true);
-                $rows = array_map(fn(int $userId) => [
+                $rows = array_map(fn (int $userId) => [
                     'team_id' => $team->id,
                     'user_id' => $userId,
                     'team_role' => $teamRole,

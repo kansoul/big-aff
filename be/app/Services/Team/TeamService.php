@@ -11,7 +11,6 @@ use App\Actions\Team\GetTeamUserOptionsAction;
 use App\Actions\Team\ListTeamsAction;
 use App\Actions\Team\UpdateTeamAction;
 use App\Models\Team;
-use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -82,9 +81,6 @@ class TeamService
         return $this->getTeamOptionsAction->execute();
     }
 
-    /**
-     * @return Collection
-     */
     public function leaders(Team $team): Collection
     {
         return $this->getTeamLeadersAction->execute($team);
