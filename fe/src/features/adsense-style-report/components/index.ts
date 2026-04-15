@@ -1,0 +1,1 @@
+export { AdsenseStyleReportTableCard } from './AdsenseStyleReportTableCard'

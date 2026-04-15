@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react'
 import { PATHS, type NavSectionId } from '@/constants/paths'
 import { PermissionSlugs } from '@/constants/permissions'
 import {
+  BarChart3,
   Building2,
   FileText,
   FolderOpen,
@@ -121,6 +122,17 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         name: 'Ad Clients',
         href: PATHS.adClients,
         icon: UserCog,
+        requiredPermission: PermissionSlugs.AdClientsView,
+      },
+    ],
+  },
+  {
+    name: 'Report',
+    items: [
+      {
+        name: 'Style Report',
+        href: PATHS.adsenseStyleReport,
+        icon: BarChart3,
         requiredPermission: PermissionSlugs.AdClientsView,
       },
     ],

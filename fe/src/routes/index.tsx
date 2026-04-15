@@ -297,6 +297,17 @@ export const router = createBrowserRouter([
             },
             handle: { title: 'Ad Clients' },
           },
+          {
+            path: routeSegment(PATHS.adsenseStyleReport),
+            lazy: async () => {
+              const { AdsenseStyleReportPage } =
+                await import('@/features/adsense-style-report/pages/AdsenseStyleReportPage')
+              return {
+                Component: withPermission(AdsenseStyleReportPage, PermissionSlugs.AdClientsView),
+              }
+            },
+            handle: { title: 'Style Report' },
+          },
         ],
       },
     ],
