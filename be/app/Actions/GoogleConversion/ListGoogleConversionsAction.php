@@ -29,7 +29,7 @@ class ListGoogleConversionsAction
 
         $query = Account::query()
             ->with('conversion')
-            ->where('type', 'google');
+            ->where('ads_type', 'google');
 
         $ownership->applyTo($query);
 
