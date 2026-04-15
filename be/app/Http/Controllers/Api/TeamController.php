@@ -187,6 +187,7 @@ class TeamController extends BaseController
     public function leaders(Team $team): JsonResponse
     {
         $leaders = $this->teamService->leaders($team);
+
         return $this->sendResponse([
             'data' => TeamLeaderResource::collection($leaders),
         ]);

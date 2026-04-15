@@ -3,15 +3,11 @@
 namespace App\Actions\Team;
 
 use App\Enums\TeamRole;
-use App\Http\Resources\Team\TeamLeaderResource;
 use App\Models\Team;
 use Illuminate\Support\Collection;
 
 class GetTeamLeadersAction
 {
-    /**
-     * @return Collection
-     */
     public function execute(Team $team): Collection
     {
         return $team->users()
