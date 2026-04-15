@@ -60,6 +60,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::SettingsUsersDelete->value);
         Route::post('{user}/assign-accounts', [UserController::class, 'assignAccounts'])
             ->middleware('permission.scope:'.Permission::AccountsAssign->value);
+        Route::get('{user}/team-options', [UserController::class, 'teamOptions'])
+            ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
     });
 
     Route::prefix('files')->middleware('ensure.app.user')->group(function () {
