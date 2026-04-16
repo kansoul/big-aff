@@ -29,11 +29,6 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'role_id' => ['required', 'integer', 'exists:roles,id'],
-            'parent_id' => [
-                $requiresParent ? 'required' : 'nullable',
-                'integer',
-                'exists:users,id',
-            ],
             'team_id' => ['nullable', 'integer', 'exists:teams,id'],
         ];
     }
@@ -44,30 +39,6 @@ class StoreUserRequest extends FormRequest
     public function after(): array
     {
         return [
-            function (Validator $validator): void {
-                $auth = $this->user();
-                if ($auth === null) {
-                    return;
-                }
-
-                $parentId = $this->input('parent_id');
-                if ($parentId === null || $parentId === '') {
-                    if (! $auth->managesAllUsers()) {
-                        $validator->errors()->add('parent_id', __('validation.required', ['attribute' => 'parent id']));
-                    }
-
-                    return;
-                }
-
-                $parentId = (int) $parentId;
-
-                if (! $auth->managesAllUsers()) {
-                    $allowed = $auth->manageableUserIds();
-                    if (! in_array($parentId, $allowed, true)) {
-                        $validator->errors()->add('parent_id', __('validation.in', ['attribute' => 'parent id']));
-                    }
-                }
-            },
             function (Validator $validator): void {
                 $auth = $this->user();
                 if ($auth === null || $auth->managesAllUsers()) {

@@ -7,6 +7,7 @@ use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class ListTeamsAction
 {
@@ -26,8 +27,11 @@ class ListTeamsAction
     {
         $ownership = OwnershipFilter::forAuthUser();
 
-        $query = Team::query()->with('users');
-        $ownership->applyTo($query);
+        $query = Team::query()
+            ->with('users')
+            ->whereHas('users', function ($query) use ($ownership) {
+                $ownership->applyTo($query, 'user_id');
+            });
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];

@@ -231,7 +231,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('{team}/assign-users', [TeamController::class, 'assignUsers'])
             ->middleware('permission.scope:'.Permission::TeamsAssign->value);
         Route::get('{team}/parent-child-options', [UserParentChildController::class, 'teamMemberOptions'])
-            ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
+            ->middleware('permission.scope:'.Permission::TeamsAssign->value);
     });
 
     Route::prefix('ad-clients')->group(function () {
