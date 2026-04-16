@@ -68,6 +68,6 @@ trait AccountRelationship
      */
     public function conversion(): HasOne
     {
-        return $this->hasOne(Conversion::class);
+        return $this->hasOne(Conversion::class, 'account_id', 'account_id');
     }
 }

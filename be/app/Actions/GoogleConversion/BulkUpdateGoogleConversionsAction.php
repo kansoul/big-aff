@@ -14,7 +14,7 @@ class BulkUpdateGoogleConversionsAction
     {
         DB::transaction(function () use ($rows): void {
             foreach ($rows as $row) {
-                $account = Account::select('account_id')->where('account_id', $row['account_id'])->first();
+                $account = Account::where('account_id', $row['account_id'])->first();
                 if (! $account) {
                     continue;
                 }
