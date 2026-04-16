@@ -39,6 +39,8 @@ type CreateRoleDialogProps = {
       createAnother?: boolean
     },
   ) => void | Promise<void>
+  /** When provided, restricts selectable permissions to this list. null = no restriction (admin). */
+  allowedPermissions?: string[] | null
 }
 
 export function CreateRoleDialog({
@@ -51,6 +53,7 @@ export function CreateRoleDialog({
   setCreatePermissions,
   submitting,
   onSubmit,
+  allowedPermissions,
 }: CreateRoleDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -101,6 +104,7 @@ export function CreateRoleDialog({
                   <PermissionCollapsibleTree
                     selected={createPermissions}
                     setSelected={setCreatePermissions}
+                    allowedPermissions={allowedPermissions}
                   />
                 </div>
               </div>

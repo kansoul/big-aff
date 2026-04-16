@@ -321,6 +321,20 @@ export const router = createBrowserRouter([
             },
             handle: { title: 'Style Report' },
           },
+          {
+            path: routeSegment(PATHS.googleConversions),
+            lazy: async () => {
+              const { GoogleConversionsPage } =
+                await import('@/features/google-conversions/pages/GoogleConversionsPage')
+              return {
+                Component: withPermission(
+                  GoogleConversionsPage,
+                  PermissionSlugs.GoogleConversionsView,
+                ),
+              }
+            },
+            handle: { title: 'Google Conversions' },
+          },
         ],
       },
     ],

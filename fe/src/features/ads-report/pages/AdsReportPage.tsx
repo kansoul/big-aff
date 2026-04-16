@@ -11,6 +11,7 @@ import type {
   AdsReportFilterOptions,
   AdsReportFilterParams,
   AdsReportListResponse,
+  AdsReportOrderBy,
   AdsReportRow,
   AdsReportSummary,
   AdsReportType,

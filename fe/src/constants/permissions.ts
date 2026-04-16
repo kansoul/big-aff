@@ -68,6 +68,8 @@ export const PermissionSlugs = {
   AdClientsDelete: 'ad-clients.delete',
   CampaignRuleSettingsView: 'campaign-rule-settings.view',
   CampaignRuleSettingsUpdate: 'campaign-rule-settings.update',
+  GoogleConversionsView: 'google-conversions.view',
+  GoogleConversionsUpdate: 'google-conversions.update',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -602,6 +604,28 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           {
             key: 'CampaignRuleSettingsUpdate',
             slug: PermissionSlugs.CampaignRuleSettingsUpdate,
+            label: 'Update',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'google-conversions',
+    label: 'Google Conversions',
+    screens: [
+      {
+        id: 'google-conversions',
+        label: 'Google Conversions',
+        permissions: [
+          {
+            key: 'GoogleConversionsView',
+            slug: PermissionSlugs.GoogleConversionsView,
+            label: 'View',
+          },
+          {
+            key: 'GoogleConversionsUpdate',
+            slug: PermissionSlugs.GoogleConversionsUpdate,
             label: 'Update',
           },
         ],

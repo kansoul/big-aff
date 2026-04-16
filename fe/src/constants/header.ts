@@ -14,6 +14,7 @@ import {
   Link2,
   Palette,
   Radio,
+  Repeat,
   SlidersHorizontal,
   UserCheck,
   UserCog,
@@ -169,6 +170,12 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         href: PATHS.campaignRuleSettings,
         icon: SlidersHorizontal,
         requiredPermission: PermissionSlugs.CampaignRuleSettingsView,
+      },
+      {
+        name: 'Google Conversions',
+        href: PATHS.googleConversions,
+        icon: Repeat,
+        requiredPermission: PermissionSlugs.GoogleConversionsView,
       },
       {
         name: 'Teams',

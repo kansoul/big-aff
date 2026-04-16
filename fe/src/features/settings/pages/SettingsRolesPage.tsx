@@ -21,6 +21,8 @@ import type { Role } from '@/shared/types'
 export function SettingsRolesPage() {
   const user = useAuthStore((s) => s.user)
   const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
+  // Non-admin users can only assign permissions they themselves have
+  const allowedPermissions = user?.is_admin ? null : perms
   const canCreate = useMemo(
     () => hasPermission(perms, PermissionSlugs.SettingsRolesCreate),
     [perms],
@@ -286,6 +288,7 @@ export function SettingsRolesPage() {
         setCreatePermissions={setCreatePermissions}
         submitting={submitting}
         onSubmit={onCreateSubmit}
+        allowedPermissions={allowedPermissions}
       />
 
       <EditRoleDialog

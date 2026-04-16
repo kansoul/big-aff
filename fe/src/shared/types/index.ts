@@ -3,6 +3,7 @@ export interface User {
   name: string
   email: string
   permissions: string[]
+  is_admin: boolean
 }
 
 /** User row from `GET/POST/PUT /api/users` (admin UI). */
