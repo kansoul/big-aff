@@ -33,6 +33,7 @@ export const PATHS = {
   adsReport: '/ads-report',
   styleReport: '/style-report',
   campaignRuleSettings: '/campaign-rule-settings',
+  googleConversions: '/google-conversions',
 } as const
 
 export const postViewPath = (id: number | string) => `/posts/${id}`
