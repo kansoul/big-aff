@@ -14,13 +14,13 @@ class BulkUpdateGoogleConversionsAction
     {
         DB::transaction(function () use ($rows): void {
             foreach ($rows as $row) {
-                $account = Account::find($row['account_id']);
+                $account = Account::select('account_id')->where('account_id', $row['account_id'])->first();
                 if (! $account) {
                     continue;
                 }
 
                 $account->conversion()->updateOrCreate(
-                    ['account_id' => $account->id],
+                    ['account_id' => $account->account_id],
                     [
                         'article_view' => $row['article_view'] ?? null,
                         'rsu_click' => $row['rsu_click'] ?? null,
