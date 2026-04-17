@@ -35,7 +35,7 @@ class FlushRealtimeReportCommand extends Command
             $this->upsertChunk($chunk);
         }
 
-        $this->line('Flushed ' . count($rows) . ' tracking_daily rows from Redis.');
+        $this->line('Flushed '.count($rows).' tracking_daily rows from Redis.');
     }
 
     /**

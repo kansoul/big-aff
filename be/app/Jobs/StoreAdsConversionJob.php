@@ -2,12 +2,9 @@
 
 namespace App\Jobs;
 
-use App\Models\Account;
-use App\Models\AdRevenue;
 use App\Models\AdsConversion;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -37,7 +34,7 @@ class StoreAdsConversionJob implements ShouldQueue
                 'conversion_date_time' => $this->conversionDateTime,
             ]);
         } catch (Throwable $e) {
-            Log::error('AdRevenue job error: ' . $e->getMessage());
+            Log::error('AdRevenue job error: '.$e->getMessage());
         }
     }
 }

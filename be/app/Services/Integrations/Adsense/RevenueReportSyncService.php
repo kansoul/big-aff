@@ -149,14 +149,14 @@ class RevenueReportSyncService
                 try {
                     $this->aggregateToRevenueReport($accountId, $date);
                 } catch (Throwable $e) {
-                    $errors[] = 'Aggregate ' . $date . ': ' . $e->getMessage();
+                    $errors[] = 'Aggregate '.$date.': '.$e->getMessage();
                     $logger->error('[RevenueReportSync] Aggregate error', ['date' => $date, 'error' => $e->getMessage()]);
                 }
             }
 
             return [
                 'success' => true,
-                'message' => "Synced {$synced} chart snapshots" . ($errors ? (' with ' . count($errors) . ' errors') : ''),
+                'message' => "Synced {$synced} chart snapshots".($errors ? (' with '.count($errors).' errors') : ''),
                 'synced_count' => $synced,
                 'skipped' => $skipped,
                 'aggregated_dates' => count($syncedDates),
@@ -167,7 +167,7 @@ class RevenueReportSyncService
         } catch (Throwable $e) {
             $logger->error('[RevenueReportSync] Fatal error', ['error' => $e->getMessage()]);
 
-            return ['success' => false, 'message' => 'Sync failed: ' . $e->getMessage()];
+            return ['success' => false, 'message' => 'Sync failed: '.$e->getMessage()];
         }
     }
 
@@ -184,7 +184,7 @@ class RevenueReportSyncService
 
             $start = Carbon::parse($startDate);
             $end = Carbon::parse($endDate);
-            $accountResource = 'accounts/' . ltrim($accountId, 'accounts/');
+            $accountResource = 'accounts/'.ltrim($accountId, 'accounts/');
 
             $reports = $this->service->accounts_reports->generate(
                 $accountResource,
@@ -243,7 +243,7 @@ class RevenueReportSyncService
         $date = $map['DATE'] ?? null;
         $styleId = $map['CUSTOM_SEARCH_STYLE_ID'] ?? null;
         $chanId = $map['CUSTOM_CHANNEL_ID'] ?? null;
-        $channelId = str_replace($account->product_code . ':', '', $chanId);
+        $channelId = str_replace($account->product_code.':', '', $chanId);
 
         if (! $date || ! $styleId || ! $channelId) {
             return null;
@@ -317,13 +317,13 @@ class RevenueReportSyncService
             ->groupBy('style_code', 'channel_code');
 
         $rows = RevenueChartReport::query()
-            ->where("revenue_chart_reports.ad_client_id", $adClientId)
+            ->where('revenue_chart_reports.ad_client_id', $adClientId)
             ->joinSub($latestSub, 'latest', function ($join) {
-                $join->on("revenue_chart_reports.style_code", '=', 'latest.style_code')
-                    ->on("revenue_chart_reports.channel_code", '=', 'latest.channel_code')
-                    ->on("revenue_chart_reports.datetime", '=', 'latest.max_datetime');
+                $join->on('revenue_chart_reports.style_code', '=', 'latest.style_code')
+                    ->on('revenue_chart_reports.channel_code', '=', 'latest.channel_code')
+                    ->on('revenue_chart_reports.datetime', '=', 'latest.max_datetime');
             })
-            ->get(["revenue_chart_reports.*"]);
+            ->get(['revenue_chart_reports.*']);
 
         if ($rows->isEmpty()) {
             return;
@@ -331,7 +331,7 @@ class RevenueReportSyncService
 
         $now = Carbon::now();
 
-        $upsertRows = $rows->map(fn(RevenueChartReport $r) => [
+        $upsertRows = $rows->map(fn (RevenueChartReport $r) => [
             'ad_client_id' => $r->ad_client_id,
             'style_code' => $r->style_code,
             'channel_code' => $r->channel_code,
