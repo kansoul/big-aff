@@ -1,14 +1,5 @@
 import type { ComponentType } from 'react'
-import {
-  Activity,
-  Banknote,
-  BarChart3,
-  Eye,
-  Landmark,
-  MousePointerClick,
-  Pause,
-  Wallet,
-} from 'lucide-react'
+import { Activity, Banknote, BarChart3, Eye, Landmark, Pause, Wallet } from 'lucide-react'
 
 import { Card, CardContent } from '@/components/ui/card'
 import type { AdsReportSummary } from '@/features/ads-report/types'
@@ -90,13 +81,6 @@ export function AdsReportSummaryCards({ summary }: AdsReportSummaryCardsProps) {
       hint: 'Total impressions',
       icon: Eye,
       tone: 'text-blue-500',
-    },
-    {
-      label: 'Total Clicks',
-      value: formatInteger(summary.total_clicks),
-      hint: 'Total clicks',
-      icon: MousePointerClick,
-      tone: 'text-rose-500',
     },
     {
       label: 'Total Reach',
