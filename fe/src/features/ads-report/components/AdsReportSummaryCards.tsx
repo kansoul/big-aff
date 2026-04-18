@@ -1,14 +1,15 @@
 import type { ComponentType } from 'react'
-import { Activity, Banknote, BarChart3, Eye, Landmark, Pause, Wallet } from 'lucide-react'
+import { Activity, Banknote, BarChart3, Landmark, Pause, Radio, Wallet } from 'lucide-react'
 
 import { Card, CardContent } from '@/components/ui/card'
-import type { AdsReportSummary } from '@/features/ads-report/types'
+import type { AdsReportStatsData } from '@/features/ads-report/types'
 
-type AdsReportSummaryCardsProps = {
-  summary: AdsReportSummary
+type Props = {
+  data: AdsReportStatsData | null
+  loading: boolean
 }
 
-type Item = {
+type StatItem = {
   label: string
   value: string
   hint: string
@@ -16,87 +17,108 @@ type Item = {
   tone: string
 }
 
-function formatUsd(value: number): string {
-  return `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
-}
-
 function formatInteger(value: number): string {
   return value.toLocaleString()
 }
 
-export function AdsReportSummaryCards({ summary }: AdsReportSummaryCardsProps) {
-  const items: Item[] = [
+function buildItems(data: AdsReportStatsData): StatItem[] {
+  const items: StatItem[] = [
     {
       label: 'Campaign',
-      value: formatInteger(summary.campaign_total),
+      value: formatInteger(data.campaigns.total),
       hint: 'Total campaigns',
       icon: BarChart3,
       tone: 'text-blue-500',
     },
     {
       label: 'Campaign Active',
-      value: formatInteger(summary.campaign_active),
-      hint: 'Running',
+      value: formatInteger(data.campaigns.active),
+      hint: 'Active',
       icon: Activity,
       tone: 'text-emerald-500',
     },
     {
       label: 'Campaign Paused',
-      value: formatInteger(summary.campaign_paused),
+      value: formatInteger(data.campaigns.paused),
       hint: 'Paused',
       icon: Pause,
       tone: 'text-amber-500',
     },
     {
       label: 'Campaign Archived',
-      value: formatInteger(summary.campaign_archived),
+      value: formatInteger(data.campaigns.archived),
       hint: 'Archived',
       icon: Landmark,
       tone: 'text-rose-500',
     },
-    {
+  ]
+
+  data.spend_by_currency.forEach(({ currency, amount }) => {
+    items.push({
       label: 'Total Spend',
-      value: formatUsd(summary.total_spend),
-      hint: 'Spend from insights',
+      value: `${amount} ${currency}`,
+      hint: 'Total spend from insights',
       icon: Wallet,
       tone: 'text-emerald-500',
-    },
-    {
+    })
+  })
+
+  if (data.show_revenue_profit) {
+    items.push({
       label: 'Revenue',
-      value: formatUsd(summary.total_revenue),
+      value: data.revenue ?? '0',
       hint: 'Total revenue',
       icon: Banknote,
       tone: 'text-emerald-500',
-    },
-    {
+    })
+
+    const profitNum = parseFloat((data.profit ?? '0').replace(/,/g, ''))
+    items.push({
       label: 'Profit',
-      value: formatUsd(summary.total_profit),
+      value: data.profit ?? '0',
       hint: 'Revenue - Spend',
       icon: BarChart3,
-      tone: summary.total_profit >= 0 ? 'text-emerald-500' : 'text-rose-500',
-    },
-    {
-      label: 'Total Impressions',
-      value: formatInteger(summary.total_impressions),
-      hint: 'Total impressions',
-      icon: Eye,
-      tone: 'text-blue-500',
-    },
-    {
-      label: 'Total Reach',
-      value: formatInteger(summary.total_reach),
-      hint: 'Total reach',
-      icon: Activity,
-      tone: 'text-slate-200',
-    },
-  ]
+      tone: profitNum >= 0 ? 'text-emerald-500' : 'text-rose-500',
+    })
+  }
+
+  items.push({
+    label: 'Total Reach',
+    value: formatInteger(data.total_reach),
+    hint: 'Total reach',
+    icon: Radio,
+    tone: 'text-slate-400',
+  })
+
+  return items
+}
+
+export function AdsReportSummaryCards({ data, loading }: Props) {
+  if (loading) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Card key={i} className="border-border/60 bg-card/80">
+            <CardContent className="space-y-3 py-5">
+              <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+              <div className="h-8 w-32 animate-pulse rounded bg-muted" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  if (!data) return null
+
+  const items = buildItems(data)
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {items.map((item) => {
+      {items.map((item, i) => {
         const Icon = item.icon
         return (
-          <Card key={item.label} className="border-border/60 bg-card/80">
+          <Card key={`${item.label}-${i}`} className="border-border/60 bg-card/80">
             <CardContent className="space-y-1.5 py-5">
               <p className="text-sm font-medium text-muted-foreground">{item.label}</p>
               <p className="text-4xl font-semibold tracking-tight text-foreground">{item.value}</p>
