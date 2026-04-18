@@ -204,6 +204,7 @@
 
 /* Search / text input */
 .mantine-TextInput-input {
+  height: 2.8rem !important;
   background-color: var(--background) !important;
   color: var(--foreground) !important;
   border-color: var(--border) !important;

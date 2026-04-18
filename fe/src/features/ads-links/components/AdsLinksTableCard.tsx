@@ -4,7 +4,6 @@ import {
   useMantineReactTable,
   type MRT_ColumnDef,
   MRT_ShowHideColumnsButton,
-  MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
 import { AlertCircle, Copy, Eye, EyeOff, Pencil, Plus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -458,7 +457,6 @@ function AdsLinksTableCardInner({
               <div className="mx-1 h-5 w-px bg-border" />
             </>
           )}
-          <MRT_ToggleGlobalFilterButton table={t} />
           <MRT_ShowHideColumnsButton table={t} />
         </div>
         <FilterPanel

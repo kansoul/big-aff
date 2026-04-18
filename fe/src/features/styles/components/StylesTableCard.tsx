@@ -4,15 +4,16 @@ import {
   useMantineReactTable,
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
+  MRT_ShowHideColumnsButton,
   MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
-import { AlertCircle, Plus, Trash2 } from 'lucide-react'
+import { Palette, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import type { Style } from '@/features/styles/types'
 
 type StylesTableCardProps = {
-  listError: string | null
   loading: boolean
   styles: Style[]
   canCreate: boolean
@@ -35,6 +36,9 @@ function getColumns(meta: {
       accessorKey: 'name',
       header: 'Name',
       size: 200,
+      Cell: ({ row }) => (
+        <span className="font-medium text-foreground">{row.original.name}</span>
+      ),
     },
     {
       accessorKey: 'code',
@@ -49,24 +53,25 @@ function getColumns(meta: {
       header: 'Created At',
       size: 160,
       Cell: ({ row }) => (
-        <span className="text-muted-foreground text-xs">
+        <span className="text-xs text-muted-foreground">
           {row.original.created_at ? new Date(row.original.created_at).toLocaleDateString() : '—'}
         </span>
       ),
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: 'Action',
       size: 80,
       enableSorting: false,
       enableGlobalFilter: false,
       enableHiding: false,
       mantineTableHeadCellProps: {
-        sx: { '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+        sx: { width: 80, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
       },
+      mantineTableBodyCellProps: { style: { width: 80 } },
       Cell: ({ row }) =>
         canDelete ? (
-          <div className="flex justify-end">
+          <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
             <Button
               type="button"
               variant="ghost"
@@ -79,12 +84,11 @@ function getColumns(meta: {
             </Button>
           </div>
         ) : null,
-    },
+    } satisfies MRT_ColumnDef<Style>,
   ]
 }
 
 function StylesTableCardInner({
-  listError,
   loading,
   styles,
   canCreate,
@@ -107,16 +111,23 @@ function StylesTableCardInner({
     getRowId: (row) => String(row.id),
     enableColumnFilters: false,
     enableGlobalFilter: true,
-    positionGlobalFilter: 'left',
     enableRowSelection: canDelete,
-    initialState: { showGlobalFilter: true, density: 'md' },
+    enableColumnPinning: true,
+    positionGlobalFilter: 'left',
+    positionToolbarAlertBanner: 'none',
+    initialState: {
+      showGlobalFilter: true,
+      density: 'md',
+      columnPinning: { right: ['actions'] },
+    },
     state: { showLoadingOverlay: loading, rowSelection },
     onRowSelectionChange: (updater) => {
-      const newSelection: MRT_RowSelectionState =
+      const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater
-      onSelectionChange(() => {
-        const next = new Set<number>()
-        for (const [idStr, checked] of Object.entries(newSelection)) {
+      onSelectionChange((prev) => {
+        const next = new Set(prev)
+        for (const row of styles) next.delete(row.id)
+        for (const [idStr, checked] of Object.entries(newPageSelection)) {
           if (checked) next.add(Number(idStr))
         }
         return next
@@ -148,36 +159,36 @@ function StylesTableCardInner({
           </>
         ) : null}
         {canCreate ? (
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-            onClick={onAddClick}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Create
-          </Button>
+          <>
+            <Button
+              size="sm"
+              className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+              onClick={onAddClick}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Create
+            </Button>
+            <div className="mx-1 h-5 w-px bg-border" />
+          </>
         ) : null}
-        <div className="mx-1 h-5 w-px bg-border" />
         <MRT_ToggleGlobalFilterButton table={t} />
+        <MRT_ShowHideColumnsButton table={t} />
       </div>
     ),
     renderEmptyRowsFallback: () => (
       <div className="flex flex-col items-center gap-2 py-14 text-center">
+        <Palette className="h-8 w-8 text-muted-foreground/30" />
         <p className="text-sm text-muted-foreground">No styles found.</p>
       </div>
     ),
   })
 
   return (
-    <>
-      {listError ? (
-        <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <p>{listError}</p>
-        </div>
-      ) : null}
-      <MantineReactTable table={table} />
-    </>
+    <Card className="overflow-hidden border-border shadow-none">
+      <CardContent className="p-0">
+        <MantineReactTable table={table} />
+      </CardContent>
+    </Card>
   )
 }
 

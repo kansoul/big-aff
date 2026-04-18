@@ -70,6 +70,7 @@ export const PermissionSlugs = {
   CampaignRuleSettingsUpdate: 'campaign-rule-settings.update',
   GoogleConversionsView: 'google-conversions.view',
   GoogleConversionsUpdate: 'google-conversions.update',
+  GoogleConversionsCreate: 'google-conversions.create',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -627,6 +628,11 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
             key: 'GoogleConversionsUpdate',
             slug: PermissionSlugs.GoogleConversionsUpdate,
             label: 'Update',
+          },
+          {
+            key: 'GoogleConversionsCreate',
+            slug: PermissionSlugs.GoogleConversionsCreate,
+            label: 'Create',
           },
         ],
       },

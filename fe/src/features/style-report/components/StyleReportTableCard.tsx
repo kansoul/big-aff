@@ -2,7 +2,6 @@ import { memo, useCallback, useMemo } from 'react'
 import {
   MantineReactTable,
   MRT_ShowHideColumnsButton,
-  MRT_ToggleGlobalFilterButton,
   type MRT_ColumnDef,
   useMantineReactTable,
 } from 'mantine-react-table'
@@ -167,7 +166,6 @@ function StyleReportTableCardInner({
     renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
         <div className="flex w-full items-center justify-end gap-2">
-          <MRT_ToggleGlobalFilterButton table={t} />
           <MRT_ShowHideColumnsButton table={t} />
         </div>
         <FilterPanel
