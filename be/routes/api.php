@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\GoogleConversionController;
 use App\Http\Controllers\Api\KeywordSetController;
 use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\RevenueReportController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\StyleController;
@@ -252,6 +253,11 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::CampaignRuleSettingsView->value);
         Route::match(['put', 'patch'], '{user}', [CampaignRuleSettingController::class, 'save'])
             ->middleware('permission.scope:'.Permission::CampaignRuleSettingsUpdate->value);
+    });
+
+    Route::prefix('revenue-reports')->group(function () {
+        Route::get('/', [RevenueReportController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::RevenueReportsView->value);
     });
 
     Route::prefix('google-conversions')->group(function () {
