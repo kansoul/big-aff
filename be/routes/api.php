@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AdClientController;
 use App\Http\Controllers\Api\AdsLinkController;
 use App\Http\Controllers\Api\AdsReportController;
+use App\Http\Controllers\Api\AnalyticsTrackingController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\BusinessCenterController;
 use App\Http\Controllers\Api\CampaignRuleSettingController;
@@ -283,4 +284,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('bulk-import', [GoogleConversionController::class, 'import'])
             ->middleware('permission.scope:'.Permission::GoogleConversionsCreate->value);
     });
+
+    Route::prefix('analytics-tracking')
+        ->middleware('permission.scope:'.Permission::AnalyticsTrackingView->value)
+        ->group(function () {
+            Route::get('stats', [AnalyticsTrackingController::class, 'stats']);
+            Route::get('keywords', [AnalyticsTrackingController::class, 'keywords']);
+        });
 });
