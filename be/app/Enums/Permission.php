@@ -164,6 +164,9 @@ enum Permission: string
     // —— Revenue Stats ——
     case RevenueStatsView = 'revenue-stats.view';                // bit 68 →  295147905179352825856
 
+    // —— Analytics Tracking ——
+    case AnalyticsTrackingView = 'analytics-tracking.view';      // bit 69 →  590295810358705651712
+
     /**
      * Bit value for this permission (1 << declaration index).
      */
