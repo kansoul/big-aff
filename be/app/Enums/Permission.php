@@ -158,6 +158,9 @@ enum Permission: string
     // —— Revenue Reports ——
     case RevenueReportsView = 'revenue-reports.view';            // bit 66 →  73786976294838206464
 
+    // —— Ads Report ——
+    case AdsReportView = 'ads-report.view';                      // bit 67 →  147573952589676412928
+
     /**
      * Bit value for this permission (1 << declaration index).
      */

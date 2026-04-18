@@ -20,7 +20,7 @@ class StyleFactory extends Factory
         $code = fake()->unique()->bothify('style_???###');
 
         return [
-            'style_code' => $code,
+            'code' => $code,
             'name' => fake()->words(2, true),
         ];
     }
