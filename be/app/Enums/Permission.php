@@ -173,7 +173,14 @@ enum Permission: string
     case InactiveStylesDelete = 'inactive-styles.delete';        // bit 71 →  2361183241434822606848
 
     // —— Revenue Chart Reports ——
-    case RevenueChartReportsView = 'revenue-chart-reports.view'; // bit 70 →  1180591620717411303424
+    case RevenueChartReportsView = 'revenue-chart-reports.view'; // bit 72 →  4722366482869645213696
+
+    // —— Style Report Range ——
+    case StyleReportRangeView = 'style-report-range.view';       // bit 73 →  9444732965739290427392
+
+    // —— User Table Preferences ——
+    case UserTablePreferencesView = 'user-table-preferences.view';     // bit 74 →  18889465931478580854784
+    case UserTablePreferencesUpdate = 'user-table-preferences.update'; // bit 75 →  37778931862957161709568
 
     /**
      * Bit value for this permission (1 << declaration index).
