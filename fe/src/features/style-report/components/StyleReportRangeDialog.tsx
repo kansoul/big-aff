@@ -1,0 +1,627 @@
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import {
+  ArrowRight,
+  CalendarClock,
+  ChevronDown,
+  Loader2,
+  Plus,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react'
+import { toast } from 'sonner'
+
+import { styleReportApi } from '@/features/style-report/api'
+import type { StyleReportRangeItem, StyleReportRangeRow } from '@/features/style-report/types'
+import { stylesApi } from '@/features/styles/api'
+import type { StyleOption } from '@/features/styles/types'
+import { Button } from '@/components/ui/button'
+import { DatePicker } from '@/components/ui/date-picker'
+import { SearchableSelect } from '@/components/common/SearchableSelect'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+
+// ─── Time Select ─────────────────────────────────────────────────────────────
+
+function generateTimeOptions() {
+  const options: { label: string; value: string }[] = []
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 5) {
+      const hh = String(h).padStart(2, '0')
+      const mm = String(m).padStart(2, '0')
+      options.push({ label: `${hh}:${mm}`, value: `${hh}:${mm}` })
+    }
+  }
+  return options
+}
+
+const TIME_OPTIONS = generateTimeOptions()
+
+type TimeSelectProps = {
+  value: string
+  onChange: (v: string) => void
+}
+
+function TimeSelect({ value, onChange }: TimeSelectProps) {
+  return (
+    <SearchableSelect
+      value={value || undefined}
+      onValueChange={onChange}
+      options={TIME_OPTIONS}
+      placeholder="00:00"
+      className="h-8 text-xs"
+    />
+  )
+}
+
+// ─── Styles Multiselect ───────────────────────────────────────────────────────
+
+type StylesSelectProps = {
+  value: string[]
+  onChange: (v: string[]) => void
+  options: StyleOption[]
+}
+
+function StylesSelect({ value, onChange, options }: StylesSelectProps) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const filtered = search.trim()
+    ? options.filter(
+        (o) =>
+          o.name.toLowerCase().includes(search.toLowerCase()) ||
+          o.code.toLowerCase().includes(search.toLowerCase()),
+      )
+    : options
+
+  function toggle(code: string) {
+    onChange(value.includes(code) ? value.filter((c) => c !== code) : [...value, code])
+  }
+
+  const triggerText =
+    value.length === 0
+      ? 'Select styles...'
+      : value.length === 1
+        ? (options.find((o) => o.code === value[0])?.name ?? value[0])
+        : `${value.length} selected`
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn(
+            'h-8 w-full justify-between gap-1.5 px-2.5 text-xs font-normal',
+            value.length === 0 && 'text-muted-foreground',
+          )}
+        >
+          <span className="flex-1 truncate text-left">{triggerText}</span>
+          {value.length > 0 ? (
+            <span
+              role="button"
+              aria-label="Clear"
+              onClick={(e) => {
+                e.stopPropagation()
+                onChange([])
+              }}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <X className="h-3 w-3" />
+            </span>
+          ) : (
+            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-0" align="start">
+        <div className="flex items-center gap-2 border-b px-3 py-2">
+          <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <input
+            className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="max-h-52 overflow-y-auto py-1" onWheel={(e) => e.stopPropagation()}>
+          {filtered.length === 0 ? (
+            <p className="py-4 text-center text-xs text-muted-foreground">No results</p>
+          ) : (
+            filtered.map((opt) => (
+              <label
+                key={opt.code}
+                className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-xs hover:bg-muted"
+              >
+                <Checkbox
+                  checked={value.includes(opt.code)}
+                  onCheckedChange={() => toggle(opt.code)}
+                />
+                <span className="truncate">{opt.name}</span>
+              </label>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// ─── Range Row ────────────────────────────────────────────────────────────────
+
+type RangeErrors = Partial<
+  Record<'start_date' | 'start_time' | 'end_date' | 'end_time' | 'style_codes', string>
+>
+
+type RangeRowProps = {
+  range: RangeState
+  styleOptions: StyleOption[]
+  errors: RangeErrors
+  onChange: (patch: Partial<RangeState>, clearField?: keyof RangeErrors) => void
+  onRemove: () => void
+  canRemove: boolean
+  index: number
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null
+  return <p className="text-[11px] text-destructive">{message}</p>
+}
+
+function RangeRow({
+  range,
+  styleOptions,
+  errors,
+  onChange,
+  onRemove,
+  canRemove,
+  index,
+}: RangeRowProps) {
+  const labelId = useId()
+  return (
+    <div className="rounded-lg border bg-muted/20 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">
+          Time Ranges &nbsp;
+          {index + 1}
+        </span>
+        {canRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-destructive/60 transition-colors hover:text-destructive"
+            aria-label="Remove range"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={`${labelId}-sd`} className="text-xs text-muted-foreground">
+            Start Date<span className="text-destructive">*</span>
+          </Label>
+          <DatePicker
+            value={range.start_date}
+            onChange={(v) => onChange({ start_date: v ?? '' }, 'start_date')}
+            placeholder="Start Date"
+          />
+          <FieldError message={errors.start_date} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={`${labelId}-st`} className="text-xs text-muted-foreground">
+            Start Time<span className="text-destructive">*</span>
+          </Label>
+          <TimeSelect
+            value={range.start_time}
+            onChange={(v: string) => onChange({ start_time: v }, 'start_time')}
+          />
+          <FieldError message={errors.start_time} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={`${labelId}-ed`} className="text-xs text-muted-foreground">
+            End Date<span className="text-destructive">*</span>
+          </Label>
+          <DatePicker
+            value={range.end_date}
+            onChange={(v) => onChange({ end_date: v ?? '' }, 'end_date')}
+            placeholder="End Date"
+          />
+          <FieldError message={errors.end_date} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={`${labelId}-et`} className="text-xs text-muted-foreground">
+            End Time<span className="text-destructive">*</span>
+          </Label>
+          <TimeSelect
+            value={range.end_time}
+            onChange={(v: string) => onChange({ end_time: v }, 'end_time')}
+          />
+          <FieldError message={errors.end_time} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs text-muted-foreground">
+            Styles<span className="text-destructive">*</span>
+          </Label>
+          <StylesSelect
+            value={range.style_codes}
+            onChange={(v) => onChange({ style_codes: v }, 'style_codes')}
+            options={styleOptions}
+          />
+          <FieldError message={errors.style_codes} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Result Table ─────────────────────────────────────────────────────────────
+
+const RESULT_COLUMNS: Array<{
+  key: keyof StyleReportRangeRow
+  label: string
+  className?: string
+}> = [
+  { key: 'range_label', label: 'Range', className: 'min-w-[180px]' },
+  { key: 'style_code', label: 'Style Code', className: 'min-w-[110px]' },
+  { key: 'style_name', label: 'Style Name', className: 'min-w-[180px]' },
+  { key: 'revenue_start', label: 'Revenue Start', className: 'text-right' },
+  { key: 'revenue_end', label: 'Revenue End', className: 'text-right' },
+  { key: 'real_revenue', label: 'Real Revenue', className: 'text-right' },
+  { key: 'conversion_start', label: 'Conv. Start', className: 'text-right' },
+  { key: 'conversion_end', label: 'Conv. End', className: 'text-right' },
+  { key: 'real_conversion', label: 'Real Conv.', className: 'text-right' },
+  { key: 'real_rpc', label: 'Real RPC', className: 'text-right' },
+  { key: 'cpc', label: 'CPC', className: 'text-right' },
+]
+
+function formatMetric(value: string | number | null): string {
+  if (value == null) return '—'
+  if (typeof value === 'number')
+    return value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+  return value
+}
+
+function parseRangeLabel(label: string): { from: string; to: string } | null {
+  const separators = ['->', '→', ' to ', ' - ']
+  for (const sep of separators) {
+    if (!label.includes(sep)) continue
+    const [from, ...rest] = label.split(sep).map((part) => part.trim())
+    const to = rest.join(sep).trim()
+    if (from && to) return { from, to }
+  }
+  return null
+}
+
+function RangeCell({ value }: { value: string }) {
+  const parsed = parseRangeLabel(value)
+  if (!parsed) return <span className="text-foreground">{value}</span>
+
+  return (
+    <div className="min-w-[220px] space-y-1.5 rounded-md bg-muted/20 px-2.5 py-2">
+      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+        <CalendarClock className="h-3.5 w-3.5" />
+        <span className="font-medium tracking-wide uppercase">Range</span>
+      </div>
+      <div className="flex items-center gap-2 text-[12px] leading-tight text-foreground">
+        <span className="rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+          From
+        </span>
+        <span className="truncate">{parsed.from}</span>
+      </div>
+      <div className="flex items-center gap-2 text-[12px] leading-tight text-foreground">
+        <span className="rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+          To
+        </span>
+        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/80" />
+        <span className="truncate">{parsed.to}</span>
+      </div>
+    </div>
+  )
+}
+
+function RangeResultTable({ data, loading }: { data: StyleReportRangeRow[]; loading: boolean }) {
+  return (
+    <div className=" rounded-xl border border-border/70 bg-card shadow-sm">
+      <div className="flex items-center justify-between border-b border-border/70 bg-muted/25 px-4 py-3">
+        <h4 className="text-sm font-semibold text-foreground">Result Preview</h4>
+        <span className="rounded-full border border-border/70 bg-background/70 px-2.5 py-0.5 text-xs text-muted-foreground">
+          {data.length} rows
+        </span>
+      </div>
+
+      <div className="overflow-auto">
+        <Table className="text-[13px]">
+          <TableHeader className="sticky top-0 z-10">
+            <TableRow className="h-14 border-border/70 bg-muted/45 hover:bg-muted/45">
+              {RESULT_COLUMNS.map((col) => (
+                <TableHead
+                  key={col.key}
+                  className={cn(
+                    'h-14 whitespace-nowrap bg-transparent text-[12px] font-semibold tracking-[0.08em] text-muted-foreground uppercase',
+                    col.className,
+                  )}
+                >
+                  {col.label}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {loading && (
+              <TableRow className="h-20 border-border/70 hover:bg-transparent">
+                <TableCell
+                  colSpan={RESULT_COLUMNS.length}
+                  className="h-20 whitespace-normal text-center"
+                >
+                  <div className="inline-flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading report...
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+
+            {!loading && data.length === 0 && (
+              <TableRow className="h-20 border-border/70 hover:bg-transparent">
+                <TableCell
+                  colSpan={RESULT_COLUMNS.length}
+                  className="h-20 whitespace-normal text-center"
+                >
+                  <p className="text-muted-foreground">No rows yet. Fill ranges and run Search.</p>
+                </TableCell>
+              </TableRow>
+            )}
+
+            {!loading &&
+              data.map((row, rowIndex) => (
+                <TableRow
+                  key={`${row.range_label}-${row.style_code}-${rowIndex}`}
+                  className="h-14 border-border/70 bg-background hover:bg-muted/20"
+                >
+                  {RESULT_COLUMNS.map((col) => {
+                    const value = row[col.key]
+                    if (col.key === 'style_code') {
+                      return (
+                        <TableCell
+                          key={col.key}
+                          className={cn('font-mono text-[12px]', col.className)}
+                        >
+                          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1">
+                            {value || '—'}
+                          </span>
+                        </TableCell>
+                      )
+                    }
+                    if (col.key === 'range_label') {
+                      return (
+                        <TableCell
+                          key={col.key}
+                          className={cn(
+                            'font-semibold whitespace-normal text-foreground',
+                            col.className,
+                          )}
+                        >
+                          <RangeCell value={String(value ?? '—')} />
+                        </TableCell>
+                      )
+                    }
+                    return (
+                      <TableCell
+                        key={col.key}
+                        className={cn('tabular-nums text-muted-foreground/95', col.className)}
+                      >
+                        {formatMetric(value)}
+                      </TableCell>
+                    )
+                  })}
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  )
+}
+
+// ─── Dialog ───────────────────────────────────────────────────────────────────
+
+type RangeState = StyleReportRangeItem & { _id: string }
+
+function makeEmptyRange(): RangeState {
+  return {
+    _id: crypto.randomUUID(),
+    start_date: '',
+    start_time: '',
+    end_date: '',
+    end_time: '',
+    style_codes: [],
+  }
+}
+
+function validateAll(ranges: RangeState[]): Record<string, RangeErrors> {
+  const result: Record<string, RangeErrors> = {}
+  for (const r of ranges) {
+    const errs: RangeErrors = {}
+    if (!r.start_date) errs.start_date = 'Required'
+    if (!r.start_time) errs.start_time = 'Required'
+    if (!r.end_date) errs.end_date = 'Required'
+    if (!r.end_time) errs.end_time = 'Required'
+    if (r.style_codes.length === 0) errs.style_codes = 'Required'
+    if (Object.keys(errs).length > 0) result[r._id] = errs
+  }
+  return result
+}
+
+type StyleReportRangeDialogProps = {
+  trigger?: React.ReactNode
+}
+
+export function StyleReportRangeDialog({ trigger }: StyleReportRangeDialogProps) {
+  const [open, setOpen] = useState(false)
+  const [ranges, setRanges] = useState<RangeState[]>([makeEmptyRange()])
+  const [fieldErrors, setFieldErrors] = useState<Record<string, RangeErrors>>({})
+  const [styleOptions, setStyleOptions] = useState<StyleOption[]>([])
+  const [submitting, setSubmitting] = useState(false)
+  const [results, setResults] = useState<StyleReportRangeRow[]>([])
+  const fetchedRef = useRef(false)
+
+  useEffect(() => {
+    if (!open || fetchedRef.current) return
+    fetchedRef.current = true
+    stylesApi
+      .options()
+      .then((res) => setStyleOptions(res.data))
+      .catch(() => {
+        toast.error('Failed to fetch style Options')
+      })
+  }, [open])
+
+  function updateRange(id: string, patch: Partial<RangeState>, clearField?: keyof RangeErrors) {
+    setRanges((prev) => prev.map((r) => (r._id === id ? { ...r, ...patch } : r)))
+    if (clearField) {
+      setFieldErrors((prev) => {
+        if (!prev[id]?.[clearField]) return prev
+        const next = { ...prev[id] }
+        delete next[clearField]
+        return { ...prev, [id]: next }
+      })
+    }
+  }
+
+  function removeRange(id: string) {
+    setRanges((prev) => prev.filter((r) => r._id !== id))
+    setFieldErrors((prev) => {
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+  }
+
+  function addRange() {
+    setRanges((prev) => [...prev, makeEmptyRange()])
+  }
+
+  const handleOpenChange = useCallback((next: boolean) => {
+    setOpen(next)
+    if (!next) {
+      setRanges([makeEmptyRange()])
+      setFieldErrors({})
+      setResults([])
+      fetchedRef.current = false
+    }
+  }, [])
+
+  function handleReset() {
+    setRanges([makeEmptyRange()])
+    setFieldErrors({})
+    setResults([])
+  }
+
+  async function handleSubmit() {
+    const errors = validateAll(ranges)
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const res = await styleReportApi.queryRange({
+        ranges: ranges.map(({ ...r }) => r),
+      })
+      const data = (res.data as { data: StyleReportRangeRow[] }).data
+      setResults(data)
+    } catch {
+      toast.error('Failed to submit query')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        {trigger ?? <Button size="sm">Style Report Range</Button>}
+      </DialogTrigger>
+      <DialogContent
+        className="flex h-[95vh] w-[95vw] flex-col gap-0 p-0 sm:max-w-[95vw]"
+        showCloseButton={false}
+      >
+        <DialogHeader className="border-b px-6 py-4">
+          <div className="flex items-center justify-between">
+            <DialogTitle>Style Report Range</DialogTitle>
+            <button
+              type="button"
+              onClick={() => handleOpenChange(false)}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </DialogHeader>
+
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-4">
+          <div className="flex justify-between">
+            Filters
+            <Button disabled={submitting} onClick={handleReset} size={'sm'} className="w-20">
+              Reset
+            </Button>
+          </div>
+          {ranges.map((range, index) => (
+            <RangeRow
+              key={range._id}
+              index={index}
+              range={range}
+              styleOptions={styleOptions}
+              errors={fieldErrors[range._id] ?? {}}
+              onChange={(patch, clearField) => updateRange(range._id, patch, clearField)}
+              onRemove={() => removeRange(range._id)}
+              canRemove={ranges.length > 1}
+            />
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-1 w-30 mx-auto gap-2 border-dashed"
+            onClick={addRange}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Range
+          </Button>
+          <div className="flex gap-2 my-2">
+            <Button
+              className="w-20"
+              type="button"
+              size="sm"
+              disabled={submitting}
+              onClick={() => void handleSubmit()}
+            >
+              Search
+            </Button>
+          </div>
+          <RangeResultTable loading={submitting} data={results} />
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

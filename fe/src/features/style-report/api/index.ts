@@ -2,6 +2,8 @@ import { axiosInstance } from '@/shared/api/axios'
 import type {
   StyleReportFilterParams,
   StyleReportListResponse,
+  StyleReportRangeQueryPayload,
+  StyleReportRangeQueryResponse,
 } from '@/features/style-report/types'
 
 export const styleReportApi = {
@@ -15,4 +17,7 @@ export const styleReportApi = {
         ...(filters.order ? { order: filters.order } : {}),
       },
     }),
+
+  queryRange: (payload: StyleReportRangeQueryPayload) =>
+    axiosInstance.post<StyleReportRangeQueryResponse>('/style-report-range/query', payload),
 }

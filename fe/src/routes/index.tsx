@@ -346,6 +346,17 @@ export const router = createBrowserRouter([
             },
             handle: { title: 'Google Conversions' },
           },
+          {
+            path: routeSegment(PATHS.campaignReport),
+            lazy: async () => {
+              const { CampaignReportPage } =
+                await import('@/features/campaign-report/pages/CampaignReportPage')
+              return {
+                Component: withPermission(CampaignReportPage, PermissionSlugs.ReportOverviewView),
+              }
+            },
+            handle: { title: 'Campaign Report' },
+          },
         ],
       },
     ],

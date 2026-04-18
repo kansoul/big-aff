@@ -45,3 +45,33 @@ export interface StyleReportFilterParams {
   page?: number
   per_page?: number
 }
+
+export interface StyleReportRangeItem {
+  start_date: string
+  start_time: string
+  end_date: string
+  end_time: string
+  style_codes: string[]
+}
+
+export interface StyleReportRangeQueryPayload {
+  ranges: StyleReportRangeItem[]
+}
+
+export interface StyleReportRangeRow {
+  range_label: string
+  style_code: string
+  style_name: string
+  revenue_start: number | null
+  revenue_end: number | null
+  real_revenue: number | null
+  conversion_start: number | null
+  conversion_end: number | null
+  real_conversion: number | null
+  real_rpc: number | null
+  cpc: number | null
+}
+
+export interface StyleReportRangeQueryResponse {
+  data: StyleReportRangeRow[]
+}
