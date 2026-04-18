@@ -32,6 +32,7 @@ export const PATHS = {
   adClients: '/ad-clients',
   adsReport: '/ads-report',
   styleReport: '/style-report',
+  revenueReport: '/revenue-report',
   campaignRuleSettings: '/campaign-rule-settings',
   googleConversions: '/google-conversions',
 } as const

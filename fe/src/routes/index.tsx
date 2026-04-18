@@ -322,6 +322,17 @@ export const router = createBrowserRouter([
             handle: { title: 'Style Report' },
           },
           {
+            path: routeSegment(PATHS.revenueReport),
+            lazy: async () => {
+              const { RevenueReportPage } =
+                await import('@/features/revenue-report/pages/RevenueReportPage')
+              return {
+                Component: withPermission(RevenueReportPage, PermissionSlugs.ReportOverviewView),
+              }
+            },
+            handle: { title: 'Revenue Report' },
+          },
+          {
             path: routeSegment(PATHS.googleConversions),
             lazy: async () => {
               const { GoogleConversionsPage } =

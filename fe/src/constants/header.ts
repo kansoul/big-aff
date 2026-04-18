@@ -142,6 +142,12 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         icon: BarChart3,
         requiredPermission: PermissionSlugs.AdClientsView,
       },
+      {
+        name: 'Revenue Report',
+        href: PATHS.revenueReport,
+        icon: BarChart3,
+        requiredPermission: PermissionSlugs.ReportOverviewView,
+      },
     ],
   },
   {
