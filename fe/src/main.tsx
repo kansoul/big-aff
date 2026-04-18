@@ -29,7 +29,7 @@ createRoot(document.getElementById('root')!).render(
             <RouterProvider router={router} />
           </Suspense>
         </AuthProvider>
-        <Toaster position="bottom-right" richColors />
+        <Toaster position="top-right" richColors />
       </ThemeProvider>
     </StrictMode>
   ) : (
@@ -39,7 +39,7 @@ createRoot(document.getElementById('root')!).render(
           <RouterProvider router={router} />
         </Suspense>
       </AuthProvider>
-      <Toaster position="bottom-right" richColors />
+      <Toaster position="top-right" richColors />
     </ThemeProvider>
   ),
 )

@@ -148,6 +148,12 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         icon: BarChart3,
         requiredPermission: PermissionSlugs.ReportOverviewView,
       },
+      {
+        name: 'Campaign Report',
+        href: PATHS.campaignReport,
+        icon: BarChart3,
+        requiredPermission: PermissionSlugs.ReportOverviewView,
+      },
     ],
   },
   {
