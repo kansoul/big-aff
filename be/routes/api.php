@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\GoogleConversionController;
 use App\Http\Controllers\Api\InactiveStyleController;
 use App\Http\Controllers\Api\KeywordSetController;
 use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\RevenueChartReportController;
 use App\Http\Controllers\Api\RevenueReportController;
 use App\Http\Controllers\Api\RevenueStatsController;
 use App\Http\Controllers\Api\RoleController;
@@ -268,6 +269,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [RevenueReportController::class, 'index'])
             ->middleware('permission.scope:'.Permission::RevenueReportsView->value);
     });
+
+    Route::prefix('revenue-chart-reports')
+        ->middleware('permission.scope:'.Permission::RevenueChartReportsView->value)
+        ->group(function () {
+            Route::get('chart', [RevenueChartReportController::class, 'chart']);
+        });
 
     Route::prefix('revenue-stats')->middleware('permission.scope:'.Permission::RevenueStatsView->value)->group(function () {
         Route::get('overview', [RevenueStatsController::class, 'overview']);
