@@ -275,6 +275,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('revenue-chart-reports')
         ->middleware('permission.scope:'.Permission::RevenueChartReportsView->value)
         ->group(function () {
+            Route::get('/', [RevenueChartReportController::class, 'index']);
             Route::get('chart', [RevenueChartReportController::class, 'chart']);
         });
 
