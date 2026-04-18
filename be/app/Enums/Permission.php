@@ -172,6 +172,9 @@ enum Permission: string
 
     case InactiveStylesDelete = 'inactive-styles.delete';        // bit 71 →  2361183241434822606848
 
+    // —— Revenue Chart Reports ——
+    case RevenueChartReportsView = 'revenue-chart-reports.view'; // bit 70 →  1180591620717411303424
+
     /**
      * Bit value for this permission (1 << declaration index).
      */

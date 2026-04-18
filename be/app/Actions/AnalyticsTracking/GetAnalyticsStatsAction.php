@@ -31,13 +31,13 @@ class GetAnalyticsStatsAction
 
         // ── InsightReport stats (views + clicks) ─────────────────────────────
         $insightQuery = InsightReport::query();
-        $ownership->applyThrough($insightQuery, 'account_id', fn(array $ids) => Account::whereIn('created_by', $ids)->select('account_id'));
+        $ownership->applyThrough($insightQuery, 'account_id', fn (array $ids) => Account::whereIn('created_by', $ids)->select('account_id'));
 
         $insightQuery
-            ->when($dateFrom, fn($q) => $q->whereDate('date_start', '>=', $dateFrom))
-            ->when($dateTo, fn($q) => $q->whereDate('date_start', '<=', $dateTo))
-            ->when($accountId, fn($q) => $q->where('account_id', $accountId))
-            ->when($campaignId, fn($q) => $q->where('campaign_id', $campaignId));
+            ->when($dateFrom, fn ($q) => $q->whereDate('date_start', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('date_start', '<=', $dateTo))
+            ->when($accountId, fn ($q) => $q->where('account_id', $accountId))
+            ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId));
 
         $totals = (clone $insightQuery)->selectRaw('
             COALESCE(SUM(search_views), 0)   AS total_search_views,
@@ -58,16 +58,16 @@ class GetAnalyticsStatsAction
         $ownership->applyThrough(
             $loadQuery,
             'link_data_id',
-            fn(array $ids) => LinkData::join('ads_links', 'link_datas.ads_link_id', '=', 'ads_links.id')
+            fn (array $ids) => LinkData::join('ads_links', 'link_datas.ads_link_id', '=', 'ads_links.id')
                 ->whereIn('ads_links.created_by', $ids)
                 ->select('link_datas.id')
         );
 
         $loadQuery
-            ->when($dateFrom, fn($q) => $q->where('created_at', '>=', $dateFrom))
-            ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
-            ->when($campaignId, fn($q) => $q->where('campaign_id', $campaignId))
-            ->when($campaignIdsForAccount !== null, fn($q) => $q->whereIn('campaign_id', $campaignIdsForAccount));
+            ->when($dateFrom, fn ($q) => $q->where('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))
+            ->when($campaignIdsForAccount !== null, fn ($q) => $q->whereIn('campaign_id', $campaignIdsForAccount));
 
         $loadTotals = (clone $loadQuery)->selectRaw('
             COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS failed_search,

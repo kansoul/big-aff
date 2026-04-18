@@ -100,7 +100,7 @@ class AdsReportSeeder extends Seeder
         $statusPool = ['ACTIVE', 'ACTIVE', 'ACTIVE', 'PAUSED', 'ARCHIVED'];
 
         for ($c = 1; $c <= $campaignCount; $c++) {
-            $campaignId = 'camp_' . $account->account_id . '_' . str_pad((string) $c, 3, '0', STR_PAD_LEFT);
+            $campaignId = 'camp_'.$account->account_id.'_'.str_pad((string) $c, 3, '0', STR_PAD_LEFT);
             $status = $statusPool[array_rand($statusPool)];
 
             $campaign = Campaign::firstOrCreate(

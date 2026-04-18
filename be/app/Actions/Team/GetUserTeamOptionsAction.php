@@ -18,7 +18,7 @@ class GetUserTeamOptionsAction
             ->select(['teams.id', 'teams.name'])
             ->orderBy('teams.name')
             ->get()
-            ->map(fn($team) => [
+            ->map(fn ($team) => [
                 'id' => $team->id,
                 'name' => $team->name,
                 'team_role' => $team->pivot->team_role,

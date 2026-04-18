@@ -15,7 +15,7 @@ return new class extends Migration
             Schema::table('conversions', function (Blueprint $table) {
                 $table->dropForeign(['account_id']);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // The foreign key may have already been dropped.
         }
 
@@ -34,7 +34,7 @@ return new class extends Migration
             Schema::table('conversions', function (Blueprint $table) {
                 $table->dropForeign(['account_id']);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // The foreign key may have already been dropped.
         }
 
