@@ -23,9 +23,11 @@ use App\Http\Controllers\Api\RevenueStatsController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\StyleController;
+use App\Http\Controllers\Api\StyleReportRangeController;
 use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserParentChildController;
+use App\Http\Controllers\Api\UserTablePreferenceController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -307,5 +309,18 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::InactiveStylesDelete->value);
         Route::delete('{user}', [InactiveStyleController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::InactiveStylesDelete->value);
+    });
+
+    Route::prefix('style-report-range')
+        ->middleware('permission.scope:'.Permission::StyleReportRangeView->value)
+        ->group(function () {
+            Route::post('query', [StyleReportRangeController::class, 'query']);
+        });
+
+    Route::prefix('user-table-preferences')->group(function () {
+        Route::get('{table_name}', [UserTablePreferenceController::class, 'show'])
+            ->middleware('permission.scope:'.Permission::UserTablePreferencesView->value);
+        Route::match(['put', 'patch'], '{table_name}', [UserTablePreferenceController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::UserTablePreferencesUpdate->value);
     });
 });

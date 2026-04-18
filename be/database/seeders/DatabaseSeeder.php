@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             CreateUserSeeder::class,
             RevenueStatsSeeder::class,
             RevenueChartReportSeeder::class,
+            StyleReportRangeSeeder::class,
             AnalyticsTrackingSeeder::class,
         ]);
     }
