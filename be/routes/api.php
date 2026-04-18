@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\GoogleConversionController;
+use App\Http\Controllers\Api\InactiveStyleController;
 use App\Http\Controllers\Api\KeywordSetController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\RevenueReportController;
@@ -291,4 +292,13 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('stats', [AnalyticsTrackingController::class, 'stats']);
             Route::get('keywords', [AnalyticsTrackingController::class, 'keywords']);
         });
+
+    Route::prefix('inactive-styles')->group(function () {
+        Route::get('/', [InactiveStyleController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::InactiveStylesView->value);
+        Route::delete('bulk', [InactiveStyleController::class, 'bulkDestroy'])
+            ->middleware('permission.scope:'.Permission::InactiveStylesDelete->value);
+        Route::delete('{user}', [InactiveStyleController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::InactiveStylesDelete->value);
+    });
 });

@@ -167,6 +167,11 @@ enum Permission: string
     // —— Analytics Tracking ——
     case AnalyticsTrackingView = 'analytics-tracking.view';      // bit 69 →  590295810358705651712
 
+    // —— Inactive Styles ——
+    case InactiveStylesView = 'inactive-styles.view';            // bit 70 →  1180591620717411303424
+
+    case InactiveStylesDelete = 'inactive-styles.delete';        // bit 71 →  2361183241434822606848
+
     /**
      * Bit value for this permission (1 << declaration index).
      */
