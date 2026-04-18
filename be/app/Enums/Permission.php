@@ -155,6 +155,9 @@ enum Permission: string
 
     case GoogleConversionsCreate = 'google-conversions.create'; // bit 65 →  36893488147419103232
 
+    // —— Revenue Reports ——
+    case RevenueReportsView = 'revenue-reports.view';            // bit 66 →  73786976294838206464
+
     /**
      * Bit value for this permission (1 << declaration index).
      */
