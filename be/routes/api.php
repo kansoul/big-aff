@@ -4,6 +4,7 @@ use App\Enums\Permission;
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AdClientController;
 use App\Http\Controllers\Api\AdsLinkController;
+use App\Http\Controllers\Api\AdsReportController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\BusinessCenterController;
 use App\Http\Controllers\Api\CampaignRuleSettingController;
@@ -253,6 +254,11 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::CampaignRuleSettingsView->value);
         Route::match(['put', 'patch'], '{user}', [CampaignRuleSettingController::class, 'save'])
             ->middleware('permission.scope:'.Permission::CampaignRuleSettingsUpdate->value);
+    });
+
+    Route::prefix('ads-report')->group(function () {
+        Route::get('stats', [AdsReportController::class, 'stats'])
+            ->middleware('permission.scope:'.Permission::AdsReportView->value);
     });
 
     Route::prefix('revenue-reports')->group(function () {

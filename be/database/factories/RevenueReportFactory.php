@@ -33,18 +33,18 @@ class RevenueReportFactory extends Factory
             ? round($estimatedEarnings / $funnelImpressions * 1000, 4)
             : null;
 
-        static $styleCodes = ['style_abc001', 'style_def002', 'style_ghi003', 'style_jkl004', 'style_mno005'];
+        static $defaultStyleCodes = ['style_abc001', 'style_def002', 'style_ghi003', 'style_jkl004', 'style_mno005'];
+        static $defaultStyleNames = ['Blue Banner', 'Red Square', 'Green Leaderboard', 'Purple Skyscraper', 'Orange Native'];
         static $channelCodes = ['chan_tech', 'chan_lifestyle', 'chan_finance', 'chan_health', 'chan_sports'];
-        static $styleNames = ['Blue Banner', 'Red Square', 'Green Leaderboard', 'Purple Skyscraper', 'Orange Native'];
         static $channelNames = ['Tech Channel', 'Lifestyle Channel', 'Finance Channel', 'Health Channel', 'Sports Channel'];
 
-        $styleIndex = array_rand($styleCodes);
+        $styleIndex = array_rand($defaultStyleCodes);
         $channelIndex = array_rand($channelCodes);
 
         return [
             'ad_client_id' => 'ca-pub-'.fake()->numerify('##############'),
-            'style_code' => $styleCodes[$styleIndex],
-            'style_name' => $styleNames[$styleIndex],
+            'style_code' => $defaultStyleCodes[$styleIndex],
+            'style_name' => $defaultStyleNames[$styleIndex],
             'channel_code' => $channelCodes[$channelIndex],
             'channel_name' => $channelNames[$channelIndex],
             'date' => fake()->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),
