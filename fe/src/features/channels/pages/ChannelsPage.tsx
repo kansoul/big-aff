@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 
 import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { formatApiError } from '@/features/settings/components'
@@ -27,12 +28,10 @@ export function ChannelsPage() {
 
   const [channels, setChannels] = useState<Channel[]>([])
   const [loading, setLoading] = useState(true)
-  const [listError, setListError] = useState<string | null>(null)
 
   const [createOpen, setCreateOpen] = useState(false)
   const [deleteRow, setDeleteRow] = useState<Channel | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [importErrors, setImportErrors] = useState<string[]>([])
@@ -47,12 +46,11 @@ export function ChannelsPage() {
 
   const loadData = useCallback(async () => {
     try {
-      setListError(null)
       setLoading(true)
       const result = await channelsApi.list()
       setChannels(result.data ?? [])
     } catch (err) {
-      setListError(formatApiError(err))
+      toast.error(formatApiError(err))
     } finally {
       setLoading(false)
     }
@@ -94,9 +92,17 @@ export function ChannelsPage() {
   }
 
   const onDeleteRow = useCallback((row: Channel) => {
-    setDeleteError(null)
     setDeleteRow(row)
   }, [])
+
+  const onDeleteOpenChange = useCallback((open: boolean) => {
+    if (!open) setDeleteRow(null)
+  }, [])
+
+  const onDeleteSuccess = useCallback(() => {
+    setDeleteRow(null)
+    void loadData()
+  }, [loadData])
 
   const onBulkDeleteClick = useCallback(() => {
     setBulkDeleteOpen(true)
@@ -105,29 +111,6 @@ export function ChannelsPage() {
   const onBulkDeleteOpenChange = useCallback((open: boolean) => {
     setBulkDeleteOpen(open)
   }, [])
-
-  const onDeleteOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      setDeleteRow(null)
-      setDeleteError(null)
-    }
-  }, [])
-
-  const onDeleteConfirm = async () => {
-    if (!deleteRow) {
-      return
-    }
-    try {
-      setSubmitting(true)
-      await channelsApi.remove(deleteRow.id)
-      setDeleteRow(null)
-      await loadData()
-    } catch (err) {
-      setDeleteError(formatApiError(err))
-    } finally {
-      setSubmitting(false)
-    }
-  }
 
   const onBulkDeleteConfirm = useCallback(async () => {
     const ids = Array.from(selectedIds)
@@ -146,12 +129,8 @@ export function ChannelsPage() {
         }
       })
 
-      const deletedCount = ids.length - failedIds.size
-      if (deletedCount > 0) {
-        setDeleteError(null)
-      }
       if (firstError) {
-        setDeleteError(formatApiError(firstError))
+        toast.error(formatApiError(firstError))
       }
 
       setSelectedIds(failedIds)
@@ -172,7 +151,6 @@ export function ChannelsPage() {
   return (
     <div className="flex flex-col gap-8">
       <ChannelsTableCard
-        listError={listError}
         loading={loading}
         channels={channels}
         canCreate={canCreate}
@@ -196,9 +174,7 @@ export function ChannelsPage() {
       <DeleteChannelDialog
         channel={deleteRow}
         onOpenChange={onDeleteOpenChange}
-        submitting={submitting}
-        error={deleteError}
-        onConfirm={onDeleteConfirm}
+        onSuccess={onDeleteSuccess}
       />
       <BulkDeleteDialog
         open={bulkDeleteOpen}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 
 import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { formatApiError } from '@/features/settings/components'
@@ -27,12 +28,10 @@ export function StylesPage() {
 
   const [styles, setStyles] = useState<Style[]>([])
   const [loading, setLoading] = useState(true)
-  const [listError, setListError] = useState<string | null>(null)
 
   const [createOpen, setCreateOpen] = useState(false)
   const [deleteRow, setDeleteRow] = useState<Style | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [importErrors, setImportErrors] = useState<string[]>([])
@@ -47,12 +46,11 @@ export function StylesPage() {
 
   const loadData = useCallback(async () => {
     try {
-      setListError(null)
       setLoading(true)
       const result = await stylesApi.list()
       setStyles(result.data ?? [])
     } catch (err) {
-      setListError(formatApiError(err))
+      toast.error(formatApiError(err))
     } finally {
       setLoading(false)
     }
@@ -94,9 +92,17 @@ export function StylesPage() {
   }
 
   const onDeleteRow = useCallback((row: Style) => {
-    setDeleteError(null)
     setDeleteRow(row)
   }, [])
+
+  const onDeleteOpenChange = useCallback((open: boolean) => {
+    if (!open) setDeleteRow(null)
+  }, [])
+
+  const onDeleteSuccess = useCallback(() => {
+    setDeleteRow(null)
+    void loadData()
+  }, [loadData])
 
   const onBulkDeleteClick = useCallback(() => {
     setBulkDeleteOpen(true)
@@ -105,29 +111,6 @@ export function StylesPage() {
   const onBulkDeleteOpenChange = useCallback((open: boolean) => {
     setBulkDeleteOpen(open)
   }, [])
-
-  const onDeleteOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      setDeleteRow(null)
-      setDeleteError(null)
-    }
-  }, [])
-
-  const onDeleteConfirm = async () => {
-    if (!deleteRow) {
-      return
-    }
-    try {
-      setSubmitting(true)
-      await stylesApi.remove(deleteRow.id)
-      setDeleteRow(null)
-      await loadData()
-    } catch (err) {
-      setDeleteError(formatApiError(err))
-    } finally {
-      setSubmitting(false)
-    }
-  }
 
   const onBulkDeleteConfirm = useCallback(async () => {
     const ids = Array.from(selectedIds)
@@ -146,12 +129,8 @@ export function StylesPage() {
         }
       })
 
-      const deletedCount = ids.length - failedIds.size
-      if (deletedCount > 0) {
-        setDeleteError(null)
-      }
       if (firstError) {
-        setDeleteError(formatApiError(firstError))
+        toast.error(formatApiError(firstError))
       }
 
       setSelectedIds(failedIds)
@@ -172,7 +151,6 @@ export function StylesPage() {
   return (
     <div className="flex flex-col gap-8">
       <StylesTableCard
-        listError={listError}
         loading={loading}
         styles={styles}
         canCreate={canCreate}
@@ -196,9 +174,7 @@ export function StylesPage() {
       <DeleteStyleDialog
         style={deleteRow}
         onOpenChange={onDeleteOpenChange}
-        submitting={submitting}
-        error={deleteError}
-        onConfirm={onDeleteConfirm}
+        onSuccess={onDeleteSuccess}
       />
       <BulkDeleteDialog
         open={bulkDeleteOpen}

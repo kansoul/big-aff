@@ -94,6 +94,7 @@ type GoogleConversionsTableCardProps = {
   drafts: GoogleConversionDraftMap
   dirtyCount: number
   canUpdate: boolean
+  canCreate: boolean
   onFilterChange: (patch: Partial<GoogleConversionFilterParams>) => void
   onDraftChange: (id: number, field: ConversionField, value: string) => void
   onSaveChanges: () => void
@@ -122,6 +123,7 @@ export function GoogleConversionsTableCard({
   drafts,
   dirtyCount,
   canUpdate,
+  canCreate,
   onFilterChange,
   onDraftChange,
   onSaveChanges,
@@ -170,15 +172,17 @@ export function GoogleConversionsTableCard({
           <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
           Reload
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-          onClick={onImportClick}
-        >
-          <FileUp className="size-3.5" />
-          Import Bulk
-        </Button>
+        {canCreate ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+            onClick={onImportClick}
+          >
+            <FileUp className="size-3.5" />
+            Import Bulk
+          </Button>
+        ) : null}
       </div>
 
       {/* Rows */}

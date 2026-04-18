@@ -31,6 +31,10 @@ export function GoogleConversionsPage() {
     () => hasPermission(perms, PermissionSlugs.GoogleConversionsUpdate),
     [perms],
   )
+  const canCreate = useMemo(
+    () => hasPermission(perms, PermissionSlugs.GoogleConversionsCreate),
+    [perms],
+  )
 
   const [conversions, setConversions] = useState<GoogleConversion[]>([])
   const [rowCount, setRowCount] = useState(0)
@@ -106,7 +110,7 @@ export function GoogleConversionsPage() {
       const original = conversions.find((c) => c.id === id)!
       const saved = original.conversion
       return {
-        account_id: Number(original.account_id),
+        account_id: String(original.account_id),
         article_view:
           draft.article_view !== undefined
             ? draft.article_view || null
@@ -140,6 +144,14 @@ export function GoogleConversionsPage() {
     void loadData(filters)
   }, [loadData, filters])
 
+  const onImportClick = useCallback(() => {
+    if (!canCreate) {
+      toast.error('You do not have permission to import conversions.')
+      return
+    }
+    setImportOpen(true)
+  }, [canCreate])
+
   return (
     <>
       <GoogleConversionsTableCard
@@ -151,18 +163,21 @@ export function GoogleConversionsPage() {
         drafts={drafts}
         dirtyCount={dirtyCount}
         canUpdate={canUpdate}
+        canCreate={canCreate}
         onFilterChange={onFilterChange}
         onDraftChange={onDraftChange}
         onSaveChanges={() => void onSaveChanges()}
-        onImportClick={() => setImportOpen(true)}
+        onImportClick={onImportClick}
         onReload={() => void loadData(filters)}
       />
 
-      <ImportBulkDialog
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        onSuccess={onImportSuccess}
-      />
+      {canCreate ? (
+        <ImportBulkDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          onSuccess={onImportSuccess}
+        />
+      ) : null}
     </>
   )
 }

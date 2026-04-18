@@ -2,7 +2,6 @@ import { memo, useCallback, useMemo } from 'react'
 import {
   MantineReactTable,
   MRT_ShowHideColumnsButton,
-  MRT_ToggleGlobalFilterButton,
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
   useMantineReactTable,
@@ -420,7 +419,6 @@ function AccountsTableCardInner({
               <div className="mx-1 h-5 w-px bg-border" />
             </>
           ) : null}
-          <MRT_ToggleGlobalFilterButton table={t} />
           <MRT_ShowHideColumnsButton table={t} />
         </div>
         <FilterPanel

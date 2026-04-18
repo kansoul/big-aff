@@ -5,7 +5,6 @@ import {
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
   MRT_ShowHideColumnsButton,
-  MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
 import { FolderOpen, Pencil, Plus, Trash2 } from 'lucide-react'
 
@@ -261,7 +260,6 @@ function CategoriesTableCardInner({
               <div className="mx-1 h-5 w-px bg-border" />
             </>
           ) : null}
-          <MRT_ToggleGlobalFilterButton table={t} />
           <MRT_ShowHideColumnsButton table={t} />
         </div>
         <FilterPanel

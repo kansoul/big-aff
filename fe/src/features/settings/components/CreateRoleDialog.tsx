@@ -89,7 +89,9 @@ export function CreateRoleDialog({
               name="name"
               render={({ field }) => (
                 <FormItem className={canAssign ? 'shrink-0' : ''}>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>
+                    Name <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. analyst" className="" autoComplete="off" {...field} />
                   </FormControl>

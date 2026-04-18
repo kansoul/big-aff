@@ -51,7 +51,13 @@ function navGroupIsActive(item: NavItem, activeNavSection: NavSectionId | undefi
 }
 
 function useNavSubActive(href: string): boolean {
-  return Boolean(useMatch({ path: href, end: true }))
+  return Boolean(useMatch({ path: href, end: false }))
+}
+
+function navGroupHasActiveChild(item: NavItem, pathname: string): boolean {
+  return (
+    item.items?.some((sub) => pathname === sub.href || pathname.startsWith(sub.href + '/')) ?? false
+  )
 }
 
 const NavDropdownLink = React.forwardRef<
@@ -63,7 +69,7 @@ const NavDropdownLink = React.forwardRef<
 >(function NavDropdownLink({ to, className, children, ...props }, ref) {
   const isActive = useNavSubActive(to)
   return (
-    <NavLink ref={ref} to={to} end className={cn(className, isActive && navSubActive)} {...props}>
+    <NavLink ref={ref} to={to} className={cn(className, isActive && navSubActive)} {...props}>
       {children}
     </NavLink>
   )
@@ -75,7 +81,6 @@ function MobileNavSubLink({ sub, onNavigate }: { sub: NavSubItem; onNavigate: ()
   return (
     <NavLink
       to={sub.href}
-      end
       onClick={onNavigate}
       className={cn(
         'flex min-h-11 w-full items-center gap-2.5 px-3 py-2.5 text-sm font-medium tracking-wide',
@@ -95,7 +100,6 @@ function HoverNavSubLink({ sub }: { sub: NavSubItem }) {
     <NavLink
       role="menuitem"
       to={sub.href}
-      end
       className={cn(
         'flex min-h-9 w-full items-center gap-2 px-3 py-2 text-sm font-medium tracking-wide transition-colors hover:bg-red-50 dark:hover:bg-red-950/30',
         isActive ? navSubActive : 'text-foreground',
@@ -139,10 +143,12 @@ const MobileNav = React.memo(function MobileNav({
   onNavigate: () => void
   items: NavItem[]
 }) {
+  const { pathname } = useLocation()
   return (
     <nav className="flex flex-col gap-1 px-2 pb-6" aria-label="Main navigation">
       {items.map((item) => {
-        const groupActive = navGroupIsActive(item, activeNavSection)
+        const groupActive =
+          navGroupIsActive(item, activeNavSection) || navGroupHasActiveChild(item, pathname)
         const linkClass = ({ isActive }: { isActive: boolean }) =>
           cn(
             'flex items-center gap-2.5 rounded-md px-3 py-3 text-sm font-semibold tracking-wide transition-colors',
@@ -155,7 +161,7 @@ const MobileNav = React.memo(function MobileNav({
           }
           const MobileLeafIcon = item.icon
           return (
-            <NavLink key={item.name} to={item.href} end onClick={onNavigate} className={linkClass}>
+            <NavLink key={item.name} to={item.href} onClick={onNavigate} className={linkClass}>
               {MobileLeafIcon && (
                 <MobileLeafIcon className="size-4 shrink-0 opacity-80" aria-hidden />
               )}
@@ -178,7 +184,6 @@ const MobileNav = React.memo(function MobileNav({
                 <>
                   <NavLink
                     to={item.href}
-                    end
                     onClick={onNavigate}
                     className={({ isActive }) =>
                       cn(
@@ -302,7 +307,9 @@ export const Header = React.memo(function Header() {
 
           <nav className="hidden md:flex items-center gap-6">
             {navItemsForUser.map((item) => {
-              const groupActive = navGroupIsActive(item, activeNavSection)
+              const groupActive =
+                navGroupIsActive(item, activeNavSection) ||
+                navGroupHasActiveChild(item, location.pathname)
 
               if (!item.items?.length) {
                 if (!item.href) {
@@ -313,7 +320,6 @@ export const Header = React.memo(function Header() {
                   <NavLink
                     key={item.name}
                     to={item.href}
-                    end
                     className={({ isActive }) =>
                       cn(navTabBase, isActive ? navTabActive : navTabInactive)
                     }
@@ -371,7 +377,6 @@ export const Header = React.memo(function Header() {
                 <div key={item.name} className="group relative">
                   <NavLink
                     to={item.href}
-                    end
                     aria-haspopup="menu"
                     className={({ isActive }) =>
                       cn(navTabBase, isActive || groupActive ? navTabActive : navTabInactive)

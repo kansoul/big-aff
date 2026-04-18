@@ -44,8 +44,7 @@ export interface GoogleConversionFilterParams {
 }
 
 export interface GoogleConversionBulkUpdateRow {
-  /** Sent as integer to the bulk-update API */
-  account_id: number
+  account_id: string
   article_view?: string | null
   rsu_click?: string | null
   search_view?: string | null

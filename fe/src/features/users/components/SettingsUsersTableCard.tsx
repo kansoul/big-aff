@@ -194,9 +194,15 @@ function SettingsUsersTableCardInner({
     },
     enableColumnFilters: true,
     enableGlobalFilter: true,
+    positionGlobalFilter: 'left',
     enableColumnPinning: true,
     enableRowSelection: (row) => canDelete && row.original.id !== currentUserId,
+    mantineSearchTextInputProps: {
+      placeholder: 'Search…',
+      sx: { minWidth: 'clamp(120px, 40vw, 260px)' },
+    },
     initialState: {
+      showGlobalFilter: true,
       density: 'md',
       columnVisibility: {},
       columnPinning: { right: ['actions'] },
