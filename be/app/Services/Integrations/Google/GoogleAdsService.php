@@ -113,6 +113,8 @@ class GoogleAdsService
                         'status' => $this->mapCampaignStatus($campaign->getStatus()),
                         'start_time' => Carbon::parse($campaign->getStartDate()),
                         'stop_time' => Carbon::parse($campaign->getEndDate()),
+                        'created_time' => Carbon::parse($campaign->getStartDate()),
+                        'updated_time' => Carbon::now(),
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
@@ -185,6 +187,8 @@ class GoogleAdsService
                         'status' => $this->mapCampaignStatus($campaign->getStatus()),
                         'start_time' => Carbon::parse($campaign->getStartDate()),
                         'stop_time' => Carbon::parse($campaign->getEndDate()),
+                        'created_time' => Carbon::parse($campaign->getStartDate()),
+                        'updated_time' => Carbon::now(),
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
@@ -314,6 +318,8 @@ class GoogleAdsService
                     'status' => $this->mapCampaignStatus($campaign->getStatus()),
                     'start_time' => Carbon::parse($campaign->getStartDate()),
                     'stop_time' => Carbon::parse($campaign->getEndDate()),
+                    'created_time' => Carbon::parse($campaign->getStartDate()),
+                    'updated_time' => Carbon::now(),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -381,6 +387,8 @@ class GoogleAdsService
                         'status' => $this->mapCampaignStatus($campaign->getStatus()),
                         'start_time' => Carbon::parse($campaign->getStartDate()),
                         'stop_time' => Carbon::parse($campaign->getEndDate()),
+                        'created_time' => Carbon::parse($campaign->getStartDate()),
+                        'updated_time' => Carbon::now(),
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
