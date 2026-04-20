@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Http\Requests\BusinessCenter\ListBusinessCentersRequest;
 use App\Http\Requests\BusinessCenter\StoreBusinessCenterRequest;
 use App\Http\Requests\BusinessCenter\UpdateBusinessCenterRequest;

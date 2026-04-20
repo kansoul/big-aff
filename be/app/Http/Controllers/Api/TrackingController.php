@@ -51,8 +51,6 @@ class TrackingController extends BaseController
      * @bodyParam conversion_action_resource_name string required Conversion action resource name.
      * @bodyParam conversion_value float required Conversion value.
      * @bodyParam currency_code string required Conversion currency.
-     *
-     * @return JsonResponse
      */
     public function storeAdsConversion(StoreAdsConversionRequest $request): JsonResponse
     {

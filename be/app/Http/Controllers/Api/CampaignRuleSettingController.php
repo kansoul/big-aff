@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Http\Requests\CampaignRuleSetting\ListCampaignRuleSettingsRequest;
 use App\Http\Requests\CampaignRuleSetting\SaveCampaignRuleSettingRequest;
 use App\Http\Resources\CampaignRuleSetting\UserCampaignRuleSettingResource;

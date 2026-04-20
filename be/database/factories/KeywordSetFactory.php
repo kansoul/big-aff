@@ -27,7 +27,7 @@ class KeywordSetFactory extends Factory
         $keywords = array_slice(fake()->shuffle($pool), 0, $count);
 
         return [
-            'name' => ucfirst(fake()->words(fake()->numberBetween(2, 4), true)) . ' Keywords',
+            'name' => ucfirst(fake()->words(fake()->numberBetween(2, 4), true)).' Keywords',
             'keywords' => $keywords,
             'created_by' => null,
             'updated_by' => null,

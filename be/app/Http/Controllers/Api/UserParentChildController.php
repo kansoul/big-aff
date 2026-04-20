@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Http\Requests\User\ListParentChildAssignmentsRequest;
 use App\Http\Requests\User\SyncUserParentChildrenRequest;
 use App\Models\Team;

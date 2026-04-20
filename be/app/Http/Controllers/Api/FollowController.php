@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Http\Requests\Follow\ListFollowsRequest;
 use App\Http\Requests\Follow\StoreFollowRequest;
 use App\Http\Resources\FollowResource;

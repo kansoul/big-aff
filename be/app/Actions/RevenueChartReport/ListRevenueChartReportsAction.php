@@ -45,7 +45,7 @@ class ListRevenueChartReportsAction
         $ownership->applyThrough(
             $query,
             'style_code',
-            fn(array $ids) => Style::whereIn('created_by', $ids)->select('code'),
+            fn (array $ids) => Style::whereIn('created_by', $ids)->select('code'),
         );
 
         if (! empty($filters['date_from'])) {

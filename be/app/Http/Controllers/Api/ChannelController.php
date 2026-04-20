@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Http\Requests\Channel\BulkStoreChannelRequest;
 use App\Http\Requests\Channel\ListChannelsRequest;
 use App\Http\Resources\ChannelResource;
@@ -74,7 +73,7 @@ class ChannelController extends BaseController
             ->get();
 
         return $this->sendResponse([
-            'data' => $channels->map(fn(Channel $channel) => [
+            'data' => $channels->map(fn (Channel $channel) => [
                 'code' => $channel->code,
                 'name' => $channel->name,
             ]),

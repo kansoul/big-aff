@@ -16,9 +16,11 @@ class StoreAdsConversionAction
         try {
             $now = now()->format('Y-m-d H:i:sP');
             StoreAdsConversionJob::dispatch($data, $now)->onQueue(config('queue.queues.ads-conversion'));
+
             return true;
         } catch (Throwable $e) {
-            Log::error('AdsConversion store error: ' . $e->getMessage());
+            Log::error('AdsConversion store error: '.$e->getMessage());
+
             return false;
         }
     }

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Http\Requests\Team\AssignTeamRequest;
 use App\Http\Requests\Team\ListTeamsRequest;
 use App\Http\Requests\Team\StoreTeamRequest;

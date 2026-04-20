@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Http\Requests\AdsLink\ListAdsLinksRequest;
 use App\Http\Requests\AdsLink\StoreAdsLinkRequest;
 use App\Http\Requests\AdsLink\UpdateAdsLinkRequest;
