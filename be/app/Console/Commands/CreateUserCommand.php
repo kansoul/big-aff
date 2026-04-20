@@ -44,7 +44,7 @@ class CreateUserCommand extends Command
 
             return Command::FAILURE;
         }
-        if (!Role::whereId($roleId)->exists()) {
+        if (! Role::whereId($roleId)->exists()) {
             $this->error("Role Id {$roleId} not exists.");
 
             return Command::FAILURE;

@@ -31,8 +31,9 @@ class UserController extends BaseController
      * List users
      *
      * Return all users the authenticated actor is allowed to manage.
+     * Each user includes their assigned accounts with business center and team details.
      *
-     * @response 200 {"data": [{"id": 1, "name": "User", "email": "user@example.com", "role_id": 1, "role": {"id": 1, "name": "Admin", "permissions": []}, "parent_id": null, "parent": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
+     * @response 200 {"data": [{"id": 1, "name": "User", "email": "user@example.com", "role_id": 1, "role": {"id": 1, "name": "Admin", "permissions": []}, "parent_id": null, "parent": null, "accounts": [{"id": 1, "business_center_id": 1, "business_center": {"id": 1, "name": "My BC"}, "team_id": null, "team": null, "account_id": "123456", "account_name": "My Account", "ads_type": "facebook", "status": "active", "is_special": false, "sync_to_mcc": false, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
      */
     public function index(ListUsersRequest $request): JsonResponse
     {

@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits\Relationship;
 
+use App\Models\Account;
 use App\Models\File;
 use App\Models\Role;
 use App\Models\Site;
@@ -97,5 +98,16 @@ trait UserRelationship
     public function campaignRuleSetting(): HasOne
     {
         return $this->hasOne(UserCampaignRuleSetting::class);
+    }
+
+    /**
+     * Accounts assigned to this user.
+     *
+     * @return BelongsToMany<Account, $this>
+     */
+    public function accounts(): BelongsToMany
+    {
+        return $this->belongsToMany(Account::class)
+            ->withTimestamps();
     }
 }

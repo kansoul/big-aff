@@ -15,11 +15,11 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            CreateUserSeeder::class,
             RevenueStatsSeeder::class,
             RevenueChartReportSeeder::class,
             StyleReportRangeSeeder::class,
             AnalyticsTrackingSeeder::class,
+            CampaignRuleSeeder::class,
         ]);
     }
 }

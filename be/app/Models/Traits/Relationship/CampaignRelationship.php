@@ -3,10 +3,14 @@
 namespace App\Models\Traits\Relationship;
 
 use App\Models\Account;
+use App\Models\CampaignApplyRule;
+use App\Models\CampaignRule;
 use App\Models\LinkData;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 trait CampaignRelationship
 {
@@ -40,5 +44,21 @@ trait CampaignRelationship
     public function updatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * @return MorphMany<CampaignApplyRule, $this>
+     */
+    public function applyRules(): MorphMany
+    {
+        return $this->morphMany(CampaignApplyRule::class, 'sourceable');
+    }
+
+    /**
+     * @return MorphToMany<CampaignRule, $this>
+     */
+    public function campaignRules(): MorphToMany
+    {
+        return $this->morphToMany(CampaignRule::class, 'sourceable', 'campaign_apply_rules');
     }
 }
