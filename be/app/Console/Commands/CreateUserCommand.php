@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +14,7 @@ class CreateUserCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'app:create-user {--name=} {--email=} {--password=}';
+    protected $signature = 'app:create-user {--name=} {--email=} {--password=} {--role_id=}';
 
     /**
      * The console command description.
@@ -29,6 +30,7 @@ class CreateUserCommand extends Command
     {
         $name = $this->option('name') ?? $this->ask('Enter user name');
         $email = $this->option('email') ?? $this->ask('Enter user email');
+        $roleId = $this->option('role_id') ?? $this->ask('Enter user role_id');
 
         while (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->error('Invalid email format. Please try again.');
@@ -42,11 +44,16 @@ class CreateUserCommand extends Command
 
             return Command::FAILURE;
         }
+        if (!Role::whereId($roleId)->exists()) {
+            $this->error("Role Id {$roleId} not exists.");
 
+            return Command::FAILURE;
+        }
         $user = User::create([
             'name' => $name,
             'email' => $email,
             'password' => Hash::make($password),
+            'role_id' => $roleId,
         ]);
 
         $this->info("User {$user->name} created successfully!");
