@@ -41,6 +41,7 @@ Route::middleware('check.whitelist')->group(function () {
     Route::get('/site/config', [SiteController::class, 'config']);
     Route::get('/post/{slug}', [PostController::class, 'getPostBySlug']);
     Route::get('/posts/search', [PostController::class, 'searchPosts']);
+    Route::get('/posts/latest', [PostController::class, 'getLatestPosts']);
     Route::post('/tracking/log', [TrackingController::class, 'storeLog']);
     Route::post('/tracking/ads-conversion', [TrackingController::class, 'storeAdsConversion']);
 });

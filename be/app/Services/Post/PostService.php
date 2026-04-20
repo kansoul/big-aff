@@ -4,6 +4,7 @@ namespace App\Services\Post;
 
 use App\Actions\Post\CreatePostAction;
 use App\Actions\Post\DeletePostAction;
+use App\Actions\Post\GetLatestPostsAction;
 use App\Actions\Post\GetPostBySlugAction;
 use App\Actions\Post\GetPostOptionsAction;
 use App\Actions\Post\ListPostsAction;
@@ -11,6 +12,7 @@ use App\Actions\Post\SearchPostsAction;
 use App\Actions\Post\UpdatePostAction;
 use App\Models\Post;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Collection;
 
@@ -24,6 +26,7 @@ class PostService
         private readonly GetPostOptionsAction $getPostOptionsAction,
         private readonly GetPostBySlugAction $getPostBySlugAction,
         private readonly SearchPostsAction $searchPostsAction,
+        private readonly GetLatestPostsAction $getLatestPostsAction,
     ) {}
 
     /**
@@ -81,5 +84,13 @@ class PostService
     public function searchPosts(array $filters): AnonymousResourceCollection
     {
         return $this->searchPostsAction->execute($filters);
+    }
+
+    /**
+     * @return EloquentCollection<int, Post>
+     */
+    public function getLatestPosts(int $limit): EloquentCollection
+    {
+        return $this->getLatestPostsAction->execute($limit);
     }
 }

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Post\GetLatestPostsRequest;
 use App\Http\Requests\Post\GetPostBySlugRequest;
 use App\Http\Requests\Post\ListPostsRequest;
 use App\Http\Requests\Post\SearchPostRequest;
 use App\Http\Requests\Post\StorePostRequest;
 use App\Http\Requests\Post\UpdatePostRequest;
+use App\Http\Resources\Post\LatestPostResource;
 use App\Http\Resources\Post\PostBySlugResource;
 use App\Http\Resources\Post\PostResource;
 use App\Models\Post;
@@ -200,5 +202,24 @@ class PostController extends BaseController
         $results = $this->postService->searchPosts($request->validated());
 
         return $results->response();
+    }
+
+    /**
+     * Get latest posts
+     *
+     * Return the most recent published posts for homepage display.
+     *
+     * @queryParam limit integer Number of posts to return (1–20, default 10). Example: 10
+     *
+     * @response 200 {"data": [{"id": 1, "title": "My Post", "slug": "my-post", "description": "Short desc", "feature_media": null, "category": null, "published_at": "2026-01-01T00:00:00+00:00", "created_at": "2026-01-01T00:00:00+00:00"}]}
+     */
+    public function getLatestPosts(GetLatestPostsRequest $request): JsonResponse
+    {
+        $limit = (int) ($request->validated('limit') ?? 10);
+        $posts = $this->postService->getLatestPosts($limit);
+
+        return $this->sendResponse([
+            'data' => LatestPostResource::collection($posts),
+        ]);
     }
 }

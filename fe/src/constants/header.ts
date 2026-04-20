@@ -3,19 +3,22 @@ import type { LucideIcon } from 'lucide-react'
 import { PATHS, type NavSectionId } from '@/constants/paths'
 import { PermissionSlugs } from '@/constants/permissions'
 import {
-  BarChart3,
   Building2,
+  CircleDollarSign,
   FileText,
   FolderOpen,
   GitBranch,
   Globe,
   Images,
+  Layers,
   LayoutDashboard,
   Link2,
+  Megaphone,
   Palette,
   Radio,
   Repeat,
   SlidersHorizontal,
+  Target,
   UserCheck,
   UserCog,
   Users,
@@ -63,6 +66,17 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         icon: Images,
         requiredPermission: PermissionSlugs.FilesView,
       },
+      {
+        name: 'Sites',
+        href: PATHS.settingsSites,
+        icon: Globe,
+        requiredPermission: PermissionSlugs.SettingsSitesView,
+      },
+      {
+        name: 'Follows',
+        href: PATHS.follows,
+        icon: UserCheck,
+      },
     ],
   },
   {
@@ -81,15 +95,74 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         requiredPermission: PermissionSlugs.StylesView,
       },
       {
-        name: 'Follows',
-        href: PATHS.follows,
-        icon: UserCheck,
-      },
-      {
         name: 'Ads Links',
         href: PATHS.adsLinks,
         icon: Link2,
         requiredPermission: PermissionSlugs.AdsLinksView,
+      },
+    ],
+  },
+  {
+    name: 'Report',
+    items: [
+      {
+        name: 'Ads Report',
+        href: PATHS.adsReport,
+        icon: Target,
+        requiredPermission: PermissionSlugs.ReportOverviewView,
+      },
+      {
+        name: 'Style Report',
+        href: PATHS.styleReport,
+        icon: Layers,
+        requiredPermission: PermissionSlugs.AdClientsView,
+      },
+      {
+        name: 'Revenue Report',
+        href: PATHS.revenueReport,
+        icon: CircleDollarSign,
+        requiredPermission: PermissionSlugs.ReportOverviewView,
+      },
+      {
+        name: 'Campaign Report',
+        href: PATHS.campaignReport,
+        icon: Megaphone,
+        requiredPermission: PermissionSlugs.ReportOverviewView,
+      },
+    ],
+  },
+  {
+    name: 'Ads',
+    items: [
+      {
+        name: 'Ad Clients',
+        href: PATHS.adClients,
+        icon: UserCog,
+        requiredPermission: PermissionSlugs.AdClientsView,
+      },
+      {
+        name: 'Business Centers',
+        href: PATHS.businessCenters,
+        icon: Building2,
+        requiredPermission: PermissionSlugs.BusinessCentersView,
+      },
+      {
+        name: 'Accounts',
+        href: PATHS.accounts,
+        icon: Wallet,
+        requiredPermission: PermissionSlugs.AccountsView,
+      },
+      {
+        name: 'Google Conversions',
+        href: PATHS.googleConversions,
+        icon: Repeat,
+        requiredPermission: PermissionSlugs.GoogleConversionsView,
+      },
+      {
+        name: 'Campaign Rules',
+        href: PATHS.campaignRuleSettings,
+        icon: SlidersHorizontal,
+        requiredPermission: PermissionSlugs.CampaignRuleSettingsView,
       },
     ],
   },
@@ -109,87 +182,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         requiredPermission: PermissionSlugs.SettingsUsersView,
       },
       {
-        name: 'Roles',
-        href: PATHS.settingsRoles,
-        icon: UserCog,
-        requiredPermission: PermissionSlugs.SettingsRolesView,
-      },
-    ],
-  },
-  {
-    name: 'Adsense',
-    items: [
-      {
-        name: 'Ad Clients',
-        href: PATHS.adClients,
-        icon: UserCog,
-        requiredPermission: PermissionSlugs.AdClientsView,
-      },
-    ],
-  },
-  {
-    name: 'Report',
-    items: [
-      {
-        name: 'Ads Report',
-        href: PATHS.adsReport,
-        icon: BarChart3,
-        requiredPermission: PermissionSlugs.ReportOverviewView,
-      },
-      {
-        name: 'Style Report',
-        href: PATHS.styleReport,
-        icon: BarChart3,
-        requiredPermission: PermissionSlugs.AdClientsView,
-      },
-      {
-        name: 'Revenue Report',
-        href: PATHS.revenueReport,
-        icon: BarChart3,
-        requiredPermission: PermissionSlugs.ReportOverviewView,
-      },
-      {
-        name: 'Campaign Report',
-        href: PATHS.campaignReport,
-        icon: BarChart3,
-        requiredPermission: PermissionSlugs.ReportOverviewView,
-      },
-    ],
-  },
-  {
-    name: 'System',
-    items: [
-      {
-        name: 'Sites',
-        href: PATHS.settingsSites,
-        icon: Globe,
-        requiredPermission: PermissionSlugs.SettingsSitesView,
-      },
-      {
-        name: 'Business Centers',
-        href: PATHS.businessCenters,
-        icon: Building2,
-        requiredPermission: PermissionSlugs.BusinessCentersView,
-      },
-      {
-        name: 'Accounts',
-        href: PATHS.accounts,
-        icon: Wallet,
-        requiredPermission: PermissionSlugs.AccountsView,
-      },
-      {
-        name: 'Campaign Rules',
-        href: PATHS.campaignRuleSettings,
-        icon: SlidersHorizontal,
-        requiredPermission: PermissionSlugs.CampaignRuleSettingsView,
-      },
-      {
-        name: 'Google Conversions',
-        href: PATHS.googleConversions,
-        icon: Repeat,
-        requiredPermission: PermissionSlugs.GoogleConversionsView,
-      },
-      {
         name: 'Teams',
         href: PATHS.teams,
         icon: UsersRound,
@@ -201,6 +193,16 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         icon: UsersRound,
         requiredPermission: PermissionSlugs.TeamsAssign,
       },
+      {
+        name: 'Roles',
+        href: PATHS.settingsRoles,
+        icon: UserCog,
+        requiredPermission: PermissionSlugs.SettingsRolesView,
+      },
     ],
+  },
+  {
+    name: 'System',
+    items: [],
   },
 ]

@@ -3,7 +3,16 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, Loader2, Mail, Lock } from 'lucide-react'
+import {
+  AlertCircle,
+  Loader2,
+  Mail,
+  Lock,
+  ArrowRight,
+  Shield,
+  Server,
+  LockKeyhole,
+} from 'lucide-react'
 
 import logoRed from '@/assets/logo-s-red.png'
 import logoWhite from '@/assets/logo-s-white.png'
@@ -72,61 +81,88 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full lg:grid lg:grid-cols-2">
-      <div className="relative hidden flex-col bg-zinc-900 border-r border-border text-white lg:flex">
-        <div className="absolute inset-0 bg-linear-to-b from-zinc-800 to-zinc-950 opacity-90" />
-        <div className="relative z-20 flex flex-col h-full p-10 justify-between">
-          <div className="flex items-center gap-3 font-bold tracking-tight">
-            <img src={logoWhite} alt={siteName} className="h-8 w-auto drop-shadow-md" />
+    <div className="relative flex min-h-screen w-full bg-background overflow-hidden">
+      {/* Hero Section (Left on Desktop) */}
+      <div className="relative hidden w-full lg:flex lg:w-[45%] xl:w-[50%] flex-col justify-between bg-zinc-950 overflow-hidden text-white p-12 lg:p-16">
+        {/* Animated Mesh Gradient Background */}
+        <div className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] lg:w-[50vw] lg:h-[50vw] rounded-full bg-indigo-600/30 blur-[100px] mix-blend-screen animate-in fade-in duration-1000" />
+        <div className="absolute bottom-[-10%] right-[-20%] w-[60vw] h-[60vw] lg:w-[40vw] lg:h-[40vw] rounded-full bg-emerald-600/20 blur-[100px] mix-blend-screen animate-in fade-in duration-1000 delay-300" />
+        <div className="absolute top-[30%] right-[10%] w-[40vw] h-[40vw] lg:w-[30vw] lg:h-[30vw] rounded-full bg-rose-600/20 blur-[100px] mix-blend-screen animate-in fade-in duration-1000 delay-500" />
+
+        {/* Subtle grid pattern overlay */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+
+        <div className="relative z-20 flex items-center gap-3 font-bold tracking-tight">
+          <img src={logoWhite} alt={siteName} className="h-10 w-auto drop-shadow-xl" />
+        </div>
+
+        <div className="relative z-20 w-full max-w-md mb-36 animate-in slide-in-from-bottom-8 fade-in duration-1000 delay-150">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-8 shadow-sm">
+            <LockKeyhole className="h-4 w-4 text-emerald-400" />
+            <span className="text-xs font-semibold tracking-wide text-zinc-100 uppercase">
+              System Access
+            </span>
           </div>
 
-          <div className="mt-auto max-w-lg">
-            <blockquote className="space-y-4">
-              <p className="text-xl font-medium leading-relaxed tracking-wide text-zinc-100">
-                &ldquo;{siteName} provides the most comprehensive platform to manage our ad
-                campaigns, track real-time performance, and drive our team's productivity to the
-                next level.&rdquo;
-              </p>
-              <footer className="text-sm font-medium text-zinc-400">
-                &mdash; The {siteName} System
-              </footer>
-            </blockquote>
+          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-6 leading-tight">
+            Your unified management workspace.
+          </h1>
+          <p className="text-lg text-zinc-300 font-medium leading-relaxed mb-10">
+            Connect to your workspace to analyze real-time performance, manage resources, and
+            orchestrate daily operations seamlessly.
+          </p>
+
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl transition-transform hover:-translate-y-1">
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-emerald-400" />
+                <span className="text-xl font-bold text-white">Protected</span>
+              </div>
+              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
+                Secure Connection
+              </span>
+            </div>
+            <div className="flex flex-col gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl transition-transform hover:-translate-y-1">
+              <div className="flex items-center gap-2">
+                <Server className="h-5 w-5 text-blue-400" />
+                <span className="text-xl font-bold text-white">Online</span>
+              </div>
+              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
+                System Status
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="relative flex w-full items-center justify-center p-4 sm:p-8 md:p-12 bg-background">
-        <div className="absolute right-4 top-4 md:right-8 md:top-8">
+      {/* Form Section (Right on Desktop, Full on Mobile) */}
+      <div className="relative flex w-full lg:w-[55%] xl:w-[50%] flex-col justify-center bg-background px-6 sm:px-12 py-12 animate-in fade-in zoom-in-95 duration-500 shadow-[-20px_0_40px_-20px_rgba(0,0,0,0.1)]">
+        <div className="absolute right-6 top-6 md:right-8 md:top-8 z-50">
           <ThemeToggle />
         </div>
 
-        <div className="mx-auto flex w-full max-w-[420px] flex-col justify-center space-y-8">
-          <div className="flex flex-col space-y-2 text-center lg:text-left">
-            <div className="flex justify-center lg:hidden mb-6">
-              <img
-                src={logoRed}
-                alt={siteName}
-                className="h-14 w-auto dark:hidden"
-                loading="eager"
-              />
-              <img
-                src={logoWhite}
-                alt={siteName}
-                className="hidden h-14 w-auto dark:block"
-                loading="eager"
-              />
-            </div>
+        <div className="mx-auto w-full max-w-[400px]">
+          <div className="flex justify-center lg:hidden mb-12">
+            <img src={logoRed} alt={siteName} className="h-14 w-auto dark:hidden" loading="eager" />
+            <img
+              src={logoWhite}
+              alt={siteName}
+              className="hidden h-14 w-auto dark:block"
+              loading="eager"
+            />
+          </div>
 
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome back</h1>
-            <p className="text-sm text-muted-foreground">
-              Enter your email and password to access your account
+          <div className="mb-10 text-center lg:text-left">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">Login</h2>
+            <p className="text-muted-foreground mt-2 text-sm sm:text-base">
+              Welcome back. Please enter your details to access your dashboard.
             </p>
           </div>
 
           {error && (
-            <div className="flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive animate-in fade-in-50 slide-in-from-top-1">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <p className="font-medium text-destructive/90">{error}</p>
+            <div className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 mb-8 text-sm text-destructive animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+              <p className="font-medium text-destructive/90 leading-relaxed">{error}</p>
             </div>
           )}
 
@@ -135,24 +171,26 @@ export function LoginPage() {
               onSubmit={(e) => {
                 void form.handleSubmit(onSubmit)(e)
               }}
-              className="space-y-5"
+              className="space-y-6"
             >
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground/90 font-medium">Email address</FormLabel>
+                    <FormLabel className="text-foreground font-semibold text-sm">
+                      Email address
+                    </FormLabel>
                     <FormControl>
                       <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
-                          <Mail className="h-4 w-4" />
+                          <Mail className="h-5 w-5" />
                         </div>
                         <Input
-                          placeholder="name@example.com"
+                          placeholder="name@company.com"
                           type="email"
                           autoComplete="email"
-                          className="pl-10 h-11 bg-background shadow-sm transition-all focus-visible:ring-primary/40 focus:border-primary"
+                          className="pl-11 h-12 rounded-xl bg-muted/40 border-border/50 shadow-sm transition-all focus-visible:ring-primary/30 focus-visible:bg-background focus:border-primary text-base"
                           {...field}
                         />
                       </div>
@@ -168,18 +206,20 @@ export function LoginPage() {
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between">
-                      <FormLabel className="text-foreground/90 font-medium">Password</FormLabel>
+                      <FormLabel className="text-foreground font-semibold text-sm">
+                        Password
+                      </FormLabel>
                     </div>
                     <FormControl>
                       <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
-                          <Lock className="h-4 w-4" />
+                          <Lock className="h-5 w-5" />
                         </div>
                         <Input
                           type="password"
                           placeholder="••••••••"
                           autoComplete="current-password"
-                          className="pl-10 h-11 bg-background shadow-sm transition-all focus-visible:ring-primary/40 focus:border-primary"
+                          className="pl-11 h-12 rounded-xl bg-muted/40 border-border/50 shadow-sm transition-all focus-visible:ring-primary/30 focus-visible:bg-background focus:border-primary text-base font-medium tracking-widest placeholder:tracking-normal"
                           {...field}
                         />
                       </div>
@@ -189,24 +229,24 @@ export function LoginPage() {
                 )}
               />
 
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center justify-between pt-2">
                 <FormField
                   control={form.control}
                   name="remember"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-2.5 space-y-0">
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                       <FormControl>
                         <Checkbox
                           checked={!!field.value}
                           onCheckedChange={(checked) => {
                             field.onChange(checked === true)
                           }}
-                          className="data-[state=checked]:bg-primary h-4 w-4"
+                          className="data-[state=checked]:bg-primary h-5 w-5 rounded-md border-muted-foreground/30"
                         />
                       </FormControl>
                       <div className="leading-none">
                         <FormLabel className="text-sm font-medium cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
-                          Remember me
+                          Remember my device
                         </FormLabel>
                       </div>
                     </FormItem>
@@ -214,26 +254,33 @@ export function LoginPage() {
                 />
               </div>
 
-              <Button
-                type="submit"
-                className="w-full h-11 text-[15px] font-semibold tracking-wide shadow-md transition-all hover:shadow-lg active:scale-[0.98] mt-2"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  'Sign in'
-                )}
-              </Button>
+              <div className="pt-4">
+                <Button
+                  type="submit"
+                  className="w-full h-12 rounded-xl text-base font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all hover:-translate-y-0.5 active:translate-y-0 group bg-primary hover:bg-primary/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Authenticating...
+                    </>
+                  ) : (
+                    <span className="flex items-center">
+                      Continue to Dashboard
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  )}
+                </Button>
+              </div>
             </form>
           </Form>
 
-          {/* Optional Footer Links */}
-          <div className="mt-8 text-center text-sm text-muted-foreground space-y-1">
-            <p>Secure login provided by {siteName} System.</p>
+          {/* Footer Area */}
+          <div className="mt-10 text-center">
+            <p className="text-sm text-muted-foreground font-medium">
+              Provided by {siteName} Systems.
+            </p>
           </div>
         </div>
       </div>

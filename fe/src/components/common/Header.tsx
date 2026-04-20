@@ -17,6 +17,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from '@/components/ui/navigation-menu'
 import { NAVIGATION_ITEMS, type NavItem, type NavSubItem } from '@/constants/header'
 import { PATHS, type NavSectionId } from '@/constants/paths'
 import { hasPermission } from '@/constants/permissions'
@@ -33,10 +41,10 @@ import { Link, NavLink, useLocation, useMatch, useMatches, useNavigate } from 'r
 
 const navTabActive = 'text-red-600 border-b-2 border-red-600 dark:text-red-400 dark:border-red-400'
 const navTabInactive =
-  'text-muted-foreground border-b-2 border-transparent hover:text-red-600 dark:hover:text-red-400'
+  'text-foreground border-b-2 border-transparent hover:text-red-600 dark:hover:text-red-400'
 const navTabBase =
-  'outline-none inline-flex items-center gap-1.5 border-b-2 border-transparent py-2 text-xs font-semibold tracking-wider transition-colors'
-const navSubActive = 'bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400'
+  'outline-none inline-flex items-center gap-1.5 border-b-2 border-transparent px-2 py-2 rounded-lg text-xs font-semibold tracking-wider transition-colors data-popup-open:hover:bg-transparent hover:text-red-600 hover:border-b-2 hover:border-red-600 dark:hover:text-red-400 dark:hover:border-red-400'
+const navSubActive = 'text-red-600 dark:text-red-400'
 
 type AppRouteHandle = { title: string; navSection?: NavSectionId }
 
@@ -60,21 +68,6 @@ function navGroupHasActiveChild(item: NavItem, pathname: string): boolean {
   )
 }
 
-const NavDropdownLink = React.forwardRef<
-  HTMLAnchorElement,
-  Omit<React.ComponentPropsWithoutRef<typeof NavLink>, 'className'> & {
-    to: string
-    className?: string
-  }
->(function NavDropdownLink({ to, className, children, ...props }, ref) {
-  const isActive = useNavSubActive(to)
-  return (
-    <NavLink ref={ref} to={to} className={cn(className, isActive && navSubActive)} {...props}>
-      {children}
-    </NavLink>
-  )
-})
-
 function MobileNavSubLink({ sub, onNavigate }: { sub: NavSubItem; onNavigate: () => void }) {
   const isActive = useNavSubActive(sub.href)
   const MobileSubIcon = sub.icon
@@ -83,7 +76,7 @@ function MobileNavSubLink({ sub, onNavigate }: { sub: NavSubItem; onNavigate: ()
       to={sub.href}
       onClick={onNavigate}
       className={cn(
-        'flex min-h-11 w-full items-center gap-2.5 px-3 py-2.5 text-sm font-medium tracking-wide',
+        'flex min-h-11 w-full items-center gap-2.5 px-3 py-2.5 text-xs font-medium tracking-wide',
         isActive ? navSubActive : 'text-foreground hover:bg-accent/40',
       )}
     >
@@ -93,21 +86,22 @@ function MobileNavSubLink({ sub, onNavigate }: { sub: NavSubItem; onNavigate: ()
   )
 }
 
-function HoverNavSubLink({ sub }: { sub: NavSubItem }) {
+function DesktopNavSubLink({ sub }: { sub: NavSubItem }) {
   const isActive = useNavSubActive(sub.href)
-  const HoverSubIcon = sub.icon
+  const SubIcon = sub.icon
   return (
-    <NavLink
-      role="menuitem"
-      to={sub.href}
-      className={cn(
-        'flex min-h-9 w-full items-center gap-2 px-3 py-2 text-sm font-medium tracking-wide transition-colors hover:bg-red-50 dark:hover:bg-red-950/30',
-        isActive ? navSubActive : 'text-foreground',
-      )}
-    >
-      <HoverSubIcon className="size-4 shrink-0 opacity-70" aria-hidden />
-      <span className="min-w-0 flex-1 text-left">{sub.name}</span>
-    </NavLink>
+    <NavigationMenuLink asChild>
+      <NavLink
+        to={sub.href}
+        className={cn(
+          'flex min-h-9 w-full cursor-pointer items-center gap-2 px-2 py-1.5 text-xs! font-medium tracking-wide transition-colors rounded-sm bg-transparent! hover:bg-transparent! focus:bg-transparent! data-active:bg-transparent! hover:text-red-600 dark:hover:text-red-400 focus:text-red-600 dark:focus:text-red-400',
+          isActive ? navSubActive : 'text-foreground',
+        )}
+      >
+        <SubIcon className="size-4 shrink-0 opacity-70" aria-hidden />
+        <span className="min-w-0 flex-1 text-left">{sub.name}</span>
+      </NavLink>
+    </NavigationMenuLink>
   )
 }
 
@@ -151,7 +145,7 @@ const MobileNav = React.memo(function MobileNav({
           navGroupIsActive(item, activeNavSection) || navGroupHasActiveChild(item, pathname)
         const linkClass = ({ isActive }: { isActive: boolean }) =>
           cn(
-            'flex items-center gap-2.5 rounded-md px-3 py-3 text-sm font-semibold tracking-wide transition-colors',
+            'flex items-center gap-2.5 rounded-md px-3 py-3 text-xs font-semibold tracking-wide transition-colors',
             isActive ? navSubActive : 'text-foreground hover:bg-accent/50',
           )
 
@@ -177,7 +171,7 @@ const MobileNav = React.memo(function MobileNav({
           <Collapsible
             key={item.name}
             defaultOpen={groupActive}
-            className="group/collapsible overflow-hidden rounded-md border border-border/60 bg-background"
+            className="group/collapsible overflow-hidden bg-background"
           >
             <div className="flex items-stretch border-b border-border/40">
               {parentNavigable ? (
@@ -187,7 +181,7 @@ const MobileNav = React.memo(function MobileNav({
                     onClick={onNavigate}
                     className={({ isActive }) =>
                       cn(
-                        'flex min-h-12 flex-1 items-center gap-2.5 px-3 text-sm font-semibold tracking-wide',
+                        'flex min-h-12 flex-1 items-center gap-2.5 px-3 text-xs font-semibold tracking-wide',
                         isActive || groupActive
                           ? 'text-red-600 dark:text-red-400'
                           : 'text-foreground',
@@ -216,7 +210,7 @@ const MobileNav = React.memo(function MobileNav({
                   <button
                     type="button"
                     className={cn(
-                      'flex min-h-12 w-full items-center justify-between gap-2 px-3 text-left text-sm font-semibold tracking-wide',
+                      'flex min-h-12 w-full items-center justify-between gap-2 px-3 text-left text-xs font-semibold tracking-wide',
                       groupActive ? 'text-red-600 dark:text-red-400' : 'text-foreground',
                     )}
                   >
@@ -297,120 +291,75 @@ export const Header = React.memo(function Header() {
             <Menu className="size-5" />
           </Button>
 
-          <Link to={PATHS.dashboard} className="flex min-w-0 items-center">
+          <Link to={PATHS.dashboard}>
             <img
               src={theme === 'dark' ? logoHeaderDark : logoHeaderLight}
-              alt="TiCOLLAB"
-              className="h-7 w-auto max-w-[min(100%,12rem)] object-contain object-left md:h-8"
+              alt="Ticollab"
+              className="h-5 w-auto object-contain object-left md:h-6"
             />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-6">
-            {navItemsForUser.map((item) => {
-              const groupActive =
-                navGroupIsActive(item, activeNavSection) ||
-                navGroupHasActiveChild(item, location.pathname)
+          <NavigationMenu className="hidden md:flex" viewport={false}>
+            <NavigationMenuList className="gap-6">
+              {navItemsForUser.map((item) => {
+                const groupActive =
+                  navGroupIsActive(item, activeNavSection) ||
+                  navGroupHasActiveChild(item, location.pathname)
 
-              if (!item.items?.length) {
-                if (!item.href) {
-                  return null
+                if (!item.items?.length) {
+                  if (!item.href) {
+                    return null
+                  }
+                  const ItemIcon = item.icon
+                  const isActive = location.pathname === item.href
+                  return (
+                    <NavigationMenuItem key={item.name}>
+                      <NavigationMenuLink asChild>
+                        <NavLink
+                          to={item.href}
+                          className={cn(
+                            navTabBase,
+                            isActive ? navTabActive : navTabInactive,
+                            'bg-transparent! focus:bg-transparent! data-[state=open]:bg-transparent! data-active:bg-transparent!',
+                          )}
+                        >
+                          {ItemIcon && <ItemIcon className="size-3.5 shrink-0" aria-hidden />}
+                          {item.name}
+                        </NavLink>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  )
                 }
-                const ItemIcon = item.icon
-                return (
-                  <NavLink
-                    key={item.name}
-                    to={item.href}
-                    className={({ isActive }) =>
-                      cn(navTabBase, isActive ? navTabActive : navTabInactive)
-                    }
-                  >
-                    {ItemIcon && <ItemIcon className="size-3.5 shrink-0" aria-hidden />}
-                    {item.name}
-                  </NavLink>
-                )
-              }
 
-              if (!hasNavigableParentHref(item)) {
                 const ParentIcon = item.icon
                 return (
-                  <DropdownMenu key={item.name}>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className={cn(
-                          navTabBase,
-                          groupActive ? navTabActive : navTabInactive,
-                          'cursor-pointer border-none bg-transparent font-inherit',
-                        )}
-                        aria-haspopup="menu"
-                      >
-                        {ParentIcon && <ParentIcon className="size-3.5 shrink-0" aria-hidden />}
-                        {item.name}
-                        <ChevronDown className="size-3.5 opacity-60" aria-hidden />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="start"
-                      className="flex min-w-48 w-auto flex-col gap-0 p-1"
+                  <NavigationMenuItem key={item.name}>
+                    <NavigationMenuTrigger
+                      className={cn(
+                        navTabBase,
+                        groupActive ? navTabActive : navTabInactive,
+                        'h-auto bg-transparent! focus:bg-transparent! data-[state=open]:bg-transparent! data-active:bg-transparent!',
+                      )}
                     >
-                      {item.items.map((sub) => {
-                        const SubIcon = sub.icon
-                        return (
-                          <DropdownMenuItem key={sub.href} asChild className="w-full">
-                            <NavDropdownLink
-                              to={sub.href}
-                              className="flex min-h-9 w-full cursor-pointer items-center gap-2 px-2 py-1.5"
-                            >
-                              <SubIcon className="size-4 shrink-0 opacity-70" aria-hidden />
-                              <span className="min-w-0 flex-1 text-left">{sub.name}</span>
-                            </NavDropdownLink>
-                          </DropdownMenuItem>
-                        )
-                      })}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      {ParentIcon && (
+                        <ParentIcon className="size-3.5 shrink-0 mr-1.5" aria-hidden />
+                      )}
+                      {item.name}
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className="flex min-w-48 w-auto flex-col gap-0 p-1">
+                        {item.items.map((sub) => (
+                          <li key={sub.href}>
+                            <DesktopNavSubLink sub={sub} />
+                          </li>
+                        ))}
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
                 )
-              }
-
-              const HoverParentIcon = item.icon
-              return (
-                <div key={item.name} className="group relative">
-                  <NavLink
-                    to={item.href}
-                    aria-haspopup="menu"
-                    className={({ isActive }) =>
-                      cn(navTabBase, isActive || groupActive ? navTabActive : navTabInactive)
-                    }
-                  >
-                    {HoverParentIcon && (
-                      <HoverParentIcon className="size-3.5 shrink-0" aria-hidden />
-                    )}
-                    {item.name}
-                    <ChevronDown
-                      className="size-3.5 opacity-60 transition-transform group-hover:rotate-180"
-                      aria-hidden
-                    />
-                  </NavLink>
-                  <div
-                    className="pointer-events-none invisible absolute left-0 top-full z-50 pt-1 opacity-0 transition-[opacity,visibility] duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100"
-                    role="menu"
-                    aria-label={`${item.name} submenu`}
-                  >
-                    <ul
-                      className="flex min-w-48 flex-col divide-y divide-border/60 rounded-md border bg-popover p-0 text-popover-foreground shadow-md ring-1 ring-foreground/10"
-                      role="none"
-                    >
-                      {item.items.map((sub) => (
-                        <li key={sub.href} className="min-w-0" role="none">
-                          <HoverNavSubLink sub={sub} />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )
-            })}
-          </nav>
+              })}
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
 
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -420,7 +369,13 @@ export const Header = React.memo(function Header() {
             className="flex w-[min(100%,20rem)] flex-col gap-0 overflow-y-auto p-0 sm:max-w-sm"
           >
             <SheetHeader className="border-b border-border/60 px-4 py-4 text-left">
-              <SheetTitle>Menu</SheetTitle>
+              <Link to={PATHS.dashboard}>
+                <img
+                  src={theme === 'dark' ? logoHeaderDark : logoHeaderLight}
+                  alt="Ticollab"
+                  className="h-5 w-auto object-contain object-left md:h-6"
+                />
+              </Link>
               <SheetDescription className="sr-only">
                 Main navigation links and submenus
               </SheetDescription>
