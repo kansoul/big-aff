@@ -1,4 +1,5 @@
 import type {
+  AccountOptionForAssign,
   ParentChildAssignmentsPayload,
   UserCreatePayload,
   UserFilterParams,
@@ -49,6 +50,17 @@ export const usersApi = {
       { child_ids: childIds },
     )
     return response.data.data
+  },
+
+  async listAccountOptions(): Promise<AccountOptionForAssign[]> {
+    const response = await axiosInstance.get<{ data: AccountOptionForAssign[] }>(
+      '/accounts/options',
+    )
+    return response.data.data
+  },
+
+  async assignAccounts(userId: number, accountIds: number[]): Promise<void> {
+    await axiosInstance.post(`/users/${userId}/assign-accounts`, { account_ids: accountIds })
   },
 
   listOptions: () => axiosInstance.get<{ data: { id: number; name: string }[] }>('/users/options'),
