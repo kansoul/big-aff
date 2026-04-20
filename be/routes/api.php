@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\AdsReportController;
 use App\Http\Controllers\Api\AnalyticsTrackingController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\BusinessCenterController;
+use App\Http\Controllers\Api\CampaignController;
+use App\Http\Controllers\Api\CampaignRuleController;
 use App\Http\Controllers\Api\CampaignRuleSettingController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ChannelController;
@@ -258,6 +260,24 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::AdClientsUpdate->value);
         Route::delete('{ad_client}', [AdClientController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::AdClientsDelete->value);
+    });
+
+    Route::prefix('campaigns')->group(function () {
+        Route::get('selector', [CampaignController::class, 'listCampaignSelectorAction'])
+            ->middleware('permission.scope:'.Permission::CampaignsView->value);
+    });
+
+    Route::prefix('campaign-rules')->group(function () {
+        Route::get('/', [CampaignRuleController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::CampaignRulesView->value);
+        Route::post('/', [CampaignRuleController::class, 'store'])
+            ->middleware('permission.scope:'.Permission::CampaignRulesCreate->value);
+        Route::get('{campaignRule}', [CampaignRuleController::class, 'show'])
+            ->middleware('permission.scope:'.Permission::CampaignRulesView->value);
+        Route::match(['put', 'patch'], '{campaignRule}', [CampaignRuleController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::CampaignRulesUpdate->value);
+        Route::delete('{campaignRule}', [CampaignRuleController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::CampaignRulesDelete->value);
     });
 
     Route::prefix('campaign-rule-settings')->group(function () {

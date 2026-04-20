@@ -182,6 +182,18 @@ enum Permission: string
     case UserTablePreferencesView = 'user-table-preferences.view';     // bit 74 →  18889465931478580854784
     case UserTablePreferencesUpdate = 'user-table-preferences.update'; // bit 75 →  37778931862957161709568
 
+    // —— Campaign Rules ——
+    case CampaignRulesView = 'campaign-rules.view';     // bit 76
+    case CampaignRulesCreate = 'campaign-rules.create'; // bit 77
+    case CampaignRulesUpdate = 'campaign-rules.update'; // bit 78
+    case CampaignRulesDelete = 'campaign-rules.delete'; // bit 79
+
+    // —— Campaigns ——
+    case CampaignsView = 'campaigns.view';              // bit 80
+
+    // —— Campaign Reports ——
+    case CampaignReportsView = 'campaign-reports.view'; // bit 81
+
     /**
      * Bit value for this permission (1 << declaration index).
      */

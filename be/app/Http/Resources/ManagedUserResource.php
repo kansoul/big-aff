@@ -51,6 +51,7 @@ class ManagedUserResource extends JsonResource
                     ];
                 }
             ),
+            'accounts' => AccountResource::collection($this->whenLoaded('accounts')),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
