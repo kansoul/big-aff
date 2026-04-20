@@ -37,10 +37,12 @@ class RevenueStatsService
     public function byTeam(array $filters): Collection
     {
         return $this->baseQuery($filters)
-            ->leftJoin('teams as t', 't.id', '=', 'a.team_id')
-            ->groupBy('a.team_id', 't.name')
+            ->join('account_user as au', 'au.account_id', '=', 'a.id')
+            ->leftJoin('team_user as tu', 'tu.user_id', '=', 'au.user_id')
+            ->leftJoin('teams as t', 't.id', '=', 'tu.team_id')
+            ->groupBy('tu.team_id', 't.name')
             ->selectRaw("
-                COALESCE(a.team_id, 0) as team_id,
+                COALESCE(tu.team_id, 0) as team_id,
                 COALESCE(t.name, '(No team)') as team_name,
                 COALESCE(SUM(campaign_reports.r_revenue), 0) as revenue,
                 COALESCE(SUM(campaign_reports.a_spend), 0) as spend,
@@ -56,19 +58,21 @@ class RevenueStatsService
     public function byUser(array $filters): Collection
     {
         return $this->baseQuery($filters)
-            ->leftJoin('users as u', 'u.id', '=', 'a.created_by')
-            ->leftJoin('teams as t', 't.id', '=', 'a.team_id')
-            ->groupBy('a.created_by', 'u.name', 'a.team_id', 't.name')
+            ->join('account_user as au', 'au.account_id', '=', 'a.id')
+            ->leftJoin('users as u', 'u.id', '=', 'au.user_id')
+            ->leftJoin('team_user as tu', 'tu.user_id', '=', 'au.user_id')
+            ->leftJoin('teams as t', 't.id', '=', 'tu.team_id')
+            ->groupBy('au.user_id', 'u.name', 'tu.team_id', 't.name')
             ->selectRaw("
-                a.created_by as user_id,
+                au.user_id as user_id,
                 COALESCE(u.name, '(Unknown)') as user_name,
-                COALESCE(a.team_id, 0) as team_id,
+                COALESCE(tu.team_id, 0) as team_id,
                 COALESCE(t.name, '(No team)') as team_name,
                 COALESCE(SUM(campaign_reports.r_revenue), 0) as revenue,
                 COALESCE(SUM(campaign_reports.a_spend), 0) as spend,
                 COALESCE(SUM(campaign_reports.r_revenue), 0) - COALESCE(SUM(campaign_reports.a_spend), 0) as profit
             ")
-            ->orderByDesc('revenue')
+            ->orderByRaw('(revenue - spend) DESC')
             ->get();
     }
 
@@ -84,7 +88,9 @@ class RevenueStatsService
         $ownership->applyThrough(
             $query,
             'campaign_reports.account_id',
-            fn (array $ids) => Account::whereIn('created_by', $ids)->select('id'),
+            fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
+                ->whereIn('account_user.user_id', $ids)
+                ->select('accounts.id'),
         );
 
         if (! empty($filters['date_from'])) {
@@ -100,7 +106,11 @@ class RevenueStatsService
         }
 
         if (! empty($filters['user_ids'])) {
-            $query->whereIn('a.created_by', $filters['user_ids']);
+            $query->whereIn('campaign_reports.account_id', function ($sub) use ($filters) {
+                $sub->select('account_id')
+                    ->from('account_user')
+                    ->whereIn('user_id', $filters['user_ids']);
+            });
         }
 
         return $query;

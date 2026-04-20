@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\Permission;
+use App\Enums\TeamRole;
 use App\Models\Account;
 use App\Models\CampaignReport;
 use App\Models\Role;
@@ -37,11 +38,17 @@ class RevenueStatsSeeder extends Seeder
             ['name' => 'Alpha Team'],
             ['description' => 'First test team', 'created_by' => $admin->id],
         );
+        $team1->users()->syncWithoutDetaching([
+            $manager1->id => ['team_role' => TeamRole::MANAGER->value, 'joined_at' => now()]
+        ]);
 
         $team2 = Team::firstOrCreate(
             ['name' => 'Beta Team'],
             ['description' => 'Second test team', 'created_by' => $admin->id],
         );
+        $team2->users()->syncWithoutDetaching([
+            $manager2->id => ['team_role' => TeamRole::MANAGER->value, 'joined_at' => now()]
+        ]);
 
         $this->seedAccountsForUser($manager1, $team1, 3);
         $this->seedAccountsForUser($manager2, $team2, 2);
@@ -132,6 +139,8 @@ class RevenueStatsSeeder extends Seeder
                     'created_by' => $user->id,
                 ],
             );
+
+            $account->users()->syncWithoutDetaching([$user->id]);
 
             $this->seedCampaignReports($account);
         }

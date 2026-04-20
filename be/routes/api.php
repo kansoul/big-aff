@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\CampaignRuleController;
 use App\Http\Controllers\Api\CampaignRuleSettingController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ChannelController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\GoogleConversionController;
@@ -290,6 +291,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('ads-report')->group(function () {
         Route::get('stats', [AdsReportController::class, 'stats'])
             ->middleware('permission.scope:'.Permission::AdsReportView->value);
+    });
+
+    Route::prefix('dashboard')->group(function () {
+        Route::get('insight-stats', [DashboardController::class, 'insightStats'])
+            ->middleware('permission.scope:'.Permission::AdsReportView->value);
+        Route::get('revenue-table', [DashboardController::class, 'revenueTable'])
+            ->middleware('permission.scope:'.Permission::RevenueStatsView->value);
     });
 
     Route::prefix('revenue-reports')->group(function () {

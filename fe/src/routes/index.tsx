@@ -132,16 +132,7 @@ export const router = createBrowserRouter([
             },
             handle: { title: 'Users', navSection: NAV_SECTIONS.settings },
           },
-          {
-            path: routeSegment(PATHS.settingsUsersAssign),
-            lazy: async () => {
-              const { AssignUsersPage } = await import('@/features/users/pages/AssignUsersPage')
-              return {
-                Component: withPermission(AssignUsersPage, PermissionSlugs.SettingsUsersView),
-              }
-            },
-            handle: { title: 'Users & Child Users', navSection: NAV_SECTIONS.settings },
-          },
+
           {
             path: routeSegment(PATHS.teams),
             lazy: async () => {

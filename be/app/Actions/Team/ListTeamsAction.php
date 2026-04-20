@@ -26,11 +26,13 @@ class ListTeamsAction
     {
         $ownership = OwnershipFilter::forAuthUser();
 
-        $query = Team::query()
-            ->with('users')
-            ->whereHas('users', function ($query) use ($ownership) {
+        $query = Team::query()->with('users');
+
+        if (! $ownership->isAdmin()) {
+            $query->whereHas('users', function ($query) use ($ownership) {
                 $ownership->applyTo($query, 'user_id');
             });
+        }
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];
