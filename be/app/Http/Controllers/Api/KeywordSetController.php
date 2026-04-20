@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\KeywordSet\ListKeywordSetsRequest;
 use App\Http\Requests\KeywordSet\StoreKeywordSetRequest;
 use App\Http\Requests\KeywordSet\UpdateKeywordSetRequest;

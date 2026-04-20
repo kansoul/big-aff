@@ -19,10 +19,8 @@ class StoreFollowRequest extends FormRequest
         return [
             'email' => ['required', 'email', 'max:255'],
             'post_id' => ['nullable', 'integer', 'exists:posts,id'],
-            'site_id' => ['required', 'integer', 'exists:sites,id'],
-            'ads_link_id' => ['nullable', 'integer', 'exists:ads_links,id'],
-            'style_code' => ['nullable', 'string', 'max:100'],
-            'channel_code' => ['nullable', 'string', 'max:100'],
+            'style' => ['nullable', 'string', 'max:100'],
+            'channel' => ['nullable', 'string', 'max:100'],
         ];
     }
 }

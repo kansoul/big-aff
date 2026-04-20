@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\Style\BulkStoreStyleRequest;
 use App\Http\Requests\Style\ListStylesRequest;
 use App\Http\Resources\StyleResource;

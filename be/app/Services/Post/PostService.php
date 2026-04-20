@@ -7,9 +7,11 @@ use App\Actions\Post\DeletePostAction;
 use App\Actions\Post\GetPostBySlugAction;
 use App\Actions\Post\GetPostOptionsAction;
 use App\Actions\Post\ListPostsAction;
+use App\Actions\Post\SearchPostsAction;
 use App\Actions\Post\UpdatePostAction;
 use App\Models\Post;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Collection;
 
 class PostService
@@ -21,6 +23,7 @@ class PostService
         private readonly DeletePostAction $deletePostAction,
         private readonly GetPostOptionsAction $getPostOptionsAction,
         private readonly GetPostBySlugAction $getPostBySlugAction,
+        private readonly SearchPostsAction $searchPostsAction,
     ) {}
 
     /**
@@ -60,8 +63,23 @@ class PostService
         return $this->getPostOptionsAction->execute();
     }
 
-    public function getPostBySlug(string $slug, ?string $campaignId, ?string $tt): ?Post
+    /**
+     * Get post by slug
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function getPostBySlug(string $slug, array $filters): ?Post
     {
-        return $this->getPostBySlugAction->execute($slug, $campaignId, $tt);
+        return $this->getPostBySlugAction->execute($slug, $filters);
+    }
+
+    /**
+     * Search posts
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function searchPosts(array $filters): AnonymousResourceCollection
+    {
+        return $this->searchPostsAction->execute($filters);
     }
 }

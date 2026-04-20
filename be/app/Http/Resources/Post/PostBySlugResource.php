@@ -33,6 +33,7 @@ class PostBySlugResource extends JsonResource
             'style' => $this->style ?? null,
             'channel' => $this->channel ?? null,
             'campaign_id' => $this->campaign_id ?? null,
+            'account_id' => $this->account_id ?? null,
             'ggid' => $this->ggid ?? null,
             'fbid' => $this->fbid ?? null,
             'created_at' => $this->created_at?->toISOString(),

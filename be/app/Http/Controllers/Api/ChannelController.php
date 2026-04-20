@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\Channel\BulkStoreChannelRequest;
 use App\Http\Requests\Channel\ListChannelsRequest;
 use App\Http\Resources\ChannelResource;
