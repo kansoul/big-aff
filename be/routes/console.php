@@ -23,3 +23,8 @@ Schedule::command('tracking:reconcile')
     ->dailyAt('02:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+Schedule::command('reports:sync-all')
+    ->everyFiveMinutes()
+    ->name('sync-all-reports')
+    ->withoutOverlapping(15);
