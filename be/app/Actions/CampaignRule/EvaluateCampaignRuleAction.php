@@ -2,52 +2,65 @@
 
 namespace App\Actions\CampaignRule;
 
+use App\Enums\EntityTypeEnum;
+use App\Enums\RuleActionMode;
 use App\Models\Campaign;
 use App\Models\CampaignApplyRule;
-use App\Models\CampaignRule;
-use App\Models\UserCampaignRuleSetting;
-use App\Services\Integrations\Telegram\TelegramService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class EvaluateCampaignRuleAction
 {
-    public function __construct(
-        protected TelegramService $telegramService,
-    ) {}
-
     /**
-     * @param  array<string, mixed>  $metrics  spend, revenue, profit, roi
+     * @param  array{spend: float, revenue: float, profit: float, roi: float}  $metrics
      */
     public function execute(Campaign $campaign, array $metrics): void
     {
-        $applyRules = CampaignApplyRule::query()
-            ->where('sourceable_type', Campaign::class)
-            ->where('sourceable_id', $campaign->id)
-            ->with(['campaignRule.user.campaignRuleSetting'])
+        $now = Carbon::now();
+
+        // Single JOIN query — mirrors tracking-afs CampaignRuleService pattern.
+        // Returns stdClass rows with rule fields + joined setting fields.
+        $rules = DB::table('campaign_rules')
+            ->select(
+                'campaign_rules.*',
+                'user_campaign_rule_settings.action_mode as setting_action_mode',
+                'user_campaign_rule_settings.telegram_chat_id as setting_telegram_chat_id',
+            )
+            ->join('campaign_apply_rules', 'campaign_rules.id', '=', 'campaign_apply_rules.campaign_rule_id')
+            ->join('users', 'campaign_rules.user_id', '=', 'users.id')
+            ->leftJoin('user_campaign_rule_settings', 'users.id', '=', 'user_campaign_rule_settings.user_id')
+            ->where('campaign_apply_rules.sourceable_type', Campaign::class)
+            ->where('campaign_apply_rules.sourceable_id', $campaign->id)
+            ->where('campaign_rules.entity_type', EntityTypeEnum::Campaign->value)
+            ->where('campaign_rules.is_active', true)
+            ->where(function ($q) {
+                $q->where('user_campaign_rule_settings.campaign_rule_auto_enabled', true)
+                    ->orWhereNull('user_campaign_rule_settings.campaign_rule_auto_enabled');
+            })
+            ->where(function ($q) use ($now) {
+                $q->whereNull('campaign_rules.expired_at')
+                    ->orWhereDate('campaign_rules.expired_at', '>=', $now->toDateString());
+            })
             ->get();
 
-        if ($applyRules->isEmpty()) {
+        if ($rules->isEmpty()) {
             return;
         }
 
-        $now = Carbon::now();
+        $spend = (float) ($metrics['spend'] ?? 0);
+        $revenue = (float) ($metrics['revenue'] ?? 0);
+        $profit = (float) ($metrics['profit'] ?? 0);
+        $roi = (float) ($metrics['roi'] ?? 0);
 
-        foreach ($applyRules as $applyRule) {
-            $rule = $applyRule->campaignRule;
-
-            if (! $rule || ! $rule->is_active) {
+        foreach ($rules as $rule) {
+            if ($spend < (float) ($rule->min_spend ?? 0)) {
                 continue;
             }
 
-            if ($rule->expired_at && $rule->expired_at->isPast()) {
-                continue;
-            }
-
-            /** @var UserCampaignRuleSetting|null $setting */
-            $setting = $rule->user?->campaignRuleSetting;
-
-            if ($setting && ! $setting->campaign_rule_auto_enabled) {
+            if ($revenue < (float) ($rule->min_revenue ?? 0)) {
                 continue;
             }
 
@@ -55,103 +68,143 @@ class EvaluateCampaignRuleAction
                 continue;
             }
 
-            if (! $this->meetsPreConditions($rule, $metrics)) {
+            $profitTriggered = $rule->min_profit !== null && $profit < (float) $rule->min_profit;
+            $roiTriggered = $rule->min_roi !== null && $roi < (float) $rule->min_roi;
+
+            if (! $profitTriggered && ! $roiTriggered) {
                 continue;
             }
 
-            if (! $this->isTriggered($rule, $metrics)) {
+            $actionMode = $rule->setting_action_mode
+                ? RuleActionMode::from($rule->setting_action_mode)
+                : RuleActionMode::PAUSE;
+
+            $telegramChatId = $rule->setting_telegram_chat_id ?? null;
+
+            if ($actionMode === RuleActionMode::WARNING) {
+                $this->sendNotification($rule, $campaign, $metrics, $telegramChatId, '🐧 *Campaign lỏ cần xem lại*');
+
+                // WARNING: notify only, do NOT delete apply rule
                 continue;
             }
 
-            $actionMode = $setting?->action_mode ?? $rule->user?->campaignRuleSetting?->action_mode;
+            // PAUSE: update status, delete apply rule, notify
+            try {
+                DB::transaction(function () use ($campaign, $rule, $metrics, $telegramChatId) {
+                    $campaign->update(['status' => 'PAUSED']);
 
-            $this->sendNotification($rule, $setting, $campaign, $metrics);
+                    CampaignApplyRule::query()
+                        ->where('sourceable_type', Campaign::class)
+                        ->where('sourceable_id', $campaign->id)
+                        ->where('campaign_rule_id', $rule->id)
+                        ->delete();
 
-            if ($actionMode?->value === 'pause') {
-                $campaign->update(['status' => 'PAUSED']);
-                $applyRule->delete();
+                    $this->sendNotification($rule, $campaign, $metrics, $telegramChatId, '🐧 *Camp lỏ đã tắt*');
+                });
+            } catch (Throwable $e) {
+                Log::channel('tracking_events')->error('[EvaluateCampaignRuleAction] Pause error', [
+                    'rule_id' => $rule->id,
+                    'campaign_id' => $campaign->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
+
+            // Stop after first pause rule fires
+            break;
         }
     }
 
-    private function isWithinTimeWindow(CampaignRule $rule, Carbon $now): bool
+    private function isWithinTimeWindow(object $rule, Carbon $now): bool
     {
-        if (! $rule->start_hour || ! $rule->end_hour) {
+        $start = $rule->start_hour ?? null;
+        $end = $rule->end_hour ?? null;
+
+        if (! $start || ! $end) {
             return true;
         }
 
-        $start = Carbon::createFromTimeString($rule->start_hour);
-        $end = Carbon::createFromTimeString($rule->end_hour);
-        $current = Carbon::createFromTimeString($now->format('H:i'));
+        $currentTime = $now->format('H:i');
 
         if ($start <= $end) {
-            return $current->between($start, $end);
+            return $currentTime >= $start && $currentTime <= $end;
         }
 
-        // Overnight window
-        return $current >= $start || $current <= $end;
+        // Overnight window (e.g. 22:00 → 06:00)
+        return $currentTime >= $start || $currentTime <= $end;
     }
 
     /**
-     * @param  array<string, mixed>  $metrics
-     */
-    private function meetsPreConditions(CampaignRule $rule, array $metrics): bool
-    {
-        if ($rule->min_spend !== null && (float) ($metrics['spend'] ?? 0) < (float) $rule->min_spend) {
-            return false;
-        }
-
-        if ($rule->min_revenue !== null && (float) ($metrics['revenue'] ?? 0) < (float) $rule->min_revenue) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * @param  array<string, mixed>  $metrics
-     */
-    private function isTriggered(CampaignRule $rule, array $metrics): bool
-    {
-        if ($rule->min_profit !== null && (float) ($metrics['profit'] ?? 0) < (float) $rule->min_profit) {
-            return true;
-        }
-
-        if ($rule->min_roi !== null && (float) ($metrics['roi'] ?? 0) < (float) $rule->min_roi) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * @param  array<string, mixed>  $metrics
+     * @param  array{spend: float, revenue: float, profit: float, roi: float}  $metrics
      */
     private function sendNotification(
-        CampaignRule $rule,
-        ?UserCampaignRuleSetting $setting,
+        object $rule,
         Campaign $campaign,
         array $metrics,
+        ?string $telegramChatId,
+        string $title,
     ): void {
         try {
-            $message = sprintf(
-                "⚠️ Campaign Rule Triggered\nRule: %s (%s)\nCampaign: %s\nSpend: %.2f | Revenue: %.2f | Profit: %.2f | ROI: %.2f%%",
-                $rule->title,
-                $rule->code_rule,
-                $campaign->campaign_name,
-                $metrics['spend'] ?? 0,
-                $metrics['revenue'] ?? 0,
-                $metrics['profit'] ?? 0,
-                $metrics['roi'] ?? 0,
-            );
+            $spend = number_format($metrics['spend'] ?? 0, 2);
+            $revenue = number_format($metrics['revenue'] ?? 0, 2);
+            $profit = number_format($metrics['profit'] ?? 0, 2);
+            $roi = number_format($metrics['roi'] ?? 0, 2);
 
-            $this->telegramService->sendMessage($message, $setting?->telegram_chat_id);
-        } catch (\Throwable $e) {
-            Log::channel('tracking_events')->error('[EvaluateCampaignRuleAction] Telegram error', [
+            $pad = 10;
+            $message = "{$title}\n\n";
+            $message .= 'Time: '.now()->format('d/m/Y H:i:s')."\n";
+            $message .= "Rule: {$rule->title}\n";
+            $message .= "Campaign: {$campaign->campaign_name}\n";
+            $message .= "================\n\n";
+            $message .= "*Metrics:*\n";
+            $message .= "```\n";
+            $message .= str_pad('Metric', $pad).str_pad('Current', $pad)."Rule\n";
+
+            $getOp = fn ($current, $ruleVal) => match (true) {
+                (float) str_replace(',', '', $current) > (float) $ruleVal => '>',
+                (float) str_replace(',', '', $current) < (float) $ruleVal => '<',
+                default => '=',
+            };
+
+            $ruleRoi = $rule->min_roi ? " {$getOp($roi, $rule->min_roi)} {$rule->min_roi}%" : '-';
+            $message .= str_pad('ROI', $pad).str_pad($roi.'%', $pad).$ruleRoi."\n";
+
+            $ruleProfit = $rule->min_profit ? " {$getOp($profit, $rule->min_profit)} \${$rule->min_profit}" : '-';
+            $message .= str_pad('Profit', $pad).str_pad('$'.$profit, $pad).$ruleProfit."\n";
+
+            $ruleSpend = $rule->min_spend ? " {$getOp($spend, $rule->min_spend)} \${$rule->min_spend}" : '-';
+            $message .= str_pad('Spend', $pad).str_pad('$'.$spend, $pad).$ruleSpend."\n";
+
+            $ruleRev = $rule->min_revenue ? " {$getOp($revenue, $rule->min_revenue)} \${$rule->min_revenue}" : '-';
+            $message .= str_pad('Revenue', $pad).str_pad('$'.$revenue, $pad).$ruleRev."\n";
+            $message .= "```\n";
+
+            $this->sendTelegram($message, $telegramChatId);
+        } catch (Throwable $e) {
+            Log::channel('tracking_events')->error('[EvaluateCampaignRuleAction] Notification error', [
                 'rule_id' => $rule->id,
                 'campaign_id' => $campaign->id,
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Send a Telegram message, optionally to an override chat ID.
+     * Falls back to the configured default chat when no override is provided.
+     */
+    private function sendTelegram(string $message, ?string $chatId): void
+    {
+        $botToken = config('services.telegram.bot_token');
+        $resolvedChatId = $chatId ?: config('services.telegram.chat_id');
+
+        if (empty($botToken) || empty($resolvedChatId)) {
+            return;
+        }
+
+        Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+            'chat_id' => $resolvedChatId,
+            'text' => $message,
+            'parse_mode' => 'Markdown',
+        ]);
     }
 }

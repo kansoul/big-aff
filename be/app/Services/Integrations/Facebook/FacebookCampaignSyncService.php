@@ -3,9 +3,14 @@
 namespace App\Services\Integrations\Facebook;
 
 use App\Enums\AdsType;
+use App\Jobs\EvaluateCampaignRuleJob;
 use App\Jobs\SyncFacebookCampaignBatchJob;
 use App\Models\Account;
+use App\Models\Campaign;
+use App\Models\CampaignReport;
+use App\Models\RealtimeReport;
 use App\Services\Integrations\CampaignReportSyncService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 
@@ -32,9 +37,9 @@ class FacebookCampaignSyncService
             : ($accountRecord
                 ? [$accountRecord]
                 : Account::whereNotNull('account_id')
-                    ->where('status', 'ACTIVE')
-                    ->where('ads_type', AdsType::FACEBOOK->value)
-                    ->get());
+                ->where('status', 'ACTIVE')
+                ->where('ads_type', AdsType::FACEBOOK->value)
+                ->get());
 
         $tokenConfigTemps = config('services.facebook_sync_tokens');
 
@@ -76,41 +81,104 @@ class FacebookCampaignSyncService
             );
         }
 
-        if (! empty($jobs)) {
-            $startDate = $data['start_date'];
-            $endDate = $data['end_date'];
-            $failedAdClientIds = $data['failed_ad_client_ids'] ?? false;
+        if (empty($jobs)) {
+            return;
+        }
 
-            Bus::batch($jobs)
-                ->name('Facebook Campaign Sync - '.count($jobs).' batches')
-                ->allowFailures()
-                ->finally(function () use ($startDate, $endDate, $isTest, $failedAdClientIds) {
-                    if ($isTest) {
-                        return;
-                    }
+        $startDate = $data['start_date'];
+        $endDate = $data['end_date'];
+        $failedAdClientIds = $data['failed_ad_client_ids'] ?? false;
 
-                    try {
-                        $resp = CampaignReportSyncService::sync([
-                            'start_date' => $startDate,
-                            'end_date' => $endDate,
-                            'failed_ad_client_ids' => $failedAdClientIds,
+        Bus::batch($jobs)
+            ->name('Facebook Campaign Sync - ' . count($jobs) . ' batches')
+            ->allowFailures()
+            ->finally(function () use ($startDate, $endDate, $isTest, $failedAdClientIds) {
+                if ($isTest) {
+                    return;
+                }
+
+                try {
+                    $resp = CampaignReportSyncService::sync([
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'failed_ad_client_ids' => $failedAdClientIds,
+                    ]);
+
+                    if (! ($resp['success'] ?? false)) {
+                        Log::error('[FacebookCampaignSync][CampaignReport] Sync failed', [
+                            'message' => $resp['message'] ?? null,
+                            'synced_count' => $resp['synced_count'] ?? 0,
+                            'error_count' => $resp['error_count'] ?? 0,
                         ]);
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('[FacebookCampaignSync][CampaignReport] Throwable', [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
 
-                        if (! ($resp['success'] ?? false)) {
-                            Log::error('[FacebookCampaignSync][CampaignReport] Sync failed', [
-                                'message' => $resp['message'] ?? null,
-                                'synced_count' => $resp['synced_count'] ?? 0,
-                                'error_count' => $resp['error_count'] ?? 0,
-                            ]);
-                        }
+                // Dispatch campaign rule evaluation after reports are synced, today only
+                if (Carbon::parse($endDate)->isToday()) {
+                    try {
+                        self::dispatchCampaignRuleJobs($endDate);
                     } catch (\Throwable $e) {
-                        Log::error('[FacebookCampaignSync][CampaignReport] Throwable', [
+                        Log::error('[FacebookCampaignSync][CampaignRules] Throwable', [
                             'error' => $e->getMessage(),
                         ]);
                     }
-                })
-                ->onQueue(config('queue.queues.all-reports-sync'))
-                ->dispatch();
+                }
+            })
+            ->onQueue(config('queue.queues.all-reports-sync'))
+            ->dispatch();
+    }
+
+    private static function dispatchCampaignRuleJobs(string $date): void
+    {
+        $campaigns = Campaign::query()
+            ->whereHas(
+                'applyRules.campaignRule',
+                fn($q) => $q
+                    ->where('is_active', true)
+                    ->where(fn($q2) => $q2->whereNull('expired_at')->orWhere('expired_at', '>=', now()))
+            )
+            ->get()
+            ->keyBy('campaign_id');
+
+        if ($campaigns->isEmpty()) {
+            return;
+        }
+
+        $campaignIdList = $campaigns->keys();
+
+        $realtimeClicksByCampaign = RealtimeReport::query()
+            ->join('link_datas', 'realtime_reports.link_data_id', '=', 'link_datas.id')
+            ->whereDate('realtime_reports.event_time', $date)
+            ->whereIn('link_datas.campaign_id', $campaignIdList)
+            ->selectRaw('link_datas.campaign_id, SUM(realtime_reports.click_ad_count) as total_clicks')
+            ->groupBy('link_datas.campaign_id')
+            ->pluck('total_clicks', 'campaign_id');
+
+        // unique index on (campaign_id, date_start) — one row per campaign per day
+        $reports = CampaignReport::query()
+            ->whereDate('date_start', $date)
+            ->whereIn('campaign_id', $campaignIdList)
+            ->get()
+            ->keyBy('campaign_id');
+
+        foreach ($campaigns as $campaignId => $campaign) {
+            $report = $reports->get($campaignId);
+
+            if (! $report) {
+                continue;
+            }
+
+            $spend = (float) $report->a_spend;
+            $realtimeClicks = (int) ($realtimeClicksByCampaign[$campaignId] ?? 0);
+            $revenue = $realtimeClicks * (float) $report->r_rpc;
+            $profit = $revenue - $spend;
+            $roi = $spend > 0 ? ($profit / $spend) * 100 : 0;
+
+            EvaluateCampaignRuleJob::dispatch($campaign, compact('spend', 'revenue', 'profit', 'roi'));
         }
     }
 }
