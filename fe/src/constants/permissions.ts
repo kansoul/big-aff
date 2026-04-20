@@ -516,6 +516,11 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
             slug: PermissionSlugs.AccountsDelete,
             label: 'Delete',
           },
+          {
+            key: 'AccountsAssign',
+            slug: PermissionSlugs.AccountsAssign,
+            label: 'Assign users',
+          },
         ],
       },
     ],

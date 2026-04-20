@@ -7,7 +7,6 @@ import {
   CircleDollarSign,
   FileText,
   FolderOpen,
-  GitBranch,
   Globe,
   Images,
   Layers,
@@ -151,6 +150,12 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         href: PATHS.accounts,
         icon: Wallet,
         requiredPermission: PermissionSlugs.AccountsView,
+      },
+      {
+        name: 'Assign Account',
+        href: PATHS.settingsUsersAssignAccounts,
+        icon: Wallet,
+        requiredPermission: PermissionSlugs.SettingsUsersView,
       },
       {
         name: 'Google Conversions',

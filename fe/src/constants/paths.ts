@@ -12,7 +12,8 @@ export const PATHS = {
   postsView: '/posts/:id',
   postsEdit: '/posts/:id/edit',
   settingsUsers: '/users',
-
+  settingsUsersAssign: '/users-assign',
+  settingsUsersAssignAccounts: '/users-accounts',
   settingsRoles: '/roles',
   settingsSites: '/sites',
   settingsSitesCreate: '/sites/create',
