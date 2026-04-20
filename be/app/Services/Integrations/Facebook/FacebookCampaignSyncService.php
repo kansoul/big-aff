@@ -37,9 +37,9 @@ class FacebookCampaignSyncService
             : ($accountRecord
                 ? [$accountRecord]
                 : Account::whereNotNull('account_id')
-                ->where('status', 'ACTIVE')
-                ->where('ads_type', AdsType::FACEBOOK->value)
-                ->get());
+                    ->where('status', 'ACTIVE')
+                    ->where('ads_type', AdsType::FACEBOOK->value)
+                    ->get());
 
         $tokenConfigTemps = config('services.facebook_sync_tokens');
 
@@ -90,7 +90,7 @@ class FacebookCampaignSyncService
         $failedAdClientIds = $data['failed_ad_client_ids'] ?? false;
 
         Bus::batch($jobs)
-            ->name('Facebook Campaign Sync - ' . count($jobs) . ' batches')
+            ->name('Facebook Campaign Sync - '.count($jobs).' batches')
             ->allowFailures()
             ->finally(function () use ($startDate, $endDate, $isTest, $failedAdClientIds) {
                 if ($isTest) {
@@ -137,9 +137,9 @@ class FacebookCampaignSyncService
         $campaigns = Campaign::query()
             ->whereHas(
                 'applyRules.campaignRule',
-                fn($q) => $q
+                fn ($q) => $q
                     ->where('is_active', true)
-                    ->where(fn($q2) => $q2->whereNull('expired_at')->orWhere('expired_at', '>=', now()))
+                    ->where(fn ($q2) => $q2->whereNull('expired_at')->orWhere('expired_at', '>=', now()))
             )
             ->get()
             ->keyBy('campaign_id');

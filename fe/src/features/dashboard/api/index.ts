@@ -1,5 +1,10 @@
 import { axiosInstance } from '@/shared/api/axios'
 import type { ApiResponse, User } from '@/shared/types'
+import type {
+  InsightStatsData,
+  RevenueTableParams,
+  RevenueTableResponse,
+} from '@/features/dashboard/types'
 
 export const dashboardApi = {
   async logout(): Promise<void> {
@@ -14,4 +19,13 @@ export const dashboardApi = {
       permissions: Array.isArray(u.permissions) ? u.permissions : [],
     }
   },
+
+  insightStats: () => axiosInstance.get<{ data: InsightStatsData }>('/dashboard/insight-stats'),
+
+  revenueTable: (params?: RevenueTableParams) =>
+    axiosInstance.get<RevenueTableResponse>('/dashboard/revenue-table', {
+      params: {
+        ...(params?.top_limit != null ? { top_limit: params.top_limit } : {}),
+      },
+    }),
 }

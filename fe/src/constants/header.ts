@@ -175,12 +175,7 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         icon: Users,
         requiredPermission: PermissionSlugs.SettingsUsersView,
       },
-      {
-        name: 'Sub-Users',
-        href: PATHS.settingsUsersAssign,
-        icon: GitBranch,
-        requiredPermission: PermissionSlugs.SettingsUsersView,
-      },
+
       {
         name: 'Teams',
         href: PATHS.teams,
