@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use App\Models\Traits\Relationship\UserParentChildRelationship;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class UserParentChild extends Model
 {
-    use UserParentChildRelationship;
+    use HasFactory, UserParentChildRelationship;
 
     protected $table = 'user_parent_child';
 

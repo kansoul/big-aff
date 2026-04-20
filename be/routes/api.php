@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\AnalyticsTrackingController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\BusinessCenterController;
 use App\Http\Controllers\Api\CampaignController;
+use App\Http\Controllers\Api\CampaignReportController;
 use App\Http\Controllers\Api\CampaignRuleController;
 use App\Http\Controllers\Api\CampaignRuleSettingController;
 use App\Http\Controllers\Api\CampaignScheduleController;
@@ -315,6 +316,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [RevenueReportController::class, 'index'])
             ->middleware('permission.scope:'.Permission::RevenueReportsView->value);
     });
+
+    Route::prefix('campaign-reports')
+        ->middleware('permission.scope:'.Permission::CampaignReportsView->value)
+        ->group(function () {
+            Route::get('filters', [CampaignReportController::class, 'filters']);
+            Route::get('/', [CampaignReportController::class, 'index']);
+            Route::post('{campaign_id}/toggle-status', [CampaignReportController::class, 'toggleStatus']);
+        });
 
     Route::prefix('revenue-chart-reports')
         ->middleware('permission.scope:'.Permission::RevenueChartReportsView->value)

@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             StyleReportRangeSeeder::class,
             AnalyticsTrackingSeeder::class,
             CampaignRuleSeeder::class,
+            CampaignReportSeeder::class,
         ]);
     }
 }

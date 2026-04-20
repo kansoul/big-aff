@@ -4,11 +4,12 @@ namespace App\Models;
 
 use App\Enums\TeamRole;
 use App\Models\Traits\Relationship\TeamUserRelationship;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TeamUser extends Model
 {
-    use TeamUserRelationship;
+    use HasFactory, TeamUserRelationship;
 
     protected $table = 'team_user';
 

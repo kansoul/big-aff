@@ -269,6 +269,37 @@ class FacebookAdsService
     }
 
     /**
+     * Update campaign status.
+     *
+     * @param  string  $campaignId  Facebook campaign ID
+     * @param  string  $status  New status ('ACTIVE' or 'PAUSED')
+     */
+    public function updateCampaignStatus(string $campaignId, string $status): bool
+    {
+        try {
+            if (! in_array($status, ['ACTIVE', 'PAUSED'], true)) {
+                Log::warning("FacebookAdsService: Invalid status provided for campaign update: {$status}");
+
+                return false;
+            }
+
+            $campaign = new Campaign($campaignId);
+            $campaign->setData(['status' => $status]);
+            $campaign->update();
+
+            return true;
+        } catch (Exception $e) {
+            Log::error('Error updating Facebook campaign status: '.$e->getMessage(), [
+                'campaign_id' => $campaignId,
+                'status' => $status,
+                'code' => $e->getCode(),
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
      * Filter campaigns using insights data.
      *
      * @param  string  $accountId  Facebook Ads account ID

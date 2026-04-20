@@ -14,6 +14,7 @@ const DEFAULT_STATUS_MAP: Record<
   { variant: 'success' | 'secondary' | 'destructive' | 'warning' | 'default'; label: string }
 > = {
   active: { variant: 'success', label: 'Active' },
+  paused: { variant: 'secondary', label: 'Paused' },
   published: { variant: 'success', label: 'Published' },
   visible: { variant: 'success', label: 'Visible' },
   draft: { variant: 'secondary', label: 'Draft' },
