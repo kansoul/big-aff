@@ -22,8 +22,8 @@ class GetRevenueChartReportRequest extends FormRequest
         return [
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
-            'style_codes' => ['nullable', 'array'],
-            'style_codes.*' => ['string', 'max:100'],
+            'channel_codes' => ['nullable', 'array'],
+            'channel_codes.*' => ['string', 'max:100'],
             'metric' => ['nullable', 'string', Rule::in(GetRevenueChartReportAction::ALLOWED_METRICS)],
         ];
     }

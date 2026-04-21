@@ -2,8 +2,8 @@
 
 namespace App\Actions\RevenueReport;
 
+use App\Models\Channel;
 use App\Models\RevenueReport;
-use App\Models\Style;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
@@ -41,7 +41,7 @@ class ListRevenueReportsAction
 
         $query = RevenueReport::query();
 
-        $ownership->applyThrough($query, 'style_code', fn (array $ids) => Style::whereIn('created_by', $ids)->select('code'));
+        $ownership->applyThrough($query, 'channel_code', fn (array $ids) => Channel::whereIn('created_by', $ids)->select('code'));
 
         if (! empty($filters['date_from'])) {
             $query->whereDate('date', '>=', $filters['date_from']);

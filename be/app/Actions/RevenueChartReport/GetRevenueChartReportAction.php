@@ -2,8 +2,8 @@
 
 namespace App\Actions\RevenueChartReport;
 
+use App\Models\Channel;
 use App\Models\RevenueChartReport;
-use App\Models\Style;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +37,7 @@ class GetRevenueChartReportAction
     ];
 
     /**
-     * @param  array{date_from?: string|null, date_to?: string|null, style_codes?: string[]|null, metric?: string|null}  $filters
+     * @param  array{date_from?: string|null, date_to?: string|null, channel_codes?: string[]|null, metric?: string|null}  $filters
      * @return array{labels: list<string>, values: list<float>, stats: array{total: float, avg: float, max: float, min: float, count: int}}
      */
     public function execute(array $filters): array
@@ -63,12 +63,12 @@ class GetRevenueChartReportAction
 
         $ownership->applyThrough(
             $query,
-            'style_code',
-            fn (array $ids) => Style::whereIn('created_by', $ids)->select('code'),
+            'channel_code',
+            fn (array $ids) => Channel::whereIn('created_by', $ids)->select('code'),
         );
 
-        if (! empty($filters['style_codes'])) {
-            $query->whereIn('style_code', $filters['style_codes']);
+        if (! empty($filters['channel_codes'])) {
+            $query->whereIn('channel_code', $filters['channel_codes']);
         }
 
         $data = $query->get();
