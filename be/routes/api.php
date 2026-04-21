@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\BusinessCenterController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\CampaignRuleController;
 use App\Http\Controllers\Api\CampaignRuleSettingController;
+use App\Http\Controllers\Api\CampaignScheduleController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\DashboardController;
@@ -357,6 +358,19 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::UserTablePreferencesView->value);
         Route::match(['put', 'patch'], '{table_name}', [UserTablePreferenceController::class, 'update'])
             ->middleware('permission.scope:'.Permission::UserTablePreferencesUpdate->value);
+    });
+
+    Route::prefix('campaign-schedules')->group(function () {
+        Route::get('/', [CampaignScheduleController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::CampaignSchedulesView->value);
+        Route::post('/', [CampaignScheduleController::class, 'store'])
+            ->middleware('permission.scope:'.Permission::CampaignSchedulesCreate->value);
+        Route::get('{campaignSchedule}', [CampaignScheduleController::class, 'show'])
+            ->middleware('permission.scope:'.Permission::CampaignSchedulesView->value);
+        Route::match(['put', 'patch'], '{campaignSchedule}', [CampaignScheduleController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::CampaignSchedulesUpdate->value);
+        Route::delete('{campaignSchedule}', [CampaignScheduleController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::CampaignSchedulesDelete->value);
     });
 
     Route::prefix('logs')
