@@ -62,6 +62,7 @@ export interface CampaignReportRow {
   campaign_id: string
   campaign_name: string | null
   campaign_status: string | null
+  has_rule?: boolean | null
   ads_type: string | null
   site_url?: string | null
   slug?: string | null

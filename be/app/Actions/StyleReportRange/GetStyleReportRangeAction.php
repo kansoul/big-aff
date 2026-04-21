@@ -2,9 +2,9 @@
 
 namespace App\Actions\StyleReportRange;
 
+use App\Models\Channel;
 use App\Models\RevenueChartReport;
 use App\Models\RevenueReport;
-use App\Models\Style;
 use App\Models\User;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 class GetStyleReportRangeAction
 {
     /**
-     * @param  array{ranges: list<array{start_date: string, start_time: string, end_date: string, end_time: string, style_codes: list<string>}>}  $filters
+     * @param  array{ranges: list<array{start_date: string, start_time: string, end_date: string, end_time: string, channel_codes: list<string>}>}  $filters
      * @return list<array<string, mixed>>
      */
     public function execute(array $filters): array
@@ -22,11 +22,16 @@ class GetStyleReportRangeAction
         $user = Auth::user();
         $ownership = OwnershipFilter::forAuthUser();
 
-        $allowedStyleCodes = null;
+        $allowedChannelCodes = null;
         if (! $user->isAdmin) {
-            $allowedStyleCodes = Style::query()
+            $allowedStyleCodes = \App\Models\Style::query()
                 ->whereIn('created_by', $ownership->allowedUserIds())
                 ->pluck('code')
+                ->all();
+
+            $allowedChannelCodes = RevenueChartReport::whereIn('style_code', $allowedStyleCodes)
+                ->distinct()
+                ->pluck('channel_code')
                 ->all();
         }
 
@@ -37,46 +42,46 @@ class GetStyleReportRangeAction
             $endDateTime = Carbon::parse("{$range['end_date']} {$range['end_time']}");
             $label = $startDateTime->toDateTimeString().' - '.$endDateTime->toDateTimeString();
 
-            $styleCodes = $range['style_codes'];
+            $channelCodes = $range['channel_codes'];
 
-            if ($allowedStyleCodes !== null) {
-                $styleCodes = array_values(array_intersect($styleCodes, $allowedStyleCodes));
+            if ($allowedChannelCodes !== null) {
+                $channelCodes = array_values(array_intersect($channelCodes, $allowedChannelCodes));
             }
 
-            if (empty($styleCodes)) {
+            if (empty($channelCodes)) {
                 continue;
             }
 
-            $startRecords = RevenueChartReport::whereIn('style_code', $styleCodes)
+            $startRecords = RevenueChartReport::whereIn('channel_code', $channelCodes)
                 ->whereBetween('datetime', [
                     $startDateTime->copy()->startOfMinute(),
                     $startDateTime->copy()->endOfMinute(),
                 ])
                 ->get()
-                ->keyBy('style_code');
+                ->keyBy('channel_code');
 
-            $endRecords = RevenueChartReport::whereIn('style_code', $styleCodes)
+            $endRecords = RevenueChartReport::whereIn('channel_code', $channelCodes)
                 ->whereBetween('datetime', [
                     $endDateTime->copy()->startOfMinute(),
                     $endDateTime->copy()->endOfMinute(),
                 ])
                 ->get()
-                ->keyBy('style_code');
+                ->keyBy('channel_code');
 
-            $latestRevenueReportIds = RevenueReport::whereIn('style_code', $styleCodes)
+            $latestRevenueReportIds = RevenueReport::whereIn('channel_code', $channelCodes)
                 ->selectRaw('MAX(id) as id')
-                ->groupBy('style_code')
+                ->groupBy('channel_code')
                 ->pluck('id');
 
             $revenueReports = RevenueReport::whereIn('id', $latestRevenueReportIds)
                 ->get()
-                ->keyBy('style_code');
+                ->keyBy('channel_code');
 
-            $styles = Style::whereIn('code', $styleCodes)->pluck('name', 'code');
+            $channels = Channel::whereIn('code', $channelCodes)->pluck('name', 'code');
 
-            foreach ($styleCodes as $styleCode) {
-                $startRecord = $startRecords->get($styleCode);
-                $endRecord = $endRecords->get($styleCode);
+            foreach ($channelCodes as $channelCode) {
+                $startRecord = $startRecords->get($channelCode);
+                $endRecord = $endRecords->get($channelCode);
 
                 $revenueStart = $startRecord?->estimated_earnings;
                 $revenueEnd = $endRecord?->estimated_earnings;
@@ -95,12 +100,12 @@ class GetStyleReportRangeAction
                     $realRpc = null;
                 }
 
-                $revenueReport = $revenueReports->get($styleCode);
+                $revenueReport = $revenueReports->get($channelCode);
 
                 $data[] = [
                     'range_label' => $label,
-                    'style_code' => $styleCode,
-                    'style_name' => $styles->get($styleCode, $styleCode),
+                    'channel_code' => $channelCode,
+                    'channel_name' => $channels->get($channelCode, $channelCode),
                     'revenue_start' => $revenueStart,
                     'revenue_end' => $revenueEnd,
                     'real_revenue' => $realRevenue,

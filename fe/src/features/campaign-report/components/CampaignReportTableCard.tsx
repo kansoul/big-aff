@@ -12,6 +12,7 @@ import { buildCopyLink } from '@/lib/ads-link'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { StyleReportRangeDialog } from '@/features/style-report/components/StyleReportRangeDialog'
 import type {
   CampaignReportDataRow,
   CampaignReportFilterParams,
@@ -320,6 +321,30 @@ function getColumns(
     },
   }
 
+  const colStyleRangeReport: MRT_ColumnDef<TableRow> = {
+    id: 'style_range_report',
+    header: 'Style Range',
+    size: 120,
+    enableSorting: false,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const r = row.original
+      return (
+        <div onClick={(e) => e.stopPropagation()}>
+          <StyleReportRangeDialog
+            initialDate={r.date_start ?? undefined}
+            initialChannelCodes={r.channel_code ? [r.channel_code] : undefined}
+            trigger={
+              <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
+                Style Range
+              </button>
+            }
+          />
+        </div>
+      )
+    },
+  }
+
   const colAdsType: MRT_ColumnDef<TableRow> = {
     accessorKey: 'ads_type',
     header: 'Ads Type',
@@ -492,6 +517,7 @@ function getColumns(
     colCampaignName,
     colCampaignStatus,
     colCampaignOnOff,
+    colStyleRangeReport,
     colLink,
     colAdsType,
     colChannelName,

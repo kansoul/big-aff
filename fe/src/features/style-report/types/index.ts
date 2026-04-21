@@ -51,7 +51,7 @@ export interface StyleReportRangeItem {
   start_time: string
   end_date: string
   end_time: string
-  style_codes: string[]
+  channel_codes: string[]
 }
 
 export interface StyleReportRangeQueryPayload {
@@ -60,8 +60,8 @@ export interface StyleReportRangeQueryPayload {
 
 export interface StyleReportRangeRow {
   range_label: string
-  style_code: string
-  style_name: string
+  channel_code: string
+  channel_name: string
   revenue_start: number | null
   revenue_end: number | null
   real_revenue: number | null

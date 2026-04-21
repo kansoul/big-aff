@@ -13,8 +13,8 @@ import { toast } from 'sonner'
 
 import { styleReportApi } from '@/features/style-report/api'
 import type { StyleReportRangeItem, StyleReportRangeRow } from '@/features/style-report/types'
-import { stylesApi } from '@/features/styles/api'
-import type { StyleOption } from '@/features/styles/types'
+import { channelsApi } from '@/features/channels/api'
+import type { ChannelOption } from '@/features/channels/types'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { SearchableSelect } from '@/components/common/SearchableSelect'
@@ -71,15 +71,15 @@ function TimeSelect({ value, onChange }: TimeSelectProps) {
   )
 }
 
-// ─── Styles Multiselect ───────────────────────────────────────────────────────
+// ─── Channels Multiselect ─────────────────────────────────────────────────────
 
-type StylesSelectProps = {
+type ChannelsSelectProps = {
   value: string[]
   onChange: (v: string[]) => void
-  options: StyleOption[]
+  options: ChannelOption[]
 }
 
-function StylesSelect({ value, onChange, options }: StylesSelectProps) {
+function ChannelsSelect({ value, onChange, options }: ChannelsSelectProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
 
@@ -97,7 +97,7 @@ function StylesSelect({ value, onChange, options }: StylesSelectProps) {
 
   const triggerText =
     value.length === 0
-      ? 'Select styles...'
+      ? 'Select channels...'
       : value.length === 1
         ? (options.find((o) => o.code === value[0])?.name ?? value[0])
         : `${value.length} selected`
@@ -166,12 +166,12 @@ function StylesSelect({ value, onChange, options }: StylesSelectProps) {
 // ─── Range Row ────────────────────────────────────────────────────────────────
 
 type RangeErrors = Partial<
-  Record<'start_date' | 'start_time' | 'end_date' | 'end_time' | 'style_codes', string>
+  Record<'start_date' | 'start_time' | 'end_date' | 'end_time' | 'channel_codes', string>
 >
 
 type RangeRowProps = {
   range: RangeState
-  styleOptions: StyleOption[]
+  channelOptions: ChannelOption[]
   errors: RangeErrors
   onChange: (patch: Partial<RangeState>, clearField?: keyof RangeErrors) => void
   onRemove: () => void
@@ -184,9 +184,48 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-[11px] text-destructive">{message}</p>
 }
 
+const QUICK_RANGES = [
+  { label: '5m', minutes: 5 },
+  { label: '15m', minutes: 15 },
+  { label: '30m', minutes: 30 },
+  { label: '45m', minutes: 45 },
+  { label: '1h', minutes: 60 },
+  { label: '2h', minutes: 120 },
+  { label: '3h', minutes: 180 },
+  { label: '6h', minutes: 360 },
+  { label: '1d', minutes: 1440 },
+]
+
+function addMinutesToDateTime(
+  date: string,
+  time: string,
+  minutes: number,
+): { date: string; time: string } {
+  const [h, m] = time.split(':').map(Number)
+  const totalMinutes = h * 60 + m + minutes
+  const newH = Math.floor(totalMinutes / 60) % 24
+  const newM = totalMinutes % 60
+  const extraDays = Math.floor(totalMinutes / (24 * 60))
+
+  let newDate = date
+  if (extraDays > 0) {
+    const d = new Date(date + 'T00:00:00')
+    d.setDate(d.getDate() + extraDays)
+    newDate = d.toISOString().slice(0, 10)
+  }
+
+  const hh = String(newH).padStart(2, '0')
+  // snap to nearest 5-min slot available in TIME_OPTIONS
+  const snappedM = Math.floor(newM / 5) * 5
+  return {
+    date: newDate,
+    time: `${hh}:${String(snappedM).padStart(2, '0')}`,
+  }
+}
+
 function RangeRow({
   range,
-  styleOptions,
+  channelOptions,
   errors,
   onChange,
   onRemove,
@@ -194,6 +233,13 @@ function RangeRow({
   index,
 }: RangeRowProps) {
   const labelId = useId()
+
+  function applyQuickRange(minutes: number) {
+    if (!range.start_date || !range.start_time) return
+    const end = addMinutesToDateTime(range.start_date, range.start_time, minutes)
+    onChange({ end_date: end.date, end_time: end.time })
+  }
+
   return (
     <div className="rounded-lg border bg-muted/20 p-4">
       <div className="mb-3 flex items-center justify-between">
@@ -257,15 +303,30 @@ function RangeRow({
         </div>
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs text-muted-foreground">
-            Styles<span className="text-destructive">*</span>
+            Channels<span className="text-destructive">*</span>
           </Label>
-          <StylesSelect
-            value={range.style_codes}
-            onChange={(v) => onChange({ style_codes: v }, 'style_codes')}
-            options={styleOptions}
+          <ChannelsSelect
+            value={range.channel_codes}
+            onChange={(v) => onChange({ channel_codes: v }, 'channel_codes')}
+            options={channelOptions}
           />
-          <FieldError message={errors.style_codes} />
+          <FieldError message={errors.channel_codes} />
         </div>
+      </div>
+      {/* Quick range shortcuts */}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <span className="text-[11px] text-muted-foreground">Quick:</span>
+        {QUICK_RANGES.map(({ label, minutes }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => applyQuickRange(minutes)}
+            disabled={!range.start_date || !range.start_time}
+            className="rounded border border-border/60 bg-background px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {label}
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -279,8 +340,8 @@ const RESULT_COLUMNS: Array<{
   className?: string
 }> = [
   { key: 'range_label', label: 'Range', className: 'min-w-[180px]' },
-  { key: 'style_code', label: 'Style Code', className: 'min-w-[110px]' },
-  { key: 'style_name', label: 'Style Name', className: 'min-w-[180px]' },
+  { key: 'channel_code', label: 'Channel Code', className: 'min-w-[110px]' },
+  { key: 'channel_name', label: 'Channel Name', className: 'min-w-[180px]' },
   { key: 'revenue_start', label: 'Revenue Start', className: 'text-right' },
   { key: 'revenue_end', label: 'Revenue End', className: 'text-right' },
   { key: 'real_revenue', label: 'Real Revenue', className: 'text-right' },
@@ -393,12 +454,12 @@ function RangeResultTable({ data, loading }: { data: StyleReportRangeRow[]; load
             {!loading &&
               data.map((row, rowIndex) => (
                 <TableRow
-                  key={`${row.range_label}-${row.style_code}-${rowIndex}`}
+                  key={`${row.range_label}-${row.channel_code}-${rowIndex}`}
                   className="h-14 border-border/70 bg-background hover:bg-muted/20"
                 >
                   {RESULT_COLUMNS.map((col) => {
                     const value = row[col.key]
-                    if (col.key === 'style_code') {
+                    if (col.key === 'channel_code') {
                       return (
                         <TableCell
                           key={col.key}
@@ -445,17 +506,6 @@ function RangeResultTable({ data, loading }: { data: StyleReportRangeRow[]; load
 
 type RangeState = StyleReportRangeItem & { _id: string }
 
-function makeEmptyRange(): RangeState {
-  return {
-    _id: crypto.randomUUID(),
-    start_date: '',
-    start_time: '',
-    end_date: '',
-    end_time: '',
-    style_codes: [],
-  }
-}
-
 function validateAll(ranges: RangeState[]): Record<string, RangeErrors> {
   const result: Record<string, RangeErrors> = {}
   for (const r of ranges) {
@@ -464,7 +514,7 @@ function validateAll(ranges: RangeState[]): Record<string, RangeErrors> {
     if (!r.start_time) errs.start_time = 'Required'
     if (!r.end_date) errs.end_date = 'Required'
     if (!r.end_time) errs.end_time = 'Required'
-    if (r.style_codes.length === 0) errs.style_codes = 'Required'
+    if (r.channel_codes.length === 0) errs.channel_codes = 'Required'
     if (Object.keys(errs).length > 0) result[r._id] = errs
   }
   return result
@@ -472,13 +522,31 @@ function validateAll(ranges: RangeState[]): Record<string, RangeErrors> {
 
 type StyleReportRangeDialogProps = {
   trigger?: React.ReactNode
+  initialDate?: string
+  initialChannelCodes?: string[]
 }
 
-export function StyleReportRangeDialog({ trigger }: StyleReportRangeDialogProps) {
+export function StyleReportRangeDialog({
+  trigger,
+  initialDate,
+  initialChannelCodes,
+}: StyleReportRangeDialogProps) {
+  const makeInitialRange = useCallback(
+    (): RangeState => ({
+      _id: crypto.randomUUID(),
+      start_date: initialDate ?? '',
+      start_time: '',
+      end_date: initialDate ?? '',
+      end_time: '',
+      channel_codes: initialChannelCodes ?? [],
+    }),
+    [initialDate, initialChannelCodes],
+  )
+
   const [open, setOpen] = useState(false)
-  const [ranges, setRanges] = useState<RangeState[]>([makeEmptyRange()])
+  const [ranges, setRanges] = useState<RangeState[]>(() => [makeInitialRange()])
   const [fieldErrors, setFieldErrors] = useState<Record<string, RangeErrors>>({})
-  const [styleOptions, setStyleOptions] = useState<StyleOption[]>([])
+  const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [results, setResults] = useState<StyleReportRangeRow[]>([])
   const fetchedRef = useRef(false)
@@ -486,11 +554,11 @@ export function StyleReportRangeDialog({ trigger }: StyleReportRangeDialogProps)
   useEffect(() => {
     if (!open || fetchedRef.current) return
     fetchedRef.current = true
-    stylesApi
+    channelsApi
       .options()
-      .then((res) => setStyleOptions(res.data))
+      .then((res) => setChannelOptions(res.data))
       .catch(() => {
-        toast.error('Failed to fetch style Options')
+        toast.error('Failed to fetch channel options')
       })
   }, [open])
 
@@ -516,21 +584,24 @@ export function StyleReportRangeDialog({ trigger }: StyleReportRangeDialogProps)
   }
 
   function addRange() {
-    setRanges((prev) => [...prev, makeEmptyRange()])
+    setRanges((prev) => [...prev, makeInitialRange()])
   }
 
-  const handleOpenChange = useCallback((next: boolean) => {
-    setOpen(next)
-    if (!next) {
-      setRanges([makeEmptyRange()])
-      setFieldErrors({})
-      setResults([])
-      fetchedRef.current = false
-    }
-  }, [])
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      setOpen(next)
+      if (!next) {
+        setRanges([makeInitialRange()])
+        setFieldErrors({})
+        setResults([])
+        fetchedRef.current = false
+      }
+    },
+    [makeInitialRange],
+  )
 
   function handleReset() {
-    setRanges([makeEmptyRange()])
+    setRanges([makeInitialRange()])
     setFieldErrors({})
     setResults([])
   }
@@ -591,7 +662,7 @@ export function StyleReportRangeDialog({ trigger }: StyleReportRangeDialogProps)
               key={range._id}
               index={index}
               range={range}
-              styleOptions={styleOptions}
+              channelOptions={channelOptions}
               errors={fieldErrors[range._id] ?? {}}
               onChange={(patch, clearField) => updateRange(range._id, patch, clearField)}
               onRemove={() => removeRange(range._id)}

@@ -4,6 +4,7 @@ namespace App\Services\CampaignReport;
 
 use App\Models\Account;
 use App\Models\CampaignReport;
+use App\Models\Channel;
 use App\Models\LinkData;
 use App\Models\User;
 use App\Support\OwnershipFilter\OwnershipFilter;
@@ -38,7 +39,6 @@ class CampaignReportFilterService
             'users' => $this->users($ownership),
             'accounts' => $this->accounts($ownership),
             'campaigns' => $this->campaigns($ownership),
-            'styles' => $this->styles($ownership),
             'channels' => $this->channels($ownership),
             'link_data_ids' => $this->linkDataIds($ownership),
             'ads_types' => self::ADS_TYPES,
@@ -57,7 +57,7 @@ class CampaignReportFilterService
         }
 
         return $query->get()
-            ->map(fn (User $u) => ['id' => (int) $u->id, 'name' => (string) $u->name])
+            ->map(fn(User $u) => ['id' => (int) $u->id, 'name' => (string) $u->name])
             ->all();
     }
 
@@ -80,7 +80,7 @@ class CampaignReportFilterService
         }
 
         return $query->get()
-            ->map(fn (Account $a) => [
+            ->map(fn(Account $a) => [
                 'id' => (int) $a->id,
                 'account_id' => (string) $a->account_id,
                 'account_name' => $a->account_name,
@@ -105,7 +105,7 @@ class CampaignReportFilterService
         $this->applyAccountOwnership($query, $ownership);
 
         return $query->get()
-            ->map(fn (CampaignReport $r) => [
+            ->map(fn(CampaignReport $r) => [
                 'campaign_id' => (string) $r->campaign_id,
                 'campaign_name' => $r->campaign_name,
                 'ads_type' => $r->ads_type,
@@ -117,41 +117,20 @@ class CampaignReportFilterService
     /**
      * @return array<int, array{code: string, name: string|null}>
      */
-    private function styles(OwnershipFilter $ownership): array
-    {
-        $query = CampaignReport::query()
-            ->select(['style_code', 'style_name'])
-            ->whereNotNull('style_code')
-            ->groupBy('style_code', 'style_name')
-            ->orderBy('style_code');
-
-        $this->applyAccountOwnership($query, $ownership);
-
-        return $query->get()
-            ->map(fn (CampaignReport $r) => [
-                'code' => (string) $r->style_code,
-                'name' => $r->style_name,
-            ])
-            ->all();
-    }
-
-    /**
-     * @return array<int, array{code: string, name: string|null}>
-     */
     private function channels(OwnershipFilter $ownership): array
     {
-        $query = CampaignReport::query()
-            ->select(['channel_code', 'channel_name'])
-            ->whereNotNull('channel_code')
-            ->groupBy('channel_code', 'channel_name')
-            ->orderBy('channel_code');
+        $query = Channel::query()
+            ->select(['code', 'name'])
+            ->whereNotNull('code')
+            ->groupBy('code', 'name')
+            ->orderBy('code');
 
         $this->applyAccountOwnership($query, $ownership);
 
         return $query->get()
-            ->map(fn (CampaignReport $r) => [
-                'code' => (string) $r->channel_code,
-                'name' => $r->channel_name,
+            ->map(fn(Channel $c) => [
+                'code' => (string) $c->code,
+                'name' => $c->name,
             ])
             ->all();
     }
@@ -178,7 +157,7 @@ class CampaignReportFilterService
             ->orderBy('id')
             ->get(['id', 'campaign_id', 'style_code', 'channel_code']);
 
-        return $rows->map(fn (LinkData $l) => [
+        return $rows->map(fn(LinkData $l) => [
             'id' => (int) $l->id,
             'campaign_id' => $l->campaign_id,
             'style_code' => $l->style_code,
@@ -196,7 +175,7 @@ class CampaignReportFilterService
         $ownership->applyThrough(
             $query,
             'account_id',
-            fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
+            fn(array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
                 ->whereIn('account_user.user_id', $ids)
                 ->select('accounts.id'),
         );
