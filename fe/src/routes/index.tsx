@@ -362,6 +362,16 @@ export const router = createBrowserRouter([
             },
             handle: { title: 'Campaign Report' },
           },
+          {
+            path: routeSegment(PATHS.logs),
+            lazy: async () => {
+              const { LogsPage } = await import('@/features/logs/pages/LogsPage')
+              return {
+                Component: withPermission(LogsPage, PermissionSlugs.LogsView),
+              }
+            },
+            handle: { title: 'Logs' },
+          },
         ],
       },
     ],

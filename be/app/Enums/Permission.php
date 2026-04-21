@@ -193,6 +193,8 @@ enum Permission: string
 
     // —— Campaign Reports ——
     case CampaignReportsView = 'campaign-reports.view'; // bit 81
+    // —— Logs ——
+    case LogsView = 'logs.view';                                        // bit 76 →  75557863725914323419136
 
     /**
      * Bit value for this permission (1 << declaration index).
