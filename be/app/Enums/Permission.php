@@ -182,19 +182,26 @@ enum Permission: string
     case UserTablePreferencesView = 'user-table-preferences.view';     // bit 74 →  18889465931478580854784
     case UserTablePreferencesUpdate = 'user-table-preferences.update'; // bit 75 →  37778931862957161709568
 
-    // —— Campaign Rules ——
-    case CampaignRulesView = 'campaign-rules.view';     // bit 76
-    case CampaignRulesCreate = 'campaign-rules.create'; // bit 77
-    case CampaignRulesUpdate = 'campaign-rules.update'; // bit 78
-    case CampaignRulesDelete = 'campaign-rules.delete'; // bit 79
-
-    // —— Campaigns ——
-    case CampaignsView = 'campaigns.view';              // bit 80
-
-    // —— Campaign Reports ——
-    case CampaignReportsView = 'campaign-reports.view'; // bit 81
     // —— Logs ——
     case LogsView = 'logs.view';                                        // bit 76 →  75557863725914323419136
+
+    // —— Campaign Rules ——
+    case CampaignRulesView = 'campaign-rules.view';     // bit 77 →  75557863725914323419136
+    case CampaignRulesCreate = 'campaign-rules.create'; // bit 78 →  151115727451828646838272
+    case CampaignRulesUpdate = 'campaign-rules.update'; // bit 79 →  302231454903657293676544
+    case CampaignRulesDelete = 'campaign-rules.delete'; // bit 80 →  604462909807314587353088
+
+    // —— Campaigns ——
+    case CampaignsView = 'campaigns.view';              // bit 81 →  1208925819615629174706176
+
+    // —— Campaign Reports ——
+    case CampaignReportsView = 'campaign-reports.view'; // bit 82 →  2417851639231258349412352
+
+    // —— Campaign Schedules ——
+    case CampaignSchedulesView = 'campaign-schedules.view'; // bit 83 →  4835703278462516698824704
+    case CampaignSchedulesCreate = 'campaign-schedules.create'; // bit 84 →  9671406556925033397649408
+    case CampaignSchedulesUpdate = 'campaign-schedules.update'; // bit 85 →  19342813113850066795298816
+    case CampaignSchedulesDelete = 'campaign-schedules.delete'; // bit 86 →  38685626227700133590597632
 
     /**
      * Bit value for this permission (1 << declaration index).
