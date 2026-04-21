@@ -5,7 +5,9 @@ import {
   type MRT_ColumnDef,
   useMantineReactTable,
 } from 'mantine-react-table'
-import { BarChart3, Eye } from 'lucide-react'
+import { BarChart3 } from 'lucide-react'
+
+import { buildCopyLink } from '@/lib/ads-link'
 
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
@@ -57,9 +59,19 @@ function isGroupRow(row: TableRow): row is CampaignReportGroupRow {
   return typeof row === 'object' && row !== null && 'is_group' in row && row.is_group === true
 }
 
-function getRowLink(row: TableRow): string | null {
+function getRowAdsManagerLink(row: TableRow): string | null {
   if (isGroupRow(row)) return null
-  return row.link ?? null
+  return row.ads_manager_link ?? null
+}
+
+function getRowArticleLink(row: TableRow): string | null {
+  if (isGroupRow(row)) return null
+  const { site_url, slug, ads_type } = row
+  if (!site_url || !slug) return null
+  const adsTypeLower = (ads_type ?? '').toLowerCase()
+  if (adsTypeLower === 'facebook') return buildCopyLink(site_url, slug, 'facebook')
+  if (adsTypeLower === 'google') return buildCopyLink(site_url, slug, 'google')
+  return null
 }
 
 function metric(row: TableRow, key: MetricKey): number {
@@ -204,323 +216,373 @@ function getColumns(
     : null
 
   // ── Identity / dimension columns ──
-  const identityCols: MRT_ColumnDef<TableRow>[] = [
-    {
-      accessorKey: 'date_start',
-      header: 'Date',
-      size: 110,
-      enableSorting: !grouped,
-      Cell: ({ row }) =>
-        isGroupRow(row.original) ? null : (
-          <span className="text-xs text-muted-foreground">{row.original.date_start ?? '—'}</span>
-        ),
-    },
-    {
-      accessorKey: 'campaign_name',
-      header: 'Campaign',
-      size: 220,
-      enableSorting: !grouped,
-      Cell: ({ row }) => {
-        if (isGroupRow(row.original)) return null
-        return (
-          <div className="flex flex-col">
-            <span className="text-xs font-medium text-foreground">
-              {row.original.campaign_name ?? row.original.campaign_id}
-            </span>
-            <span className="text-[10px] font-mono text-muted-foreground">
-              {row.original.campaign_id}
-            </span>
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: 'campaign_status',
-      header: 'Status',
-      size: 110,
-      enableSorting: !grouped,
-      Cell: ({ row }) => {
-        if (isGroupRow(row.original)) return null
-        const status = row.original.campaign_status
-        return <StatusBadge status={status} label={status ?? undefined} />
-      },
-    },
-    {
-      id: 'campaign_onoff',
-      header: 'On/Off',
-      size: 80,
-      enableSorting: false,
-      Cell: ({ row }) => {
-        if (isGroupRow(row.original)) return null
-        const r = row.original
-        const isActive = (r.campaign_status ?? '').toUpperCase() === 'ACTIVE'
-        return (
-          <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
-            <Switch
-              checked={isActive}
-              disabled={Boolean(toggling[r.campaign_id])}
-              aria-label={`Toggle status for ${r.campaign_id}`}
-              onCheckedChange={(checked) => {
-                void onToggleCampaignStatus(r.campaign_id, checked, r.ads_type)
-              }}
-            />
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: 'account_name',
-      header: 'Account',
-      size: 180,
-      enableSorting: !grouped,
-      Cell: ({ row }) =>
-        isGroupRow(row.original) ? null : (
-          <span className="text-xs text-muted-foreground">
-            {row.original.account_name ?? row.original.account_id ?? '—'}
-          </span>
-        ),
-    },
-    {
-      accessorKey: 'ads_type',
-      header: 'Ads Type',
-      size: 110,
-      Cell: ({ row }) => {
-        if (isGroupRow(row.original)) return <span className="text-muted-foreground/50">—</span>
-        const val = row.original.ads_type
-        return <StatusBadge status={val} label={val ?? undefined} />
-      },
-    },
-    {
-      accessorKey: 'link',
-      header: 'Link',
-      size: 110,
-      enableSorting: false,
-      Cell: ({ row }) => {
-        if (isGroupRow(row.original)) return null
-        const link = getRowLink(row.original)
-        if (!link) return <span className="text-muted-foreground/50">—</span>
-        return (
-          <a
-            className="inline-flex items-center gap-1 text-xs text-primary underline-offset-4 hover:underline"
-            href={link}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Eye className="h-3.5 w-3.5" />
-            View
-          </a>
-        )
-      },
-    },
-    {
-      accessorKey: 'channel_name',
-      header: 'Channel',
-      size: 150,
-      enableSorting: !grouped,
-      Cell: ({ row }) =>
-        isGroupRow(row.original) ? null : (
-          <span className="text-xs text-muted-foreground">
-            {row.original.channel_name ?? row.original.channel_code ?? '—'}
-          </span>
-        ),
-    },
-    {
-      accessorKey: 'style_name',
-      header: 'Style',
-      size: 150,
-      enableSorting: !grouped,
-      Cell: ({ row }) =>
-        isGroupRow(row.original) ? null : (
-          <span className="text-xs text-muted-foreground">
-            {row.original.style_name ?? row.original.style_code ?? '—'}
-          </span>
-        ),
-    },
-    {
-      accessorKey: 'style_code',
-      header: 'Style Code',
-      size: 130,
-      enableSorting: !grouped,
-      Cell: ({ row }) =>
-        isGroupRow(row.original) ? null : (
-          <span className="text-xs font-mono text-muted-foreground">
-            {row.original.style_code ?? '—'}
-          </span>
-        ),
-    },
-    {
-      accessorKey: 'channel_code',
-      header: 'Channel Code',
-      size: 140,
-      enableSorting: !grouped,
-      Cell: ({ row }) =>
-        isGroupRow(row.original) ? null : (
-          <span className="text-xs font-mono text-muted-foreground">
-            {row.original.channel_code ?? '—'}
-          </span>
-        ),
-    },
-  ]
+  const colDateStart: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'date_start',
+    header: 'Date',
+    size: 110,
+    enableSorting: !grouped,
+    Cell: ({ row }) =>
+      isGroupRow(row.original) ? null : (
+        <span className="text-xs text-muted-foreground">{row.original.date_start ?? '—'}</span>
+      ),
+  }
 
-  // ── Budget columns ──
-  const budgetCols: MRT_ColumnDef<TableRow>[] = [
-    usd('daily_budget', '🔵 Daily Budget', 130),
-    usd('lifetime_budget', '🔵 Lifetime Budget', 140),
-  ]
+  const colAccountName: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'account_name',
+    header: 'Account',
+    size: 180,
+    enableSorting: !grouped,
+    Cell: ({ row }) =>
+      isGroupRow(row.original) ? null : (
+        <span className="text-xs text-muted-foreground">
+          {row.original.account_name ?? row.original.account_id ?? '—'}
+        </span>
+      ),
+  }
 
-  // ── Revenue (r_*) columns ──
-  const revenueCols: MRT_ColumnDef<TableRow>[] = [
+  const colCampaignName: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'campaign_name',
+    header: 'Campaign',
+    size: 220,
+    enableSorting: !grouped,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      return (
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-foreground">
+            {row.original.campaign_name ?? row.original.campaign_id}
+          </span>
+          <span className="text-[10px] font-mono text-muted-foreground">
+            {row.original.campaign_id}
+          </span>
+        </div>
+      )
+    },
+  }
+
+  const colCampaignStatus: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'campaign_status',
+    header: 'Status',
+    size: 110,
+    enableSorting: !grouped,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const status = row.original.campaign_status
+      return <StatusBadge status={status} label={status ?? undefined} />
+    },
+  }
+
+  const colCampaignOnOff: MRT_ColumnDef<TableRow> = {
+    id: 'campaign_onoff',
+    header: 'On/Off',
+    size: 80,
+    enableSorting: false,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const r = row.original
+      const isActive = (r.campaign_status ?? '').toUpperCase() === 'ACTIVE'
+      return (
+        <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+          <Switch
+            checked={isActive}
+            disabled={Boolean(toggling[r.campaign_id])}
+            aria-label={`Toggle status for ${r.campaign_id}`}
+            onCheckedChange={(checked) => {
+              void onToggleCampaignStatus(r.campaign_id, checked, r.ads_type)
+            }}
+          />
+        </div>
+      )
+    },
+  }
+
+  const colStyleName: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'style_name',
+    header: 'Style',
+    size: 150,
+    enableSorting: !grouped,
+    Cell: ({ row }) =>
+      isGroupRow(row.original) ? null : (
+        <span className="text-xs text-muted-foreground">
+          {row.original.style_name ?? row.original.style_code ?? '—'}
+        </span>
+      ),
+  }
+
+  const colStyleCode: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'style_code',
+    header: 'Style Code',
+    size: 130,
+    enableSorting: !grouped,
+    Cell: ({ row }) =>
+      isGroupRow(row.original) ? null : (
+        <span className="text-xs font-mono text-muted-foreground">
+          {row.original.style_code ?? '—'}
+        </span>
+      ),
+  }
+
+  const colLink: MRT_ColumnDef<TableRow> = {
+    id: 'link',
+    header: 'Link',
+    size: 200,
+    enableSorting: false,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const link = getRowArticleLink(row.original)
+      if (!link) return <span className="text-muted-foreground/50">—</span>
+      const display = link.length > 70 ? link.slice(0, 70) + '…' : link
+      return (
+        <a
+          className="font-mono text-[11px] text-primary underline-offset-4 hover:underline"
+          href={link}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={link}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {display}
+        </a>
+      )
+    },
+  }
+
+  const colAdsType: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'ads_type',
+    header: 'Ads Type',
+    size: 110,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return <span className="text-muted-foreground/50">—</span>
+      const val = row.original.ads_type
+      return <StatusBadge status={val} label={val ?? undefined} />
+    },
+  }
+
+  const colChannelName: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'channel_name',
+    header: 'Channel',
+    size: 150,
+    enableSorting: !grouped,
+    Cell: ({ row }) =>
+      isGroupRow(row.original) ? null : (
+        <span className="text-xs text-muted-foreground">
+          {row.original.channel_name ?? row.original.channel_code ?? '—'}
+        </span>
+      ),
+  }
+
+  const colChannelCode: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'channel_code',
+    header: 'Channel Code',
+    size: 140,
+    enableSorting: !grouped,
+    Cell: ({ row }) =>
+      isGroupRow(row.original) ? null : (
+        <span className="text-xs font-mono text-muted-foreground">
+          {row.original.channel_code ?? '—'}
+        </span>
+      ),
+  }
+
+  // ── Profit / ROI columns ──
+  const colProfit: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'profit',
+    header: 'Profit',
+    size: 120,
+    Cell: ({ row }) => {
+      const v = isGroupRow(row.original) ? row.original.group_summary.profit : row.original.profit
+      return (
+        <span
+          className={cn(
+            'tabular-nums text-xs font-medium',
+            v >= 0 ? 'text-emerald-500' : 'text-rose-500',
+          )}
+        >
+          {formatUsd(v)}
+        </span>
+      )
+    },
+  }
+
+  const colRoi: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'roi',
+    header: 'ROI',
+    size: 90,
+    Cell: ({ row }) => {
+      const v = isGroupRow(row.original) ? row.original.group_summary.roi : row.original.roi
+      return (
+        <span
+          className={cn(
+            'tabular-nums text-xs font-medium',
+            v >= 0 ? 'text-emerald-500' : 'text-rose-500',
+          )}
+        >
+          {formatRoi(v)}
+        </span>
+      )
+    },
+  }
+
+  // ── Realtime (rt_*) columns ──
+  const colRtClickAdCount: MRT_ColumnDef<TableRow> = {
+    id: 'rt_click_ad_count',
+    header: '🟢 Realtime Clicks',
+    size: 130,
+    accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.click_ad_count ?? 0)),
+    enableSorting: false,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const rt = row.original.realtime_report
+      return rt ? (
+        <span className="tabular-nums text-xs">{rt.click_ad_count}</span>
+      ) : (
+        <span className="text-muted-foreground/50">—</span>
+      )
+    },
+    Footer: () =>
+      summary ? (
+        <span className="tabular-nums text-xs font-semibold">{summary.rt_click_ad_count}</span>
+      ) : null,
+  }
+
+  const colRtClickKeywordCount: MRT_ColumnDef<TableRow> = {
+    id: 'rt_click_keyword_count',
+    header: '🟢 Realtime Keyword Clicks',
+    size: 170,
+    accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.click_keyword_count ?? 0)),
+    enableSorting: false,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const rt = row.original.realtime_report
+      return rt ? (
+        <span className="tabular-nums text-xs">{rt.click_keyword_count}</span>
+      ) : (
+        <span className="text-muted-foreground/50">—</span>
+      )
+    },
+    Footer: () =>
+      summary ? (
+        <span className="tabular-nums text-xs font-semibold">{summary.rt_click_keyword_count}</span>
+      ) : null,
+  }
+
+  const colRtViewSearchCount: MRT_ColumnDef<TableRow> = {
+    id: 'rt_view_search_count',
+    header: '🟢 Realtime Search Views',
+    size: 160,
+    accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.view_search_count ?? 0)),
+    enableSorting: false,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const rt = row.original.realtime_report
+      return rt ? (
+        <span className="tabular-nums text-xs">{rt.view_search_count}</span>
+      ) : (
+        <span className="text-muted-foreground/50">—</span>
+      )
+    },
+    Footer: () =>
+      summary ? (
+        <span className="tabular-nums text-xs font-semibold">{summary.rt_view_search_count}</span>
+      ) : null,
+  }
+
+  const colRtViewArticleCount: MRT_ColumnDef<TableRow> = {
+    id: 'rt_view_article_count',
+    header: '🟢 Realtime Article Views',
+    size: 160,
+    accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.view_article_count ?? 0)),
+    enableSorting: false,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const rt = row.original.realtime_report
+      return rt ? (
+        <span className="tabular-nums text-xs">{rt.view_article_count}</span>
+      ) : (
+        <span className="text-muted-foreground/50">—</span>
+      )
+    },
+    Footer: () =>
+      summary ? (
+        <span className="tabular-nums text-xs font-semibold">{summary.rt_view_article_count}</span>
+      ) : null,
+  }
+
+  // Column order matches AllReportResource.php
+  return [
+    // ── Group label (grouped mode only) ──
+    ...(groupLabelCol ? [groupLabelCol] : []),
+
+    // ── Identity / dimension ──
+    colDateStart,
+    colAccountName,
+    colCampaignName,
+    colCampaignStatus,
+    colCampaignOnOff,
+    colStyleName,
+    colStyleCode,
+    colLink,
+    colAdsType,
+    colChannelName,
+    colChannelCode,
+
+    // ── Revenue & spend ──
     usd('r_revenue', '🟡 Revenue', 120),
-    ratio('r_rpc', '🟡 RPC', 100),
-    count('r_search_views', '🟡 SearchViews', 160),
-    count('r_ad_requests', '🟡 Ad Requests', 130),
-    ratio('r_ad_requests_rpm', '🟡 Req. RPM', 110),
+    usd('a_spend', '🔵 Spending', 120),
+    colProfit,
+    colRoi,
+
+    // ── Conversions ──
+    colRtClickAdCount, // 🟢 Real-time Conv.
+    count('r_conversion', 'Rev. Conv.', 110), // 🟡 Conv.
+    count('a_conversion', '🔵 ADS Conv.', 110), // 🔵 ADS Conv.
+
+    // ── Search impressions & RPM ──
     count('r_impressions', '🟡 Impressions', 160),
     ratio('r_impressions_rpm', '🟡 Impr. RPM', 120),
-    count('r_funnel_requests', '🟡 Funnel Requests', 150),
-    count('r_funnel_clicks', '🟡 Funnel Clicks', 140),
-    count('r_funnel_impressions', '🟡 Funnel Impr.', 140),
-    ratio('r_funnel_rpm', '🟡 Funnel RPM', 120),
+    ratio('r_rpc', '🟡 RPC', 100),
+
+    // ── CPA ──
     ratio('r_cpa', '🟡 Revenue CPA', 130),
-  ]
-
-  // ── Derived profit / ROI columns ──
-  const derivedCols: MRT_ColumnDef<TableRow>[] = [
-    usd('a_spend', '🔵 Spending', 120),
-    {
-      accessorKey: 'profit',
-      header: 'Profit',
-      size: 120,
-      Cell: ({ row }) => {
-        const v = isGroupRow(row.original) ? row.original.group_summary.profit : row.original.profit
-        return (
-          <span
-            className={cn(
-              'tabular-nums text-xs font-medium',
-              v >= 0 ? 'text-emerald-500' : 'text-rose-500',
-            )}
-          >
-            {formatUsd(v)}
-          </span>
-        )
-      },
-    },
-    {
-      accessorKey: 'roi',
-      header: 'ROI',
-      size: 90,
-      Cell: ({ row }) => {
-        const v = isGroupRow(row.original) ? row.original.group_summary.roi : row.original.roi
-        return (
-          <span
-            className={cn(
-              'tabular-nums text-xs font-medium',
-              v >= 0 ? 'text-emerald-500' : 'text-rose-500',
-            )}
-          >
-            {formatRoi(v)}
-          </span>
-        )
-      },
-    },
-    count('r_conversion', 'Rev. Conv.', 110),
-    count('a_conversion', '🔵 ADS Conv.', 110),
-  ]
-
-  // ── Ads (a_*) columns ──
-  const adsCols: MRT_ColumnDef<TableRow>[] = [
-    count('a_clicks', '🔵 Supply clicks', 110),
-    count('a_ad_clicks', '🔵 Ad Clicks', 110),
-    count('a_article_views', '🔵 Landingpage view', 150),
-    count('a_search_views', '🔵 ADS SearchView', 140),
-    count('a_impressions', '🔵 ADS Impressions', 120),
-    count('a_reach', '🔵 ADS Reach', 110),
-    ratio('a_cpc', '🔵 ADS CPC', 100),
-    ratio('a_cpm', '🔵 CPM', 100),
-    ratio('a_ctr', '🔵 FB CTR (All)', 100),
-    ratio('a_ctr_link', '🔵 ADS CTR', 110),
-    ratio('a_cpc_link', '🔵 ADS CPC Link', 110),
-    ratio('a_frequency', '🔵 Frequency', 110),
     ratio('a_cpa', '🔵 ADS CPA', 110),
-  ]
 
-  // ── Realtime (rt_*) columns — no summary footer, group rows show nothing ──
-  const realtimeCols: MRT_ColumnDef<TableRow>[] = [
-    {
-      id: 'rt_click_ad_count',
-      header: '🟢 Realtime Clicks',
-      size: 130,
-      accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.click_ad_count ?? 0)),
-      enableSorting: false,
-      Cell: ({ row }) => {
-        if (isGroupRow(row.original)) return null
-        const rt = row.original.realtime_report
-        return rt ? (
-          <span className="tabular-nums text-xs">{rt.click_ad_count}</span>
-        ) : (
-          <span className="text-muted-foreground/50">—</span>
-        )
-      },
-    },
-    {
-      id: 'rt_click_keyword_count',
-      header: '🟢 Realtime Keyword Clicks',
-      size: 170,
-      accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.click_keyword_count ?? 0)),
-      enableSorting: false,
-      Cell: ({ row }) => {
-        if (isGroupRow(row.original)) return null
-        const rt = row.original.realtime_report
-        return rt ? (
-          <span className="tabular-nums text-xs">{rt.click_keyword_count}</span>
-        ) : (
-          <span className="text-muted-foreground/50">—</span>
-        )
-      },
-    },
-    {
-      id: 'rt_view_search_count',
-      header: '🟢 Realtime Search Views',
-      size: 160,
-      accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.view_search_count ?? 0)),
-      enableSorting: false,
-      Cell: ({ row }) => {
-        if (isGroupRow(row.original)) return null
-        const rt = row.original.realtime_report
-        return rt ? (
-          <span className="tabular-nums text-xs">{rt.view_search_count}</span>
-        ) : (
-          <span className="text-muted-foreground/50">—</span>
-        )
-      },
-    },
-    {
-      id: 'rt_view_article_count',
-      header: '🟢 Realtime Article Views',
-      size: 160,
-      accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.view_article_count ?? 0)),
-      enableSorting: false,
-      Cell: ({ row }) => {
-        if (isGroupRow(row.original)) return null
-        const rt = row.original.realtime_report
-        return rt ? (
-          <span className="tabular-nums text-xs">{rt.view_article_count}</span>
-        ) : (
-          <span className="text-muted-foreground/50">—</span>
-        )
-      },
-    },
-  ]
+    // ── Search views ──
+    colRtViewSearchCount, // 🟢 Realtime Search Views
+    count('r_search_views', '🟡 SearchViews', 160), // 🟡 SearchViews
+    count('a_search_views', '🔵 ADS SearchView', 140), // 🔵 ADS SearchView
 
-  return [
-    ...(groupLabelCol ? [groupLabelCol] : []),
-    ...identityCols,
-    ...budgetCols,
-    ...revenueCols,
-    ...derivedCols,
-    ...adsCols,
-    ...realtimeCols,
+    // ── Keyword / funnel ──
+    colRtClickKeywordCount, // 🟢 Realtime Keyword Clicks
+    count('a_clicks', '🔵 Supply clicks', 110), // 🔵 Supply clicks
+    count('r_funnel_clicks', '🟡 Funnel Clicks', 140), // 🟡 Funnel Clicks
+    count('r_funnel_requests', '🟡 Funnel Requests', 150), // 🟡 Funnel Requests
+    count('r_funnel_impressions', '🟡 Funnel Impr.', 140), // 🟡 Funnel Impressions
+    ratio('r_funnel_rpm', '🟡 Funnel RPM', 120), // 🟡 Funnel RPM
+
+    // ── Ad requests ──
+    count('r_ad_requests', '🟡 Ad Requests', 130),
+    ratio('r_ad_requests_rpm', '🟡 Req. RPM', 110),
+
+    // ── ADS platform metrics ──
+    ratio('a_ctr_link', '🔵 ADS CTR', 110),
+    count('a_article_views', '🔵 Landingpage view', 150),
+    ratio('a_cpc_link', '🔵 ADS CPC Link', 110),
+    count('a_reach', '🔵 ADS Reach', 110),
+    count('a_impressions', '🔵 ADS Impressions', 120),
+    ratio('a_cpm', '🔵 CPM', 100),
+    ratio('a_frequency', '🔵 Frequency', 110),
+    ratio('a_ctr', '🔵 FB CTR (All)', 100),
+
+    // ── Budget ──
+    usd('daily_budget', '🔵 Daily Budget', 130),
+    usd('lifetime_budget', '🔵 Lifetime Budget', 140),
+
+    // ── Remaining ADS cols ──
+    count('a_ad_clicks', '🔵 Ad Clicks', 110),
+    ratio('a_cpc', '🔵 ADS CPC', 100),
+
+    // ── Remaining realtime ──
+    colRtViewArticleCount,
   ]
 }
 
@@ -632,7 +694,7 @@ function CampaignReportTableCardInner({
     mantineTableBodyRowProps: ({ row }) => {
       const isGroup = isGroupRow(row.original)
       const isSubRow = row.depth > 0
-      const link = getRowLink(row.original)
+      const link = getRowAdsManagerLink(row.original)
       return {
         onClick: (e) => {
           if (

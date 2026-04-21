@@ -71,7 +71,9 @@ export interface CampaignReportRow {
   campaign_name: string | null
   campaign_status: string | null
   ads_type: string | null
-  link?: string | null
+  site_url?: string | null
+  slug?: string | null
+  ads_manager_link?: string | null
   daily_budget: string | number | null
   lifetime_budget: string | number | null
 
@@ -155,6 +157,10 @@ export interface CampaignReportSummary {
   profit: number
   roi: number
   roi_realtime: number
+  rt_click_ad_count: number
+  rt_click_keyword_count: number
+  rt_view_search_count: number
+  rt_view_article_count: number
 }
 
 export interface CampaignReportGroupRow {

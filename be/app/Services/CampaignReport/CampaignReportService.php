@@ -104,6 +104,12 @@ class CampaignReportService
         // No dedup needed: click_keyword_count is already per-campaign.
         $selectParts[] = 'COALESCE(SUM(COALESCE(rt_gs.click_keyword_count, 0) * COALESCE(rv_gs.cost_per_click, 0)), 0) AS revenue_est';
 
+        // Realtime aggregates
+        $selectParts[] = 'COALESCE(SUM(rt_gs.click_ad_count), 0) AS rt_click_ad_count';
+        $selectParts[] = 'COALESCE(SUM(rt_gs.click_keyword_count), 0) AS rt_click_keyword_count';
+        $selectParts[] = 'COALESCE(SUM(rt_gs.view_search_count), 0) AS rt_view_search_count';
+        $selectParts[] = 'COALESCE(SUM(rt_gs.view_article_count), 0) AS rt_view_article_count';
+
         $row = $baseQuery->selectRaw(implode(', ', $selectParts))->first();
 
         // Channel revenue must be queried separately to avoid double-counting when multiple
@@ -197,6 +203,7 @@ class CampaignReportService
             $this->accumulateSumColumns($buckets[$bucketId]['group_summary'], $row);
             $this->accumulateRevenueEst($buckets[$bucketId]['group_summary'], $row);
             $this->accumulateChannelRevenue($buckets[$bucketId]['group_summary'], $bucketRevenuePairs[$bucketId], $row);
+            $this->accumulateRealtimeColumns($buckets[$bucketId]['group_summary'], $row);
         }
 
         foreach ($buckets as &$bucket) {
@@ -247,6 +254,20 @@ class CampaignReportService
             $seenPairs[$pairKey] = true;
             $summary['revenue'] += (float) ($row->r_estimated_earnings ?? 0);
         }
+    }
+
+    /**
+     * Accumulate realtime report counts from a single row into a summary array.
+     *
+     * @param  array<string, mixed>  $summary
+     */
+    private function accumulateRealtimeColumns(array &$summary, CampaignReport $row): void
+    {
+        $rt = $row->realtimeReport;
+        $summary['rt_click_ad_count'] += (float) ($rt?->click_ad_count ?? 0);
+        $summary['rt_click_keyword_count'] += (float) ($rt?->click_keyword_count ?? 0);
+        $summary['rt_view_search_count'] += (float) ($rt?->view_search_count ?? 0);
+        $summary['rt_view_article_count'] += (float) ($rt?->view_article_count ?? 0);
     }
 
     // ─── User / account resolution ────────────────────────────────────────────
@@ -338,7 +359,16 @@ class CampaignReportService
      */
     private function emptySummary(): array
     {
-        $summary = ['record_count' => 0, 'revenue' => 0.0, 'revenue_est' => 0.0, 'roi_realtime' => 0.0];
+        $summary = [
+            'record_count' => 0,
+            'revenue' => 0.0,
+            'revenue_est' => 0.0,
+            'roi_realtime' => 0.0,
+            'rt_click_ad_count' => 0.0,
+            'rt_click_keyword_count' => 0.0,
+            'rt_view_search_count' => 0.0,
+            'rt_view_article_count' => 0.0,
+        ];
 
         foreach (self::SUM_COLUMNS as $col) {
             $summary[$col] = 0.0;
@@ -368,6 +398,10 @@ class CampaignReportService
         }
 
         $summary['revenue_est'] = (float) ($row->revenue_est ?? 0);
+        $summary['rt_click_ad_count'] = (float) ($row->rt_click_ad_count ?? 0);
+        $summary['rt_click_keyword_count'] = (float) ($row->rt_click_keyword_count ?? 0);
+        $summary['rt_view_search_count'] = (float) ($row->rt_view_search_count ?? 0);
+        $summary['rt_view_article_count'] = (float) ($row->rt_view_article_count ?? 0);
 
         return $this->finalizeSummary($summary, $summary['record_count']);
     }
@@ -394,6 +428,10 @@ class CampaignReportService
         $summary['profit'] = round($profit, 2);
         $summary['roi'] = round($roi, 2);
         $summary['roi_realtime'] = round($roiRealtime, 2);
+        $summary['rt_click_ad_count'] = (int) ($summary['rt_click_ad_count'] ?? 0);
+        $summary['rt_click_keyword_count'] = (int) ($summary['rt_click_keyword_count'] ?? 0);
+        $summary['rt_view_search_count'] = (int) ($summary['rt_view_search_count'] ?? 0);
+        $summary['rt_view_article_count'] = (int) ($summary['rt_view_article_count'] ?? 0);
 
         $summary = array_merge($summary, $this->deriveRevenueRatios($summary, $revenue));
         $summary = array_merge($summary, $this->deriveAdsRatios($summary, $spend));
