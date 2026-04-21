@@ -3,12 +3,12 @@ name: laravel-crud
 description: "Use this skill whenever implementing CRUD (Create/Read/Update/Delete) endpoints in this repo's Laravel backend. Follows the project's current conventions: API controllers extend App\\Http\\Controllers\\API\\BaseController (sendResponse/sendError), validation via FormRequest, transformation via JsonResource, and business logic placed in Services/ + optional Actions/. Includes route patterns (routes/api.php), Sanctum middleware usage, pagination, filtering, and PHPUnit feature tests."
 license: MIT
 metadata:
-  author: big-ticollab
-  domain: backend
-  triggers: CRUD, create endpoint, update endpoint, delete endpoint, list endpoint, apiResource, controller, form request, json resource, feature test, phpunit, sanctum
-  role: specialist
-  scope: implementation
-  output-format: code
+    author: big-ticollab
+    domain: backend
+    triggers: CRUD, create endpoint, update endpoint, delete endpoint, list endpoint, apiResource, controller, form request, json resource, feature test, phpunit, sanctum
+    role: specialist
+    scope: implementation
+    output-format: code
 ---
 
 # Laravel BE CRUD (project conventions)
@@ -19,18 +19,18 @@ For folder locations (`routes/`, `app/Http/Controllers/Api/`, `app/Models/Traits
 
 ## Project conventions you MUST follow here
 
-- **Standard API responses**: Controllers should extend `App\Http\Controllers\API\BaseController` and use:
-  - `sendResponse(mixed $data, int $code = 200)` — returns `response()->json($data, $code)` directly; controllers build the response array themselves (e.g. `['data' => new Resource($entity)]`).
-  - `sendError(string $error, array $errorMessages = [], int $code = 404)` — returns `{"success": false, "message": "...", "data": null}` (plus `"errors"` when provided).
+- **Standard API responses**: Controllers should extend `App\Http\Controllers\Api\BaseController` and use:
+    - `sendResponse(mixed $data, int $code = 200)` — returns `response()->json($data, $code)` directly; controllers build the response array themselves (e.g. `['data' => new Resource($entity)]`).
+    - `sendError(string $error, array $errorMessages = [], int $code = 404)` — returns `{"success": false, "message": "...", "data": null}` (plus `"errors"` when provided).
 - **Validation**: use `FormRequest` and always call `$request->validated()` (do not use `$request->all()`).
 - **Transform output**: use `App\Http\Resources\*Resource` (`JsonResource`) for `show`/`index` payloads.
 - **Business logic placement**:
-  - Default: `App\Services\<Domain>\<Entity>Service`
-  - For large or multi-step logic: split into `App\Actions\<Domain>\*Action` and inject into the Service (as with `AuthService`).
+    - Default: `App\Services\<Domain>\<Entity>Service`
+    - For large or multi-step logic: split into `App\Actions\<Domain>\*Action` and inject into the Service (as with `AuthService`).
 - **Model composition rule (project-specific)**:
-  - Keep Eloquent model classes thin.
-  - Put model behavior in traits under `App\Models\Traits\...` (for example relationship/scope/attribute/method/observer traits).
-  - When adding or changing model functionality, create or edit the corresponding trait and only wire it in the model via `use`.
+    - Keep Eloquent model classes thin.
+    - Put model behavior in traits under `App\Models\Traits\...` (for example relationship/scope/attribute/method/observer traits).
+    - When adding or changing model functionality, create or edit the corresponding trait and only wire it in the model via `use`.
 - **Routes**: API routes live in `be/routes/api.php`. Use `Route::middleware('auth:sanctum')` for endpoints that require authentication.
 - **Best practices (required)**: when building CRUD, you must follow the `be/.agents/skills/laravel-best-practices` skill (performance, security, validation, routing, testing, architecture). If there is a minor conflict between a "CRUD template" and best practices, prefer **best practices + conventions already present in the codebase**.
 
@@ -75,21 +75,21 @@ When you need transactions or side effects (events/jobs/files):
 
 ### 4) Controller (API)
 
-Create the controller under `app/Http/Controllers/Api/` (namespace **`App\Http\Controllers\Api\...`** or nested such as **`App\Http\Controllers\Api\Auth`** — **match sibling controllers** in the same folder). Extend **`App\Http\Controllers\API\BaseController`** (see `app/Http/Controllers/Api/BaseController.php`), with methods:
+Create the controller under `app/Http/Controllers/Api/` (namespace **`App\Http\Controllers\Api\...`** or nested such as **`App\Http\Controllers\Api\Auth`** — **match sibling controllers** in the same folder). Extend **`App\Http\Controllers\Api\BaseController`** (see `app/Http/Controllers/Api/BaseController.php`), with methods:
 
 - `index()`:
-  - accept filter params (at minimum: `per_page`, `page`, optional `q`).
-  - return `$this->sendResponse(['data' => Resource::collection($items), 'pagination' => $this->parsePagination($paginator)])` (or without pagination if not paginating).
+    - accept filter params (at minimum: `per_page`, `page`, optional `q`).
+    - return `$this->sendResponse(['data' => Resource::collection($items), 'pagination' => $this->parsePagination($paginator)])` (or without pagination if not paginating).
 - `store(StoreRequest $request)`:
-  - `$entity = $service->create($request->validated())`
-  - return `$this->sendResponse(['data' => new Resource($entity)])`
+    - `$entity = $service->create($request->validated())`
+    - return `$this->sendResponse(['data' => new Resource($entity)])`
 - `show(<Entity> $entity)`:
-  - implicit route model binding
-  - return `$this->sendResponse(['data' => new Resource($entity)])`
+    - implicit route model binding
+    - return `$this->sendResponse(['data' => new Resource($entity)])`
 - `update(UpdateRequest $request, <Entity> $entity)`:
-  - return `$this->sendResponse(['data' => new Resource($updated)])`
+    - return `$this->sendResponse(['data' => new Resource($updated)])`
 - `destroy(<Entity> $entity)`:
-  - delete and return `$this->sendResponse([], Response::HTTP_NO_CONTENT)`
+    - delete and return `$this->sendResponse([], Response::HTTP_NO_CONTENT)`
 
 Error handling:
 
@@ -119,9 +119,9 @@ Create these only when the user asks or the table/model does not exist yet:
 
 - **Migration**: table + indexes + foreign keys.
 - **Model**:
-  - Declare `$fillable` or `$guarded`.
-  - Declare `$casts`.
-  - Define relationships; eager-load at the query call site to avoid N+1.
+    - Declare `$fillable` or `$guarded`.
+    - Declare `$casts`.
+    - Define relationships; eager-load at the query call site to avoid N+1.
 - **Factory**: add a factory to support tests.
 
 ## Response shape (must match BaseController)
@@ -130,7 +130,7 @@ Create these only when the user asks or the table/model does not exist yet:
 
 ```json
 {
-  "data": "... (Resource or collection) ..."
+    "data": "... (Resource or collection) ..."
 }
 ```
 
@@ -138,8 +138,8 @@ For paginated endpoints, include `pagination` alongside `data`:
 
 ```json
 {
-  "data": ["..."],
-  "pagination": { "current_page": 1, "total": 50 }
+    "data": ["..."],
+    "pagination": { "current_page": 1, "total": 50 }
 }
 ```
 
@@ -147,16 +147,16 @@ Errors use `sendError()`:
 
 ```json
 {
-  "success": false,
-  "message": "...",
-  "data": null,
-  "errors": {}
+    "success": false,
+    "message": "...",
+    "data": null,
+    "errors": {}
 }
 ```
 
 ## Quick checklist before you finish
 
-- Controller correctly extends `App\Http\Controllers\API\BaseController` and returns `sendResponse`/`sendError`.
+- Controller correctly extends `App\Http\Controllers\Api\BaseController` and returns `sendResponse`/`sendError`.
 - `index` uses pagination or a sensible limit (do not return the full table for large datasets).
 - No N+1 (eager-load relations in the query when the resource needs them).
 - Requests use `$request->validated()`.
@@ -192,7 +192,7 @@ class ListPostsRequest extends FormRequest
 }
 ```
 
-### List*Action structure
+### List\*Action structure
 
 Every `List*Action` **must** declare `ORDERABLE_COLUMNS`, apply `OwnershipFilter`, then `SortInput`, then `PaginationInput`:
 
@@ -250,10 +250,10 @@ $ownership->authorize($site->created_by);
 $userIds = array_values(array_intersect($userIds, $ownership->allowedUserIds()));
 ```
 
-| Method | Purpose |
-|--------|---------|
-| `OwnershipFilter::forAuthUser()` | Instantiate for authenticated user |
-| `->applyTo(Builder $query, string $column = 'created_by')` | List — direct owner column |
-| `->applyThrough(Builder $query, string $column, Closure $subquery)` | List — owner via related table |
-| `->authorize(?int $ownerId)` | Update/Delete — throws 403 if unauthorized |
-| `->allowedUserIds(): array` | Raw array of allowed user IDs |
+| Method                                                              | Purpose                                    |
+| ------------------------------------------------------------------- | ------------------------------------------ |
+| `OwnershipFilter::forAuthUser()`                                    | Instantiate for authenticated user         |
+| `->applyTo(Builder $query, string $column = 'created_by')`          | List — direct owner column                 |
+| `->applyThrough(Builder $query, string $column, Closure $subquery)` | List — owner via related table             |
+| `->authorize(?int $ownerId)`                                        | Update/Delete — throws 403 if unauthorized |
+| `->allowedUserIds(): array`                                         | Raw array of allowed user IDs              |

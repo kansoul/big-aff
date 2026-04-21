@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\RevenueReport\ListRevenueReportsRequest;
 use App\Http\Resources\RevenueReportResource;
 use App\Services\RevenueReport\RevenueReportService;

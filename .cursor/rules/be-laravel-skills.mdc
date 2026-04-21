@@ -11,10 +11,10 @@ Khi làm việc trong **`be/`** (Laravel API), kích hoạt skill phù hợp **t
 
 ## Skills (canonical trong repo)
 
-| Skill | Đường dẫn | Khi nào dùng |
-|-------|-----------|----------------|
+| Skill                      | Đường dẫn                                                                                                                      | Khi nào dùng                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | **laravel-best-practices** | **`be/.agents/skills/laravel-best-practices/SKILL.md`** (và bản symlink **`/.agents/skills/laravel-best-practices/SKILL.md`**) | Mọi thay đổi PHP Laravel: controller, model, migration, Form Request, policy, job, query Eloquent, bảo mật, cache, v.v. |
-| **laravel-crud** | **`be/.agents/skills/laravel-crud/SKILL.md`** | CRUD API: FormRequest, Resource, service/controller pattern, `routes/api.php`, Sanctum, PHPUnit. |
+| **laravel-crud**           | **`be/.agents/skills/laravel-crud/SKILL.md`**                                                                                  | CRUD API: FormRequest, Resource, service/controller pattern, `routes/api.php`, Sanctum, PHPUnit.                        |
 
 Chi tiết rule bổ sung nằm trong **`be/.agents/skills/laravel-best-practices/rules/`**.
 
@@ -23,7 +23,7 @@ Chi tiết rule bổ sung nằm trong **`be/.agents/skills/laravel-best-practice
 **Đọc trước:** **`be/.agents/skills/laravel-best-practices/SKILL.md`** — mục **Repository layout (`big-ticollab/be`)** và **Model Trait Composition**.
 
 - **`routes/api.php`** — đăng ký route API; nhóm Sanctum theo pattern hiện có.
-- **`app/Http/Controllers/Api/`** — controller API (ưu tiên extend **`App\Http\Controllers\API\BaseController`** khi app đã dùng `sendResponse` / `sendError`).
+- **`app/Http/Controllers/Api/`** — controller API (ưu tiên extend **`App\Http\Controllers\Api\BaseController`** khi app đã dùng `sendResponse` / `sendError`).
 - **`app/Http/Requests/`** — Form Request (có thể nhóm theo domain, ví dụ `User/`).
 - **`app/Http/Resources/`** — API Resource cho JSON.
 - **`app/Actions/`** — bắt buộc đặt business logic đơn nhiệm ở đây. Mỗi action chỉ xử lý một use case nhỏ, có thể tái sử dụng.

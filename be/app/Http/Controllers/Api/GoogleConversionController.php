@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\GoogleConversion\BulkUpdateGoogleConversionsRequest;
 use App\Http\Requests\GoogleConversion\ImportGoogleConversionsRequest;
 use App\Http\Requests\GoogleConversion\ListGoogleConversionsRequest;

@@ -103,6 +103,23 @@ export function LogsPage() {
     setPage(1)
   }
 
+  const handleClearLogs = async () => {
+    if (!window.confirm('Are you sure you want to clear all logs? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      await logsApi.clear()
+      toast.success('Logs cleared successfully')
+      refresh()
+    } catch (err) {
+      toast.error(formatApiError(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
@@ -133,6 +150,7 @@ export function LogsPage() {
             setPage(1)
           }}
           onRefresh={refresh}
+          onClear={handleClearLogs}
           onRowClick={setSelectedEntry}
         />
       </div>
