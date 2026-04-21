@@ -35,7 +35,7 @@ const DEFAULT_FILTERS: CampaignReportFilterParams = {
   style_codes: [],
   channel_codes: [],
   link_data_ids: [],
-  group_by: '',
+  group_by: 'channel_code',
   page: 1,
   per_page: 30,
 }

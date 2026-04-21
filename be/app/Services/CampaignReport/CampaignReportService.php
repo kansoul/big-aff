@@ -4,6 +4,7 @@ namespace App\Services\CampaignReport;
 
 use App\Actions\CampaignReport\ListCampaignReportsAction;
 use App\Models\CampaignReport;
+use App\Models\RevenueReport;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -11,13 +12,15 @@ use Illuminate\Support\Facades\DB;
 class CampaignReportService
 {
     /**
-     * Columns that get SUM-aggregated into grand_summary / group_summary.
+     * Columns that are SUM-aggregated into grand_summary / group_summary.
      *
      * @var array<int, string>
      */
     private const SUM_COLUMNS = [
+        // Budget
         'daily_budget',
         'lifetime_budget',
+        // Revenue (r_*)
         'r_search_views',
         'r_conversion',
         'r_revenue',
@@ -26,6 +29,7 @@ class CampaignReportService
         'r_funnel_requests',
         'r_funnel_clicks',
         'r_funnel_impressions',
+        // Ads (a_*)
         'a_ad_clicks',
         'a_article_views',
         'a_search_views',
@@ -68,6 +72,8 @@ class CampaignReportService
         ];
     }
 
+    // ─── Grand summary ────────────────────────────────────────────────────────
+
     /**
      * Compute SUM aggregates across the full (unpaginated) filtered query.
      *
@@ -78,15 +84,74 @@ class CampaignReportService
     {
         $baseQuery = $this->listCampaignReportsAction->buildBaseQuery($filters);
 
+        // Join revenue_reports (rv_gs) and realtime_reports (rt_gs) for aggregation.
+        // buildBaseQuery() may already join rv via execute(), but here we add them
+        // explicitly for the raw aggregate query.
+        $baseQuery
+            ->leftJoin('revenue_reports as rv_gs', function ($join) {
+                $join->on('rv_gs.channel_code', '=', 'campaign_reports.channel_code')
+                    ->on('rv_gs.date', '=', 'campaign_reports.date_start');
+            })
+            ->leftJoin('realtime_reports as rt_gs', 'rt_gs.id', '=', 'campaign_reports.realtime_report_id');
+
         $selectParts = ['COUNT(*) AS record_count'];
+
         foreach (self::SUM_COLUMNS as $col) {
-            $selectParts[] = "COALESCE(SUM({$col}), 0) AS {$col}";
+            $selectParts[] = "COALESCE(SUM(campaign_reports.{$col}), 0) AS {$col}";
         }
+
+        // revenue_est = SUM(click_keyword_count * cost_per_click) per campaign row.
+        // No dedup needed: click_keyword_count is already per-campaign.
+        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_gs.click_keyword_count, 0) * COALESCE(rv_gs.cost_per_click, 0)), 0) AS revenue_est';
 
         $row = $baseQuery->selectRaw(implode(', ', $selectParts))->first();
 
-        return $this->normalizeSummaryRow($row);
+        // Channel revenue must be queried separately to avoid double-counting when multiple
+        // campaigns share the same (channel_code, date_start) → same revenue_reports row.
+        $revenue = $this->computeChannelRevenue($filters);
+
+        return $this->normalizeSummaryRow($row, $revenue);
     }
+
+    /**
+     * Sum estimated_earnings from RevenueReport for the filtered channels/dates.
+     * Queries distinct channel_codes from the base query to avoid double-counting
+     * revenue when multiple campaigns share a channel on the same date.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    private function computeChannelRevenue(array $filters): float
+    {
+        $revenueQuery = RevenueReport::query();
+
+        if (! empty($filters['date_from'])) {
+            $revenueQuery->whereDate('date', '>=', $filters['date_from']);
+        }
+        if (! empty($filters['date_to'])) {
+            $revenueQuery->whereDate('date', '<=', $filters['date_to']);
+        }
+
+        if (! empty($filters['channel_codes'])) {
+            $revenueQuery->whereIn('channel_code', $filters['channel_codes']);
+        } else {
+            $channelCodes = $this->listCampaignReportsAction->buildBaseQuery($filters)
+                ->select('campaign_reports.channel_code')
+                ->distinct()
+                ->pluck('channel_code')
+                ->filter()
+                ->values();
+
+            if ($channelCodes->isEmpty()) {
+                return 0.0;
+            }
+
+            $revenueQuery->whereIn('channel_code', $channelCodes);
+        }
+
+        return (float) $revenueQuery->sum('estimated_earnings');
+    }
+
+    // ─── Group building ───────────────────────────────────────────────────────
 
     /**
      * Group the current page items by the given column and compute per-group summary.
@@ -106,20 +171,10 @@ class CampaignReportService
             return [];
         }
 
-        // Resolve user_id mapping if needed (one account_id → one "primary" user_id).
-        $accountUserMap = [];
-        $userNameMap = [];
-        if ($groupBy === 'user_id') {
-            $accountIds = array_unique(array_map(fn (CampaignReport $r) => $r->account_id, $items));
-            $accountUserMap = $this->resolveAccountPrimaryUser($accountIds);
-            $userIds = array_unique(array_values($accountUserMap));
-            $userNameMap = User::query()
-                ->whereIn('id', $userIds)
-                ->pluck('name', 'id')
-                ->all();
-        }
+        [$accountUserMap, $userNameMap] = $this->resolveUserMapsIfNeeded($items, $groupBy);
 
         $buckets = [];
+        $bucketRevenuePairs = []; // tracks (channel_code, date_start) per bucket to avoid double-counting revenue
 
         foreach ($items as $row) {
             [$key, $label] = $this->resolveGroupKeyLabel($row, $groupBy, $accountUserMap, $userNameMap);
@@ -133,14 +188,15 @@ class CampaignReportService
                     'group_summary' => $this->emptySummary(),
                     'items' => [],
                 ];
+                $bucketRevenuePairs[$bucketId] = [];
             }
 
             $buckets[$bucketId]['items'][] = $row;
             $buckets[$bucketId]['record_count']++;
-            foreach (self::SUM_COLUMNS as $col) {
-                $buckets[$bucketId]['group_summary'][$col] =
-                    (float) $buckets[$bucketId]['group_summary'][$col] + (float) ($row->{$col} ?? 0);
-            }
+
+            $this->accumulateSumColumns($buckets[$bucketId]['group_summary'], $row);
+            $this->accumulateRevenueEst($buckets[$bucketId]['group_summary'], $row);
+            $this->accumulateChannelRevenue($buckets[$bucketId]['group_summary'], $bucketRevenuePairs[$bucketId], $row);
         }
 
         foreach ($buckets as &$bucket) {
@@ -149,6 +205,75 @@ class CampaignReportService
         unset($bucket);
 
         return array_values($buckets);
+    }
+
+    /**
+     * Accumulate SUM_COLUMNS from a single row into a summary array.
+     *
+     * @param  array<string, mixed>  $summary
+     */
+    private function accumulateSumColumns(array &$summary, CampaignReport $row): void
+    {
+        foreach (self::SUM_COLUMNS as $col) {
+            $summary[$col] = (float) $summary[$col] + (float) ($row->{$col} ?? 0);
+        }
+    }
+
+    /**
+     * Accumulate revenue_est (realtime click_keyword_count * cost_per_click) from a single row.
+     * No dedup needed — click_keyword_count is per-campaign.
+     *
+     * @param  array<string, mixed>  $summary
+     */
+    private function accumulateRevenueEst(array &$summary, CampaignReport $row): void
+    {
+        $clickKeywordCount = (float) ($row->realtimeReport?->click_keyword_count ?? 0);
+        $rpc = (float) ($row->rpc ?? 0);
+        $summary['revenue_est'] += $clickKeywordCount * $rpc;
+    }
+
+    /**
+     * Accumulate channel revenue once per unique (channel_code, date_start) pair
+     * to avoid double-counting when multiple campaigns share the same channel/date.
+     *
+     * @param  array<string, mixed>  $summary
+     * @param  array<string, bool>  $seenPairs
+     */
+    private function accumulateChannelRevenue(array &$summary, array &$seenPairs, CampaignReport $row): void
+    {
+        $pairKey = ($row->channel_code ?? '').'_'.($row->date_start?->toDateString() ?? '');
+
+        if (! isset($seenPairs[$pairKey])) {
+            $seenPairs[$pairKey] = true;
+            $summary['revenue'] += (float) ($row->r_estimated_earnings ?? 0);
+        }
+    }
+
+    // ─── User / account resolution ────────────────────────────────────────────
+
+    /**
+     * When grouping by user_id, resolve account→user and user→name maps.
+     * Returns empty maps for other group-by values.
+     *
+     * @param  array<int, CampaignReport>  $items
+     * @return array{array<string, int>, array<int, string>}
+     */
+    private function resolveUserMapsIfNeeded(array $items, string $groupBy): array
+    {
+        if ($groupBy !== 'user_id') {
+            return [[], []];
+        }
+
+        $accountIds = array_unique(array_map(fn (CampaignReport $r) => $r->account_id, $items));
+        $accountUserMap = $this->resolveAccountPrimaryUser($accountIds);
+
+        $userIds = array_unique(array_values($accountUserMap));
+        $userNameMap = User::query()
+            ->whereIn('id', $userIds)
+            ->pluck('name', 'id')
+            ->all();
+
+        return [$accountUserMap, $userNameMap];
     }
 
     /**
@@ -206,85 +331,119 @@ class CampaignReportService
         };
     }
 
+    // ─── Summary helpers ──────────────────────────────────────────────────────
+
     /**
      * @return array<string, mixed>
      */
     private function emptySummary(): array
     {
-        $summary = ['record_count' => 0];
+        $summary = ['record_count' => 0, 'revenue' => 0.0, 'revenue_est' => 0.0, 'roi_realtime' => 0.0];
+
         foreach (self::SUM_COLUMNS as $col) {
-            $summary[$col] = 0;
+            $summary[$col] = 0.0;
         }
 
         return $summary;
     }
 
     /**
-     * Normalize SUM query row: cast to numeric + append derived profit/roi.
+     * Cast a raw aggregate query row to a normalized summary array, then finalize.
      *
      * @return array<string, mixed>
      */
-    private function normalizeSummaryRow(?object $row): array
+    private function normalizeSummaryRow(?object $row, float $revenue = 0.0): array
     {
         $summary = $this->emptySummary();
+        $summary['revenue'] = $revenue;
 
         if ($row === null) {
             return $this->finalizeSummary($summary, 0);
         }
 
         $summary['record_count'] = (int) ($row->record_count ?? 0);
+
         foreach (self::SUM_COLUMNS as $col) {
             $summary[$col] = (float) ($row->{$col} ?? 0);
         }
+
+        $summary['revenue_est'] = (float) ($row->revenue_est ?? 0);
 
         return $this->finalizeSummary($summary, $summary['record_count']);
     }
 
     /**
-     * Attach derived fields (profit, roi) to a summary map.
+     * Attach all derived fields (profit, roi, ratios) to a completed summary map.
      *
      * @param  array<string, mixed>  $summary
      * @return array<string, mixed>
      */
     private function finalizeSummary(array $summary, int $recordCount): array
     {
-        $revenue = (float) ($summary['r_revenue'] ?? 0);
+        $revenue = (float) ($summary['revenue'] ?? 0);
+        $revenueEst = (float) ($summary['revenue_est'] ?? 0);
         $spend = (float) ($summary['a_spend'] ?? 0);
+
         $profit = $revenue - $spend;
         $roi = $spend > 0 ? ($profit / $spend) * 100 : 0.0;
+        $roiRealtime = $spend > 0 ? (($revenueEst - $spend) / $spend) * 100 : 0.0;
 
+        $summary['record_count'] = $recordCount;
+        $summary['revenue'] = round($revenue, 2);
+        $summary['revenue_est'] = round($revenueEst, 2);
+        $summary['profit'] = round($profit, 2);
+        $summary['roi'] = round($roi, 2);
+        $summary['roi_realtime'] = round($roiRealtime, 2);
+
+        $summary = array_merge($summary, $this->deriveRevenueRatios($summary, $revenue));
+        $summary = array_merge($summary, $this->deriveAdsRatios($summary, $spend));
+
+        return $summary;
+    }
+
+    /**
+     * Compute revenue-side ratios (r_rpc, r_cpa, RPMs) from summed components.
+     *
+     * @param  array<string, mixed>  $summary
+     * @return array<string, float>
+     */
+    private function deriveRevenueRatios(array $summary, float $revenue): array
+    {
         $rConversion = (float) ($summary['r_conversion'] ?? 0);
         $rAdRequests = (float) ($summary['r_ad_requests'] ?? 0);
         $rImpressions = (float) ($summary['r_impressions'] ?? 0);
         $rFunnelImpressions = (float) ($summary['r_funnel_impressions'] ?? 0);
 
+        return [
+            'r_rpc' => $rConversion > 0 ? round($revenue / $rConversion, 4) : 0.0,
+            'r_cpa' => $rConversion > 0 ? round($revenue / $rConversion, 4) : 0.0,
+            'r_ad_requests_rpm' => $rAdRequests > 0 ? round(($revenue / $rAdRequests) * 1000, 4) : 0.0,
+            'r_impressions_rpm' => $rImpressions > 0 ? round(($revenue / $rImpressions) * 1000, 4) : 0.0,
+            'r_funnel_rpm' => $rFunnelImpressions > 0 ? round(($revenue / $rFunnelImpressions) * 1000, 4) : 0.0,
+        ];
+    }
+
+    /**
+     * Compute ads-side ratios (CPC, CPM, CTR, CPA, frequency) from summed components.
+     *
+     * @param  array<string, mixed>  $summary
+     * @return array<string, float>
+     */
+    private function deriveAdsRatios(array $summary, float $spend): array
+    {
         $aClicks = (float) ($summary['a_clicks'] ?? 0);
         $aImpressions = (float) ($summary['a_impressions'] ?? 0);
         $aConversion = (float) ($summary['a_conversion'] ?? 0);
         $aReach = (float) ($summary['a_reach'] ?? 0);
 
-        $summary['record_count'] = $recordCount;
-        $summary['profit'] = round($profit, 2);
-        $summary['roi'] = round($roi, 2);
-
-        // Derived rollups (ratios) computed from summed components.
-        $summary['r_rpc'] = $rConversion > 0 ? round($revenue / $rConversion, 4) : 0.0;
-        $summary['r_cpa'] = $rConversion > 0 ? round($revenue / $rConversion, 4) : 0.0;
-        $summary['r_ad_requests_rpm'] =
-            $rAdRequests > 0 ? round(($revenue / $rAdRequests) * 1000, 4) : 0.0;
-        $summary['r_impressions_rpm'] =
-            $rImpressions > 0 ? round(($revenue / $rImpressions) * 1000, 4) : 0.0;
-        $summary['r_funnel_rpm'] =
-            $rFunnelImpressions > 0 ? round(($revenue / $rFunnelImpressions) * 1000, 4) : 0.0;
-
-        $summary['a_cpc'] = $aClicks > 0 ? round($spend / $aClicks, 4) : 0.0;
-        $summary['a_cpc_link'] = $aClicks > 0 ? round($spend / $aClicks, 4) : 0.0;
-        $summary['a_cpm'] = $aImpressions > 0 ? round(($spend / $aImpressions) * 1000, 4) : 0.0;
-        $summary['a_ctr'] = $aImpressions > 0 ? round(($aClicks / $aImpressions) * 100, 4) : 0.0;
-        $summary['a_ctr_link'] = $aImpressions > 0 ? round(($aClicks / $aImpressions) * 100, 4) : 0.0;
-        $summary['a_cpa'] = $aConversion > 0 ? round($spend / $aConversion, 4) : 0.0;
-        $summary['a_frequency'] = $aReach > 0 ? round($aImpressions / $aReach, 4) : 0.0;
-
-        return $summary;
+        return [
+            'a_cpc' => $aClicks > 0 ? round($spend / $aClicks, 4) : 0.0,
+            'a_cpc_link' => $aClicks > 0 ? round($spend / $aClicks, 4) : 0.0,
+            'a_cpm' => $aImpressions > 0 ? round(($spend / $aImpressions) * 1000, 4) : 0.0,
+            'a_ctr' => $aImpressions > 0 ? round(($aClicks / $aImpressions) * 100, 4) : 0.0,
+            'a_ctr_link' => $aImpressions > 0 ? round(($aClicks / $aImpressions) * 100, 4) : 0.0,
+            'a_cpa' => $aConversion > 0 ? round($spend / $aConversion, 4) : 0.0,
+            'a_frequency' => $aReach > 0 ? round($aImpressions / $aReach, 4) : 0.0,
+        ];
     }
 }

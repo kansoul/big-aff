@@ -10,6 +10,7 @@ use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class ListCampaignReportsAction
 {
@@ -67,9 +68,19 @@ class ListCampaignReportsAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $query = $this->buildBaseQuery($filters)->with([
-            'realtimeReport.linkData.adsLink.site',
-        ]);
+        $query = $this->buildBaseQuery($filters)
+            ->leftJoin('revenue_reports as rv', function ($join) {
+                $join->on('rv.channel_code', '=', 'campaign_reports.channel_code')
+                    ->on('rv.date', '=', 'campaign_reports.date_start');
+            })
+            ->select(
+                'campaign_reports.*',
+                DB::raw('COALESCE(rv.estimated_earnings, 0) as r_estimated_earnings'),
+                DB::raw('COALESCE(rv.cost_per_click, 0) as rpc'),
+            )
+            ->with([
+                'realtimeReport.linkData.adsLink.site',
+            ]);
 
         SortInput::fromValidatedArray(
             $filters,
@@ -132,11 +143,11 @@ class ListCampaignReportsAction
         }
 
         if (! empty($filters['style_codes'])) {
-            $query->whereIn('style_code', $filters['style_codes']);
+            $query->whereIn('campaign_reports.style_code', $filters['style_codes']);
         }
 
         if (! empty($filters['channel_codes'])) {
-            $query->whereIn('channel_code', $filters['channel_codes']);
+            $query->whereIn('campaign_reports.channel_code', $filters['channel_codes']);
         }
 
         if (! empty($filters['link_data_ids'])) {

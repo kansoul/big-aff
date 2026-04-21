@@ -59,9 +59,11 @@ class CampaignReportResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $revenue = (float) ($this->r_revenue ?? 0);
+        $realtimeConversion = (float) ($this->realtimeReport?->click_keyword_count ?? 0);
+        $rpc = (float) ($this->rpc ?? 0);
         $spend = (float) ($this->a_spend ?? 0);
-        $profit = $revenue - $spend;
+        $revenueEst = $realtimeConversion * $rpc;
+        $profit = $revenueEst - $spend;
         $roi = $spend > 0 ? ($profit / $spend) * 100 : 0.0;
 
         return [
@@ -120,8 +122,10 @@ class CampaignReportResource extends JsonResource
             'a_clicks' => $this->a_clicks,
 
             // Derived
+            'revenue_est' => round($revenueEst, 2),
             'profit' => round($profit, 2),
             'roi' => round($roi, 2),
+            'roi_realtime' => round($roi, 2),
 
             // Realtime tracking counters (nullable)
             'realtime_report' => $this->whenLoaded('realtimeReport', function () {

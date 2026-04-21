@@ -110,8 +110,10 @@ export interface CampaignReportRow {
   a_frequency: string | number
   a_clicks: number
 
+  revenue_est: number
   profit: number
   roi: number
+  roi_realtime: number
 
   realtime_report: CampaignReportRealtime | null
 }
@@ -148,8 +150,11 @@ export interface CampaignReportSummary {
   a_ctr_link: number
   a_cpc_link: number
   a_frequency: number
+  revenue: number
+  revenue_est: number
   profit: number
   roi: number
+  roi_realtime: number
 }
 
 export interface CampaignReportGroupRow {
