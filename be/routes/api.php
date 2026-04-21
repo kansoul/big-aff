@@ -362,6 +362,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('logs')
         ->middleware(['permission.scope:'.Permission::LogsView->value, 'throttle:120,1'])
         ->group(function () {
+            Route::delete('clear', [LogController::class, 'clear']);
             Route::get('files', [LogController::class, 'files']);
             Route::get('tail', [LogController::class, 'tail']);
             Route::get('{id}', [LogController::class, 'show']);

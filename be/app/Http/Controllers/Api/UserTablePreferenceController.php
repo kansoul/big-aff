@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\UserTablePreference\UpdateUserTablePreferenceRequest;
 use App\Http\Resources\UserTablePreferenceResource;
 use App\Services\UserTablePreference\UserTablePreferenceService;

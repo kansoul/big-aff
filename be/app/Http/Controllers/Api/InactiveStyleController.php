@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\InactiveStyle\BulkClearInactiveStylesRequest;
 use App\Http\Requests\InactiveStyle\ListInactiveStylesRequest;
 use App\Http\Resources\InactiveStyleResource;

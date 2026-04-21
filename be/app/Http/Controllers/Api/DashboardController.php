@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\Dashboard\RevenueTableRequest;
 use App\Services\Dashboard\DashboardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * @tags Dashboard
@@ -54,7 +54,7 @@ class DashboardController extends BaseController
      */
     public function revenueTable(RevenueTableRequest $request): JsonResponse
     {
-        if (! auth()->user()?->is_admin) {
+        if (! Auth::user()?->is_admin) {
             return $this->sendError('Forbidden.', [], Response::HTTP_FORBIDDEN);
         }
 

@@ -29,5 +29,7 @@ export const logsApi = {
       },
     }),
 
+  clear: () => axiosInstance.delete('/logs/clear'),
+
   show: (id: string) => axiosInstance.get<LogEntryResponse>(`/logs/${id}`),
 }

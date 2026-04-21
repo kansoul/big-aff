@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react'
 import { MantineReactTable, useMantineReactTable, type MRT_ColumnDef } from 'mantine-react-table'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
@@ -29,6 +29,7 @@ type Props = {
   onPageChange: (page: number) => void
   onPerPageChange: (perPage: number) => void
   onRefresh: () => void
+  onClear: () => void
   onRowClick: (entry: LogEntry) => void
 }
 
@@ -77,6 +78,7 @@ export const LogsTableCard = memo(function LogsTableCard({
   onPageChange,
   onPerPageChange,
   onRefresh,
+  onClear,
   onRowClick,
 }: Props) {
   const fileSelectOptions = useMemo(
@@ -144,10 +146,14 @@ export const LogsTableCard = memo(function LogsTableCard({
     }),
     renderTopToolbar: () => (
       <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        <div className="flex w-full items-center justify-end">
+        <div className="flex w-full items-center justify-end gap-2">
           <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading}>
             <RefreshCw className={`mr-1 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
+          </Button>
+          <Button variant="destructive" size="sm" onClick={onClear} disabled={loading}>
+            <Trash2 className="mr-1 h-4 w-4" />
+            Clear
           </Button>
         </div>
         <FilterPanel

@@ -68,4 +68,18 @@ class LogController extends BaseController
 
         return $this->sendResponse(['data' => $entry]);
     }
+
+    /**
+     * Clear all log files.
+     *
+     * @response 200 {
+     *   "message": "Logs cleared successfully."
+     * }
+     */
+    public function clear(): JsonResponse
+    {
+        $this->logService->clear();
+
+        return $this->sendResponse(['message' => 'Logs cleared successfully.']);
+    }
 }

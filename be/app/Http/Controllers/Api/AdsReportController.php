@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\AdsReport\GetAdsReportStatsRequest;
 use App\Services\AdsReport\AdsReportService;
 use Illuminate\Http\JsonResponse;

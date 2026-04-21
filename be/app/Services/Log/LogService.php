@@ -6,6 +6,7 @@ use App\Actions\Log\GetLogEntryAction;
 use App\Actions\Log\ListLogEntriesAction;
 use App\Actions\Log\ListLogFilesAction;
 use App\Actions\Log\TailLogEntriesAction;
+use App\Actions\Log\ClearLogFilesAction;
 
 class LogService
 {
@@ -14,6 +15,7 @@ class LogService
         private readonly ListLogEntriesAction $listEntriesAction,
         private readonly TailLogEntriesAction $tailAction,
         private readonly GetLogEntryAction $getEntryAction,
+        private readonly ClearLogFilesAction $clearFilesAction,
     ) {}
 
     /**
@@ -48,5 +50,13 @@ class LogService
     public function find(string $id): ?array
     {
         return $this->getEntryAction->execute($id);
+    }
+
+    /**
+     * Clear all log files.
+     */
+    public function clear(): void
+    {
+        $this->clearFilesAction->execute();
     }
 }
