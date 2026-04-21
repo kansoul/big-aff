@@ -6,8 +6,6 @@ export type CampaignReportOrderBy =
   | 'campaign_id'
   | 'campaign_name'
   | 'ads_type'
-  | 'style_code'
-  | 'style_name'
   | 'channel_code'
   | 'channel_name'
   | 'daily_budget'
@@ -43,13 +41,7 @@ export type CampaignReportOrderBy =
 
 export type CampaignReportOrder = 'asc' | 'desc'
 
-export type CampaignReportGroupBy =
-  | ''
-  | 'channel_code'
-  | 'style_code'
-  | 'account_id'
-  | 'user_id'
-  | 'campaign_id'
+export type CampaignReportGroupBy = '' | 'channel_code' | 'account_id' | 'user_id' | 'campaign_id'
 
 export interface CampaignReportRealtime {
   id: number
@@ -77,8 +69,6 @@ export interface CampaignReportRow {
   daily_budget: string | number | null
   lifetime_budget: string | number | null
 
-  style_code: string | null
-  style_name: string | null
   channel_code: string | null
   channel_name: string | null
 
@@ -214,12 +204,10 @@ export interface CampaignReportFiltersResponse {
       ads_type: string | null
       account_id: string | null
     }>
-    styles: Array<{ code: string; name: string | null }>
     channels: Array<{ code: string; name: string | null }>
     link_data_ids: Array<{
       id: number
       campaign_id: string | null
-      style_code: string | null
       channel_code: string | null
     }>
     ads_types: Array<{ value: string; label: string }>
@@ -240,7 +228,6 @@ export interface CampaignReportFilterParams {
   account_ids?: number[]
   ads_type?: string | null
   campaign_ids?: string[]
-  style_codes?: string[]
   channel_codes?: string[]
   link_data_ids?: number[]
   group_by?: CampaignReportGroupBy

@@ -16,7 +16,6 @@ function buildListParams(filters: CampaignReportFilterParams) {
     ...(filters.account_ids?.length ? { 'account_ids[]': filters.account_ids } : {}),
     ...(filters.ads_type ? { ads_type: filters.ads_type } : {}),
     ...(filters.campaign_ids?.length ? { 'campaign_ids[]': filters.campaign_ids } : {}),
-    ...(filters.style_codes?.length ? { 'style_codes[]': filters.style_codes } : {}),
     ...(filters.channel_codes?.length ? { 'channel_codes[]': filters.channel_codes } : {}),
     ...(filters.link_data_ids?.length ? { 'link_data_ids[]': filters.link_data_ids } : {}),
     ...(filters.group_by ? { group_by: filters.group_by } : {}),

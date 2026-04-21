@@ -21,7 +21,6 @@ class ListCampaignReportsRequest extends FormRequest
      */
     public const GROUP_BY_COLUMNS = [
         'channel_code',
-        'style_code',
         'account_id',
         'user_id',
         'campaign_id',
@@ -50,8 +49,6 @@ class ListCampaignReportsRequest extends FormRequest
                 'ads_type' => ['nullable', 'string', Rule::in(['facebook', 'google'])],
                 'campaign_ids' => ['nullable', 'array'],
                 'campaign_ids.*' => ['string', 'max:255'],
-                'style_codes' => ['nullable', 'array'],
-                'style_codes.*' => ['string', 'max:100'],
                 'channel_codes' => ['nullable', 'array'],
                 'channel_codes.*' => ['string', 'max:100'],
                 'link_data_ids' => ['nullable', 'array'],

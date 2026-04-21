@@ -25,8 +25,6 @@ class ListCampaignReportsAction
         'campaign_id',
         'campaign_name',
         'ads_type',
-        'style_code',
-        'style_name',
         'channel_code',
         'channel_name',
         'daily_budget',
@@ -140,10 +138,6 @@ class ListCampaignReportsAction
 
         if (! empty($filters['campaign_ids'])) {
             $query->whereIn('campaign_id', $filters['campaign_ids']);
-        }
-
-        if (! empty($filters['style_codes'])) {
-            $query->whereIn('campaign_reports.style_code', $filters['style_codes']);
         }
 
         if (! empty($filters['channel_codes'])) {

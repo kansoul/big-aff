@@ -176,7 +176,6 @@ function GroupSubRowCell({ row }: { row: Exclude<TableRow, CampaignReportGroupRo
 
 const GROUP_BY_LABEL: Record<string, string> = {
   channel_code: 'Channel',
-  style_code: 'Style',
   account_id: 'Account',
   user_id: 'User',
   campaign_id: 'Campaign',
@@ -294,32 +293,6 @@ function getColumns(
         </div>
       )
     },
-  }
-
-  const colStyleName: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'style_name',
-    header: 'Style',
-    size: 150,
-    enableSorting: !grouped,
-    Cell: ({ row }) =>
-      isGroupRow(row.original) ? null : (
-        <span className="text-xs text-muted-foreground">
-          {row.original.style_name ?? row.original.style_code ?? '—'}
-        </span>
-      ),
-  }
-
-  const colStyleCode: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'style_code',
-    header: 'Style Code',
-    size: 130,
-    enableSorting: !grouped,
-    Cell: ({ row }) =>
-      isGroupRow(row.original) ? null : (
-        <span className="text-xs font-mono text-muted-foreground">
-          {row.original.style_code ?? '—'}
-        </span>
-      ),
   }
 
   const colLink: MRT_ColumnDef<TableRow> = {
@@ -519,8 +492,6 @@ function getColumns(
     colCampaignName,
     colCampaignStatus,
     colCampaignOnOff,
-    colStyleName,
-    colStyleCode,
     colLink,
     colAdsType,
     colChannelName,

@@ -32,7 +32,6 @@ const DEFAULT_FILTERS: CampaignReportFilterParams = {
   account_ids: [],
   ads_type: null,
   campaign_ids: [],
-  style_codes: [],
   channel_codes: [],
   link_data_ids: [],
   group_by: 'channel_code',
@@ -44,7 +43,6 @@ const EMPTY_OPTIONS: FilterOptions = {
   users: [],
   accounts: [],
   campaigns: [],
-  styles: [],
   channels: [],
   link_data_ids: [],
   ads_types: [],
@@ -53,7 +51,6 @@ const EMPTY_OPTIONS: FilterOptions = {
 const GROUP_BY_OPTIONS: SelectOption[] = [
   { value: '__none__', label: 'No grouping' },
   { value: 'channel_code', label: 'Channel' },
-  { value: 'style_code', label: 'Style' },
   { value: 'account_id', label: 'Account' },
   { value: 'user_id', label: 'User' },
   { value: 'campaign_id', label: 'Campaign' },
@@ -84,13 +81,7 @@ function parseStringOrNull(value: unknown): string | null {
 
 function parseGroupBy(value: unknown): CampaignReportGroupBy {
   if (typeof value !== 'string' || value === '__none__') return ''
-  const allowed: CampaignReportGroupBy[] = [
-    'channel_code',
-    'style_code',
-    'account_id',
-    'user_id',
-    'campaign_id',
-  ]
+  const allowed: CampaignReportGroupBy[] = ['channel_code', 'account_id', 'user_id', 'campaign_id']
   return (allowed as string[]).includes(value) ? (value as CampaignReportGroupBy) : ''
 }
 
@@ -187,7 +178,6 @@ export function CampaignReportPage() {
       account_ids: parseNumberArray(values.account_ids),
       ads_type: parseStringOrNull(values.ads_type),
       campaign_ids: parseStringArray(values.campaign_ids),
-      style_codes: parseStringArray(values.style_codes),
       channel_codes: parseStringArray(values.channel_codes),
       link_data_ids: parseNumberArray(values.link_data_ids),
       group_by: parseGroupBy(values.group_by),
@@ -238,15 +228,6 @@ export function CampaignReportPage() {
     [options.campaigns],
   )
 
-  const styleOptions = useMemo<SelectOption[]>(
-    () =>
-      options.styles.map((s) => ({
-        value: s.code,
-        label: s.name ? `${s.name} (${s.code})` : s.code,
-      })),
-    [options.styles],
-  )
-
   const channelOptions = useMemo<SelectOption[]>(
     () =>
       options.channels.map((c) => ({
@@ -261,7 +242,6 @@ export function CampaignReportPage() {
       options.link_data_ids.map((l) => {
         const parts = [String(l.id)]
         if (l.campaign_id) parts.push(l.campaign_id)
-        if (l.style_code) parts.push(l.style_code)
         return {
           value: String(l.id),
           label: parts.join(' · '),
@@ -320,14 +300,6 @@ export function CampaignReportPage() {
         placeholder: 'All campaigns',
       },
       {
-        field: 'style_codes',
-        label: 'Style',
-        type: 'multiselect',
-        value: filters.style_codes ?? [],
-        options: styleOptions,
-        placeholder: 'All styles',
-      },
-      {
         field: 'channel_codes',
         label: 'Channel',
         type: 'multiselect',
@@ -359,7 +331,6 @@ export function CampaignReportPage() {
       accountOptions,
       adsTypeOptions,
       campaignOptions,
-      styleOptions,
       channelOptions,
       linkDataOptions,
     ],
