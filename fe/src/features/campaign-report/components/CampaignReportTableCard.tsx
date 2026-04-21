@@ -176,8 +176,7 @@ function getColumns(
         const r = row.original
         const campaignId = r.campaign_id
         const isActive = (r.campaign_status ?? '').toUpperCase() === 'ACTIVE'
-        const isFacebook = (r.ads_type ?? '').toLowerCase() === 'facebook'
-        const disabled = Boolean(toggling[campaignId]) || (isFacebook && !isActive)
+        const disabled = Boolean(toggling[campaignId])
 
         return (
           <div className="flex items-center" onClick={(e) => e.stopPropagation()}>

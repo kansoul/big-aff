@@ -56,14 +56,6 @@ class ToggleCampaignReportStatusAction
             }
         }
 
-        if ($adsType === 'facebook' && $newStatus !== 'PAUSED') {
-            return [
-                'success' => false,
-                'message' => 'Facebook ads only support pausing campaigns.',
-                'status' => 422,
-            ];
-        }
-
         try {
             $success = match ($adsType) {
                 'facebook' => app(FacebookAdsService::class)->updateCampaignStatus($campaignId, $newStatus),
