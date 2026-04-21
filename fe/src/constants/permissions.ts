@@ -71,6 +71,7 @@ export const PermissionSlugs = {
   GoogleConversionsView: 'google-conversions.view',
   GoogleConversionsUpdate: 'google-conversions.update',
   GoogleConversionsCreate: 'google-conversions.create',
+  LogsView: 'logs.view',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -638,6 +639,23 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
             key: 'GoogleConversionsCreate',
             slug: PermissionSlugs.GoogleConversionsCreate,
             label: 'Create',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'logs',
+    label: 'Logs',
+    screens: [
+      {
+        id: 'logs',
+        label: 'Logs',
+        permissions: [
+          {
+            key: 'LogsView',
+            slug: PermissionSlugs.LogsView,
+            label: 'View',
           },
         ],
       },

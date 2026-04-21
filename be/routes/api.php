@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\GoogleConversionController;
 use App\Http\Controllers\Api\InactiveStyleController;
 use App\Http\Controllers\Api\KeywordSetController;
+use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\RevenueChartReportController;
 use App\Http\Controllers\Api\RevenueReportController;
@@ -357,4 +358,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::match(['put', 'patch'], '{table_name}', [UserTablePreferenceController::class, 'update'])
             ->middleware('permission.scope:'.Permission::UserTablePreferencesUpdate->value);
     });
+
+    Route::prefix('logs')
+        ->middleware(['permission.scope:'.Permission::LogsView->value, 'throttle:120,1'])
+        ->group(function () {
+            Route::get('files', [LogController::class, 'files']);
+            Route::get('tail', [LogController::class, 'tail']);
+            Route::get('{id}', [LogController::class, 'show']);
+            Route::get('/', [LogController::class, 'index']);
+        });
 });

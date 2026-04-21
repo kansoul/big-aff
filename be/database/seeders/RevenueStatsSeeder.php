@@ -39,7 +39,7 @@ class RevenueStatsSeeder extends Seeder
             ['description' => 'First test team', 'created_by' => $admin->id],
         );
         $team1->users()->syncWithoutDetaching([
-            $manager1->id => ['team_role' => TeamRole::MANAGER->value, 'joined_at' => now()]
+            $manager1->id => ['team_role' => TeamRole::MANAGER->value, 'joined_at' => now()],
         ]);
 
         $team2 = Team::firstOrCreate(
@@ -47,7 +47,7 @@ class RevenueStatsSeeder extends Seeder
             ['description' => 'Second test team', 'created_by' => $admin->id],
         );
         $team2->users()->syncWithoutDetaching([
-            $manager2->id => ['team_role' => TeamRole::MANAGER->value, 'joined_at' => now()]
+            $manager2->id => ['team_role' => TeamRole::MANAGER->value, 'joined_at' => now()],
         ]);
 
         $this->seedAccountsForUser($manager1, $team1, 3);

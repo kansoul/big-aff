@@ -12,6 +12,7 @@ import {
   Layers,
   LayoutDashboard,
   Link2,
+  LogsIcon,
   Megaphone,
   Palette,
   Radio,
@@ -203,6 +204,13 @@ export const NAVIGATION_ITEMS: NavItem[] = [
   },
   {
     name: 'System',
-    items: [],
+    items: [
+      {
+        name: 'Logs',
+        href: PATHS.logs,
+        icon: LogsIcon,
+        requiredPermission: PermissionSlugs.LogsView,
+      },
+    ],
   },
 ]
