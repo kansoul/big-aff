@@ -257,7 +257,7 @@ function RangeRow({
           </button>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`${labelId}-sd`} className="text-xs text-muted-foreground">
             Start Date<span className="text-destructive">*</span>
@@ -637,11 +637,11 @@ export function RevenueReportRangeDialog({
         {trigger ?? <Button size="sm">Revenue Report Range</Button>}
       </DialogTrigger>
       <DialogContent
-        className="flex h-[95vh] w-[95vw] flex-col gap-0 p-0 sm:max-w-[95vw]"
+        className="flex h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 p-0 sm:h-[95vh] sm:w-[95vw] sm:max-w-[95vw]"
         showCloseButton={false}
       >
-        <DialogHeader className="border-b px-6 py-4">
-          <div className="flex items-center justify-between">
+        <DialogHeader className="border-b px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <DialogTitle>Revenue Report Range</DialogTitle>
             <button
               type="button"
@@ -654,10 +654,15 @@ export function RevenueReportRangeDialog({
           </div>
         </DialogHeader>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-4">
-          <div className="flex justify-between">
-            Filters
-            <Button disabled={submitting} onClick={handleReset} size={'sm'} className="w-20">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-semibold">
+            <span>Filters</span>
+            <Button
+              disabled={submitting}
+              onClick={handleReset}
+              size="sm"
+              className="w-full sm:w-20"
+            >
               Reset
             </Button>
           </div>
@@ -677,15 +682,15 @@ export function RevenueReportRangeDialog({
             type="button"
             variant="outline"
             size="sm"
-            className="mt-1 w-30 mx-auto gap-2 border-dashed"
+            className="mx-auto mt-1 w-full max-w-xs gap-2 border-dashed sm:w-auto"
             onClick={addRange}
           >
             <Plus className="h-3.5 w-3.5" />
             Add Range
           </Button>
-          <div className="flex gap-2 my-2">
+          <div className="my-2 flex flex-wrap gap-2">
             <Button
-              className="w-20"
+              className="w-full sm:w-20"
               type="button"
               size="sm"
               disabled={submitting}

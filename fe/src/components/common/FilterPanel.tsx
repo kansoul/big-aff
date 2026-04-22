@@ -313,7 +313,7 @@ function FilterPanelInner(props: FilterPanelProps) {
     <Collapsible open={open} onOpenChange={setOpen} className={cn('w-full', className)}>
       <div className="flex flex-col gap-4 rounded-lg border bg-background/60 p-4 shadow-sm">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border/50 pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
           <CollapsibleTrigger asChild>
             <button
               type="button"
@@ -329,7 +329,7 @@ function FilterPanelInner(props: FilterPanelProps) {
             </button>
           </CollapsibleTrigger>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {props.applyMode && (
               <Button
                 type="button"

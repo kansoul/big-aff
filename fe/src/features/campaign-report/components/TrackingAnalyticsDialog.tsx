@@ -183,25 +183,30 @@ function KeywordPaginationBar({
   const pageNumbers = getPageNumbers(page, totalPages)
 
   return (
-    <div className="flex items-center justify-end gap-2 border-t border-border/70 bg-muted/25 px-4 py-2.5">
-      <span className="text-xs text-muted-foreground">Per Page</span>
-      <Select value={String(perPage)} onValueChange={(v) => onPaginationChange(1, Number(v))}>
-        <SelectTrigger size="sm" className="w-16 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {PER_PAGE_OPTIONS.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {o.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <div className="ml-2 flex items-center gap-1">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 bg-muted/25 px-4 py-2.5">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Per Page</span>
+        <Select value={String(perPage)} onValueChange={(v) => onPaginationChange(1, Number(v))}>
+          <SelectTrigger size="sm" className="w-16 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PER_PAGE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-muted-foreground sm:hidden">
+          {page}/{totalPages}
+        </span>
+      </div>
+      <div className="ml-auto flex items-center gap-1">
         <Button
           variant="outline"
           size="icon"
-          className="h-7 w-7"
+          className="hidden h-7 w-7 sm:inline-flex"
           disabled={page <= 1}
           onClick={() => onPaginationChange(1, perPage)}
         >
@@ -220,7 +225,7 @@ function KeywordPaginationBar({
           p === '...' ? (
             <span
               key={`ellipsis-${i}`}
-              className="flex h-7 w-7 items-center justify-center text-xs text-muted-foreground"
+              className="hidden h-7 w-7 items-center justify-center text-xs text-muted-foreground sm:flex"
             >
               …
             </span>
@@ -229,7 +234,7 @@ function KeywordPaginationBar({
               key={p}
               variant={p === page ? 'secondary' : 'outline'}
               size="icon"
-              className={cn('h-7 w-7 text-xs', p === page && 'font-semibold')}
+              className={cn('hidden h-7 w-7 text-xs sm:inline-flex', p === page && 'font-semibold')}
               disabled={p === page}
               onClick={() => onPaginationChange(p, perPage)}
             >
@@ -249,7 +254,7 @@ function KeywordPaginationBar({
         <Button
           variant="outline"
           size="icon"
-          className="h-7 w-7"
+          className="hidden h-7 w-7 sm:inline-flex"
           disabled={page >= totalPages}
           onClick={() => onPaginationChange(totalPages, perPage)}
         >
@@ -565,11 +570,11 @@ function TrackingAnalyticsDialogInner({
         {trigger ?? <Button size="sm">Tracking Analytics</Button>}
       </DialogTrigger>
       <DialogContent
-        className="flex h-[95vh] w-[95vw] flex-col gap-0 p-0 sm:max-w-[95vw]"
+        className="flex h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 p-0 sm:h-[95vh] sm:w-[95vw] sm:max-w-[95vw]"
         showCloseButton={false}
       >
-        <DialogHeader className="border-b px-6 py-4">
-          <div className="flex items-center justify-between">
+        <DialogHeader className="border-b px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <BarChart2 className="h-4 w-4 text-muted-foreground" />
               <DialogTitle>Tracking Analytics</DialogTitle>
@@ -585,7 +590,7 @@ function TrackingAnalyticsDialogInner({
           </div>
         </DialogHeader>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           <FilterPanel
             fields={filterFields}
             onReset={onFilterReset}
@@ -666,10 +671,12 @@ function TrackingAnalyticsDialogInner({
           {/* Keyword tracking table */}
           <div className="rounded-xl border border-border/70 bg-card shadow-sm">
             {/* Table header with search */}
-            <div className="flex items-center gap-3 border-b border-border/70 px-4 py-3">
-              <KeyRound className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-semibold text-foreground">Keyword Tracking</span>
-              <div className="relative ml-auto">
+            <div className="flex flex-col gap-2 border-b border-border/70 px-4 py-3 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-semibold text-foreground">Keyword Tracking</span>
+              </div>
+              <div className="relative w-full sm:ml-auto sm:w-52">
                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={keywordSearch}
