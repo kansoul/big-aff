@@ -24,7 +24,7 @@ class StoreCampaignRuleRequest extends FormRequest
             'is_active' => ['sometimes', 'boolean'],
             'expired_at' => ['nullable', 'date', 'after:now'],
             'campaign_ids' => ['sometimes', 'array'],
-            'campaign_ids.*' => ['integer', 'exists:campaigns,campaign_id'],
+            'campaign_ids.*' => ['string', 'exists:campaigns,campaign_id'],
 
             // Campaign-level conditions
             'min_roi' => ['nullable', 'numeric', 'min:0'],

@@ -24,7 +24,7 @@ class UpdateCampaignRuleRequest extends FormRequest
             'is_active' => ['sometimes', 'boolean'],
             'expired_at' => ['sometimes', 'nullable', 'date', 'after:now'],
             'campaign_ids' => ['sometimes', 'nullable', 'array'],
-            'campaign_ids.*' => ['integer', 'exists:campaigns,campaign_ids'],
+            'campaign_ids.*' => ['string', 'exists:campaigns,campaign_ids'],
 
             // Campaign-level conditions
             'min_roi' => ['sometimes', 'nullable', 'numeric', 'min:0'],
