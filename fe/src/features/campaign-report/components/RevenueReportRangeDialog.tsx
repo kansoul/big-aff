@@ -11,8 +11,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { styleReportApi } from '@/features/style-report/api'
-import type { StyleReportRangeItem, StyleReportRangeRow } from '@/features/style-report/types'
+import { campaignReportApi } from '@/features/campaign-report/api'
+import type { StyleReportRangeItem, StyleReportRangeRow } from '@/features/campaign-report/types'
 import { channelsApi } from '@/features/channels/api'
 import type { ChannelOption } from '@/features/channels/types'
 import { Button } from '@/components/ui/button'
@@ -201,24 +201,23 @@ function addMinutesToDateTime(
   time: string,
   minutes: number,
 ): { date: string; time: string } {
-  const [h, m] = time.split(':').map(Number)
-  const totalMinutes = h * 60 + m + minutes
-  const newH = Math.floor(totalMinutes / 60) % 24
-  const newM = totalMinutes % 60
-  const extraDays = Math.floor(totalMinutes / (24 * 60))
-
-  let newDate = date
-  if (extraDays > 0) {
-    const d = new Date(date + 'T00:00:00')
-    d.setDate(d.getDate() + extraDays)
-    newDate = d.toISOString().slice(0, 10)
+  const localDateTime = new Date(`${date}T${time}:00`)
+  if (Number.isNaN(localDateTime.getTime())) {
+    return { date, time }
   }
 
-  const hh = String(newH).padStart(2, '0')
-  // snap to nearest 5-min slot available in TIME_OPTIONS
-  const snappedM = Math.floor(newM / 5) * 5
+  localDateTime.setMinutes(localDateTime.getMinutes() + minutes)
+  // Snap to nearest 5-min slot available in TIME_OPTIONS.
+  const snappedM = Math.floor(localDateTime.getMinutes() / 5) * 5
+  localDateTime.setMinutes(snappedM, 0, 0)
+
+  const yyyy = localDateTime.getFullYear()
+  const mm = String(localDateTime.getMonth() + 1).padStart(2, '0')
+  const dd = String(localDateTime.getDate()).padStart(2, '0')
+  const hh = String(localDateTime.getHours()).padStart(2, '0')
+
   return {
-    date: newDate,
+    date: `${yyyy}-${mm}-${dd}`,
     time: `${hh}:${String(snappedM).padStart(2, '0')}`,
   }
 }
@@ -400,13 +399,6 @@ function RangeCell({ value }: { value: string }) {
 function RangeResultTable({ data, loading }: { data: StyleReportRangeRow[]; loading: boolean }) {
   return (
     <div className=" rounded-xl border border-border/70 bg-card shadow-sm">
-      <div className="flex items-center justify-between border-b border-border/70 bg-muted/25 px-4 py-3">
-        <h4 className="text-sm font-semibold text-foreground">Result Preview</h4>
-        <span className="rounded-full border border-border/70 bg-background/70 px-2.5 py-0.5 text-xs text-muted-foreground">
-          {data.length} rows
-        </span>
-      </div>
-
       <div className="overflow-auto">
         <Table className="text-[13px]">
           <TableHeader className="sticky top-0 z-10">
@@ -415,7 +407,7 @@ function RangeResultTable({ data, loading }: { data: StyleReportRangeRow[]; load
                 <TableHead
                   key={col.key}
                   className={cn(
-                    'h-14 whitespace-nowrap bg-transparent text-[12px] font-semibold tracking-[0.08em] text-muted-foreground uppercase',
+                    'h-14 whitespace-nowrap bg-transparent text-[12px] font-semibold tracking-[0.08em] text-muted-foreground capitalize',
                     col.className,
                   )}
                 >
@@ -520,27 +512,31 @@ function validateAll(ranges: RangeState[]): Record<string, RangeErrors> {
   return result
 }
 
-type StyleReportRangeDialogProps = {
+type RevenueReportRangeDialogProps = {
   trigger?: React.ReactNode
   initialDate?: string
+  initialDateFrom?: string | null
+  initialDateTo?: string | null
   initialChannelCodes?: string[]
 }
 
-export function StyleReportRangeDialog({
+export function RevenueReportRangeDialog({
   trigger,
   initialDate,
+  initialDateFrom,
+  initialDateTo,
   initialChannelCodes,
-}: StyleReportRangeDialogProps) {
+}: RevenueReportRangeDialogProps) {
   const makeInitialRange = useCallback(
     (): RangeState => ({
       _id: crypto.randomUUID(),
-      start_date: initialDate ?? '',
+      start_date: initialDateFrom ?? initialDate ?? '',
       start_time: '',
-      end_date: initialDate ?? '',
+      end_date: initialDateTo ?? initialDate ?? '',
       end_time: '',
       channel_codes: initialChannelCodes ?? [],
     }),
-    [initialDate, initialChannelCodes],
+    [initialDate, initialDateFrom, initialDateTo, initialChannelCodes],
   )
 
   const [open, setOpen] = useState(false)
@@ -564,14 +560,22 @@ export function StyleReportRangeDialog({
 
   function updateRange(id: string, patch: Partial<RangeState>, clearField?: keyof RangeErrors) {
     setRanges((prev) => prev.map((r) => (r._id === id ? { ...r, ...patch } : r)))
-    if (clearField) {
-      setFieldErrors((prev) => {
-        if (!prev[id]?.[clearField]) return prev
-        const next = { ...prev[id] }
+    setFieldErrors((prev) => {
+      if (!prev[id]) return prev
+      const next = { ...prev[id] }
+      let changed = false
+      for (const key of Object.keys(patch) as (keyof RangeErrors)[]) {
+        if (key in next) {
+          delete next[key]
+          changed = true
+        }
+      }
+      if (clearField && clearField in next) {
         delete next[clearField]
-        return { ...prev, [id]: next }
-      })
-    }
+        changed = true
+      }
+      return changed ? { ...prev, [id]: next } : prev
+    })
   }
 
   function removeRange(id: string) {
@@ -615,7 +619,7 @@ export function StyleReportRangeDialog({
 
     setSubmitting(true)
     try {
-      const res = await styleReportApi.queryRange({
+      const res = await campaignReportApi.queryRange({
         ranges: ranges.map(({ ...r }) => r),
       })
       const data = (res.data as { data: StyleReportRangeRow[] }).data
@@ -630,7 +634,7 @@ export function StyleReportRangeDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        {trigger ?? <Button size="sm">Style Report Range</Button>}
+        {trigger ?? <Button size="sm">Revenue Report Range</Button>}
       </DialogTrigger>
       <DialogContent
         className="flex h-[95vh] w-[95vw] flex-col gap-0 p-0 sm:max-w-[95vw]"
@@ -638,7 +642,7 @@ export function StyleReportRangeDialog({
       >
         <DialogHeader className="border-b px-6 py-4">
           <div className="flex items-center justify-between">
-            <DialogTitle>Style Report Range</DialogTitle>
+            <DialogTitle>Revenue Report Range</DialogTitle>
             <button
               type="button"
               onClick={() => handleOpenChange(false)}

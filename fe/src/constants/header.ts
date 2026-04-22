@@ -9,7 +9,6 @@ import {
   FolderOpen,
   Globe,
   Images,
-  Layers,
   LayoutDashboard,
   Link2,
   LogsIcon,
@@ -111,12 +110,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         href: PATHS.adsReport,
         icon: Target,
         requiredPermission: PermissionSlugs.AdsReportView,
-      },
-      {
-        name: 'Style Report',
-        href: PATHS.styleReport,
-        icon: Layers,
-        requiredPermission: PermissionSlugs.AdClientsView,
       },
       {
         name: 'Revenue Report',

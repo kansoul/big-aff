@@ -12,7 +12,6 @@ import { buildCopyLink } from '@/lib/ads-link'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
 import { StatusBadge } from '@/components/common/StatusBadge'
-import { StyleReportRangeDialog } from '@/features/style-report/components/StyleReportRangeDialog'
 import type {
   CampaignReportDataRow,
   CampaignReportFilterParams,
@@ -21,6 +20,12 @@ import type {
   CampaignReportOrderBy,
   CampaignReportSummary,
 } from '@/features/campaign-report/types'
+import {
+  CampaignSchedulesDialog,
+  RevenueReportListDialog,
+  RevenueReportRangeDialog,
+  TrackingAnalyticsDialog,
+} from '@/features/campaign-report/components'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -152,13 +157,49 @@ function makeCountCol(
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function GroupLabelCell({ row }: { row: CampaignReportGroupRow }) {
+function GroupLabelCell({
+  row,
+  isChannelGroup,
+  dateFrom,
+  dateTo,
+}: {
+  row: CampaignReportGroupRow
+  isChannelGroup: boolean
+  dateFrom?: string | null
+  dateTo?: string | null
+}) {
+  const channelCode = typeof row.group_key === 'string' ? row.group_key : undefined
   return (
     <div className="flex flex-col">
       <span className="text-xs font-semibold text-foreground">
         {row.group_label ?? String(row.group_key ?? '—')}
       </span>
-      <span className="text-[11px] text-muted-foreground">{row.record_count} record(s)</span>
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] text-muted-foreground">{row.record_count} record(s)</span>
+        {isChannelGroup && (
+          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+            <RevenueReportRangeDialog
+              initialChannelCodes={channelCode ? [channelCode] : undefined}
+              initialDateFrom={dateFrom}
+              initialDateTo={dateTo}
+              trigger={
+                <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
+                  View Revenue Range
+                </button>
+              }
+            />
+            <RevenueReportListDialog
+              initialDateFrom={dateFrom}
+              initialDateTo={dateTo}
+              trigger={
+                <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
+                  View Revenue List
+                </button>
+              }
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -190,6 +231,8 @@ function getColumns(
   groupBy: CampaignReportGroupBy,
   toggling: Record<string, boolean>,
   onToggleCampaignStatus: (campaignId: string, checked: boolean, adsType: string | null) => void,
+  dateFrom?: string | null,
+  dateTo?: string | null,
 ): MRT_ColumnDef<TableRow>[] {
   // Shortcuts to avoid passing summary repeatedly
   const usd = (key: MetricKey, header: string, size: number) =>
@@ -208,7 +251,12 @@ function getColumns(
         enableSorting: false,
         Cell: ({ row }) =>
           isGroupRow(row.original) ? (
-            <GroupLabelCell row={row.original} />
+            <GroupLabelCell
+              row={row.original}
+              isChannelGroup={groupBy === 'channel_code'}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+            />
           ) : (
             <GroupSubRowCell row={row.original} />
           ),
@@ -321,22 +369,22 @@ function getColumns(
     },
   }
 
-  const colStyleRangeReport: MRT_ColumnDef<TableRow> = {
-    id: 'style_range_report',
-    header: 'Style Range',
-    size: 120,
+  const colTrackingAnalytic: MRT_ColumnDef<TableRow> = {
+    id: 'tracking_analytic',
+    header: 'Tracking Analytic',
+    size: 150,
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
       const r = row.original
       return (
         <div onClick={(e) => e.stopPropagation()}>
-          <StyleReportRangeDialog
+          <TrackingAnalyticsDialog
             initialDate={r.date_start ?? undefined}
-            initialChannelCodes={r.channel_code ? [r.channel_code] : undefined}
+            initialCampaignId={r.campaign_id ?? undefined}
             trigger={
               <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
-                Style Range
+                View Analytics
               </button>
             }
           />
@@ -359,27 +407,22 @@ function getColumns(
   const colChannelName: MRT_ColumnDef<TableRow> = {
     accessorKey: 'channel_name',
     header: 'Channel',
-    size: 150,
+    size: 200,
     enableSorting: !grouped,
-    Cell: ({ row }) =>
-      isGroupRow(row.original) ? null : (
-        <span className="text-xs text-muted-foreground">
-          {row.original.channel_name ?? row.original.channel_code ?? '—'}
-        </span>
-      ),
-  }
-
-  const colChannelCode: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'channel_code',
-    header: 'Channel Code',
-    size: 140,
-    enableSorting: !grouped,
-    Cell: ({ row }) =>
-      isGroupRow(row.original) ? null : (
-        <span className="text-xs font-mono text-muted-foreground">
-          {row.original.channel_code ?? '—'}
-        </span>
-      ),
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const r = row.original
+      return (
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">
+            {r.channel_name ?? r.channel_code ?? '—'}
+          </span>
+          <span className="text-xs font-mono text-muted-foreground/70">
+            {r.channel_code ?? '—'}
+          </span>
+        </div>
+      )
+    },
   }
 
   // ── Profit / ROI columns ──
@@ -517,11 +560,10 @@ function getColumns(
     colCampaignName,
     colCampaignStatus,
     colCampaignOnOff,
-    colStyleRangeReport,
+    colTrackingAnalytic,
     colLink,
     colAdsType,
     colChannelName,
-    colChannelCode,
 
     // ── Revenue & spend ──
     usd('r_revenue', '🟡 Revenue', 120),
@@ -610,8 +652,25 @@ function CampaignReportTableCardInner({
 }: Props) {
   const grouped = Boolean(filters.group_by)
   const columns = useMemo(
-    () => getColumns(summary, grouped, filters.group_by ?? '', toggling, onToggleCampaignStatus),
-    [filters.group_by, grouped, onToggleCampaignStatus, summary, toggling],
+    () =>
+      getColumns(
+        summary,
+        grouped,
+        filters.group_by ?? '',
+        toggling,
+        onToggleCampaignStatus,
+        filters.date_from,
+        filters.date_to,
+      ),
+    [
+      filters.group_by,
+      filters.date_from,
+      filters.date_to,
+      grouped,
+      onToggleCampaignStatus,
+      summary,
+      toggling,
+    ],
   )
 
   const sorting = useMemo(
@@ -689,10 +748,11 @@ function CampaignReportTableCardInner({
     enableFullScreenToggle: false,
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
     mantineTableBodyRowProps: ({ row }) => {
-      const isGroup = isGroupRow(row.original)
+      const isGroup = grouped && (row.getCanExpand() || isGroupRow(row.original))
       const isSubRow = row.depth > 0
       const link = getRowAdsManagerLink(row.original)
       return {
+        className: isGroup ? 'campaign-group-row' : undefined,
         onClick: (e) => {
           if (
             (e.target as HTMLElement).closest(
@@ -707,15 +767,8 @@ function CampaignReportTableCardInner({
           const isDark = theme.colorScheme === 'dark'
           if (isGroup) {
             return {
-              backgroundColor: isDark ? 'rgba(99, 102, 241, 0.22)' : 'rgba(99, 102, 241, 0.09)',
               fontWeight: 600,
-              boxShadow: `inset 3px 0 0 0 ${theme.fn.primaryColor()}`,
-              '&:hover': {
-                backgroundColor: isDark
-                  ? 'rgba(99, 102, 241, 0.30) !important'
-                  : 'rgba(99, 102, 241, 0.15) !important',
-              },
-              '& td': { backgroundColor: 'transparent !important' },
+              boxShadow: `inset 3px 0 0 0 ${isDark ? theme.colors.dark[2] : theme.colors.gray[5]}`,
             }
           }
           if (isSubRow) {
@@ -742,8 +795,15 @@ function CampaignReportTableCardInner({
       }
     },
     mantineTableBodyCellProps: ({ row }) =>
-      isGroupRow(row.original)
-        ? { sx: { fontWeight: 600, backgroundColor: 'transparent !important' } }
+      grouped && (row.getCanExpand() || isGroupRow(row.original))
+        ? {
+            className: 'campaign-group-cell',
+            sx: () => {
+              return {
+                fontWeight: 600,
+              }
+            },
+          }
         : {},
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
@@ -752,6 +812,13 @@ function CampaignReportTableCardInner({
           Daily Campaign Reports
         </h3>
         <div className="flex items-center gap-2">
+          <CampaignSchedulesDialog
+            trigger={
+              <button className="inline-flex items-center gap-1.5 rounded border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">
+                Campaign Schedules
+              </button>
+            }
+          />
           <MRT_ShowHideColumnsButton table={t} />
         </div>
       </div>

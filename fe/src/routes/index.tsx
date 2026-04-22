@@ -287,20 +287,6 @@ export const router = createBrowserRouter([
             handle: { title: 'Ads Report' },
           },
           {
-            path: routeSegment(PATHS.styleReport),
-            lazy: async () => {
-              const { StyleReportPage } =
-                await import('@/features/style-report/pages/StyleReportPage')
-              return {
-                Component: withPermission(
-                  StyleReportPage as ComponentType,
-                  PermissionSlugs.AdClientsView,
-                ),
-              }
-            },
-            handle: { title: 'Style Report' },
-          },
-          {
             path: routeSegment(PATHS.revenueReport),
             lazy: async () => {
               const { RevenueReportPage } =
