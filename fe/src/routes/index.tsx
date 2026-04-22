@@ -281,7 +281,7 @@ export const router = createBrowserRouter([
             lazy: async () => {
               const { AdsReportPage } = await import('@/features/ads-report/pages/AdsReportPage')
               return {
-                Component: withPermission(AdsReportPage, PermissionSlugs.ReportOverviewView),
+                Component: withPermission(AdsReportPage, PermissionSlugs.AdsReportView),
               }
             },
             handle: { title: 'Ads Report' },
@@ -306,7 +306,7 @@ export const router = createBrowserRouter([
               const { RevenueReportPage } =
                 await import('@/features/revenue-report/pages/RevenueReportPage')
               return {
-                Component: withPermission(RevenueReportPage, PermissionSlugs.ReportOverviewView),
+                Component: withPermission(RevenueReportPage, PermissionSlugs.RevenueReportsView),
               }
             },
             handle: { title: 'Revenue Report' },
@@ -331,7 +331,7 @@ export const router = createBrowserRouter([
               const { CampaignReportPage } =
                 await import('@/features/campaign-report/pages/CampaignReportPage')
               return {
-                Component: withPermission(CampaignReportPage, PermissionSlugs.ReportOverviewView),
+                Component: withPermission(CampaignReportPage, PermissionSlugs.CampaignReportsView),
               }
             },
             handle: { title: 'Campaign Report' },

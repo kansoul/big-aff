@@ -26,11 +26,11 @@ class LogReaderService
     public function listFiles(): array
     {
         $dir = storage_path('logs');
-        $pattern = $dir . '/*.log';
+        $pattern = $dir.'/*.log';
 
-        $paths = array_filter(glob($pattern) ?: [], static fn(string $path): bool => filesize($path) > 0);
+        $paths = array_filter(glob($pattern) ?: [], static fn (string $path): bool => filesize($path) > 0);
 
-        usort($paths, static fn(string $a, string $b): int => filemtime($b) <=> filemtime($a));
+        usort($paths, static fn (string $a, string $b): int => filemtime($b) <=> filemtime($a));
 
         return array_map(static function (string $path): array {
             $info = new SplFileInfo($path);
@@ -54,7 +54,7 @@ class LogReaderService
             throw new InvalidArgumentException('Invalid log filename.');
         }
 
-        $candidate = storage_path('logs/' . basename($filename));
+        $candidate = storage_path('logs/'.basename($filename));
         $logsDir = realpath(storage_path('logs'));
         $real = realpath($candidate);
 
@@ -62,7 +62,7 @@ class LogReaderService
             throw new InvalidArgumentException('Log file not found.');
         }
 
-        if (! str_starts_with($real, $logsDir . DIRECTORY_SEPARATOR)) {
+        if (! str_starts_with($real, $logsDir.DIRECTORY_SEPARATOR)) {
             throw new InvalidArgumentException('Log file not found.');
         }
 

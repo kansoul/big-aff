@@ -14,6 +14,7 @@ use App\Http\Resources\Post\LatestPostResource;
 use App\Http\Resources\Post\PostBySlugResource;
 use App\Http\Resources\Post\PostResource;
 use App\Models\Post;
+use App\Models\User;
 use App\Services\Post\PostService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -86,7 +87,7 @@ class PostController extends BaseController
     {
         $data = $request->validated();
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = Auth::user();
         if (! $user->hasPermissionFlag(Permission::PostsPublish)) {
             $data['status'] = 'draft';
@@ -151,7 +152,7 @@ class PostController extends BaseController
     {
         $data = $request->validated();
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = Auth::user();
         if (! $user->hasPermissionFlag(Permission::PostsPublish)) {
             unset($data['status'], $data['published_at']);
