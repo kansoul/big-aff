@@ -16,7 +16,8 @@ class CreateCampaignRuleAction
     public function execute(array $data): CampaignRule
     {
         return DB::transaction(function () use ($data) {
-            $campaignIds = $data['campaign_ids'] ?? [];
+            $campaigns = Campaign::whereIn('campaign_id', $data['campaign_ids'] ?? [])->get();
+            $campaignIds = $campaigns->pluck('id')->toArray();
             unset($data['campaign_ids']);
 
             $rule = CampaignRule::create([

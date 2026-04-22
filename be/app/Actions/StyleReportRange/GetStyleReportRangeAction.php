@@ -5,6 +5,7 @@ namespace App\Actions\StyleReportRange;
 use App\Models\Channel;
 use App\Models\RevenueChartReport;
 use App\Models\RevenueReport;
+use App\Models\Style;
 use App\Models\User;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
@@ -24,7 +25,7 @@ class GetStyleReportRangeAction
 
         $allowedChannelCodes = null;
         if (! $user->isAdmin) {
-            $allowedStyleCodes = \App\Models\Style::query()
+            $allowedStyleCodes = Style::query()
                 ->whereIn('created_by', $ownership->allowedUserIds())
                 ->pluck('code')
                 ->all();

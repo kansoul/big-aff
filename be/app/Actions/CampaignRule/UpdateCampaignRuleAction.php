@@ -18,7 +18,8 @@ class UpdateCampaignRuleAction
         OwnershipFilter::forAuthUser()->authorize($rule->user_id);
 
         return DB::transaction(function () use ($rule, $data) {
-            $campaignIds = $data['campaign_ids'] ?? null;
+            $campaigns = Campaign::whereIn('campaign_id', $data['campaign_ids'] ?? [])->get();
+            $campaignIds = $campaigns->pluck('id')->toArray();
             unset($data['campaign_ids']);
 
             $rule->update($data);

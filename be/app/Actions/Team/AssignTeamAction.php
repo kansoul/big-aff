@@ -37,7 +37,7 @@ class AssignTeamAction
                     ->where('team_role', TeamRole::LEADER->value)
                     ->whereNotIn('user_id', $userIds)
                     ->pluck('user_id')
-                    ->map(fn($id) => (int) $id)
+                    ->map(fn ($id) => (int) $id)
                     ->all();
 
                 if (! empty($removedLeaderIds)) {
@@ -57,7 +57,7 @@ class AssignTeamAction
                 ->where('team_id', $team->id)
                 ->whereIn('user_id', $userIds)
                 ->pluck('user_id')
-                ->map(fn($id) => (int) $id)
+                ->map(fn ($id) => (int) $id)
                 ->all();
 
             $candidates = array_diff($userIds, $alreadyInThisTeam);
@@ -72,7 +72,7 @@ class AssignTeamAction
                     ->whereIn('user_id', $candidates)
                     ->whereIn('team_role', [TeamRole::LEADER->value, TeamRole::MEMBER->value])
                     ->get(['user_id', 'team_id', 'team_role']);
-                $conflictUserIds = $conflictRows->pluck('user_id')->map(fn($id) => (int) $id)->all();
+                $conflictUserIds = $conflictRows->pluck('user_id')->map(fn ($id) => (int) $id)->all();
                 $toInsert = array_values(array_diff($candidates, $conflictUserIds));
 
                 if (! empty($conflictUserIds)) {
@@ -93,7 +93,7 @@ class AssignTeamAction
             if (! empty($toInsert)) {
                 $now = now();
                 $isSingleTeamRole = in_array($teamRole, [TeamRole::LEADER->value, TeamRole::MEMBER->value], true);
-                $rows = array_map(fn(int $userId) => [
+                $rows = array_map(fn (int $userId) => [
                     'team_id' => $team->id,
                     'user_id' => $userId,
                     'team_role' => $teamRole,
