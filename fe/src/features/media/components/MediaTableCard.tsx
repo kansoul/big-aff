@@ -12,6 +12,7 @@ import { Trash2, Upload, ZoomIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { MediaFile, MediaFilterParams } from '@/features/media/types'
 import type { ManagedUser } from '@/shared/types'
 
@@ -190,6 +191,7 @@ function MediaTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: MediaTableCardProps) {
+  const isMobile = useIsMobile()
   const [previewFile, setPreviewFile] = useState<MediaFile | null>(null)
 
   const columns = useMemo(
@@ -251,14 +253,19 @@ function MediaTableCardInner({
     },
     enableColumnFilters: false,
     enableGlobalFilter: false,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
       columnVisibility: { user_id: false },
-      columnPinning: { right: ['actions'] },
     },
-    state: { pagination, sorting, showLoadingOverlay: loading, rowSelection },
+    state: {
+      pagination,
+      sorting,
+      showLoadingOverlay: loading,
+      rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
+    },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

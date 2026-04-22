@@ -10,6 +10,7 @@ import { FolderOpen, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { Category, CategoryFilterParams } from '@/features/categories/types'
 
 type ActionMeta = {
@@ -137,6 +138,7 @@ function CategoriesTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: CategoriesTableCardProps) {
+  const isMobile = useIsMobile()
   const columns = useMemo(
     () => getColumns({ canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow }),
     [canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow],
@@ -173,12 +175,11 @@ function CategoriesTableCardInner({
     rowCount,
     enableColumnFilters: false,
     enableGlobalFilter: false,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
       columnVisibility: { created_at: false },
-      columnPinning: { right: ['actions'] },
     },
     state: {
       showLoadingOverlay: loading,
@@ -188,6 +189,7 @@ function CategoriesTableCardInner({
       },
       sorting,
       rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
     },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =

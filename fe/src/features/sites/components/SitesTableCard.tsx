@@ -12,6 +12,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { Site, SiteFilterParams } from '@/features/sites/types'
 
 type PaginationState = { pageIndex: number; pageSize: number }
@@ -164,6 +165,7 @@ function SitesTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: SitesTableCardProps) {
+  const isMobile = useIsMobile()
   const columns = useMemo(
     () =>
       getSitesColumns({
@@ -226,14 +228,19 @@ function SitesTableCardInner({
     },
     enableColumnFilters: false,
     enableGlobalFilter: false,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
       columnVisibility: { updated_at: false },
-      columnPinning: { right: ['actions'] },
     },
-    state: { pagination, sorting, showLoadingOverlay: loading, rowSelection },
+    state: {
+      pagination,
+      sorting,
+      showLoadingOverlay: loading,
+      rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
+    },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

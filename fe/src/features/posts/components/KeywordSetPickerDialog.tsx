@@ -3,6 +3,7 @@ import { MantineReactTable, useMantineReactTable, type MRT_ColumnDef } from 'man
 import { AlertCircle, Loader2, Pencil, Plus, Search, Tags, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { useIsMobile } from '@/hooks/useMobile'
 import type { KeywordSet } from '@/features/posts/types'
 import { keywordSetsApi } from '@/features/posts/api/keywordSetsApi'
 import { formatApiError } from '@/features/settings/components'
@@ -51,6 +52,7 @@ export function KeywordSetPickerDialog({
   canUpdate = false,
   canDelete = false,
 }: Props) {
+  const isMobile = useIsMobile()
   const [tab, setTab] = useState<Tab>('select')
 
   // — Select tab state —
@@ -296,7 +298,7 @@ export function KeywordSetPickerDialog({
     enableGlobalFilter: false,
     enableSorting: false,
     enableFullScreenToggle: false,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableTopToolbar: false,
     enableBottomToolbar: true,
     manualPagination: true,
@@ -304,7 +306,7 @@ export function KeywordSetPickerDialog({
     state: {
       pagination: { pageIndex: page - 1, pageSize: perPage },
       showLoadingOverlay: loading,
-      columnPinning: { right: ['actions'] },
+      columnPinning: { right: isMobile ? [] : ['actions'] },
     },
     onPaginationChange: (updater) => {
       const next =

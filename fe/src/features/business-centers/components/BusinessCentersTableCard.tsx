@@ -12,6 +12,7 @@ import { Building2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { BusinessCenter, BusinessCenterFilterParams } from '@/features/business-centers/types'
 
 type PaginationState = { pageIndex: number; pageSize: number }
@@ -165,6 +166,7 @@ function BusinessCentersTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: BusinessCentersTableCardProps) {
+  const isMobile = useIsMobile()
   const columns = useMemo(
     () =>
       getBusinessCentersColumns({
@@ -215,14 +217,19 @@ function BusinessCentersTableCardInner({
     },
     enableColumnFilters: false,
     enableGlobalFilter: false,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
       columnVisibility: { updated_at: false },
-      columnPinning: { right: ['actions'] },
     },
-    state: { pagination, sorting, showLoadingOverlay: loading, rowSelection },
+    state: {
+      pagination,
+      sorting,
+      showLoadingOverlay: loading,
+      rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
+    },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

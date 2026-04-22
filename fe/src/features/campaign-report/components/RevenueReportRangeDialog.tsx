@@ -548,7 +548,7 @@ export function RevenueReportRangeDialog({
   const fetchedRef = useRef(false)
 
   useEffect(() => {
-    if (!open || fetchedRef.current) return
+    if (fetchedRef.current) return
     fetchedRef.current = true
     channelsApi
       .options()
@@ -556,7 +556,7 @@ export function RevenueReportRangeDialog({
       .catch(() => {
         toast.error('Failed to fetch channel options')
       })
-  }, [open])
+  }, [])
 
   function updateRange(id: string, patch: Partial<RangeState>, clearField?: keyof RangeErrors) {
     setRanges((prev) => prev.map((r) => (r._id === id ? { ...r, ...patch } : r)))
@@ -598,7 +598,6 @@ export function RevenueReportRangeDialog({
         setRanges([makeInitialRange()])
         setFieldErrors({})
         setResults([])
-        fetchedRef.current = false
       }
     },
     [makeInitialRange],

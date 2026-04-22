@@ -12,6 +12,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { UserFilterParams } from '@/features/users/types'
 import type { ManagedUser } from '@/shared/types'
 
@@ -166,6 +167,7 @@ function SettingsUsersTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: SettingsUsersTableCardProps) {
+  const isMobile = useIsMobile()
   const columns = useMemo(
     () => getUsersColumns({ currentUserId, canUpdate, canDelete, onEditRow, onDeleteRow }),
     [currentUserId, canUpdate, canDelete, onEditRow, onDeleteRow],
@@ -195,7 +197,7 @@ function SettingsUsersTableCardInner({
     enableColumnFilters: true,
     enableGlobalFilter: true,
     positionGlobalFilter: 'left',
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: (row) => canDelete && row.original.id !== currentUserId,
     mantineSearchTextInputProps: {
       placeholder: 'Search…',
@@ -205,9 +207,14 @@ function SettingsUsersTableCardInner({
       showGlobalFilter: true,
       density: 'md',
       columnVisibility: {},
-      columnPinning: { right: ['actions'] },
     },
-    state: { pagination, sorting, showLoadingOverlay: loading, rowSelection },
+    state: {
+      pagination,
+      sorting,
+      showLoadingOverlay: loading,
+      rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
+    },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater
