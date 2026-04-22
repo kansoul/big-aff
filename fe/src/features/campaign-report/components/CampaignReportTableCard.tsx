@@ -21,6 +21,7 @@ import type {
   CampaignReportSummary,
 } from '@/features/campaign-report/types'
 import {
+  CampaignRulesDialog,
   CampaignSchedulesDialog,
   RevenueReportListDialog,
   RevenueReportRangeDialog,
@@ -818,6 +819,13 @@ function CampaignReportTableCardInner({
             trigger={
               <button className="inline-flex items-center gap-1.5 rounded border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">
                 Campaign Schedules
+              </button>
+            }
+          />
+          <CampaignRulesDialog
+            trigger={
+              <button className="inline-flex items-center gap-1.5 rounded border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">
+                Campaign Rules
               </button>
             }
           />

@@ -566,7 +566,7 @@ function RevenueReportListDialogInner({
                       <TableHead
                         key={col.key}
                         className={cn(
-                          'h-14 whitespace-nowrap bg-transparent text-[12px] font-semibold tracking-[0.08em] text-muted-foreground uppercase',
+                          'h-14 whitespace-nowrap bg-transparent text-[12px] font-semibold tracking-[0.08em] text-muted-foreground capitalize',
                           col.className,
                         )}
                       >
