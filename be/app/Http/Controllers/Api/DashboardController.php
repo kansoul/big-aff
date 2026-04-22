@@ -54,7 +54,7 @@ class DashboardController extends BaseController
      */
     public function revenueTable(RevenueTableRequest $request): JsonResponse
     {
-        if (! Auth::user()?->is_admin) {
+        if ((string) Auth::user()?->role?->permissions !== '-1') {
             return $this->sendError('Forbidden.', [], Response::HTTP_FORBIDDEN);
         }
 

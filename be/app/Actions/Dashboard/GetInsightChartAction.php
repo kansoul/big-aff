@@ -50,7 +50,7 @@ class GetInsightChartAction
         $ownership->applyThrough(
             $query,
             'account_id',
-            fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
+            fn(array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
                 ->whereIn('account_user.user_id', $ids)
                 ->select('accounts.id'),
         );
@@ -90,7 +90,7 @@ class GetInsightChartAction
 
     private function sumColumn(Builder $query, string $type, string $from, string $to): float
     {
-        $column = $type === 'spend' ? 'a_spend' : 'rr.estimated_earnings';
+        $column = $type === 'spend' ? 'campaign_reports.a_spend' : 'rr.estimated_earnings';
 
         return round(
             (float) $query->whereDate('campaign_reports.date_start', '>=', $from)

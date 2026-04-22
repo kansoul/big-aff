@@ -2,9 +2,7 @@
 
 namespace App\Actions\Dashboard;
 
-use App\Models\Account;
 use App\Models\CampaignReport;
-use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -13,48 +11,36 @@ class GetRevenueTableAction
 {
     public function execute(array $filters): array
     {
-        $ownership = OwnershipFilter::forAuthUser();
         $now = Carbon::now();
         $limit = min((int) ($filters['top_limit'] ?? 10), 50);
 
         return [
-            'by_team' => $this->byTeam($ownership, $now),
-            'top_users' => $this->topUsers($ownership, $now, $limit),
+            'by_team' => $this->byTeam($now),
+            'top_users' => $this->topUsers($now, $limit),
         ];
     }
 
-    private function baseQuery(OwnershipFilter $ownership, Carbon $now): Builder
+    private function baseQuery(Carbon $now): Builder
     {
         $from = $now->copy()->startOfMonth()->toDateString();
         $to = $now->copy()->endOfMonth()->toDateString();
 
-        $query = CampaignReport::query()
+        return CampaignReport::query()
             ->join('accounts as a', 'a.id', '=', 'campaign_reports.account_id')
             ->leftJoin('revenue_reports as rr', function ($join) {
                 $join->on('rr.channel_code', '=', 'campaign_reports.channel_code')
                     ->whereColumn('rr.date', 'campaign_reports.date_start');
-            });
-
-        $ownership->applyThrough(
-            $query,
-            'campaign_reports.account_id',
-            fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
-                ->whereIn('account_user.user_id', $ids)
-                ->select('accounts.id'),
-        );
-
-        $query->whereDate('campaign_reports.date_start', '>=', $from)
+            })
+            ->whereDate('campaign_reports.date_start', '>=', $from)
             ->whereDate('campaign_reports.date_start', '<=', $to);
-
-        return $query;
     }
 
-    private function byTeam(OwnershipFilter $ownership, Carbon $now): Collection
+    private function byTeam(Carbon $now): Collection
     {
         $today = $now->toDateString();
 
-        return $this->baseQuery($ownership, $now)
-            ->leftJoin('account_user as au', 'au.account_id', '=', 'a.id')
+        return $this->baseQuery($now)
+            ->join('account_user as au', 'au.account_id', '=', 'a.id')
             ->leftJoin('team_user as tu', 'tu.user_id', '=', 'au.user_id')
             ->leftJoin('teams as t', 't.id', '=', 'tu.team_id')
             ->groupBy('tu.team_id', 't.name')
@@ -98,12 +84,12 @@ class GetRevenueTableAction
             });
     }
 
-    private function topUsers(OwnershipFilter $ownership, Carbon $now, int $limit): Collection
+    private function topUsers(Carbon $now, int $limit): Collection
     {
         $today = $now->toDateString();
 
-        return $this->baseQuery($ownership, $now)
-            ->leftJoin('account_user as au', 'au.account_id', '=', 'a.id')
+        return $this->baseQuery($now)
+            ->join('account_user as au', 'au.account_id', '=', 'a.id')
             ->leftJoin('users as u', 'u.id', '=', 'au.user_id')
             ->leftJoin('team_user as tu', 'tu.user_id', '=', 'au.user_id')
             ->leftJoin('teams as t', 't.id', '=', 'tu.team_id')
