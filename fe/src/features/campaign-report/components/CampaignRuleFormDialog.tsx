@@ -326,7 +326,7 @@ export function CampaignRuleFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[calc(100vh-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto sm:max-h-[90vh] sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit Rule' : 'Create Campaign Rule'}</DialogTitle>
         </DialogHeader>
@@ -436,7 +436,7 @@ export function CampaignRuleFormDialog({
             {/* ── Conditions (auto off) ── */}
             {entityType === 'campaign' && (
               <ConditionSection title="Conditions (Conditions for auto off)">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="min_roi"
@@ -520,7 +520,7 @@ export function CampaignRuleFormDialog({
             {/* ── Conditions Rules (active rule) ── */}
             <ConditionSection title="Conditions Rules (Conditions for active rule)">
               {entityType === 'campaign' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="min_revenue"
@@ -573,7 +573,7 @@ export function CampaignRuleFormDialog({
               )}
 
               {entityType === 'ad_adset' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="min_conversion"
@@ -648,7 +648,7 @@ export function CampaignRuleFormDialog({
               />
 
               {/* Start / End Hour */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="start_hour"

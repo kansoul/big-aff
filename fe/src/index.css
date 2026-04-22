@@ -205,6 +205,14 @@
   background-color: var(--accent) !important;
 }
 
+/* Campaign report table: remove row separators to avoid bright divider artifacts in dark mode */
+.campaign-report-table-container .mantine-Table-root tbody tr td,
+.campaign-report-table-container .mantine-Table-root tbody tr.campaign-group-row td,
+.campaign-report-table-container .mantine-Table-root tbody td.campaign-group-cell {
+  border-top: none !important;
+  border-bottom: none !important;
+}
+
 /* Bottom toolbar (pagination row) */
 .mantine-Paper-root > div:last-child {
   background-color: var(--card) !important;

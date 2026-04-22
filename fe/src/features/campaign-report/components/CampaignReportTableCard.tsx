@@ -8,6 +8,7 @@ import {
 import { BarChart3 } from 'lucide-react'
 
 import { buildCopyLink } from '@/lib/ads-link'
+import { useIsMobile } from '@/hooks/useMobile'
 
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
@@ -175,10 +176,10 @@ function GroupLabelCell({
       <span className="text-xs font-semibold text-foreground">
         {row.group_label ?? String(row.group_key ?? '—')}
       </span>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] text-muted-foreground">{row.record_count} record(s)</span>
         {isChannelGroup && (
-          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
             <RevenueReportRangeDialog
               initialChannelCodes={channelCode ? [channelCode] : undefined}
               initialDateFrom={dateFrom}
@@ -654,6 +655,7 @@ function CampaignReportTableCardInner({
   onToggleCampaignStatus,
 }: Props) {
   const grouped = Boolean(filters.group_by)
+  const isMobile = useIsMobile()
   const columns = useMemo(
     () =>
       getColumns(
@@ -681,6 +683,11 @@ function CampaignReportTableCardInner({
     [filters.order_by, filters.order],
   )
 
+  const pinnedLeftColumns = useMemo(
+    () => (isMobile ? [] : grouped ? ['group_label'] : ['date_start', 'campaign_name']),
+    [grouped, isMobile],
+  )
+
   const table = useMantineReactTable({
     data,
     columns,
@@ -701,7 +708,7 @@ function CampaignReportTableCardInner({
     },
     enableColumnFilters: false,
     enableGlobalFilter: false,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: false,
     positionToolbarAlertBanner: 'none',
     mantinePaginationProps: {
@@ -724,7 +731,7 @@ function CampaignReportTableCardInner({
       sorting,
       expanded: grouped ? true : {},
       columnPinning: {
-        left: grouped ? ['group_label'] : ['date_start', 'campaign_name'],
+        left: pinnedLeftColumns,
       },
       columnVisibility: grouped
         ? { date_start: false, campaign_name: false }
@@ -749,7 +756,10 @@ function CampaignReportTableCardInner({
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
-    mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
+    mantineTableContainerProps: {
+      className: 'campaign-report-table-container',
+      sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
+    },
     mantineTableBodyRowProps: ({ row }) => {
       const isGroup = grouped && (row.getCanExpand() || isGroupRow(row.original))
       const isSubRow = row.depth > 0
@@ -810,11 +820,11 @@ function CampaignReportTableCardInner({
         : {},
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full items-center justify-between gap-2 border-b bg-muted/20 px-3 py-2">
+      <div className="flex w-full flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-3 py-2">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Daily Campaign Reports
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
           <CampaignSchedulesDialog
             trigger={
               <button className="inline-flex items-center gap-1.5 rounded border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">

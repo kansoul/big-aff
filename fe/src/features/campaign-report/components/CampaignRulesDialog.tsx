@@ -89,7 +89,7 @@ type ColDef = {
 }
 
 type ActionCallbacks = {
-  onToggleActive: (row: CampaignRuleRow) => void
+  onToggleActive: (row: CampaignRuleRow) => void | Promise<void>
   onEdit: (row: CampaignRuleRow) => void
   onDelete: (row: CampaignRuleRow) => void
 }
@@ -126,7 +126,9 @@ function buildColumns(actions: ActionCallbacks): ColDef[] {
       render: (row) => (
         <Switch
           checked={row.is_active}
-          onCheckedChange={() => actions.onToggleActive(row)}
+          onCheckedChange={() => {
+            void actions.onToggleActive(row)
+          }}
           aria-label="Active status"
         />
       ),
@@ -343,25 +345,30 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
   const pageNumbers = getPageNumbers(page, totalPages)
 
   return (
-    <div className="flex items-center justify-end gap-2 border-t border-border/70 bg-muted/25 px-4 py-2.5">
-      <span className="text-xs text-muted-foreground">Per Page</span>
-      <Select value={String(perPage)} onValueChange={(v) => onPaginationChange(1, Number(v))}>
-        <SelectTrigger size="sm" className="w-16 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {PER_PAGE_OPTIONS.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {o.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <div className="ml-2 flex items-center gap-1">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 bg-muted/25 px-4 py-2.5">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Per Page</span>
+        <Select value={String(perPage)} onValueChange={(v) => onPaginationChange(1, Number(v))}>
+          <SelectTrigger size="sm" className="w-16 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PER_PAGE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-muted-foreground sm:hidden">
+          {page}/{totalPages}
+        </span>
+      </div>
+      <div className="ml-auto flex items-center gap-1">
         <Button
           variant="outline"
           size="icon"
-          className="h-7 w-7"
+          className="hidden h-7 w-7 sm:inline-flex"
           disabled={page <= 1}
           onClick={() => onPaginationChange(1, perPage)}
         >
@@ -380,7 +387,7 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
           p === '...' ? (
             <span
               key={`ellipsis-${i}`}
-              className="flex h-7 w-7 items-center justify-center text-xs text-muted-foreground"
+              className="hidden h-7 w-7 items-center justify-center text-xs text-muted-foreground sm:flex"
             >
               …
             </span>
@@ -389,7 +396,7 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
               key={p}
               variant={p === page ? 'secondary' : 'outline'}
               size="icon"
-              className={cn('h-7 w-7 text-xs', p === page && 'font-semibold')}
+              className={cn('hidden h-7 w-7 text-xs sm:inline-flex', p === page && 'font-semibold')}
               disabled={p === page}
               onClick={() => onPaginationChange(p, perPage)}
             >
@@ -409,7 +416,7 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
         <Button
           variant="outline"
           size="icon"
-          className="h-7 w-7"
+          className="hidden h-7 w-7 sm:inline-flex"
           disabled={page >= totalPages}
           onClick={() => onPaginationChange(totalPages, perPage)}
         >
@@ -448,7 +455,7 @@ function DeleteConfirmDialog({ item, onOpenChange, onSuccess }: DeleteConfirmDia
 
   return (
     <AlertDialog open={!!item} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-w-[calc(100vw-1rem)] sm:max-w-sm">
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Rule</AlertDialogTitle>
           <AlertDialogDescription>
@@ -617,19 +624,19 @@ function CampaignRulesDialogInner({ trigger }: CampaignRulesDialogProps) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger ?? <Button size="sm">Campaign Rules</Button>}</DialogTrigger>
       <DialogContent
-        className="flex h-[95vh] w-[95vw] flex-col gap-0 p-0 sm:max-w-[95vw]"
+        className="flex h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 p-0 sm:h-[95vh] sm:w-[95vw] sm:max-w-[95vw]"
         showCloseButton={false}
       >
-        <DialogHeader className="border-b px-6 py-4">
-          <div className="flex items-center justify-between">
+        <DialogHeader className="border-b px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-muted-foreground" />
               <DialogTitle>Campaign Rules</DialogTitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-2">
               <Button
                 size="sm"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide whitespace-nowrap"
                 onClick={() => {
                   setEditItem(null)
                   setFormOpen(true)
@@ -650,7 +657,7 @@ function CampaignRulesDialogInner({ trigger }: CampaignRulesDialogProps) {
           </div>
         </DialogHeader>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4">
           <FilterPanel
             fields={filterFields}
             onReset={onFilterReset}
