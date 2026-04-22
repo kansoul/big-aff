@@ -111,3 +111,24 @@ export interface TeamParentChildOption {
 export interface TeamParentChildOptionsResponse {
   data: TeamParentChildOption[]
 }
+
+export interface TeamAccountOption {
+  id: number
+  account_id: string
+  account_name: string | null
+  ads_type: string
+  team_id: number
+}
+
+export interface TeamWithAccountOptions {
+  id: number
+  name: string
+  accounts: TeamAccountOption[]
+}
+
+export interface TeamAccountOptionsResponse {
+  data: {
+    show_team_filter: boolean
+    teams: TeamWithAccountOptions[]
+  }
+}

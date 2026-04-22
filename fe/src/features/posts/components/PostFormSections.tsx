@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import type { Control, UseFormSetValue, UseFormWatch } from 'react-hook-form'
+import { Plus } from 'lucide-react'
 
 import type { Category } from '@/features/categories/types'
 import type { KeywordSet, PostFormValues } from '@/features/posts/types'
@@ -7,6 +8,7 @@ import { MediaPickerField } from '@/components/common/MediaPickerDialog'
 import { KeywordSetPickerField } from './KeywordSetPickerField'
 import { TextEditorField } from '@/components/common/TextEditor'
 import { LANGUAGE_OPTIONS } from '@/constants/languages'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/date-picker'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -37,6 +39,8 @@ type PostFormSectionsProps = {
   canUpdateKeywordSet?: boolean
   canDeleteKeywordSet?: boolean
   canPublish?: boolean
+  canCreateCategory?: boolean
+  onCreateCategoryClick?: () => void
 }
 
 export function PostFormSections({
@@ -50,6 +54,8 @@ export function PostFormSections({
   canUpdateKeywordSet = false,
   canDeleteKeywordSet = false,
   canPublish = false,
+  canCreateCategory = false,
+  onCreateCategoryClick,
 }: PostFormSectionsProps) {
   const title = watch('title')
 
@@ -147,7 +153,21 @@ export function PostFormSections({
               name="category_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <div className="flex items-center justify-between gap-2">
+                    <FormLabel>Category</FormLabel>
+                    {canCreateCategory && onCreateCategoryClick ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 h-[14px] p-0! px-2 text-xs text-red-400 hover:text-foreground"
+                        onClick={onCreateCategoryClick}
+                      >
+                        <Plus className="w-3" />
+                        Add
+                      </Button>
+                    ) : null}
+                  </div>
                   <SearchableSelect
                     value={field.value ? String(field.value) : '__none__'}
                     onValueChange={(v) => field.onChange(v === '__none__' ? null : Number(v))}

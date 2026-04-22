@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -12,6 +12,7 @@ import { formatApiError } from '@/features/settings/components'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { categoriesApi } from '@/features/categories/api'
+import { CategoryFormDialog } from '@/features/categories/components'
 import type { Category } from '@/features/categories/types'
 import { PATHS, postViewPath } from '@/constants/paths'
 import { useAuthStore } from '@/hooks/useAuthStore'
@@ -27,28 +28,31 @@ export function EditPostPage() {
   const canUpdateKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsUpdate)
   const canDeleteKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsDelete)
   const canPublish = hasPermission(perms, PermissionSlugs.PostsPublish)
+  const canCreateCategory = hasPermission(perms, PermissionSlugs.CategoriesCreate)
 
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
+  const [categoryFormOpen, setCategoryFormOpen] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [postKeywordSets, setPostKeywordSets] = useState<KeywordSet[]>([])
 
-  useEffect(() => {
-    void categoriesApi
-      .list({
-        page: 1,
-        per_page: 100,
-        query: null,
-        parent_id: null,
-        order_by: 'name',
-        order: 'asc',
-      })
-      .then((res) => {
-        setCategories(res.data.data)
-      })
+  const loadCategories = useCallback(async () => {
+    const res = await categoriesApi.list({
+      page: 1,
+      per_page: 100,
+      query: null,
+      parent_id: null,
+      order_by: 'name',
+      order: 'asc',
+    })
+    setCategories(res.data.data)
   }, [])
+
+  useEffect(() => {
+    void loadCategories()
+  }, [loadCategories])
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postFormSchema) as any,
@@ -67,6 +71,21 @@ export function EditPostPage() {
       published_at: null,
     },
   })
+
+  const onCategoryCreated = useCallback(
+    (category?: Category) => {
+      if (category) {
+        setCategories((prev) => {
+          const next = prev.filter((item) => item.id !== category.id)
+          return [...next, category].sort((a, b) => a.name.localeCompare(b.name))
+        })
+        form.setValue('category_id', category.id, { shouldDirty: true, shouldValidate: true })
+      }
+
+      void loadCategories()
+    },
+    [form, loadCategories],
+  )
 
   useEffect(() => {
     if (!id) return
@@ -183,6 +202,8 @@ export function EditPostPage() {
             canUpdateKeywordSet={canUpdateKeywordSet}
             canDeleteKeywordSet={canDeleteKeywordSet}
             canPublish={canPublish}
+            canCreateCategory={canCreateCategory}
+            onCreateCategoryClick={() => setCategoryFormOpen(true)}
           />
 
           {formError ? (
@@ -217,6 +238,12 @@ export function EditPostPage() {
           </div>
         </form>
       </Form>
+
+      <CategoryFormDialog
+        open={categoryFormOpen}
+        onOpenChange={setCategoryFormOpen}
+        onSuccess={onCategoryCreated}
+      />
     </div>
   )
 }

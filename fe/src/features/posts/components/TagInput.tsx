@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { ClipboardEvent, KeyboardEvent } from 'react'
 import { X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -20,14 +21,29 @@ export function TagInput({
 }: TagInputProps) {
   const [inputValue, setInputValue] = useState('')
 
-  const addTag = (raw: string) => {
-    const trimmed = raw.trim()
-    if (trimmed && !value.includes(trimmed)) {
-      onChange([...value, trimmed])
+  const addTags = (rawTags: string[]) => {
+    const nextTags = rawTags.reduce<string[]>(
+      (tags, raw) => {
+        const trimmed = raw.trim()
+        if (trimmed && !tags.includes(trimmed)) {
+          tags.push(trimmed)
+        }
+
+        return tags
+      },
+      [...value],
+    )
+
+    if (nextTags.length !== value.length) {
+      onChange(nextTags)
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const addTag = (raw: string) => {
+    addTags([raw])
+  }
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault()
       addTag(inputValue)
@@ -35,6 +51,15 @@ export function TagInput({
     } else if (e.key === 'Backspace' && !inputValue && value.length > 0) {
       onChange(value.slice(0, -1))
     }
+  }
+
+  const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData('text')
+    if (!text.includes(',')) return
+
+    e.preventDefault()
+    addTags(`${inputValue}${text}`.split(','))
+    setInputValue('')
   }
 
   const handleBlur = () => {
@@ -74,6 +99,7 @@ export function TagInput({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           onBlur={handleBlur}
           placeholder={value.length === 0 ? placeholder : ''}
           className="min-w-24 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"

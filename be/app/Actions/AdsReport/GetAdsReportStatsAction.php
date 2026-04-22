@@ -2,12 +2,17 @@
 
 namespace App\Actions\AdsReport;
 
+use App\Enums\TeamRole;
 use App\Models\Account;
 use App\Models\Campaign;
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
 use App\Models\Style;
+use App\Models\TeamUser;
+use App\Models\User;
 use App\Support\OwnershipFilter\OwnershipFilter;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class GetAdsReportStatsAction
 {
@@ -115,11 +120,14 @@ class GetAdsReportStatsAction
      */
     private function resolveAccountIds(?int $teamId, ?string $adsType, ?string $accountId): ?array
     {
-        if ($teamId === null && $adsType === null && $accountId === null) {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if ($user->is_admin && $teamId === null && $adsType === null && $accountId === null) {
             return null;
         }
 
-        $query = Account::query();
+        $query = $this->accessibleAccountQuery($user);
 
         if ($accountId !== null) {
             $query->where('account_id', $accountId);
@@ -132,5 +140,29 @@ class GetAdsReportStatsAction
         }
 
         return $query->pluck('account_id')->toArray();
+    }
+
+    /**
+     * @return Builder<Account>
+     */
+    private function accessibleAccountQuery(User $user): Builder
+    {
+        $query = Account::query();
+
+        if ($user->is_admin) {
+            return $query;
+        }
+
+        $managerTeamIds = TeamUser::query()
+            ->where('user_id', $user->id)
+            ->where('team_role', TeamRole::MANAGER->value)
+            ->pluck('team_id')
+            ->all();
+
+        if (count($managerTeamIds) > 1) {
+            return $query->whereIn('team_id', $managerTeamIds);
+        }
+
+        return $query->whereHas('users', fn ($builder) => $builder->where('users.id', $user->id));
     }
 }
