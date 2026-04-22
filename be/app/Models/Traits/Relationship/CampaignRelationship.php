@@ -3,11 +3,14 @@
 namespace App\Models\Traits\Relationship;
 
 use App\Models\Account;
+use App\Models\AdsetInsightsReport;
+use App\Models\AdsInsightsReport;
 use App\Models\CampaignApplyRule;
 use App\Models\CampaignRule;
 use App\Models\LinkData;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
@@ -28,6 +31,22 @@ trait CampaignRelationship
     public function linkData(): HasOne
     {
         return $this->hasOne(LinkData::class, 'campaign_id', 'campaign_id');
+    }
+
+    /**
+     * @return HasMany<AdsetInsightsReport>
+     */
+    public function adsetInsightsReports(): HasMany
+    {
+        return $this->hasMany(AdsetInsightsReport::class, 'campaign_id', 'campaign_id');
+    }
+
+    /**
+     * @return HasMany<AdsInsightsReport>
+     */
+    public function adsInsightsReports(): HasMany
+    {
+        return $this->hasMany(AdsInsightsReport::class, 'campaign_id', 'campaign_id');
     }
 
     /**

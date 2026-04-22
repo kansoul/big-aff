@@ -156,6 +156,10 @@ enum Permission: string
     // —— Files ——
     case FilesView = 'files.view';                             // bit 82 →  4835703278458516698824704
 
+    // —— Delivery Entities Reports ——
+    case DeliveryEntitiesReportsView = 'delivery-entities-reports.view';
+    case DeliveryEntitiesReportsUpdate = 'delivery-entities-reports.update';
+
     /**
      * Bit value for this permission as a decimal string (2^index).
      * Uses GMP to support arbitrarily large bit positions.

@@ -3,6 +3,7 @@
 use App\Enums\Permission;
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AdClientController;
+use App\Http\Controllers\Api\AdsDeliveryEntitiesController;
 use App\Http\Controllers\Api\AdsLinkController;
 use App\Http\Controllers\Api\AdsReportController;
 use App\Http\Controllers\Api\AnalyticsTrackingController;
@@ -280,6 +281,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('campaigns')->group(function () {
         Route::get('selector', [CampaignController::class, 'listCampaignSelectorAction']);
+    });
+
+    Route::prefix('campaign-reports')->group(function () {
+        Route::get('{campaignId}/delivery-entities-reports', [AdsDeliveryEntitiesController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::DeliveryEntitiesReportsView->value);
+        Route::patch('{campaignId}/adsets/{adsetInsightId}/toggle-status', [AdsDeliveryEntitiesController::class, 'toggleAdsetStatus'])
+            ->middleware('permission.scope:'.Permission::DeliveryEntitiesReportsUpdate->value);
+        Route::patch('{campaignId}/ads/{adsInsightId}/toggle-status', [AdsDeliveryEntitiesController::class, 'toggleAdStatus'])
+            ->middleware('permission.scope:'.Permission::DeliveryEntitiesReportsUpdate->value);
     });
 
     Route::prefix('campaign-rules')->group(function () {
