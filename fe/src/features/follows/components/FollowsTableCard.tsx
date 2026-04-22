@@ -9,6 +9,7 @@ import {
 import { Mail, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { Follow, FollowFilterParams } from '@/features/follows/types'
 
 type ActionMeta = {
@@ -148,6 +149,7 @@ function FollowsTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: FollowsTableCardProps) {
+  const isMobile = useIsMobile()
   const columns = useMemo(() => getColumns({ canDelete, onDeleteRow }), [canDelete, onDeleteRow])
 
   const sorting = useMemo(
@@ -168,12 +170,11 @@ function FollowsTableCardInner({
     rowCount,
     enableColumnFilters: false,
     enableGlobalFilter: false,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
       columnVisibility: { created_at: false },
-      columnPinning: { right: ['actions'] },
     },
     state: {
       showLoadingOverlay: loading,
@@ -183,6 +184,7 @@ function FollowsTableCardInner({
       },
       sorting,
       rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
     },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =

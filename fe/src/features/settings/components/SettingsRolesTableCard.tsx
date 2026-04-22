@@ -10,6 +10,7 @@ import {
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { Role } from '@/shared/types'
 
 import { describeRolePermissions } from './roleSettingsUtils'
@@ -126,6 +127,7 @@ function SettingsRolesTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: SettingsRolesTableCardProps) {
+  const isMobile = useIsMobile()
   const columns = useMemo(
     () => getRolesColumns({ canUpdate, canAssign, canDelete, onEditRow, onDeleteRow }),
     [canUpdate, canAssign, canDelete, onEditRow, onDeleteRow],
@@ -142,14 +144,17 @@ function SettingsRolesTableCardInner({
     enableColumnFilters: false,
     enableGlobalFilter: true,
     positionGlobalFilter: 'left',
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: canDelete,
     initialState: {
       showGlobalFilter: true,
       density: 'md',
-      columnPinning: { right: ['actions'] },
     },
-    state: { showLoadingOverlay: loading, rowSelection },
+    state: {
+      showLoadingOverlay: loading,
+      rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
+    },
     onRowSelectionChange: (updater) => {
       const newSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

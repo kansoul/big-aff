@@ -11,6 +11,7 @@ import { Palette, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { Style } from '@/features/styles/types'
 
 type StylesTableCardProps = {
@@ -36,9 +37,7 @@ function getColumns(meta: {
       accessorKey: 'name',
       header: 'Name',
       size: 200,
-      Cell: ({ row }) => (
-        <span className="font-medium text-foreground">{row.original.name}</span>
-      ),
+      Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
     },
     {
       accessorKey: 'code',
@@ -99,6 +98,7 @@ function StylesTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: StylesTableCardProps) {
+  const isMobile = useIsMobile()
   const columns = useMemo(() => getColumns({ canDelete, onDeleteRow }), [canDelete, onDeleteRow])
   const rowSelection = useMemo<MRT_RowSelectionState>(
     () => Object.fromEntries(styles.map((row) => [String(row.id), selectedIds.has(row.id)])),
@@ -112,15 +112,18 @@ function StylesTableCardInner({
     enableColumnFilters: false,
     enableGlobalFilter: true,
     enableRowSelection: canDelete,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     positionGlobalFilter: 'left',
     positionToolbarAlertBanner: 'none',
     initialState: {
       showGlobalFilter: true,
       density: 'md',
-      columnPinning: { right: ['actions'] },
     },
-    state: { showLoadingOverlay: loading, rowSelection },
+    state: {
+      showLoadingOverlay: loading,
+      rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
+    },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

@@ -12,6 +12,7 @@ import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPane
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { Account, AccountFilterParams } from '@/features/accounts/types'
 import type { SearchableSelectOption } from '@/components/common/SearchableSelect'
 import { AssignUserAccountsDialog } from './AssignUserAccountsDialog'
@@ -232,6 +233,7 @@ function AccountsTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: AccountsTableCardProps) {
+  const isMobile = useIsMobile()
   const [assignOpen, setAssignOpen] = useState(false)
 
   const columns = useMemo(
@@ -342,11 +344,10 @@ function AccountsTableCardInner({
     rowCount,
     enableColumnFilters: false,
     enableGlobalFilter: false,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
-      columnPinning: { right: ['actions'] },
       columnVisibility: {
         business_center: false,
         team: false,
@@ -360,6 +361,7 @@ function AccountsTableCardInner({
       },
       sorting,
       rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
     },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =

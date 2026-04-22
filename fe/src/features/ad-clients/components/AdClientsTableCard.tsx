@@ -10,6 +10,7 @@ import { CreditCard, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { Button } from '@/components/ui/button'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { AdClient, AdClientFilterParams } from '@/features/ad-clients/types'
 
 type ActionMeta = {
@@ -149,6 +150,7 @@ function AdClientsTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: AdClientsTableCardProps) {
+  const isMobile = useIsMobile()
   const columns = useMemo(
     () => getColumns({ canUpdate, canDelete, onEditRow, onDeleteRow }),
     [canUpdate, canDelete, onEditRow, onDeleteRow],
@@ -197,12 +199,11 @@ function AdClientsTableCardInner({
     rowCount,
     enableColumnFilters: false,
     enableGlobalFilter: false,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: canDelete,
     positionToolbarAlertBanner: 'none',
     initialState: {
       density: 'md',
-      columnPinning: { right: ['actions'] },
     },
     state: {
       showLoadingOverlay: loading,
@@ -212,6 +213,7 @@ function AdClientsTableCardInner({
       },
       sorting,
       rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
     },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =

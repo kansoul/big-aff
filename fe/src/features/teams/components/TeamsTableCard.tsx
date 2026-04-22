@@ -10,6 +10,7 @@ import { Loader2, Network, Pencil, Plus, Trash2, UserPlus, UsersRound } from 'lu
 
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { Team, TeamFilterParams, TeamRole } from '@/features/teams/types'
 
 type ActionMeta = {
@@ -245,6 +246,7 @@ function TeamsTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: TeamsTableCardProps) {
+  const isMobile = useIsMobile()
   const columns = useMemo(
     () =>
       getColumns({
@@ -306,12 +308,11 @@ function TeamsTableCardInner({
     rowCount,
     enableColumnFilters: false,
     enableGlobalFilter: false,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
       columnVisibility: { created_at: false },
-      columnPinning: { right: ['actions'] },
     },
     state: {
       showLoadingOverlay: loading,
@@ -321,6 +322,7 @@ function TeamsTableCardInner({
       },
       sorting,
       rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
     },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =

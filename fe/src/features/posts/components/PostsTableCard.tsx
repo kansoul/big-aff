@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { useIsMobile } from '@/hooks/useMobile'
 import { LANGUAGE_OPTIONS } from '@/constants/languages'
 import { userOptionsApi } from '@/features/posts/api'
 import { categoriesApi } from '@/features/categories/api'
@@ -241,6 +242,7 @@ function PostsTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: PostsTableCardProps) {
+  const isMobile = useIsMobile()
   const [userOptions, setUserOptions] = useState<{ label: string; value: string }[]>([])
   const [categoryOptions, setCategoryOptions] = useState<{ label: string; value: string }[]>([])
 
@@ -381,13 +383,18 @@ function PostsTableCardInner({
     },
     enableColumnFilters: false,
     enableGlobalFilter: false,
-    enableColumnPinning: true,
+    enableColumnPinning: !isMobile,
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
-      columnPinning: { right: ['actions'] },
     },
-    state: { pagination, sorting, showLoadingOverlay: loading, rowSelection },
+    state: {
+      pagination,
+      sorting,
+      showLoadingOverlay: loading,
+      rowSelection,
+      columnPinning: { right: isMobile ? [] : ['actions'] },
+    },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater
@@ -450,7 +457,7 @@ function PostsTableCardInner({
           onReset={onFilterReset}
           applyMode
           onApply={(values) => {
-            const { created_at, ...rest } = values as Record<string, unknown>
+            const { created_at, ...rest } = values
             const range = created_at as DateRangeValue | undefined
             onFilterChange({
               ...(rest as Partial<PostFilterParams>),
