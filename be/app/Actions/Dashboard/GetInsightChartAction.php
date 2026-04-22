@@ -12,6 +12,8 @@ class GetInsightChartAction
 {
     /**
      * Returns all 6 revenue/spend metrics, each with current and previous period values.
+     * Spend is sourced from CampaignReport (a_spend).
+     * Revenue is sourced from RevenueReport (estimated_earnings), joined via channel_code + date.
      *
      * @return array{
      *   daily_spend:    array{today: float, yesterday: float},
@@ -28,18 +30,23 @@ class GetInsightChartAction
         $now = Carbon::now();
 
         return [
-            'daily_spend' => $this->daily($ownership, $now, 'a_spend'),
-            'weekly_spend' => $this->weekly($ownership, $now, 'a_spend'),
-            'monthly_spend' => $this->monthly($ownership, $now, 'a_spend'),
-            'daily_revenue' => $this->daily($ownership, $now, 'r_revenue'),
-            'weekly_revenue' => $this->weekly($ownership, $now, 'r_revenue'),
-            'monthly_revenue' => $this->monthly($ownership, $now, 'r_revenue'),
+            'daily_spend' => $this->daily($ownership, $now, 'spend'),
+            'weekly_spend' => $this->weekly($ownership, $now, 'spend'),
+            'monthly_spend' => $this->monthly($ownership, $now, 'spend'),
+            'daily_revenue' => $this->daily($ownership, $now, 'revenue'),
+            'weekly_revenue' => $this->weekly($ownership, $now, 'revenue'),
+            'monthly_revenue' => $this->monthly($ownership, $now, 'revenue'),
         ];
     }
 
     private function baseQuery(OwnershipFilter $ownership): Builder
     {
-        $query = CampaignReport::query();
+        $query = CampaignReport::query()
+            ->leftJoin('revenue_reports as rr', function ($join) {
+                $join->on('rr.channel_code', '=', 'campaign_reports.channel_code')
+                    ->whereColumn('rr.date', 'campaign_reports.date_start');
+            });
+
         $ownership->applyThrough(
             $query,
             'account_id',
@@ -51,40 +58,44 @@ class GetInsightChartAction
         return $query;
     }
 
-    private function daily(OwnershipFilter $ownership, Carbon $now, string $column): array
+    private function daily(OwnershipFilter $ownership, Carbon $now, string $type): array
     {
         $base = $this->baseQuery($ownership);
 
         return [
-            'today' => $this->sumColumn(clone $base, $column, $now->toDateString(), $now->toDateString()),
-            'yesterday' => $this->sumColumn(clone $base, $column, $now->copy()->subDay()->toDateString(), $now->copy()->subDay()->toDateString()),
+            'today' => $this->sumColumn(clone $base, $type, $now->toDateString(), $now->toDateString()),
+            'yesterday' => $this->sumColumn(clone $base, $type, $now->copy()->subDay()->toDateString(), $now->copy()->subDay()->toDateString()),
         ];
     }
 
-    private function weekly(OwnershipFilter $ownership, Carbon $now, string $column): array
+    private function weekly(OwnershipFilter $ownership, Carbon $now, string $type): array
     {
         $base = $this->baseQuery($ownership);
 
         return [
-            'this_week' => $this->sumColumn(clone $base, $column, $now->copy()->startOfWeek()->toDateString(), $now->copy()->endOfWeek()->toDateString()),
-            'last_week' => $this->sumColumn(clone $base, $column, $now->copy()->subWeek()->startOfWeek()->toDateString(), $now->copy()->subWeek()->endOfWeek()->toDateString()),
+            'this_week' => $this->sumColumn(clone $base, $type, $now->copy()->startOfWeek()->toDateString(), $now->copy()->endOfWeek()->toDateString()),
+            'last_week' => $this->sumColumn(clone $base, $type, $now->copy()->subWeek()->startOfWeek()->toDateString(), $now->copy()->subWeek()->endOfWeek()->toDateString()),
         ];
     }
 
-    private function monthly(OwnershipFilter $ownership, Carbon $now, string $column): array
+    private function monthly(OwnershipFilter $ownership, Carbon $now, string $type): array
     {
         $base = $this->baseQuery($ownership);
 
         return [
-            'this_month' => $this->sumColumn(clone $base, $column, $now->copy()->startOfMonth()->toDateString(), $now->copy()->endOfMonth()->toDateString()),
-            'last_month' => $this->sumColumn(clone $base, $column, $now->copy()->subMonth()->startOfMonth()->toDateString(), $now->copy()->subMonth()->endOfMonth()->toDateString()),
+            'this_month' => $this->sumColumn(clone $base, $type, $now->copy()->startOfMonth()->toDateString(), $now->copy()->endOfMonth()->toDateString()),
+            'last_month' => $this->sumColumn(clone $base, $type, $now->copy()->subMonth()->startOfMonth()->toDateString(), $now->copy()->subMonth()->endOfMonth()->toDateString()),
         ];
     }
 
-    private function sumColumn(Builder $query, string $column, string $from, string $to): float
+    private function sumColumn(Builder $query, string $type, string $from, string $to): float
     {
+        $column = $type === 'spend' ? 'a_spend' : 'rr.estimated_earnings';
+
         return round(
-            (float) $query->whereDate('date_start', '>=', $from)->whereDate('date_start', '<=', $to)->sum($column),
+            (float) $query->whereDate('campaign_reports.date_start', '>=', $from)
+                ->whereDate('campaign_reports.date_start', '<=', $to)
+                ->sum($column),
             2,
         );
     }

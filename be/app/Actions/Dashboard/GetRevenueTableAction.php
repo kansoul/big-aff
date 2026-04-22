@@ -29,7 +29,11 @@ class GetRevenueTableAction
         $to = $now->copy()->endOfMonth()->toDateString();
 
         $query = CampaignReport::query()
-            ->join('accounts as a', 'a.id', '=', 'campaign_reports.account_id');
+            ->join('accounts as a', 'a.id', '=', 'campaign_reports.account_id')
+            ->leftJoin('revenue_reports as rr', function ($join) {
+                $join->on('rr.channel_code', '=', 'campaign_reports.channel_code')
+                    ->whereColumn('rr.date', 'campaign_reports.date_start');
+            });
 
         $ownership->applyThrough(
             $query,
@@ -50,19 +54,19 @@ class GetRevenueTableAction
         $today = $now->toDateString();
 
         return $this->baseQuery($ownership, $now)
-            ->join('account_user as au', 'au.account_id', '=', 'a.id')
+            ->leftJoin('account_user as au', 'au.account_id', '=', 'a.id')
             ->leftJoin('team_user as tu', 'tu.user_id', '=', 'au.user_id')
             ->leftJoin('teams as t', 't.id', '=', 'tu.team_id')
             ->groupBy('tu.team_id', 't.name')
             ->selectRaw("
                 COALESCE(tu.team_id, 0) as team_id,
                 COALESCE(t.name, '(No team)') as team_name,
-                COALESCE(SUM(CASE WHEN campaign_reports.date_start = ? THEN campaign_reports.r_revenue ELSE 0 END), 0) as daily_revenue,
+                COALESCE(SUM(CASE WHEN campaign_reports.date_start = ? THEN rr.estimated_earnings ELSE 0 END), 0) as daily_revenue,
                 COALESCE(SUM(CASE WHEN campaign_reports.date_start = ? THEN campaign_reports.a_spend ELSE 0 END), 0) as daily_spend,
-                COALESCE(SUM(campaign_reports.r_revenue), 0) as monthly_revenue,
+                COALESCE(SUM(rr.estimated_earnings), 0) as monthly_revenue,
                 COALESCE(SUM(campaign_reports.a_spend), 0) as monthly_spend
             ", [$today, $today])
-            ->orderByRaw('COALESCE(SUM(campaign_reports.r_revenue), 0) DESC')
+            ->orderByRaw('COALESCE(SUM(rr.estimated_earnings), 0) DESC')
             ->get()
             ->map(function ($row) {
                 $dailyRevenue = (float) $row->daily_revenue;
@@ -99,7 +103,7 @@ class GetRevenueTableAction
         $today = $now->toDateString();
 
         return $this->baseQuery($ownership, $now)
-            ->join('account_user as au', 'au.account_id', '=', 'a.id')
+            ->leftJoin('account_user as au', 'au.account_id', '=', 'a.id')
             ->leftJoin('users as u', 'u.id', '=', 'au.user_id')
             ->leftJoin('team_user as tu', 'tu.user_id', '=', 'au.user_id')
             ->leftJoin('teams as t', 't.id', '=', 'tu.team_id')
@@ -109,12 +113,12 @@ class GetRevenueTableAction
                 COALESCE(u.name, '(Unknown)') as user_name,
                 COALESCE(tu.team_id, 0) as team_id,
                 COALESCE(t.name, '(No team)') as team_name,
-                COALESCE(SUM(CASE WHEN campaign_reports.date_start = ? THEN campaign_reports.r_revenue ELSE 0 END), 0) as daily_revenue,
+                COALESCE(SUM(CASE WHEN campaign_reports.date_start = ? THEN rr.estimated_earnings ELSE 0 END), 0) as daily_revenue,
                 COALESCE(SUM(CASE WHEN campaign_reports.date_start = ? THEN campaign_reports.a_spend ELSE 0 END), 0) as daily_spend,
-                COALESCE(SUM(campaign_reports.r_revenue), 0) as monthly_revenue,
+                COALESCE(SUM(rr.estimated_earnings), 0) as monthly_revenue,
                 COALESCE(SUM(campaign_reports.a_spend), 0) as monthly_spend
             ", [$today, $today])
-            ->orderByRaw('(COALESCE(SUM(campaign_reports.r_revenue), 0) - COALESCE(SUM(campaign_reports.a_spend), 0)) DESC')
+            ->orderByRaw('(COALESCE(SUM(rr.estimated_earnings), 0) - COALESCE(SUM(campaign_reports.a_spend), 0)) DESC')
             ->limit($limit)
             ->get()
             ->map(function ($row) {
