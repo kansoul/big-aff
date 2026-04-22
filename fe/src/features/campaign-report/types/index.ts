@@ -237,3 +237,208 @@ export interface CampaignReportFilterParams {
   page?: number
   per_page?: number
 }
+
+// ─── Revenue Report ───────────────────────────────────────────────────────────
+
+export type RevenueReportOrderBy =
+  | 'id'
+  | 'date'
+  | 'style_code'
+  | 'channel_code'
+  | 'page_views'
+  | 'clicks'
+  | 'estimated_earnings'
+  | 'ad_requests'
+  | 'impressions'
+  | 'cost_per_click'
+  | 'funnel_requests'
+  | 'funnel_impressions'
+  | 'funnel_clicks'
+  | 'funnel_rpm'
+  | 'created_at'
+
+export type RevenueReportOrder = 'asc' | 'desc'
+
+export interface RevenueReportRow {
+  id: number
+  ad_client_id: string
+  style_code: string
+  style_name: string
+  channel_code: string
+  channel_name: string
+  date: string
+  page_views: number
+  clicks: number
+  estimated_earnings: number
+  ad_requests: number
+  impressions: number
+  ad_requests_rpm: number
+  impressions_rpm: number
+  cost_per_click: number
+  funnel_requests: number | null
+  funnel_impressions: number | null
+  funnel_clicks: number | null
+  funnel_rpm: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RevenueReportFilterParams {
+  channel_codes?: string[]
+  date_from?: string | null
+  date_to?: string | null
+  order_by?: RevenueReportOrderBy | null
+  order?: RevenueReportOrder | null
+  page?: number
+  per_page?: number
+}
+
+export interface RevenueReportListResponse {
+  data: RevenueReportRow[]
+  pagination: CampaignReportPagination
+}
+
+// ─── Revenue Report Range ─────────────────────────────────────────────────────
+
+export interface StyleReportRangeItem {
+  start_date: string
+  start_time: string
+  end_date: string
+  end_time: string
+  channel_codes: string[]
+}
+
+export interface StyleReportRangeQueryPayload {
+  ranges: StyleReportRangeItem[]
+}
+
+export interface StyleReportRangeRow {
+  range_label: string
+  channel_code: string
+  channel_name: string
+  revenue_start: number | null
+  revenue_end: number | null
+  real_revenue: number | null
+  conversion_start: number | null
+  conversion_end: number | null
+  real_conversion: number | null
+  real_rpc: number | null
+  cpc: number | null
+}
+
+export interface StyleReportRangeQueryResponse {
+  data: StyleReportRangeRow[]
+}
+
+// ─── Tracking Analytics ───────────────────────────────────────────────────────
+
+export interface TrackingAnalyticsFilterParams {
+  account_id?: string | null
+  campaign_id?: string | null
+  date_from?: string | null
+  date_to?: string | null
+}
+
+export interface TrackingAnalyticsResponse {
+  data: {
+    views: {
+      search_views: { value: number; ctr: number }
+      article_views: { value: number }
+    }
+    clicks: {
+      search_ad_clicks: { value: number; ctr: number; ctr_ldp: number }
+      article_ad_clicks: { value: number; ctr: number }
+    }
+    loads: {
+      failed_search_ad_loads: { value: number; ctr: number }
+      failed_article_ad_loads: { value: number; ctr: number }
+    }
+  }
+}
+
+// ─── Keyword Tracking ─────────────────────────────────────────────────────────
+
+export type KeywordTrackingOrderBy = 'id' | 'name' | 'created_at'
+
+export interface KeywordTrackingFilterParams {
+  account_id?: string | null
+  campaign_id?: string | null
+  date_from?: string | null
+  date_to?: string | null
+  keyword?: string | null
+  order?: 'asc' | 'desc' | null
+  order_by?: KeywordTrackingOrderBy | null
+  page?: number
+  per_page?: number
+}
+
+export interface KeywordTrackingRow {
+  id: number
+  name: string
+  keywords: string[] | null
+  created_at: string
+}
+
+export interface KeywordTrackingListResponse {
+  data: KeywordTrackingRow[]
+  pagination: CampaignReportPagination
+}
+
+// ─── Campaign Schedules ───────────────────────────────────────────────────────
+
+export type CampaignScheduleOrderBy =
+  | 'id'
+  | 'name'
+  | 'is_active'
+  | 'turn_on_time'
+  | 'turn_off_time'
+  | 'created_at'
+
+export interface CampaignScheduleRow {
+  id: number
+  name: string
+  turn_on_time: string | null
+  turn_off_time: string | null
+  is_active: boolean
+  created_by: number
+  creator: { id?: number; name?: string | null } | null
+  campaign_ids: string[]
+  items_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CampaignScheduleFilterParams {
+  campaign_id?: string | null
+  is_active?: boolean | null
+  name?: string | null
+  order?: 'asc' | 'desc' | null
+  order_by?: CampaignScheduleOrderBy | null
+  page?: number
+  per_page?: number
+}
+
+export interface CampaignScheduleListResponse {
+  data: CampaignScheduleRow[]
+  pagination: CampaignReportPagination
+}
+
+export interface CampaignScheduleSingleResponse {
+  data: CampaignScheduleRow
+}
+
+export interface CampaignScheduleCreatePayload {
+  name: string
+  turn_on_time?: string | null
+  turn_off_time?: string | null
+  is_active?: boolean
+  campaign_ids: string[]
+}
+
+export interface CampaignScheduleUpdatePayload {
+  name?: string
+  turn_on_time?: string | null
+  turn_off_time?: string | null
+  is_active?: boolean
+  campaign_ids?: string[]
+}

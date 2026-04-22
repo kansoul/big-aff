@@ -179,6 +179,32 @@
   color: var(--accent-foreground) !important;
 }
 
+/* Campaign report grouped rows (channel/account/user/campaign group headers) */
+.mantine-Table-root tbody tr.campaign-group-row td {
+  background-color: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-top: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border) !important;
+  font-weight: 600 !important;
+}
+
+.mantine-Table-root tbody tr.campaign-group-row:hover td {
+  background-color: var(--accent) !important;
+}
+
+/* Backup target directly on group cells to avoid MRT/Mantine row style overrides */
+.mantine-Table-root tbody td.campaign-group-cell {
+  background-color: var(--muted) !important;
+  color: var(--foreground) !important;
+  border-top: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border) !important;
+  font-weight: 600 !important;
+}
+
+.mantine-Table-root tbody tr:hover td.campaign-group-cell {
+  background-color: var(--accent) !important;
+}
+
 /* Bottom toolbar (pagination row) */
 .mantine-Paper-root > div:last-child {
   background-color: var(--card) !important;
