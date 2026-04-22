@@ -41,6 +41,11 @@ export const teamsApi = {
   userOptions: (teamId: number) =>
     axiosInstance.get<TeamUserOptionsResponse>(`/teams/${teamId}/user-options`),
 
+  members: (teamId: number) =>
+    axiosInstance.get<{ data: { id: number; name: string; email: string }[] }>(
+      `/teams/${teamId}/members`,
+    ),
+
   assignUsers: (teamId: number, payload: TeamAssignUsersPayload) =>
     axiosInstance.post(`/teams/${teamId}/assign-users`, payload),
 

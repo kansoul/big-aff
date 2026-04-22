@@ -25,6 +25,7 @@ export function CreatePostPage() {
   const canCreateKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsCreate)
   const canUpdateKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsUpdate)
   const canDeleteKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsDelete)
+  const canPublish = hasPermission(perms, PermissionSlugs.PostsPublish)
 
   const [submitting, setSubmitting] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
@@ -111,6 +112,7 @@ export function CreatePostPage() {
             canCreateKeywordSet={canCreateKeywordSet}
             canUpdateKeywordSet={canUpdateKeywordSet}
             canDeleteKeywordSet={canDeleteKeywordSet}
+            canPublish={canPublish}
           />
 
           {formError ? (

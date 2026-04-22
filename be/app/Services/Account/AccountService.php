@@ -2,12 +2,14 @@
 
 namespace App\Services\Account;
 
+use App\Actions\Account\AssignAccountAction;
 use App\Actions\Account\BulkCreateAccountAction;
 use App\Actions\Account\DeleteAccountAction;
 use App\Actions\Account\GetAccountOptionsAction;
 use App\Actions\Account\ListAccountsAction;
 use App\Actions\Account\UpdateAccountAction;
 use App\Models\Account;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -19,14 +21,15 @@ class AccountService
         private readonly UpdateAccountAction $updateAccountAction,
         private readonly DeleteAccountAction $deleteAccountAction,
         private readonly GetAccountOptionsAction $getAccountOptionsAction,
+        private readonly AssignAccountAction $assignAccountAction,
     ) {}
 
     /**
-     * @return Collection<int, array{id: int, account_id: string, account_name: string|null}>
+     * @return Collection<int, array{id: int, account_id: string, account_name: string|null, team_id: int|null}>
      */
-    public function options(): Collection
+    public function options(?int $userId = null): Collection
     {
-        return $this->getAccountOptionsAction->execute();
+        return $this->getAccountOptionsAction->execute($userId);
     }
 
     /**
@@ -57,5 +60,13 @@ class AccountService
     public function delete(Account $account): void
     {
         $this->deleteAccountAction->execute($account);
+    }
+
+    /**
+     * @param  array<int>  $accountIds
+     */
+    public function assignToUser(User $user, array $accountIds): void
+    {
+        $this->assignAccountAction->execute($user, $accountIds);
     }
 }

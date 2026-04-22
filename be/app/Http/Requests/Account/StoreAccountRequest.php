@@ -26,6 +26,7 @@ class StoreAccountRequest extends FormRequest
             'status' => ['nullable', 'string', 'max:50'],
             'is_special' => ['nullable', 'boolean'],
             'sync_to_mcc' => ['nullable', 'boolean'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
 
             'lines' => ['required', 'string'],
         ];

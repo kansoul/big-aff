@@ -7,10 +7,11 @@ import {
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
 } from 'mantine-react-table'
-import { EyeOff, FileText, Pencil, Plus, Trash2 } from 'lucide-react'
+import { EyeOff, FileText, Globe, GlobeLock, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { LANGUAGE_OPTIONS } from '@/constants/languages'
 import { userOptionsApi } from '@/features/posts/api'
@@ -22,21 +23,38 @@ type PaginationState = { pageIndex: number; pageSize: number }
 type ActionMeta = {
   canUpdate: boolean
   canDelete: boolean
+  canPublish: boolean
   onViewRow: (row: Post) => void
   onEditRow: (row: Post) => void
   onDeleteRow: (row: Post) => void
   onToggleHidden: (row: Post) => void
+  onPublishRow: (row: Post, publish: boolean) => void
 }
 
 function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
-  const { canUpdate, canDelete, onEditRow, onDeleteRow, onToggleHidden } = meta
-  const typeLabels: Record<string, string> = {
-    normal: 'Normal',
-    ai: 'AI',
-    wordpress: 'WordPress',
-  }
+  const { canUpdate, canDelete, canPublish, onEditRow, onDeleteRow, onToggleHidden, onPublishRow } =
+    meta
 
   return [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      size: 70,
+      Cell: ({ row }) => <span className="text-xs text-muted-foreground">#{row.original.id}</span>,
+    },
+    {
+      accessorKey: 'feature_media',
+      header: 'Image',
+      size: 70,
+      enableSorting: false,
+      Cell: ({ row }) => {
+        const media = row.original.feature_media
+        if (!media) return <span className="text-muted-foreground/30 text-xs">—</span>
+        return (
+          <img src={media.url} alt={row.original.title} className="h-9 w-14 rounded object-cover" />
+        )
+      },
+    },
     {
       accessorKey: 'title',
       header: 'Title',
@@ -52,36 +70,24 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
       Cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
-      accessorKey: 'type',
-      header: 'Type',
-      size: 100,
-      Cell: ({ row }) => {
-        const t = row.original.type
-        if (!t) return <span className="text-muted-foreground/50">—</span>
-        return <StatusBadge status={t} label={typeLabels[t] ?? t} />
-      },
+      accessorKey: 'created_by',
+      header: 'User',
+      size: 90,
+      enableSorting: false,
+      Cell: ({ row }) => (
+        <span className="text-muted-foreground text-xs">{row.original.created_by ?? '—'}</span>
+      ),
     },
     {
-      accessorKey: 'lang',
-      header: 'Lang',
-      size: 70,
+      accessorKey: 'note',
+      header: 'Note',
+      size: 150,
       enableSorting: false,
-      Cell: ({ row }) => <span className="text-muted-foreground">{row.original.lang ?? '—'}</span>,
-    },
-    {
-      accessorKey: 'category',
-      header: 'Category',
-      size: 130,
-      enableSorting: false,
-      Cell: ({ row }) => {
-        const cat = row.original.category
-        if (!cat) return <span className="text-muted-foreground/50">—</span>
-        return (
-          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
-            {cat.name}
-          </span>
-        )
-      },
+      Cell: ({ row }) => (
+        <span className="text-muted-foreground text-xs line-clamp-2">
+          {row.original.note ?? <span className="opacity-30">—</span>}
+        </span>
+      ),
     },
     {
       accessorKey: 'published_at',
@@ -94,26 +100,16 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
       },
     },
     {
-      accessorKey: 'created_at',
-      header: 'Created At',
-      size: 150,
-      Cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {new Date(row.original.created_at).toLocaleString()}
-        </span>
-      ),
-    },
-    {
       id: 'actions',
       header: 'Action',
-      size: 250,
+      size: 290,
       enableSorting: false,
       enableGlobalFilter: false,
       enableHiding: false,
       mantineTableHeadCellProps: {
-        sx: { width: 250, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+        sx: { width: 290, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
       },
-      mantineTableBodyCellProps: { style: { width: 250 } },
+      mantineTableBodyCellProps: { style: { width: 290 } },
       Cell: ({ row }: { row: { original: Post } }) => (
         <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
           {canUpdate ? (
@@ -150,6 +146,33 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
               </Button>
             </>
           ) : null}
+          {canPublish ? (
+            row.original.status === 'published' ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                aria-label={`Unpublish ${row.original.title}`}
+                onClick={() => onPublishRow(row.original, false)}
+              >
+                <GlobeLock className="h-3.5 w-3.5" />
+                Unpublish
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                aria-label={`Publish ${row.original.title}`}
+                onClick={() => onPublishRow(row.original, true)}
+              >
+                <Globe className="h-3.5 w-3.5" />
+                Publish
+              </Button>
+            )
+          ) : null}
           {canDelete ? (
             <Button
               type="button"
@@ -182,11 +205,13 @@ type PostsTableCardProps = {
   canCreate: boolean
   canUpdate: boolean
   canDelete: boolean
+  canPublish: boolean
   onAddClick: () => void
   onViewRow: (row: Post) => void
   onEditRow: (row: Post) => void
   onDeleteRow: (row: Post) => void
   onToggleHidden: (row: Post) => void
+  onPublishRow: (row: Post, publish: boolean) => void
   selectedIds: Set<number>
   onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
   onBulkDeleteClick: () => void
@@ -205,11 +230,13 @@ function PostsTableCardInner({
   canCreate,
   canUpdate,
   canDelete,
+  canPublish,
   onAddClick,
   onViewRow,
   onEditRow,
   onDeleteRow,
   onToggleHidden,
+  onPublishRow,
   selectedIds,
   onSelectionChange,
   onBulkDeleteClick,
@@ -228,8 +255,27 @@ function PostsTableCardInner({
   }, [])
 
   const columns = useMemo(
-    () => getColumns({ canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow, onToggleHidden }),
-    [canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow, onToggleHidden],
+    () =>
+      getColumns({
+        canUpdate,
+        canDelete,
+        canPublish,
+        onViewRow,
+        onEditRow,
+        onDeleteRow,
+        onToggleHidden,
+        onPublishRow,
+      }),
+    [
+      canUpdate,
+      canDelete,
+      canPublish,
+      onViewRow,
+      onEditRow,
+      onDeleteRow,
+      onToggleHidden,
+      onPublishRow,
+    ],
   )
 
   const sorting: MRT_SortingState = useMemo(
@@ -295,18 +341,14 @@ function PostsTableCardInner({
         options: userOptions,
       },
       {
-        field: 'created_at_from',
-        label: 'Created From',
-        type: 'datepicker',
-        value: filters.created_at_from ?? null,
-        placeholder: 'Select start date',
-      },
-      {
-        field: 'created_at_to',
-        label: 'Created To',
-        type: 'datepicker',
-        value: filters.created_at_to ?? null,
-        placeholder: 'Select end date',
+        field: 'created_at',
+        label: 'Created At',
+        type: 'daterange',
+        value: {
+          from: filters.created_at_from ?? null,
+          to: filters.created_at_to ?? null,
+        } as DateRangeValue,
+        placeholder: 'Select range',
       },
       {
         field: 'is_hidden',
@@ -343,7 +385,6 @@ function PostsTableCardInner({
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
-      columnVisibility: { created_at: false },
       columnPinning: { right: ['actions'] },
     },
     state: { pagination, sorting, showLoadingOverlay: loading, rowSelection },
@@ -408,7 +449,15 @@ function PostsTableCardInner({
           fields={filterFields}
           onReset={onFilterReset}
           applyMode
-          onApply={(values) => onFilterChange(values as Partial<PostFilterParams>)}
+          onApply={(values) => {
+            const { created_at, ...rest } = values as Record<string, unknown>
+            const range = created_at as DateRangeValue | undefined
+            onFilterChange({
+              ...(rest as Partial<PostFilterParams>),
+              created_at_from: range?.from ?? null,
+              created_at_to: range?.to ?? null,
+            })
+          }}
         />
       </div>
     ),

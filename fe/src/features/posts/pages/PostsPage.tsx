@@ -37,6 +37,7 @@ export function PostsPage() {
   const canCreate = useMemo(() => hasPermission(perms, PermissionSlugs.PostsCreate), [perms])
   const canUpdate = useMemo(() => hasPermission(perms, PermissionSlugs.PostsUpdate), [perms])
   const canDelete = useMemo(() => hasPermission(perms, PermissionSlugs.PostsDelete), [perms])
+  const canPublish = useMemo(() => hasPermission(perms, PermissionSlugs.PostsPublish), [perms])
 
   const [data, setData] = useState<Post[]>([])
   const [rowCount, setRowCount] = useState(0)
@@ -161,6 +162,21 @@ export function PostsPage() {
     [loadData],
   )
 
+  const onPublishRow = useCallback(
+    (row: Post, publish: boolean) => {
+      void (async () => {
+        try {
+          await postsApi.publish(row.id, publish)
+          toast.success(publish ? 'Post published successfully' : 'Post unpublished successfully')
+          loadData()
+        } catch (err) {
+          toast.error(formatApiError(err))
+        }
+      })()
+    },
+    [loadData],
+  )
+
   const onConfirmBulkDelete = useCallback(async () => {
     const ids = Array.from(selectedIds)
     if (ids.length === 0) return
@@ -209,11 +225,13 @@ export function PostsPage() {
         canCreate={canCreate}
         canUpdate={canUpdate}
         canDelete={canDelete}
+        canPublish={canPublish}
         onAddClick={onAddClick}
         onViewRow={onViewRow}
         onEditRow={onEditRow}
         onDeleteRow={onDeleteRow}
         onToggleHidden={onToggleHidden}
+        onPublishRow={onPublishRow}
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         onBulkDeleteClick={onBulkDeleteClick}

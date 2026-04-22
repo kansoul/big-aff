@@ -26,6 +26,7 @@ export function EditPostPage() {
   const canCreateKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsCreate)
   const canUpdateKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsUpdate)
   const canDeleteKeywordSet = hasPermission(perms, PermissionSlugs.KeywordSetsDelete)
+  const canPublish = hasPermission(perms, PermissionSlugs.PostsPublish)
 
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -181,6 +182,7 @@ export function EditPostPage() {
             canCreateKeywordSet={canCreateKeywordSet}
             canUpdateKeywordSet={canUpdateKeywordSet}
             canDeleteKeywordSet={canDeleteKeywordSet}
+            canPublish={canPublish}
           />
 
           {formError ? (

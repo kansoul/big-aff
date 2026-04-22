@@ -32,12 +32,12 @@ class PostResource extends JsonResource
             'is_hidden' => $this->is_hidden,
             'type' => $this->type,
             'category_id' => $this->category_id,
-            'category' => $this->whenLoaded('category', fn () => [
+            'category' => $this->whenLoaded('category', fn() => [
                 'id' => $this->category?->id,
                 'name' => $this->category?->name,
             ]),
             'keyword_sets' => KeywordSetResource::collection($this->whenLoaded('keywordSets')),
-            'created_by' => $this->created_by,
+            'created_by' => $this->creator?->email,
             'updated_by' => $this->updated_by,
             'published_at' => $this->published_at,
             'created_at' => $this->created_at,

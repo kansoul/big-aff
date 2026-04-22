@@ -69,6 +69,9 @@ export const postsApi = {
     }),
 
   remove: (id: number) => axiosInstance.delete(`/posts/${id}`),
+
+  publish: (id: number, publish: boolean) =>
+    axiosInstance.post<{ data: Post }>(`/posts/${id}/publish`, { publish }),
 }
 
 export const userOptionsApi = {

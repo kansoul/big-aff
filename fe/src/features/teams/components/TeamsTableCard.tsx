@@ -6,38 +6,135 @@ import {
   type MRT_RowSelectionState,
   useMantineReactTable,
 } from 'mantine-react-table'
-import { Pencil, Plus, Trash2, UsersRound } from 'lucide-react'
+import { Loader2, Network, Pencil, Plus, Trash2, UserPlus, UsersRound } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
-import type { Team, TeamFilterParams } from '@/features/teams/types'
+import type { Team, TeamFilterParams, TeamRole } from '@/features/teams/types'
 
 type ActionMeta = {
   canUpdate: boolean
   canDelete: boolean
+  canAssign: boolean
   onEditRow: (row: Team) => void
   onDeleteRow: (row: Team) => void
+  onAddMembers: (row: Team) => void
+  onEditMembers: (row: Team) => void
+  onAssignToLeaders: (row: Team) => void
+  savedUserIdsByTeam: Record<number, number[]>
+  savedUserRolesByTeam: Record<number, Record<number, TeamRole>>
+  teamOptionsLoading: Record<number, boolean>
 }
 
 function getColumns(meta: ActionMeta): MRT_ColumnDef<Team>[] {
-  const { canUpdate, canDelete, onEditRow, onDeleteRow } = meta
+  const {
+    canUpdate,
+    canDelete,
+    canAssign,
+    onEditRow,
+    onDeleteRow,
+    onAddMembers,
+    onEditMembers,
+    onAssignToLeaders,
+    savedUserIdsByTeam,
+    savedUserRolesByTeam,
+    teamOptionsLoading,
+  } = meta
 
   return [
     {
       accessorKey: 'name',
       header: 'Name',
-      size: 220,
+      size: 200,
       Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
     },
     {
       accessorKey: 'description',
       header: 'Description',
-      size: 260,
+      size: 240,
       enableSorting: false,
       Cell: ({ row }) => {
         const description = row.original.description
         if (!description) return <span className="text-muted-foreground/50">-</span>
         return <span className="line-clamp-2 text-muted-foreground">{description}</span>
+      },
+    },
+    {
+      id: 'users',
+      header: 'Members',
+      size: 260,
+      enableSorting: false,
+      enableGlobalFilter: false,
+      Cell: ({ row }) => {
+        const team = row.original
+        const savedIds = savedUserIdsByTeam[team.id] ?? (team.users ?? []).map((u) => u.id)
+        const savedRoles = savedUserRolesByTeam[team.id] ?? {}
+        const roleCounts = savedIds.reduce(
+          (acc, userId) => {
+            const role = savedRoles[userId] ?? 'member'
+            acc[role] += 1
+            return acc
+          },
+          { manager: 0, leader: 0, member: 0 },
+        )
+        const isEmpty = savedIds.length === 0
+        const optionsLoading = teamOptionsLoading[team.id] ?? false
+
+        return (
+          <div className="flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              {(team.users_count ?? savedIds.length) > 0 ? (
+                <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
+                  {team.users_count ?? savedIds.length} total
+                </span>
+              ) : null}
+              {roleCounts.manager > 0 ? (
+                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">
+                  Manager {roleCounts.manager}
+                </span>
+              ) : null}
+              {roleCounts.leader > 0 ? (
+                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+                  Leader {roleCounts.leader}
+                </span>
+              ) : null}
+              {roleCounts.member > 0 ? (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  Member {roleCounts.member}
+                </span>
+              ) : null}
+              {optionsLoading ? (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Loader2 className="size-3 animate-spin" />
+                </span>
+              ) : null}
+            </div>
+            {canAssign ? (
+              <div className="flex flex-wrap gap-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={isEmpty ? 'default' : 'secondary'}
+                  className="h-7 gap-1 px-2 text-xs font-medium"
+                  onClick={() => (isEmpty ? onAddMembers(team) : onEditMembers(team))}
+                >
+                  {isEmpty ? <UserPlus className="size-3" /> : <Pencil className="size-3" />}
+                  {isEmpty ? 'Add members' : 'Edit members'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 px-2 text-xs font-medium"
+                  onClick={() => onAssignToLeaders(team)}
+                >
+                  <Network className="size-3" />
+                  Assign to leaders
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        )
       },
     },
     {
@@ -53,14 +150,14 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Team>[] {
     {
       id: 'actions',
       header: 'Actions',
-      size: 180,
+      size: 140,
       enableSorting: false,
       enableGlobalFilter: false,
       enableHiding: false,
       mantineTableHeadCellProps: {
-        sx: { width: 180, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+        sx: { width: 140, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
       },
-      mantineTableBodyCellProps: { style: { width: 180 } },
+      mantineTableBodyCellProps: { style: { width: 140 } },
       Cell: ({ row }: { row: { original: Team } }) => (
         <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
           {canUpdate ? (
@@ -107,9 +204,16 @@ type TeamsTableCardProps = {
   canCreate: boolean
   canUpdate: boolean
   canDelete: boolean
+  canAssign: boolean
   onAddClick: () => void
   onEditRow: (row: Team) => void
   onDeleteRow: (row: Team) => void
+  onAddMembers: (row: Team) => void
+  onEditMembers: (row: Team) => void
+  onAssignToLeaders: (row: Team) => void
+  savedUserIdsByTeam: Record<number, number[]>
+  savedUserRolesByTeam: Record<number, Record<number, TeamRole>>
+  teamOptionsLoading: Record<number, boolean>
   selectedIds: Set<number>
   onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
   onBulkDeleteClick: () => void
@@ -127,16 +231,48 @@ function TeamsTableCardInner({
   canCreate,
   canUpdate,
   canDelete,
+  canAssign,
   onAddClick,
   onEditRow,
   onDeleteRow,
+  onAddMembers,
+  onEditMembers,
+  onAssignToLeaders,
+  savedUserIdsByTeam,
+  savedUserRolesByTeam,
+  teamOptionsLoading,
   selectedIds,
   onSelectionChange,
   onBulkDeleteClick,
 }: TeamsTableCardProps) {
   const columns = useMemo(
-    () => getColumns({ canUpdate, canDelete, onEditRow, onDeleteRow }),
-    [canUpdate, canDelete, onEditRow, onDeleteRow],
+    () =>
+      getColumns({
+        canUpdate,
+        canDelete,
+        canAssign,
+        onEditRow,
+        onDeleteRow,
+        onAddMembers,
+        onEditMembers,
+        onAssignToLeaders,
+        savedUserIdsByTeam,
+        savedUserRolesByTeam,
+        teamOptionsLoading,
+      }),
+    [
+      canUpdate,
+      canDelete,
+      canAssign,
+      onEditRow,
+      onDeleteRow,
+      onAddMembers,
+      onEditMembers,
+      onAssignToLeaders,
+      savedUserIdsByTeam,
+      savedUserRolesByTeam,
+      teamOptionsLoading,
+    ],
   )
 
   const filterFields = useMemo<FilterFieldDef[]>(

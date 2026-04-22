@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\DB;
 class AssignAccountAction
 {
     /**
-     * Assign a list of accounts to a user.
+     * Sync a user's account assignments (1-n: each account belongs to at most one user).
+     * Only accounts belonging to the user's teams are affected.
      *
      * @param  array<int>  $accountIds
      *
@@ -24,44 +25,53 @@ class AssignAccountAction
             throw new AuthorizationException;
         }
 
-        $accountQuery = DB::table('accounts')
-            ->whereIn('id', $accountIds)
-            ->whereNull('deleted_at');
+        // Get user's team IDs
+        $userTeamIds = DB::table('team_user')
+            ->where('user_id', $user->id)
+            ->pluck('team_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
 
-        if (! $ownership->isAdmin()) {
-            $accountQuery->whereIn('created_by', $ownership->allowedUserIds());
-        }
-
-        $allowedAccountIds = $accountQuery
+        // All accounts in user's teams
+        $teamAccountIds = DB::table('accounts')
+            ->whereNull('deleted_at')
+            ->whereIn('team_id', $userTeamIds)
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        if (empty($allowedAccountIds)) {
-            return;
-        }
+        // Filter requested account_ids to only those in user's teams
+        $allowedAccountIds = array_values(array_intersect(
+            array_map('intval', $accountIds),
+            $teamAccountIds,
+        ));
 
-        DB::transaction(function () use ($user, $allowedAccountIds): void {
-            $existing = DB::table('account_user')
+        DB::transaction(function () use ($user, $allowedAccountIds, $teamAccountIds): void {
+            // Remove all existing assignments for this user within their teams (sync)
+            DB::table('account_user')
                 ->where('user_id', $user->id)
-                ->whereIn('account_id', $allowedAccountIds)
-                ->pluck('account_id')
-                ->map(fn ($id) => (int) $id)
-                ->all();
+                ->whereIn('account_id', $teamAccountIds)
+                ->delete();
 
-            $toInsert = array_diff($allowedAccountIds, $existing);
-
-            if (! empty($toInsert)) {
-                $now = now();
-                $rows = array_map(fn (int $accountId) => [
-                    'user_id' => $user->id,
-                    'account_id' => $accountId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ], $toInsert);
-
-                DB::table('account_user')->insert($rows);
+            if (empty($allowedAccountIds)) {
+                return;
             }
+
+            // Enforce 1-n: remove any other user's assignment for these accounts
+            DB::table('account_user')
+                ->whereIn('account_id', $allowedAccountIds)
+                ->where('user_id', '!=', $user->id)
+                ->delete();
+
+            $now = now();
+            $rows = array_map(fn (int $accountId) => [
+                'user_id' => $user->id,
+                'account_id' => $accountId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ], $allowedAccountIds);
+
+            DB::table('account_user')->insert($rows);
         });
     }
 }

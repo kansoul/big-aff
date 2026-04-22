@@ -183,6 +183,16 @@ class TeamController extends BaseController
      * @response 403 {"message": "This action is unauthorized."}
      * @response 404 {"message": "No query results for model [App\\Models\\Team] 1"}
      */
+    public function members(Team $team): JsonResponse
+    {
+        $members = $team->users()
+            ->select(['users.id', 'users.name', 'users.email'])
+            ->orderBy('users.name')
+            ->get();
+
+        return $this->sendResponse(['data' => $members]);
+    }
+
     public function leaders(Team $team): JsonResponse
     {
         $leaders = $this->teamService->leaders($team);

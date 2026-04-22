@@ -30,6 +30,7 @@ class UpdateAccountRequest extends FormRequest
             'status' => ['sometimes', 'nullable', 'string', 'max:50'],
             'is_special' => ['sometimes', 'boolean'],
             'sync_to_mcc' => ['sometimes', 'boolean'],
+            'user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
         ];
     }
 }

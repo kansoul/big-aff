@@ -1,3 +1,6 @@
 export { AccountsTableCard } from './AccountsTableCard'
+export { AssignUserAccountsDialog } from './AssignUserAccountsDialog'
+export { AssignUserAccountsPicker } from './AssignUserAccountsPicker'
+export { AssignUserAccountsTableCard } from './AssignUserAccountsTableCard'
 export { CreateAccountDialog, EditAccountDialog } from './AccountFormDialog'
 export { DeleteAccountDialog } from './DeleteAccountDialog'
