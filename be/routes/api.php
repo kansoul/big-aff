@@ -66,6 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('options', [UserController::class, 'options']);
         Route::get('/', [UserController::class, 'index'])
             ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
+        Route::get('channel-assignments', [ChannelController::class, 'listUsersWithChannels'])
+            ->middleware('permission.scope:'.Permission::ChannelsAssign->value);
         Route::get('parent-child-assignments', [UserParentChildController::class, 'index'])
             ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
         Route::post('/', [UserController::class, 'store'])
@@ -78,6 +80,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::SettingsUsersDelete->value);
         Route::post('{user}/assign-accounts', [AccountController::class, 'assignToUser'])
             ->middleware('permission.scope:'.Permission::AccountsAssign->value);
+        Route::post('{user}/assign-channels', [ChannelController::class, 'assignToUser'])
+            ->middleware('permission.scope:'.Permission::ChannelsAssign->value);
         Route::get('{user}/team-options', [UserController::class, 'teamOptions'])
             ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
     });
