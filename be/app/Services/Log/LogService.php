@@ -2,11 +2,11 @@
 
 namespace App\Services\Log;
 
+use App\Actions\Log\ClearLogFilesAction;
 use App\Actions\Log\GetLogEntryAction;
 use App\Actions\Log\ListLogEntriesAction;
 use App\Actions\Log\ListLogFilesAction;
 use App\Actions\Log\TailLogEntriesAction;
-use App\Actions\Log\ClearLogFilesAction;
 
 class LogService
 {

@@ -83,16 +83,19 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('files')->middleware('ensure.app.user')->group(function () {
-        Route::get('/options', [FileController::class, 'options']);
-        Route::get('/', [FileController::class, 'index']);
+        Route::get('/options', [FileController::class, 'options'])
+            ->middleware('permission.scope:'.Permission::FilesView->value);
+        Route::get('/', [FileController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::FilesView->value);
         Route::post('/', [FileController::class, 'store']);
-        Route::get('{file}', [FileController::class, 'show']);
-        Route::delete('{file}', [FileController::class, 'destroy']);
+        Route::get('{file}', [FileController::class, 'show'])
+            ->middleware('permission.scope:'.Permission::FilesView->value);
+        Route::delete('{file}', [FileController::class, 'destroy'])
+            ->middleware('permission.scope:'.Permission::FilesView->value);
     });
 
     Route::prefix('sites')->group(function () {
-        Route::get('options', [SiteController::class, 'options'])
-            ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
+        Route::get('options', [SiteController::class, 'options']);
         Route::get('/', [SiteController::class, 'index'])
             ->middleware('permission.scope:'.Permission::SettingsSitesView->value);
         Route::post('/', [SiteController::class, 'store'])
@@ -108,8 +111,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('posts')->group(function () {
-        Route::get('options', [PostController::class, 'options'])
-            ->middleware('permission.scope:'.Permission::AdsLinksCreate->value.'|'.Permission::AdsLinksView->value);
+        Route::get('options', [PostController::class, 'options']);
         Route::get('/', [PostController::class, 'index'])
             ->middleware('permission.scope:'.Permission::PostsView->value);
         Route::post('/', [PostController::class, 'store'])
@@ -125,8 +127,13 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('categories')->group(function () {
+        $categoryListBits = implode('|', [
+            (string) Permission::CategoriesView->value,
+            (string) Permission::PostsCreate->value,
+            (string) Permission::PostsUpdate->value,
+        ]);
         Route::get('/', [CategoryController::class, 'index'])
-            ->middleware('permission.scope:'.Permission::CategoriesView->value);
+            ->middleware('permission.scope:'.$categoryListBits);
         Route::post('/', [CategoryController::class, 'store'])
             ->middleware('permission.scope:'.Permission::CategoriesCreate->value);
         Route::get('{category}', [CategoryController::class, 'show'])
@@ -138,8 +145,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('channels')->group(function () {
-        Route::get('options', [ChannelController::class, 'options'])
-            ->middleware('permission.scope:'.Permission::ChannelsView->value.'|'.Permission::ChannelsCreate->value);
+        Route::get('options', [ChannelController::class, 'options']);
         Route::get('/', [ChannelController::class, 'index'])
             ->middleware('permission.scope:'.Permission::ChannelsView->value);
         Route::post('/', [ChannelController::class, 'store'])
@@ -149,8 +155,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('styles')->group(function () {
-        Route::get('options', [StyleController::class, 'options'])
-            ->middleware('permission.scope:'.Permission::StylesView->value.'|'.Permission::StylesCreate->value);
+        Route::get('options', [StyleController::class, 'options']);
         Route::get('/', [StyleController::class, 'index'])
             ->middleware('permission.scope:'.Permission::StylesView->value);
         Route::post('/', [StyleController::class, 'store'])
@@ -173,6 +178,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('roles')->group(function () {
         $listBits = implode('|', [
             (string) Permission::SettingsRolesView->value,
+            (string) Permission::SettingsUsersView->value,
             (string) Permission::SettingsUsersCreate->value,
             (string) Permission::SettingsUsersUpdate->value,
         ]);
@@ -202,8 +208,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('business-centers')->group(function () {
-        Route::get('options', [BusinessCenterController::class, 'options'])
-            ->middleware('permission.scope:'.Permission::BusinessCentersView->value);
+        Route::get('options', [BusinessCenterController::class, 'options']);
         Route::get('/', [BusinessCenterController::class, 'index'])
             ->middleware('permission.scope:'.Permission::BusinessCentersView->value);
         Route::post('/', [BusinessCenterController::class, 'store'])
@@ -217,8 +222,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('accounts')->group(function () {
-        Route::get('options', [AccountController::class, 'options'])
-            ->middleware('permission.scope:'.Permission::AccountsView->value);
+        Route::get('options', [AccountController::class, 'options']);
         Route::get('/', [AccountController::class, 'index'])
             ->middleware('permission.scope:'.Permission::AccountsView->value);
         Route::post('/', [AccountController::class, 'store'])
@@ -232,10 +236,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('teams')->group(function () {
-        Route::get('options', [TeamController::class, 'options'])
-            ->middleware('permission.scope:'.Permission::TeamsView->value);
-        Route::get('account-options', [TeamController::class, 'accountOptions'])
-            ->middleware('permission.scope:'.Permission::AdsReportView->value);
+        Route::get('options', [TeamController::class, 'options']);
+        Route::get('account-options', [TeamController::class, 'accountOptions']);
         Route::get('/', [TeamController::class, 'index'])
             ->middleware('permission.scope:'.Permission::TeamsView->value);
         Route::post('/', [TeamController::class, 'store'])
@@ -272,8 +274,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('campaigns')->group(function () {
-        Route::get('selector', [CampaignController::class, 'listCampaignSelectorAction'])
-            ->middleware('permission.scope:'.Permission::CampaignsView->value);
+        Route::get('selector', [CampaignController::class, 'listCampaignSelectorAction']);
     });
 
     Route::prefix('campaign-rules')->group(function () {
@@ -302,10 +303,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('dashboard')->group(function () {
-        Route::get('insight-stats', [DashboardController::class, 'insightStats'])
-            ->middleware('permission.scope:'.Permission::AdsReportView->value);
-        Route::get('revenue-table', [DashboardController::class, 'revenueTable'])
-            ->middleware('permission.scope:'.Permission::RevenueStatsView->value);
+        Route::get('insight-stats', [DashboardController::class, 'insightStats']);
+        Route::get('revenue-table', [DashboardController::class, 'revenueTable']);
     });
 
     Route::prefix('revenue-reports')->group(function () {

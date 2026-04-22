@@ -32,7 +32,7 @@ class PostResource extends JsonResource
             'is_hidden' => $this->is_hidden,
             'type' => $this->type,
             'category_id' => $this->category_id,
-            'category' => $this->whenLoaded('category', fn() => [
+            'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category?->id,
                 'name' => $this->category?->name,
             ]),

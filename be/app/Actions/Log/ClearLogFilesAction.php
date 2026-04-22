@@ -10,7 +10,7 @@ class ClearLogFilesAction
     public function execute(): void
     {
         $dir = storage_path('logs');
-        $pattern = $dir . '/*.log';
+        $pattern = $dir.'/*.log';
         $paths = glob($pattern) ?: [];
 
         foreach ($paths as $path) {
