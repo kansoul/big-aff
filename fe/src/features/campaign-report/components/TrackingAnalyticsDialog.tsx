@@ -343,12 +343,14 @@ type TrackingAnalyticsDialogProps = {
   trigger?: React.ReactNode
   initialDate?: string | null
   initialCampaignId?: string | null
+  initialAccountId?: string | null
 }
 
 function TrackingAnalyticsDialogInner({
   trigger,
   initialDate,
   initialCampaignId,
+  initialAccountId,
 }: TrackingAnalyticsDialogProps) {
   const [open, setOpen] = useState(false)
 
@@ -360,6 +362,7 @@ function TrackingAnalyticsDialogInner({
   const [filters, setFilters] = useState<TrackingAnalyticsFilterParams>(() => ({
     date_from: initialDate ?? null,
     date_to: initialDate ?? null,
+    account_id: initialAccountId ?? null,
     campaign_id: initialCampaignId ?? null,
   }))
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null)
@@ -453,6 +456,7 @@ function TrackingAnalyticsDialogInner({
         setFilters({
           date_from: initialDate ?? null,
           date_to: initialDate ?? null,
+          account_id: initialAccountId ?? null,
           campaign_id: initialCampaignId ?? null,
         })
         setStatsData(null)
@@ -463,7 +467,7 @@ function TrackingAnalyticsDialogInner({
         fetchedOptionsRef.current = false
       }
     },
-    [initialDate, initialCampaignId],
+    [initialDate, initialCampaignId, initialAccountId],
   )
 
   const onApplyFilters = useCallback((values: Record<string, unknown>) => {
@@ -481,11 +485,12 @@ function TrackingAnalyticsDialogInner({
     setFilters({
       date_from: initialDate ?? null,
       date_to: initialDate ?? null,
+      account_id: initialAccountId ?? null,
       campaign_id: initialCampaignId ?? null,
     })
     setKeywordState(DEFAULT_KEYWORD_STATE)
     setKeywordSearch('')
-  }, [initialDate, initialCampaignId])
+  }, [initialDate, initialCampaignId, initialAccountId])
 
   const onKeywordSort = useCallback(
     (orderBy: KeywordTrackingOrderBy | null, order: 'asc' | 'desc' | null) => {
