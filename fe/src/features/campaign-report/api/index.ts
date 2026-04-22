@@ -4,6 +4,11 @@ import type {
   CampaignReportFiltersResponse,
   CampaignReportListResponse,
   CampaignReportToggleStatusResponse,
+  CampaignRuleCreatePayload,
+  CampaignRuleFilterParams,
+  CampaignRuleListResponse,
+  CampaignRuleSingleResponse,
+  CampaignRuleUpdatePayload,
   CampaignScheduleCreatePayload,
   CampaignScheduleFilterParams,
   CampaignScheduleListResponse,
@@ -111,6 +116,25 @@ export const campaignReportApi = {
   updateCampaignSchedule: (id: number, payload: CampaignScheduleUpdatePayload) =>
     axiosInstance.put<CampaignScheduleSingleResponse>(`/campaign-schedules/${id}`, payload),
 
-  deleteCampaignSchedule: (id: number) =>
-    axiosInstance.delete(`/campaign-schedules/${id}`),
+  deleteCampaignSchedule: (id: number) => axiosInstance.delete(`/campaign-schedules/${id}`),
+
+  createCampaignRule: (payload: CampaignRuleCreatePayload) =>
+    axiosInstance.post<CampaignRuleSingleResponse>('/campaign-rules', payload),
+
+  updateCampaignRule: (id: number, payload: CampaignRuleUpdatePayload) =>
+    axiosInstance.put<CampaignRuleSingleResponse>(`/campaign-rules/${id}`, payload),
+
+  deleteCampaignRule: (id: number) => axiosInstance.delete(`/campaign-rules/${id}`),
+
+  listCampaignRules: (filters: CampaignRuleFilterParams) =>
+    axiosInstance.get<CampaignRuleListResponse>('/campaign-rules', {
+      params: {
+        page: filters.page ?? 1,
+        per_page: filters.per_page ?? 30,
+        ...(filters.entity_type ? { entity_type: filters.entity_type } : {}),
+        ...(filters.is_active != null ? { is_active: filters.is_active ? '1' : '0' } : {}),
+        ...(filters.order_by ? { order_by: filters.order_by } : {}),
+        ...(filters.order ? { order: filters.order } : {}),
+      },
+    }),
 }

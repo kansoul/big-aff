@@ -1,6 +1,7 @@
 export { CampaignReportTableCard } from './CampaignReportTableCard'
 export { CampaignReportSummaryCard } from './CampaignReportSummaryCard'
 export { CampaignSchedulesDialog } from './CampaignSchedulesDialog'
+export { CampaignRulesDialog } from './CampaignRulesDialog'
 export { RevenueReportListDialog } from './RevenueReportListDialog'
 export { RevenueReportRangeDialog } from './RevenueReportRangeDialog'
 export { TrackingAnalyticsDialog } from './TrackingAnalyticsDialog'

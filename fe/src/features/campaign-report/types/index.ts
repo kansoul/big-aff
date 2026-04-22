@@ -384,6 +384,93 @@ export interface KeywordTrackingListResponse {
   pagination: CampaignReportPagination
 }
 
+// ─── Campaign Rules ───────────────────────────────────────────────────────────
+
+export type CampaignRuleEntityType = 'campaign' | 'ad_adset'
+
+export type CampaignRuleOrderBy =
+  | 'id'
+  | 'title'
+  | 'entity_type'
+  | 'is_active'
+  | 'expired_at'
+  | 'created_at'
+
+export interface CampaignRuleRow {
+  id: number
+  title: string
+  code_rule: string
+  entity_type: CampaignRuleEntityType
+  is_active: boolean
+  expired_at: string
+  min_roi: string | null
+  min_profit: string | null
+  min_revenue: string | null
+  min_spend: string | null
+  max_cpa: string | null
+  min_conversion: number | null
+  min_spend_adset: string | null
+  start_hour: string | null
+  end_hour: string | null
+  user: { id?: number; name?: string | null; email?: string | null } | null
+  apply_rules_count: number
+  campaign_ids: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface CampaignRuleCreatePayload {
+  title: string
+  entity_type: CampaignRuleEntityType
+  is_active?: boolean
+  expired_at?: string | null
+  min_roi?: number | null
+  min_profit?: number | null
+  min_revenue?: number | null
+  min_spend?: number | null
+  max_cpa?: number | null
+  min_conversion?: number | null
+  min_spend_adset?: number | null
+  start_hour?: string | null
+  end_hour?: string | null
+  campaign_ids?: string[] | null
+}
+
+export interface CampaignRuleUpdatePayload {
+  title?: string
+  entity_type?: CampaignRuleEntityType
+  is_active?: boolean
+  expired_at?: string | null
+  min_roi?: number | null
+  min_profit?: number | null
+  min_revenue?: number | null
+  min_spend?: number | null
+  max_cpa?: number | null
+  min_conversion?: number | null
+  min_spend_adset?: number | null
+  start_hour?: string | null
+  end_hour?: string | null
+  campaign_ids?: string[] | null
+}
+
+export interface CampaignRuleSingleResponse {
+  data: CampaignRuleRow
+}
+
+export interface CampaignRuleFilterParams {
+  entity_type?: CampaignRuleEntityType | null
+  is_active?: boolean | null
+  order?: 'asc' | 'desc' | null
+  order_by?: CampaignRuleOrderBy | null
+  page?: number
+  per_page?: number
+}
+
+export interface CampaignRuleListResponse {
+  data: CampaignRuleRow[]
+  pagination: CampaignReportPagination
+}
+
 // ─── Campaign Schedules ───────────────────────────────────────────────────────
 
 export type CampaignScheduleOrderBy =
