@@ -183,7 +183,10 @@ enum Permission: string
     case UserTablePreferencesUpdate = 'user-table-preferences.update'; // bit 75 →  37778931862957161709568
 
     // —— Logs ——
-    case LogsView = 'logs.view';                                        // bit 76 →  75557863725914323419136
+    case LogsView = 'logs.view';                        // bit 82
+
+    // —— Posts (publish) ——
+    case PostsPublish = 'posts.publish';                // bit 83
 
     // —— Campaign Rules ——
     case CampaignRulesView = 'campaign-rules.view';     // bit 77 →  75557863725914323419136

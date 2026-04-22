@@ -2,14 +2,18 @@ import { memo } from 'react'
 import { Loader2, Save, Users } from 'lucide-react'
 
 import { AssignUserAccountsPicker, type AssignAccountOption } from './AssignUserAccountsPicker'
-import type { AccountOptionForAssign, UserAccountAssignmentRow } from '@/features/users/types'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import type {
+  AccountOptionForAssign,
+  UserAccountAssignmentRow,
+} from '../types/userAccountAssignments'
 
 type AssignUserAccountsTableCardProps = {
   loading: boolean
   users: UserAccountAssignmentRow[]
-  accountOptions: AccountOptionForAssign[]
+  /** Per-user account options filtered by their team */
+  accountOptionsByUser: Record<number, AccountOptionForAssign[]>
   drafts: Record<number, number[]>
   savedByUserId: Record<number, number[]>
   onDraftChange: (userId: number, accountIds: number[]) => void
@@ -21,11 +25,11 @@ type AssignUserAccountsTableCardProps = {
 
 function accountOptionsForRow(
   row: UserAccountAssignmentRow,
-  accountOptions: AccountOptionForAssign[],
+  options: AccountOptionForAssign[],
 ): AssignAccountOption[] {
   const merged = new Map<number, AssignAccountOption>()
 
-  accountOptions.forEach((option) => {
+  options.forEach((option) => {
     merged.set(option.id, {
       id: option.id,
       account_id: option.account_id,
@@ -52,7 +56,7 @@ function hasSelectionDiff(left: number[], right: number[]): boolean {
 function AssignUserAccountsTableCardInner({
   loading,
   users,
-  accountOptions,
+  accountOptionsByUser,
   drafts,
   savedByUserId,
   onDraftChange,
@@ -80,7 +84,7 @@ function AssignUserAccountsTableCardInner({
             const draft = drafts[row.id] ?? saved
             const dirty = hasSelectionDiff(draft, saved)
             const isSaving = savingRowId === row.id
-            const pickerOptions = accountOptionsForRow(row, accountOptions)
+            const pickerOptions = accountOptionsForRow(row, accountOptionsByUser[row.id] ?? [])
 
             return (
               <div

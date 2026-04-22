@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Permission;
 use App\Http\Requests\Post\GetLatestPostsRequest;
 use App\Http\Requests\Post\GetPostBySlugRequest;
 use App\Http\Requests\Post\ListPostsRequest;
+use App\Http\Requests\Post\PublishPostRequest;
 use App\Http\Requests\Post\SearchPostRequest;
 use App\Http\Requests\Post\StorePostRequest;
 use App\Http\Requests\Post\UpdatePostRequest;
@@ -14,6 +16,7 @@ use App\Http\Resources\Post\PostResource;
 use App\Models\Post;
 use App\Services\Post\PostService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -81,7 +84,16 @@ class PostController extends BaseController
      */
     public function store(StorePostRequest $request): JsonResponse
     {
-        $post = $this->postService->create($request->validated());
+        $data = $request->validated();
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (! $user->hasPermissionFlag(Permission::PostsPublish)) {
+            $data['status'] = 'draft';
+            $data['published_at'] = null;
+        }
+
+        $post = $this->postService->create($data);
         $post->load(['featureMedia', 'category']);
 
         return $this->sendResponse(
@@ -137,7 +149,15 @@ class PostController extends BaseController
      */
     public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
-        $updated = $this->postService->update($post, $request->validated());
+        $data = $request->validated();
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (! $user->hasPermissionFlag(Permission::PostsPublish)) {
+            unset($data['status'], $data['published_at']);
+        }
+
+        $updated = $this->postService->update($post, $data);
 
         return $this->sendResponse(
             ['data' => new PostResource($updated)]
@@ -160,6 +180,31 @@ class PostController extends BaseController
         $this->postService->delete($post);
 
         return $this->sendResponse([], Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Publish or unpublish post
+     *
+     * Toggle a post between published and draft. Pass `publish: true` to publish, `false` to unpublish.
+     *
+     * @urlParam post integer required The post ID. Example: 1
+     *
+     * @bodyParam publish boolean required Whether to publish (true) or unpublish (false). Example: true
+     *
+     * @response 200 {"data": {"id": 1, "status": "published", "published_at": "2026-04-21T00:00:00+00:00"}}
+     * @response 403 {"message": "This action is unauthorized."}
+     * @response 404 {"message": "No query results for model [App\\Models\\Post] 1"}
+     */
+    public function publish(Post $post, PublishPostRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+
+        $updated = $this->postService->update($post, [
+            'status' => $data['publish'] ? 'published' : 'draft',
+            'published_at' => $data['publish'] ? now()->toDateString() : null,
+        ]);
+
+        return $this->sendResponse(['data' => new PostResource($updated)]);
     }
 
     /**

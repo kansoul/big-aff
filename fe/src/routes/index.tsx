@@ -132,21 +132,6 @@ export const router = createBrowserRouter([
             },
             handle: { title: 'Users', navSection: NAV_SECTIONS.settings },
           },
-
-          {
-            path: routeSegment(PATHS.settingsUsersAssignAccounts),
-            lazy: async () => {
-              const { AssignUserAccountsPage } =
-                await import('@/features/users/pages/AssignUserAccountsPage')
-              return {
-                Component: withPermission(
-                  AssignUserAccountsPage,
-                  PermissionSlugs.SettingsUsersView,
-                ),
-              }
-            },
-            handle: { title: 'Assign Account', navSection: NAV_SECTIONS.settings },
-          },
           {
             path: routeSegment(PATHS.teams),
             lazy: async () => {
@@ -156,17 +141,6 @@ export const router = createBrowserRouter([
               }
             },
             handle: { title: 'Teams' },
-          },
-          {
-            path: routeSegment(PATHS.teamsAssignUsers),
-            lazy: async () => {
-              const { AssignTeamUsersPage } =
-                await import('@/features/teams/pages/AssignTeamUsersPage')
-              return {
-                Component: withPermission(AssignTeamUsersPage, PermissionSlugs.TeamsAssign),
-              }
-            },
-            handle: { title: 'Assign Team Users' },
           },
           {
             path: routeSegment(PATHS.channels),

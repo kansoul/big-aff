@@ -5,10 +5,23 @@ import type {
   AccountCreatePayload,
   AccountFilterParams,
   AccountListResponse,
+  AccountOptionForAssign,
   AccountUpdatePayload,
 } from '@/features/accounts/types'
 
 export const accountsApi = {
+  listUserAssignOptions: async (userId: number): Promise<AccountOptionForAssign[]> => {
+    const response = await axiosInstance.get<{ data: AccountOptionForAssign[] }>(
+      '/accounts/options',
+      { params: { user_id: userId } },
+    )
+    return response.data.data
+  },
+
+  assignToUser: async (userId: number, accountIds: number[]): Promise<void> => {
+    await axiosInstance.post(`/users/${userId}/assign-accounts`, { account_ids: accountIds })
+  },
+
   list: (filters: AccountFilterParams) =>
     axiosInstance.get<AccountListResponse>('/accounts', {
       params: {
@@ -31,6 +44,7 @@ export const accountsApi = {
       ads_type: payload.ads_type,
       business_center_id: payload.business_center_id ?? null,
       team_id: payload.team_id ?? null,
+      user_id: payload.user_id ?? null,
       status: payload.status ?? null,
       is_special: payload.is_special ?? false,
       sync_to_mcc: payload.sync_to_mcc ?? false,
@@ -44,6 +58,7 @@ export const accountsApi = {
       ads_type: payload.ads_type,
       business_center_id: payload.business_center_id ?? null,
       team_id: payload.team_id ?? null,
+      user_id: payload.user_id ?? null,
       status: payload.status ?? null,
       is_special: payload.is_special,
       sync_to_mcc: payload.sync_to_mcc,

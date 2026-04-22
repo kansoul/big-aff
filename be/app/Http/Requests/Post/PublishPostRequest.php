@@ -1,15 +1,16 @@
 <?php
 
-namespace App\Http\Requests\Account;
+namespace App\Http\Requests\Post;
 
+use App\Enums\Permission;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class AssignAccountRequest extends FormRequest
+class PublishPostRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->hasPermissionFlag(Permission::PostsPublish);
     }
 
     /**
@@ -18,8 +19,7 @@ class AssignAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'account_ids' => ['present', 'array'],
-            'account_ids.*' => ['required', 'integer', 'exists:accounts,id'],
+            'publish' => ['required', 'boolean'],
         ];
     }
 }

@@ -1,5 +1,4 @@
 import type {
-  AccountOptionForAssign,
   ParentChildAssignmentsPayload,
   UserCreatePayload,
   UserFilterParams,
@@ -48,13 +47,6 @@ export const usersApi = {
     const response = await axiosInstance.put<ApiResponse<ParentChildAssignmentsPayload>>(
       `/users/${parentId}/parent-children`,
       { child_ids: childIds },
-    )
-    return response.data.data
-  },
-
-  async listAccountOptions(): Promise<AccountOptionForAssign[]> {
-    const response = await axiosInstance.get<{ data: AccountOptionForAssign[] }>(
-      '/accounts/options',
     )
     return response.data.data
   },

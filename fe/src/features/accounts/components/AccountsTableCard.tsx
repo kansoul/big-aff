@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import {
   MantineReactTable,
   MRT_ShowHideColumnsButton,
@@ -6,7 +6,7 @@ import {
   type MRT_RowSelectionState,
   useMantineReactTable,
 } from 'mantine-react-table'
-import { Pencil, Plus, Trash2, Wallet } from 'lucide-react'
+import { Pencil, Plus, Trash2, UserCheck, Wallet } from 'lucide-react'
 
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { StatusBadge } from '@/components/common/StatusBadge'
@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import type { Account, AccountFilterParams } from '@/features/accounts/types'
 import type { SearchableSelectOption } from '@/components/common/SearchableSelect'
+import { AssignUserAccountsDialog } from './AssignUserAccountsDialog'
 
 type ToggleField = 'is_special' | 'sync_to_mcc'
 
@@ -196,6 +197,7 @@ type AccountsTableCardProps = {
   canCreate: boolean
   canUpdate: boolean
   canDelete: boolean
+  canAssign: boolean
   onAddClick: () => void
   onEditRow: (row: Account) => void
   onDeleteRow: (row: Account) => void
@@ -220,6 +222,7 @@ function AccountsTableCardInner({
   canCreate,
   canUpdate,
   canDelete,
+  canAssign,
   onAddClick,
   onEditRow,
   onDeleteRow,
@@ -229,6 +232,8 @@ function AccountsTableCardInner({
   onSelectionChange,
   onBulkDeleteClick,
 }: AccountsTableCardProps) {
+  const [assignOpen, setAssignOpen] = useState(false)
+
   const columns = useMemo(
     () =>
       getColumns({
@@ -406,6 +411,20 @@ function AccountsTableCardInner({
               <div className="mx-1 h-5 w-px bg-border" />
             </>
           ) : null}
+          {canAssign ? (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                onClick={() => setAssignOpen(true)}
+              >
+                <UserCheck className="h-3.5 w-3.5" />
+                Assign Accounts
+              </Button>
+              <div className="mx-1 h-5 w-px bg-border" />
+            </>
+          ) : null}
           {canCreate ? (
             <>
               <Button
@@ -437,7 +456,12 @@ function AccountsTableCardInner({
     ),
   })
 
-  return <MantineReactTable table={table} />
+  return (
+    <>
+      <MantineReactTable table={table} />
+      <AssignUserAccountsDialog open={assignOpen} onOpenChange={setAssignOpen} />
+    </>
+  )
 }
 
 export const AccountsTableCard = memo(AccountsTableCardInner)

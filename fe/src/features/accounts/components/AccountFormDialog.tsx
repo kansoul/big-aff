@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AlertCircle, Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
@@ -33,6 +33,7 @@ import type {
 } from '@/features/accounts/types'
 import { accountCreateSchema, accountUpdateSchema } from '@/features/accounts/types'
 import { formatApiError } from '@/features/settings/components'
+import { teamsApi } from '@/features/teams/api'
 
 const ADS_TYPE_OPTIONS = [
   { value: 'facebook', label: 'Facebook' },
@@ -45,14 +46,41 @@ const STATUS_OPTIONS = [
   { value: 'die', label: 'Die' },
 ]
 
-const ACCOUNT_CREATE_DEFAULT_VALUES: AccountCreateFormValues = {
-  ads_type: 'facebook',
-  business_center_id: null,
-  team_id: null,
-  status: null,
-  is_special: false,
-  sync_to_mcc: false,
-  lines: '',
+type TeamMember = { id: number; name: string; email: string }
+
+function useTeamUsers(teamId: number | undefined | null): SearchableSelectOption[] {
+  const [loadedTeamId, setLoadedTeamId] = useState<number | null | undefined>(null)
+  const [users, setUsers] = useState<TeamMember[]>([])
+
+  useEffect(() => {
+    if (!teamId) return
+    let ignore = false
+    teamsApi
+      .members(teamId)
+      .then((res) => {
+        if (!ignore) {
+          setUsers(res.data.data)
+          setLoadedTeamId(teamId)
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setUsers([])
+          setLoadedTeamId(teamId)
+        }
+      })
+    return () => {
+      ignore = true
+    }
+  }, [teamId])
+
+  return useMemo(
+    () =>
+      loadedTeamId === teamId
+        ? users.map((u) => ({ value: String(u.id), label: `${u.name} (${u.email})` }))
+        : [],
+    [loadedTeamId, teamId, users],
+  )
 }
 
 type CreateAccountDialogProps = {
@@ -75,22 +103,43 @@ export function CreateAccountDialog({
 
   const form = useForm<AccountCreateFormValues>({
     resolver: zodResolver(accountCreateSchema),
-    defaultValues: ACCOUNT_CREATE_DEFAULT_VALUES,
+    defaultValues: {
+      ads_type: 'facebook',
+      business_center_id: null,
+      team_id: undefined,
+      user_id: null,
+      status: null,
+      is_special: false,
+      sync_to_mcc: false,
+      lines: '',
+    },
   })
 
+  const selectedTeamId = useWatch({ control: form.control, name: 'team_id' })
+  const teamUserOptions = useTeamUsers(selectedTeamId)
+
   useEffect(() => {
-    if (!open) {
-      return
-    }
+    if (!open) return
     setFormError(null)
-    form.reset(ACCOUNT_CREATE_DEFAULT_VALUES)
+    form.reset({
+      ads_type: 'facebook',
+      business_center_id: null,
+      team_id: undefined,
+      user_id: null,
+      status: null,
+      is_special: false,
+      sync_to_mcc: false,
+      lines: '',
+    })
   }, [open, form])
+
+  useEffect(() => {
+    form.setValue('user_id', null)
+  }, [selectedTeamId, form])
 
   const onSubmit = async (
     values: AccountCreateFormValues,
-    options?: {
-      createAnother?: boolean
-    },
+    options?: { createAnother?: boolean },
   ) => {
     try {
       setFormError(null)
@@ -99,6 +148,7 @@ export function CreateAccountDialog({
         ads_type: values.ads_type,
         business_center_id: values.business_center_id,
         team_id: values.team_id,
+        user_id: values.user_id,
         status: values.status,
         is_special: values.is_special,
         sync_to_mcc: values.sync_to_mcc,
@@ -106,7 +156,16 @@ export function CreateAccountDialog({
       })
       toast.success('Account created successfully')
       if (options?.createAnother) {
-        form.reset(ACCOUNT_CREATE_DEFAULT_VALUES)
+        form.reset({
+          ads_type: 'facebook',
+          business_center_id: null,
+          team_id: undefined,
+          user_id: null,
+          status: null,
+          is_special: false,
+          sync_to_mcc: false,
+          lines: '',
+        })
       } else {
         onOpenChange(false)
       }
@@ -159,18 +218,20 @@ export function CreateAccountDialog({
 
             <FormField
               control={form.control}
-              name="business_center_id"
+              name="team_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Business Center ID</FormLabel>
+                  <FormLabel>
+                    Team <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <SearchableSelect
-                      value={field.value != null ? String(field.value) : '__none__'}
+                      value={field.value != null ? String(field.value) : ''}
                       onValueChange={(value) =>
-                        field.onChange(value === '__none__' ? null : Number(value))
+                        field.onChange(value !== '' ? Number(value) : undefined)
                       }
-                      options={[{ value: '__none__', label: 'None' }, ...businessCenterOptions]}
-                      placeholder="Select business center"
+                      options={teamOptions}
+                      placeholder="Select team"
                       disabled={submitting}
                     />
                   </FormControl>
@@ -181,18 +242,40 @@ export function CreateAccountDialog({
 
             <FormField
               control={form.control}
-              name="team_id"
+              name="user_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Team</FormLabel>
+                  <FormLabel>Assign to User</FormLabel>
                   <FormControl>
                     <SearchableSelect
                       value={field.value != null ? String(field.value) : '__none__'}
                       onValueChange={(value) =>
                         field.onChange(value === '__none__' ? null : Number(value))
                       }
-                      options={[{ value: '__none__', label: 'None' }, ...teamOptions]}
-                      placeholder="Select team"
+                      options={[{ value: '__none__', label: 'None' }, ...teamUserOptions]}
+                      placeholder={selectedTeamId ? 'Select user' : 'Select a team first'}
+                      disabled={submitting || !selectedTeamId}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="business_center_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Business Center</FormLabel>
+                  <FormControl>
+                    <SearchableSelect
+                      value={field.value != null ? String(field.value) : '__none__'}
+                      onValueChange={(value) =>
+                        field.onChange(value === '__none__' ? null : Number(value))
+                      }
+                      options={[{ value: '__none__', label: 'None' }, ...businessCenterOptions]}
+                      placeholder="Select business center"
                       disabled={submitting}
                     />
                   </FormControl>
@@ -272,8 +355,7 @@ export function CreateAccountDialog({
                   <FormControl>
                     <Textarea
                       rows={7}
-                      placeholder={`123456789|My Account Name\n1234123123|Another Account\n---\nMain Team IDs:\n(none available)
-                        `}
+                      placeholder={`123456789|My Account Name\n1234123123|Another Account`}
                       value={field.value}
                       disabled={submitting}
                       onChange={field.onChange}
@@ -357,12 +439,16 @@ export function EditAccountDialog({
       account_name: null,
       ads_type: 'facebook',
       business_center_id: null,
-      team_id: null,
+      team_id: undefined,
+      user_id: null,
       status: null,
       is_special: false,
       sync_to_mcc: false,
     },
   })
+
+  const selectedTeamId = useWatch({ control: form.control, name: 'team_id' })
+  const teamUserOptions = useTeamUsers(selectedTeamId)
 
   const defaults = useMemo(
     () => ({
@@ -370,7 +456,8 @@ export function EditAccountDialog({
       account_name: account?.account_name ?? null,
       ads_type: account?.ads_type ?? ('facebook' as const),
       business_center_id: account?.business_center_id ?? null,
-      team_id: account?.team_id ?? null,
+      team_id: account?.team_id ?? undefined,
+      user_id: null as number | null,
       status: account?.status ?? null,
       is_special: account?.is_special ?? false,
       sync_to_mcc: account?.sync_to_mcc ?? false,
@@ -379,17 +466,13 @@ export function EditAccountDialog({
   )
 
   useEffect(() => {
-    if (!open) {
-      return
-    }
+    if (!open) return
     setFormError(null)
     form.reset(defaults)
   }, [open, defaults, form])
 
   const onSubmit = async (values: AccountUpdateFormValues) => {
-    if (!account) {
-      return
-    }
+    if (!account) return
 
     try {
       setFormError(null)
@@ -400,6 +483,7 @@ export function EditAccountDialog({
         ads_type: values.ads_type,
         business_center_id: values.business_center_id,
         team_id: values.team_id,
+        user_id: values.user_id,
         status: values.status,
         is_special: values.is_special,
         sync_to_mcc: values.sync_to_mcc,
@@ -490,18 +574,20 @@ export function EditAccountDialog({
 
             <FormField
               control={form.control}
-              name="business_center_id"
+              name="team_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Business Center ID</FormLabel>
+                  <FormLabel>
+                    Team <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <SearchableSelect
-                      value={field.value != null ? String(field.value) : '__none__'}
+                      value={field.value != null ? String(field.value) : ''}
                       onValueChange={(value) =>
-                        field.onChange(value === '__none__' ? null : Number(value))
+                        field.onChange(value !== '' ? Number(value) : undefined)
                       }
-                      options={[{ value: '__none__', label: 'None' }, ...businessCenterOptions]}
-                      placeholder="Select business center"
+                      options={teamOptions}
+                      placeholder="Select team"
                       disabled={submitting}
                     />
                   </FormControl>
@@ -512,18 +598,40 @@ export function EditAccountDialog({
 
             <FormField
               control={form.control}
-              name="team_id"
+              name="user_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Team</FormLabel>
+                  <FormLabel>Assign to User</FormLabel>
                   <FormControl>
                     <SearchableSelect
                       value={field.value != null ? String(field.value) : '__none__'}
                       onValueChange={(value) =>
                         field.onChange(value === '__none__' ? null : Number(value))
                       }
-                      options={[{ value: '__none__', label: 'None' }, ...teamOptions]}
-                      placeholder="Select team"
+                      options={[{ value: '__none__', label: 'None' }, ...teamUserOptions]}
+                      placeholder={selectedTeamId ? 'Select user' : 'Select a team first'}
+                      disabled={submitting || !selectedTeamId}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="business_center_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Business Center</FormLabel>
+                  <FormControl>
+                    <SearchableSelect
+                      value={field.value != null ? String(field.value) : '__none__'}
+                      onValueChange={(value) =>
+                        field.onChange(value === '__none__' ? null : Number(value))
+                      }
+                      options={[{ value: '__none__', label: 'None' }, ...businessCenterOptions]}
+                      placeholder="Select business center"
                       disabled={submitting}
                     />
                   </FormControl>

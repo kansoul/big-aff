@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Account\AssignAccountRequest;
 use App\Http\Requests\Account\ListAccountsRequest;
 use App\Http\Requests\Account\StoreAccountRequest;
 use App\Http\Requests\Account\UpdateAccountRequest;
 use App\Http\Resources\AccountResource;
 use App\Models\Account;
+use App\Models\User;
 use App\Services\Account\AccountService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -25,12 +28,17 @@ class AccountController extends BaseController
      * Account options
      *
      * Return a lightweight list of accounts for use in select/dropdown inputs.
+     * Optionally filter by a user's teams by passing `user_id`.
      *
-     * @response 200 {"data": [{"id": 1, "account_id": "123456", "account_name": "My Account"}]}
+     * @queryParam user_id integer optional Filter accounts by the given user's teams. Example: 1
+     *
+     * @response 200 {"data": [{"id": 1, "account_id": "123456", "account_name": "My Account", "team_id": 1}]}
      */
-    public function options(): JsonResponse
+    public function options(Request $request): JsonResponse
     {
-        return $this->sendResponse(['data' => $this->accountService->options()]);
+        $userId = $request->integer('user_id') ?: null;
+
+        return $this->sendResponse(['data' => $this->accountService->options($userId)]);
     }
 
     /**
@@ -156,5 +164,28 @@ class AccountController extends BaseController
         $this->accountService->delete($account);
 
         return $this->sendResponse([], Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Assign accounts to user
+     *
+     * Sync account assignments for a user. Only accounts in the user's teams are valid.
+     * Each account can only be assigned to one user (1-n). Existing assignments within
+     * the user's teams are replaced by the provided list.
+     *
+     * @urlParam user integer required The user ID. Example: 1
+     *
+     * @bodyParam account_ids integer[] required List of account IDs to assign (can be empty to clear). Example: [1, 2, 3]
+     *
+     * @response 200 {"data": []}
+     * @response 403 {"message": "This action is unauthorized."}
+     * @response 404 {"message": "No query results for model [App\\Models\\User] 1"}
+     * @response 422 {"message": "The account_ids field must be present.", "errors": {"account_ids": ["The account_ids field must be present."]}}
+     */
+    public function assignToUser(AssignAccountRequest $request, User $user): JsonResponse
+    {
+        $this->accountService->assignToUser($user, $request->validated('account_ids', []));
+
+        return $this->sendResponse([]);
     }
 }

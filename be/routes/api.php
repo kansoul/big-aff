@@ -76,7 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::SettingsUsersUpdate->value);
         Route::delete('{user}', [UserController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::SettingsUsersDelete->value);
-        Route::post('{user}/assign-accounts', [UserController::class, 'assignAccounts'])
+        Route::post('{user}/assign-accounts', [AccountController::class, 'assignToUser'])
             ->middleware('permission.scope:'.Permission::AccountsAssign->value);
         Route::get('{user}/team-options', [UserController::class, 'teamOptions'])
             ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
@@ -120,6 +120,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::PostsUpdate->value);
         Route::delete('{post}', [PostController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::PostsDelete->value);
+        Route::post('{post}/publish', [PostController::class, 'publish'])
+            ->middleware('permission.scope:'.Permission::PostsPublish->value);
     });
 
     Route::prefix('categories')->group(function () {
@@ -242,6 +244,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::TeamsUpdate->value);
         Route::delete('{team}', [TeamController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::TeamsDelete->value);
+        Route::get('{team}/members', [TeamController::class, 'members'])
+            ->middleware('permission.scope:'.Permission::TeamsView->value);
         Route::get('{team}/leaders', [TeamController::class, 'leaders'])
             ->middleware('permission.scope:'.Permission::TeamsView->value);
         Route::get('{team}/user-options', [TeamController::class, 'userOptions'])

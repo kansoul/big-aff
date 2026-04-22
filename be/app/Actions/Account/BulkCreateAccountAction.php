@@ -16,6 +16,8 @@ class BulkCreateAccountAction
      */
     public function execute(array $data): array
     {
+        $userId = isset($data['user_id']) ? (int) $data['user_id'] : null;
+
         $sharedFields = collect($data)->only([
             'ads_type',
             'business_center_id',
@@ -84,8 +86,20 @@ class BulkCreateAccountAction
                 'account_name' => $parsed['account_name'],
             ];
 
-            $account = DB::transaction(function () use ($sharedFields, $accountData): Account {
-                return Account::create(array_merge($sharedFields, $accountData));
+            $account = DB::transaction(function () use ($sharedFields, $accountData, $userId): Account {
+                $account = Account::create(array_merge($sharedFields, $accountData));
+
+                if ($userId !== null) {
+                    DB::table('account_user')->where('account_id', $account->id)->delete();
+                    DB::table('account_user')->insert([
+                        'user_id' => $userId,
+                        'account_id' => $account->id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                return $account;
             });
 
             $created[] = $account;

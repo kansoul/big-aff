@@ -34,7 +34,7 @@ class ListPostsAction
     {
         $ownership = OwnershipFilter::forAuthUser();
 
-        $query = Post::query()->with(['featureMedia', 'category', 'keywordSets']);
+        $query = Post::query()->with(['featureMedia', 'category', 'keywordSets', 'creator']);
 
         if (! empty($filters['deleted_at'])) {
             match ($filters['deleted_at']) {

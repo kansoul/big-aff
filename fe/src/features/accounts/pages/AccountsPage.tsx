@@ -43,6 +43,7 @@ export function AccountsPage() {
   const canCreate = useMemo(() => hasPermission(perms, PermissionSlugs.AccountsCreate), [perms])
   const canUpdate = useMemo(() => hasPermission(perms, PermissionSlugs.AccountsUpdate), [perms])
   const canDelete = useMemo(() => hasPermission(perms, PermissionSlugs.AccountsDelete), [perms])
+  const canAssign = useMemo(() => hasPermission(perms, PermissionSlugs.AccountsAssign), [perms])
 
   const [data, setData] = useState<Account[]>([])
   const [businessCenterOptions, setBusinessCenterOptions] = useState<SearchableSelectOption[]>([])
@@ -280,6 +281,7 @@ export function AccountsPage() {
         canCreate={canCreate}
         canUpdate={canUpdate}
         canDelete={canDelete}
+        canAssign={canAssign}
         onAddClick={onAddClick}
         onEditRow={onEditRow}
         onDeleteRow={onDeleteRow}

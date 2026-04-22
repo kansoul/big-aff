@@ -36,6 +36,7 @@ type PostFormSectionsProps = {
   canCreateKeywordSet?: boolean
   canUpdateKeywordSet?: boolean
   canDeleteKeywordSet?: boolean
+  canPublish?: boolean
 }
 
 export function PostFormSections({
@@ -48,6 +49,7 @@ export function PostFormSections({
   canCreateKeywordSet = false,
   canUpdateKeywordSet = false,
   canDeleteKeywordSet = false,
+  canPublish = false,
 }: PostFormSectionsProps) {
   const title = watch('title')
 
@@ -99,48 +101,30 @@ export function PostFormSections({
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField
-              control={control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Status <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <SearchableSelect
-                    value={field.value ?? ''}
-                    onValueChange={field.onChange}
-                    options={[
-                      { label: 'Draft', value: 'draft' },
-                      { label: 'Published', value: 'published' },
-                      { label: 'Trash', value: 'trash' },
-                    ]}
-                    placeholder="Select status"
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <SearchableSelect
-                    value={field.value ?? '__none__'}
-                    onValueChange={(v) => field.onChange(v === '__none__' ? null : v)}
-                    options={[
-                      { label: 'Normal', value: 'normal' },
-                      { label: 'AI', value: 'ai' },
-                      { label: 'WordPress', value: 'wordpress' },
-                    ]}
-                    placeholder="Select type"
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {canPublish ? (
+              <FormField
+                control={control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Status <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <SearchableSelect
+                      value={field.value ?? ''}
+                      onValueChange={field.onChange}
+                      options={[
+                        { label: 'Draft', value: 'draft' },
+                        { label: 'Published', value: 'published' },
+                        { label: 'Trash', value: 'trash' },
+                      ]}
+                      placeholder="Select status"
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
             <FormField
               control={control}
               name="lang"
@@ -177,24 +161,26 @@ export function PostFormSections({
               )}
             />
 
-            <FormField
-              control={control}
-              name="published_at"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Published At</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      value={field.value ?? null}
-                      onChange={field.onChange}
-                      placeholder="Pick a date"
-                      className="w-full"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {canPublish ? (
+              <FormField
+                control={control}
+                name="published_at"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Published At</FormLabel>
+                    <FormControl>
+                      <DatePicker
+                        value={field.value ?? null}
+                        onChange={field.onChange}
+                        placeholder="Pick a date"
+                        className="w-full"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
             {/* add keyword here field */}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
