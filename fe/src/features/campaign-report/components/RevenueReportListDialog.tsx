@@ -382,12 +382,14 @@ type RevenueReportListDialogProps = {
   trigger?: React.ReactNode
   initialDateFrom?: string | null
   initialDateTo?: string | null
+  initialChannelCodes?: string[]
 }
 
 function RevenueReportListDialogInner({
   trigger,
   initialDateFrom,
   initialDateTo,
+  initialChannelCodes,
 }: RevenueReportListDialogProps) {
   const [open, setOpen] = useState(false)
   const [data, setData] = useState<RevenueReportRow[]>([])
@@ -397,6 +399,7 @@ function RevenueReportListDialogInner({
     ...DEFAULT_FILTERS,
     date_from: initialDateFrom ?? null,
     date_to: initialDateTo ?? null,
+    channel_codes: initialChannelCodes ?? [],
   })
   const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([])
   const fetchedOptionsRef = useRef(false)
@@ -438,13 +441,14 @@ function RevenueReportListDialogInner({
           ...DEFAULT_FILTERS,
           date_from: initialDateFrom ?? null,
           date_to: initialDateTo ?? null,
+          channel_codes: initialChannelCodes ?? [],
         })
         setData([])
         setRowCount(0)
         fetchedOptionsRef.current = false
       }
     },
-    [initialDateFrom, initialDateTo],
+    [initialDateFrom, initialDateTo, initialChannelCodes],
   )
 
   const onFilterChange = useCallback((patch: Partial<RevenueReportFilterParams>) => {
@@ -457,8 +461,9 @@ function RevenueReportListDialogInner({
         ...DEFAULT_FILTERS,
         date_from: initialDateFrom ?? null,
         date_to: initialDateTo ?? null,
+        channel_codes: initialChannelCodes ?? [],
       }),
-    [initialDateFrom, initialDateTo],
+    [initialDateFrom, initialDateTo, initialChannelCodes],
   )
 
   const onPaginationChange = useCallback((page: number, perPage: number) => {

@@ -191,6 +191,7 @@ function GroupLabelCell({
             <RevenueReportListDialog
               initialDateFrom={dateFrom}
               initialDateTo={dateTo}
+              initialChannelCodes={channelCode ? [channelCode] : undefined}
               trigger={
                 <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
                   View Revenue List
