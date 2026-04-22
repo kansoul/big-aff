@@ -37,7 +37,7 @@ type CategoryFormDialogProps = {
   onOpenChange: (open: boolean) => void
   /** When provided, dialog is in edit mode. */
   category?: Category | null
-  onSuccess: () => void
+  onSuccess: (category?: Category) => void
 }
 
 const CATEGORY_CREATE_DEFAULT_VALUES: CategoryCreateFormValues = {
@@ -86,19 +86,21 @@ export function CategoryFormDialog({
       setFormError(null)
       setSubmitting(true)
       if (isEdit && category) {
-        await categoriesApi.update(category.id, {
+        const res = await categoriesApi.update(category.id, {
           name: values.name,
           description: values.description,
           parent_id: values.parent_id,
         })
         toast.success('Category updated successfully')
+        onSuccess(res.data.data)
       } else {
-        await categoriesApi.create({
+        const res = await categoriesApi.create({
           name: values.name,
           description: values.description,
           parent_id: values.parent_id,
         })
         toast.success('Category created successfully')
+        onSuccess(res.data.data)
       }
 
       if (!isEdit && options?.createAnother) {
@@ -106,7 +108,6 @@ export function CategoryFormDialog({
       } else {
         onOpenChange(false)
       }
-      onSuccess()
     } catch (err) {
       setFormError(formatApiError(err))
     } finally {

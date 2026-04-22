@@ -2,6 +2,7 @@ import { axiosInstance } from '@/shared/api/axios'
 import { isNil } from '@/lib/utils'
 import type {
   TeamAssignUsersPayload,
+  TeamAccountOptionsResponse,
   Team,
   TeamCreatePayload,
   TeamFilterParams,
@@ -37,6 +38,8 @@ export const teamsApi = {
     }),
 
   listOptions: () => axiosInstance.get<{ data: { id: number; name: string }[] }>('/teams/options'),
+
+  accountOptions: () => axiosInstance.get<TeamAccountOptionsResponse>('/teams/account-options'),
 
   userOptions: (teamId: number) =>
     axiosInstance.get<TeamUserOptionsResponse>(`/teams/${teamId}/user-options`),

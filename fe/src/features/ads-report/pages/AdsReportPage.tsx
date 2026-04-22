@@ -9,11 +9,14 @@ import type {
   AdsReportStatsData,
   AdsReportStatsFilterParams,
 } from '@/features/ads-report/types'
-import { FilterPanel, type FilterFieldDef, type SelectOption } from '@/components/common/FilterPanel'
+import {
+  FilterPanel,
+  type FilterFieldDef,
+  type SelectOption,
+} from '@/components/common/FilterPanel'
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
-import { accountsApi } from '@/features/accounts/api'
 import { teamsApi } from '@/features/teams/api'
-import type { Account } from '@/features/accounts/types'
+import type { TeamWithAccountOptions } from '@/features/teams/types'
 
 const DEFAULT_FILTERS: AdsReportStatsFilterParams = {
   date_from: dayjs().startOf('month').format('YYYY-MM-DD'),
@@ -28,15 +31,26 @@ function parseDateRange(value: unknown): DateRangeValue | null {
   return null
 }
 
-function accountsToOptions(accounts: Account[]): SelectOption[] {
+function accountsToOptions(accounts: TeamWithAccountOptions['accounts']): SelectOption[] {
   return accounts.map((a) => ({
     value: a.account_id,
     label: a.account_name ? `${a.account_name}` : a.account_id,
   }))
 }
 
-function teamsToOptions(teams: { id: number; name: string }[]): SelectOption[] {
+function teamsToOptions(teams: TeamWithAccountOptions[]): SelectOption[] {
   return teams.map((t) => ({ value: String(t.id), label: t.name }))
+}
+
+function getAccountsForFilters(
+  teams: TeamWithAccountOptions[],
+  teamId?: number | null,
+  adsType?: AdsReportAdsType | null,
+) {
+  return teams
+    .filter((team) => teamId == null || team.id === teamId)
+    .flatMap((team) => team.accounts)
+    .filter((account) => !adsType || account.ads_type === adsType)
 }
 
 export function AdsReportPage() {
@@ -44,16 +58,14 @@ export function AdsReportPage() {
   const [statsData, setStatsData] = useState<AdsReportStatsData | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const [accountOptions, setAccountOptions] = useState<SelectOption[]>([])
-  const [teamOptions, setTeamOptions] = useState<SelectOption[]>([])
+  const [teamsWithAccounts, setTeamsWithAccounts] = useState<TeamWithAccountOptions[]>([])
+  const [showTeamFilter, setShowTeamFilter] = useState(false)
 
   useEffect(() => {
-    void Promise.all([accountsApi.list({ page: 1, per_page: 100 }), teamsApi.listOptions()]).then(
-      ([accountsRes, teamsRes]) => {
-        setAccountOptions(accountsToOptions(accountsRes.data.data))
-        setTeamOptions(teamsToOptions(teamsRes.data.data))
-      },
-    )
+    void teamsApi.accountOptions().then((res) => {
+      setTeamsWithAccounts(res.data.data.teams)
+      setShowTeamFilter(res.data.data.show_team_filter)
+    })
   }, [])
 
   const loadData = useCallback(async (activeFilters: AdsReportStatsFilterParams) => {
@@ -72,23 +84,63 @@ export function AdsReportPage() {
     void loadData(filters)
   }, [loadData, filters])
 
-  const onApplyFilters = useCallback((values: Record<string, unknown>) => {
-    const range = parseDateRange(values.date_range)
-    setFilters({
-      date_from: range?.from ?? null,
-      date_to: range?.to ?? null,
-      account_id: (values.account_id as string | null) ?? null,
-      ads_type: (values.ads_type as AdsReportAdsType | null) ?? null,
-      team_id: values.team_id ? Number(values.team_id) : null,
-    })
-  }, [])
+  const onFieldChange = useCallback(
+    (field: string, value: unknown) => {
+      setFilters((prev) => {
+        const next: AdsReportStatsFilterParams = { ...prev }
+
+        if (field === 'date_range') {
+          const range = parseDateRange(value)
+          next.date_from = range?.from ?? null
+          next.date_to = range?.to ?? null
+        }
+
+        if (field === 'team_id') {
+          next.team_id = value ? Number(value) : null
+        }
+
+        if (field === 'ads_type') {
+          next.ads_type = (value as AdsReportAdsType | null) ?? null
+        }
+
+        if (field === 'account_id') {
+          next.account_id = (value as string | null) ?? null
+        }
+
+        if (field === 'team_id' || field === 'ads_type') {
+          const nextAccountIds = new Set(
+            getAccountsForFilters(teamsWithAccounts, next.team_id, next.ads_type).map(
+              (account) => account.account_id,
+            ),
+          )
+
+          if (next.account_id && !nextAccountIds.has(next.account_id)) {
+            next.account_id = null
+          }
+        }
+
+        return next
+      })
+    },
+    [teamsWithAccounts],
+  )
 
   const onResetFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS)
   }, [])
 
-  const filterFields = useMemo<FilterFieldDef[]>(
-    () => [
+  const accountOptions = useMemo(
+    () =>
+      accountsToOptions(
+        getAccountsForFilters(teamsWithAccounts, filters.team_id, filters.ads_type),
+      ),
+    [teamsWithAccounts, filters.team_id, filters.ads_type],
+  )
+
+  const teamOptions = useMemo(() => teamsToOptions(teamsWithAccounts), [teamsWithAccounts])
+
+  const filterFields = useMemo<FilterFieldDef[]>(() => {
+    const fields: FilterFieldDef[] = [
       {
         field: 'date_range',
         label: 'Date Range',
@@ -99,14 +151,20 @@ export function AdsReportPage() {
         },
         placeholder: 'Select date range',
       },
-      {
-        field: 'account_id',
-        label: 'Account',
+    ]
+
+    if (showTeamFilter) {
+      fields.push({
+        field: 'team_id',
+        label: 'Team',
         type: 'select',
-        value: filters.account_id ?? null,
-        options: accountOptions,
-        placeholder: 'All accounts',
-      },
+        value: filters.team_id != null ? String(filters.team_id) : null,
+        options: teamOptions,
+        placeholder: 'All teams',
+      })
+    }
+
+    fields.push(
       {
         field: 'ads_type',
         label: 'Ads Type',
@@ -119,25 +177,21 @@ export function AdsReportPage() {
         placeholder: 'All types',
       },
       {
-        field: 'team_id',
-        label: 'Team',
+        field: 'account_id',
+        label: 'Account',
         type: 'select',
-        value: filters.team_id != null ? String(filters.team_id) : null,
-        options: teamOptions,
-        placeholder: 'All teams',
+        value: filters.account_id ?? null,
+        options: accountOptions,
+        placeholder: 'All accounts',
       },
-    ],
-    [filters, accountOptions, teamOptions],
-  )
+    )
+
+    return fields
+  }, [filters, accountOptions, showTeamFilter, teamOptions])
 
   return (
     <div className="space-y-6">
-      <FilterPanel
-        fields={filterFields}
-        onReset={onResetFilters}
-        applyMode
-        onApply={onApplyFilters}
-      />
+      <FilterPanel fields={filterFields} onReset={onResetFilters} onFieldChange={onFieldChange} />
 
       <AdsReportSummaryCards data={statsData} loading={loading} />
     </div>

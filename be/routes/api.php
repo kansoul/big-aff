@@ -234,6 +234,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('teams')->group(function () {
         Route::get('options', [TeamController::class, 'options'])
             ->middleware('permission.scope:'.Permission::TeamsView->value);
+        Route::get('account-options', [TeamController::class, 'accountOptions'])
+            ->middleware('permission.scope:'.Permission::AdsReportView->value);
         Route::get('/', [TeamController::class, 'index'])
             ->middleware('permission.scope:'.Permission::TeamsView->value);
         Route::post('/', [TeamController::class, 'store'])

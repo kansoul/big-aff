@@ -20,7 +20,12 @@ class UpdateCategoryAction
         $data['updated_by'] = Auth::id();
 
         return DB::transaction(function () use ($category, $data) {
-            return $category->update($data);
+            $updated = $category->update($data);
+            if ($updated) {
+                $category->refresh();
+            }
+
+            return $category;
         });
     }
 }

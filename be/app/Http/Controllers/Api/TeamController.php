@@ -173,6 +173,18 @@ class TeamController extends BaseController
     }
 
     /**
+     * Team account options
+     *
+     * Return teams with their accounts for ads report filters.
+     *
+     * @response 200 {"data": {"show_team_filter": true, "teams": [{"id": 1, "name": "Marketing", "accounts": [{"id": 1, "account_id": "123456", "account_name": "My Account", "ads_type": "facebook", "team_id": 1}]}]}}
+     */
+    public function accountOptions(): JsonResponse
+    {
+        return $this->sendResponse(['data' => $this->teamService->accountOptions()]);
+    }
+
+    /**
      * List team leaders
      *
      * Return all users with the leader role in a team, including their assigned child users.

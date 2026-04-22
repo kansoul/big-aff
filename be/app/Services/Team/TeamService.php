@@ -5,6 +5,7 @@ namespace App\Services\Team;
 use App\Actions\Team\AssignTeamAction;
 use App\Actions\Team\CreateTeamAction;
 use App\Actions\Team\DeleteTeamAction;
+use App\Actions\Team\GetTeamAccountOptionsAction;
 use App\Actions\Team\GetTeamLeadersAction;
 use App\Actions\Team\GetTeamOptionsAction;
 use App\Actions\Team\GetTeamUserOptionsAction;
@@ -25,6 +26,7 @@ class TeamService
         private readonly DeleteTeamAction $deleteTeamAction,
         private readonly AssignTeamAction $assignTeamAction,
         private readonly GetTeamUserOptionsAction $getTeamUserOptionsAction,
+        private readonly GetTeamAccountOptionsAction $getTeamAccountOptionsAction,
         private readonly GetTeamOptionsAction $getTeamOptionsAction,
         private readonly GetTeamLeadersAction $getTeamLeadersAction,
         private readonly GetUserTeamOptionsAction $getUserTeamOptionsAction,
@@ -82,6 +84,14 @@ class TeamService
     public function options(): Collection
     {
         return $this->getTeamOptionsAction->execute();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function accountOptions(): array
+    {
+        return $this->getTeamAccountOptionsAction->execute();
     }
 
     public function leaders(Team $team): Collection
