@@ -1,0 +1,774 @@
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  BarChart2,
+  ChevronFirst,
+  ChevronLast,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  KeyRound,
+  Loader2,
+  MousePointerClick,
+  Search,
+  Sparkles,
+  X,
+} from 'lucide-react'
+import { toast } from 'sonner'
+
+import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { cn } from '@/lib/utils'
+import { campaignReportApi } from '@/features/campaign-report/api'
+import type {
+  CampaignReportFiltersResponse,
+  KeywordTrackingFilterParams,
+  KeywordTrackingOrderBy,
+  KeywordTrackingRow,
+  TrackingAnalyticsFilterParams,
+  TrackingAnalyticsResponse,
+} from '@/features/campaign-report/types'
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+
+type StatCardProps = {
+  title: string
+  value: number
+  ctrItems: string[]
+  footerLabel: string
+  icon: React.ReactNode
+  iconBg: string
+  fetching: boolean
+}
+
+function StatCard({ title, value, ctrItems, footerLabel, icon, iconBg, fetching }: StatCardProps) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-card p-5 shadow-sm">
+      <p className="text-sm font-medium text-muted-foreground">{title}</p>
+      <p className="mt-2 text-3xl font-bold tracking-tight text-foreground">
+        {fetching ? (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/40" />
+        ) : (
+          value.toLocaleString()
+        )}
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        {ctrItems.map((item, i) => (
+          <span key={i} className="flex items-center gap-1">
+            {i > 0 && <span className="select-none text-border/80">|</span>}
+            <span>{item}</span>
+          </span>
+        ))}
+        {ctrItems.length > 0 && <span className="select-none text-border/80">|</span>}
+        <span className="flex items-center gap-1.5">
+          <span>{footerLabel}</span>
+          <span
+            className={cn('inline-flex h-5 w-5 items-center justify-center rounded-full', iconBg)}
+          >
+            {icon}
+          </span>
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ─── Keyword sort header ──────────────────────────────────────────────────────
+
+type KeywordSortHeaderProps = {
+  label: string
+  orderBy?: KeywordTrackingOrderBy
+  activeOrderBy?: KeywordTrackingOrderBy | null
+  activeOrder?: 'asc' | 'desc' | null
+  onSort: (orderBy: KeywordTrackingOrderBy | null, order: 'asc' | 'desc' | null) => void
+}
+
+function KeywordSortHeader({
+  label,
+  orderBy,
+  activeOrderBy,
+  activeOrder,
+  onSort,
+}: KeywordSortHeaderProps) {
+  if (!orderBy) return <span>{label}</span>
+  const isActive = activeOrderBy === orderBy
+  const currentOrder = isActive ? activeOrder : null
+
+  function handleClick() {
+    if (!orderBy) return
+    if (!isActive || currentOrder === null) onSort(orderBy, 'desc')
+    else if (currentOrder === 'desc') onSort(orderBy, 'asc')
+    else onSort(null, null)
+  }
+
+  return (
+    <button
+      type="button"
+      className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+      onClick={handleClick}
+    >
+      {label}
+      {isActive && currentOrder === 'desc' ? (
+        <ArrowDown className="h-3 w-3" />
+      ) : isActive && currentOrder === 'asc' ? (
+        <ArrowUp className="h-3 w-3" />
+      ) : (
+        <ArrowUpDown className="h-3 w-3 opacity-40" />
+      )}
+    </button>
+  )
+}
+
+// ─── Keyword pagination ───────────────────────────────────────────────────────
+
+const PER_PAGE_OPTIONS = [
+  { label: '30', value: '30' },
+  { label: '50', value: '50' },
+  { label: '100', value: '100' },
+]
+
+function getPageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const delta = 2
+  const left = current - delta
+  const right = current + delta
+  const pages: (number | '...')[] = [1]
+  if (left > 2) pages.push('...')
+  for (let i = Math.max(2, left); i <= Math.min(total - 1, right); i++) pages.push(i)
+  if (right < total - 1) pages.push('...')
+  pages.push(total)
+  return pages
+}
+
+type KeywordPaginationBarProps = {
+  page: number
+  perPage: number
+  rowCount: number
+  onPaginationChange: (page: number, perPage: number) => void
+}
+
+function KeywordPaginationBar({
+  page,
+  perPage,
+  rowCount,
+  onPaginationChange,
+}: KeywordPaginationBarProps) {
+  const totalPages = Math.max(1, Math.ceil(rowCount / perPage))
+  const pageNumbers = getPageNumbers(page, totalPages)
+
+  return (
+    <div className="flex items-center justify-end gap-2 border-t border-border/70 bg-muted/25 px-4 py-2.5">
+      <span className="text-xs text-muted-foreground">Per Page</span>
+      <Select value={String(perPage)} onValueChange={(v) => onPaginationChange(1, Number(v))}>
+        <SelectTrigger size="sm" className="w-16 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {PER_PAGE_OPTIONS.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <div className="ml-2 flex items-center gap-1">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-7 w-7"
+          disabled={page <= 1}
+          onClick={() => onPaginationChange(1, perPage)}
+        >
+          <ChevronFirst className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-7 w-7"
+          disabled={page <= 1}
+          onClick={() => onPaginationChange(page - 1, perPage)}
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </Button>
+        {pageNumbers.map((p, i) =>
+          p === '...' ? (
+            <span
+              key={`ellipsis-${i}`}
+              className="flex h-7 w-7 items-center justify-center text-xs text-muted-foreground"
+            >
+              …
+            </span>
+          ) : (
+            <Button
+              key={p}
+              variant={p === page ? 'secondary' : 'outline'}
+              size="icon"
+              className={cn('h-7 w-7 text-xs', p === page && 'font-semibold')}
+              disabled={p === page}
+              onClick={() => onPaginationChange(p, perPage)}
+            >
+              {p}
+            </Button>
+          ),
+        )}
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-7 w-7"
+          disabled={page >= totalPages}
+          onClick={() => onPaginationChange(page + 1, perPage)}
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-7 w-7"
+          disabled={page >= totalPages}
+          onClick={() => onPaginationChange(totalPages, perPage)}
+        >
+          <ChevronLast className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Keyword table columns ────────────────────────────────────────────────────
+
+type KeywordColDef = {
+  key: keyof KeywordTrackingRow
+  label: string
+  orderBy?: KeywordTrackingOrderBy
+  className?: string
+  render: (row: KeywordTrackingRow) => React.ReactNode
+}
+
+const KEYWORD_COLUMNS: KeywordColDef[] = [
+  {
+    key: 'id',
+    label: '#',
+    orderBy: 'id',
+    className: 'min-w-[60px]',
+    render: (row) => <span className="tabular-nums text-muted-foreground/70">{row.id}</span>,
+  },
+  {
+    key: 'name',
+    label: 'Keyword',
+    orderBy: 'name',
+    className: 'min-w-[240px]',
+    render: (row) => <span className="font-medium text-foreground">{row.name}</span>,
+  },
+  {
+    key: 'keywords',
+    label: 'Keywords',
+    className: 'min-w-[240px]',
+    render: (row) => {
+      if (!row.keywords?.length) return <span className="text-muted-foreground/50">—</span>
+      const items = row.keywords
+      return (
+        <div className="flex flex-wrap gap-1">
+          {items.map((k, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border"
+            >
+              {k}
+            </span>
+          ))}
+        </div>
+      )
+    },
+  },
+  {
+    key: 'created_at',
+    label: 'Created At',
+    orderBy: 'created_at',
+    className: 'min-w-[160px]',
+    render: (row) => (
+      <span className="tabular-nums text-muted-foreground/95">{row.created_at}</span>
+    ),
+  },
+]
+
+// ─── Keyword table state ──────────────────────────────────────────────────────
+
+type KeywordTableState = {
+  page: number
+  per_page: number
+  order_by: KeywordTrackingOrderBy | null
+  order: 'asc' | 'desc' | null
+  keyword: string | null
+}
+
+const DEFAULT_KEYWORD_STATE: KeywordTableState = {
+  page: 1,
+  per_page: 30,
+  order_by: null,
+  order: null,
+  keyword: null,
+}
+
+// ─── Dialog ───────────────────────────────────────────────────────────────────
+
+type FilterOptions = CampaignReportFiltersResponse['data']
+
+type TrackingAnalyticsDialogProps = {
+  trigger?: React.ReactNode
+  initialDate?: string | null
+  initialCampaignId?: string | null
+  initialAccountId?: string | null
+}
+
+function TrackingAnalyticsDialogInner({
+  trigger,
+  initialDate,
+  initialCampaignId,
+  initialAccountId,
+}: TrackingAnalyticsDialogProps) {
+  const [open, setOpen] = useState(false)
+
+  // Stats
+  const [fetching, setFetching] = useState(false)
+  const [statsData, setStatsData] = useState<TrackingAnalyticsResponse['data'] | null>(null)
+
+  // Shared filters
+  const [filters, setFilters] = useState<TrackingAnalyticsFilterParams>(() => ({
+    date_from: initialDate ?? null,
+    date_to: initialDate ?? null,
+    account_id: initialAccountId ?? null,
+    campaign_id: initialCampaignId ?? null,
+  }))
+  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null)
+  const fetchedOptionsRef = useRef(false)
+
+  // Keyword table
+  const [keywordData, setKeywordData] = useState<KeywordTrackingRow[]>([])
+  const [keywordRowCount, setKeywordRowCount] = useState(0)
+  const [keywordFetching, setKeywordFetching] = useState(false)
+  const [keywordState, setKeywordState] = useState<KeywordTableState>(DEFAULT_KEYWORD_STATE)
+  const [keywordSearch, setKeywordSearch] = useState('')
+  const keywordDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const loadData = useCallback(async (activeFilters: TrackingAnalyticsFilterParams) => {
+    try {
+      setFetching(true)
+      const { data: response } = await campaignReportApi.trackingAnalyticsStats(activeFilters)
+      setStatsData(response.data)
+    } catch {
+      toast.error('Failed to load tracking analytics')
+      setStatsData(null)
+    } finally {
+      setFetching(false)
+    }
+  }, [])
+
+  const loadKeywords = useCallback(
+    async (sharedFilters: TrackingAnalyticsFilterParams, tableState: KeywordTableState) => {
+      try {
+        setKeywordFetching(true)
+        const params: KeywordTrackingFilterParams = {
+          ...sharedFilters,
+          page: tableState.page,
+          per_page: tableState.per_page,
+          keyword: tableState.keyword,
+          order_by: tableState.order_by,
+          order: tableState.order,
+        }
+        const { data: response } = await campaignReportApi.listKeywords(params)
+        setKeywordData(response.data)
+        setKeywordRowCount(response.pagination.total)
+      } catch {
+        toast.error('Failed to load keyword tracking')
+        setKeywordData([])
+        setKeywordRowCount(0)
+      } finally {
+        setKeywordFetching(false)
+      }
+    },
+    [],
+  )
+
+  useEffect(() => {
+    if (!open) return
+    void loadData(filters)
+  }, [open, loadData, filters])
+
+  useEffect(() => {
+    if (!open) return
+    void loadKeywords(filters, keywordState)
+  }, [open, filters, keywordState, loadKeywords])
+
+  useEffect(() => {
+    if (!open) return
+    if (keywordDebounceRef.current) clearTimeout(keywordDebounceRef.current)
+    keywordDebounceRef.current = setTimeout(() => {
+      setKeywordState((prev) => {
+        const next = keywordSearch || null
+        if (prev.keyword === next) return prev
+        return { ...prev, keyword: next, page: 1 }
+      })
+    }, 400)
+    return () => {
+      if (keywordDebounceRef.current) clearTimeout(keywordDebounceRef.current)
+    }
+  }, [keywordSearch, open])
+
+  useEffect(() => {
+    if (!open || fetchedOptionsRef.current) return
+    fetchedOptionsRef.current = true
+    campaignReportApi
+      .filters()
+      .then((res) => setFilterOptions(res.data.data))
+      .catch(() => toast.error('Failed to load filter options'))
+  }, [open])
+
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      setOpen(next)
+      if (!next) {
+        setFilters({
+          date_from: initialDate ?? null,
+          date_to: initialDate ?? null,
+          account_id: initialAccountId ?? null,
+          campaign_id: initialCampaignId ?? null,
+        })
+        setStatsData(null)
+        setKeywordData([])
+        setKeywordRowCount(0)
+        setKeywordState(DEFAULT_KEYWORD_STATE)
+        setKeywordSearch('')
+        fetchedOptionsRef.current = false
+      }
+    },
+    [initialDate, initialCampaignId, initialAccountId],
+  )
+
+  const onApplyFilters = useCallback((values: Record<string, unknown>) => {
+    const dateRange = values.date_range as { from: string | null; to: string | null } | null
+    setFilters({
+      date_from: dateRange?.from ?? null,
+      date_to: dateRange?.to ?? null,
+      account_id: (values.account_id as string) || null,
+      campaign_id: (values.campaign_id as string) || null,
+    })
+    setKeywordState((prev) => ({ ...prev, page: 1 }))
+  }, [])
+
+  const onFilterReset = useCallback(() => {
+    setFilters({
+      date_from: initialDate ?? null,
+      date_to: initialDate ?? null,
+      account_id: initialAccountId ?? null,
+      campaign_id: initialCampaignId ?? null,
+    })
+    setKeywordState(DEFAULT_KEYWORD_STATE)
+    setKeywordSearch('')
+  }, [initialDate, initialCampaignId, initialAccountId])
+
+  const onKeywordSort = useCallback(
+    (orderBy: KeywordTrackingOrderBy | null, order: 'asc' | 'desc' | null) => {
+      setKeywordState((prev) => ({ ...prev, order_by: orderBy, order, page: 1 }))
+    },
+    [],
+  )
+
+  const onKeywordPaginationChange = useCallback((page: number, perPage: number) => {
+    setKeywordState((prev) => ({ ...prev, page, per_page: perPage }))
+  }, [])
+
+  const accountOptions = useMemo(
+    () =>
+      (filterOptions?.accounts ?? []).map((a) => ({
+        label: a.account_name ? `${a.account_name} (${a.account_id})` : a.account_id,
+        value: a.account_id,
+      })),
+    [filterOptions],
+  )
+
+  const campaignOptions = useMemo(
+    () =>
+      (filterOptions?.campaigns ?? []).map((c) => ({
+        label: c.campaign_name ? `${c.campaign_name} (${c.campaign_id})` : c.campaign_id,
+        value: c.campaign_id,
+      })),
+    [filterOptions],
+  )
+
+  const filterFields: FilterFieldDef[] = useMemo(
+    () => [
+      {
+        field: 'date_range',
+        label: 'Date',
+        type: 'daterange',
+        value:
+          filters.date_from || filters.date_to
+            ? { from: filters.date_from ?? null, to: filters.date_to ?? null }
+            : null,
+      },
+      {
+        field: 'account_id',
+        label: 'Account',
+        type: 'select',
+        value: filters.account_id ?? null,
+        options: accountOptions,
+      },
+      {
+        field: 'campaign_id',
+        label: 'Campaign',
+        type: 'select',
+        value: filters.campaign_id ?? null,
+        options: campaignOptions,
+      },
+    ],
+    [
+      filters.date_from,
+      filters.date_to,
+      filters.account_id,
+      filters.campaign_id,
+      accountOptions,
+      campaignOptions,
+    ],
+  )
+
+  const d = statsData
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        {trigger ?? <Button size="sm">Tracking Analytics</Button>}
+      </DialogTrigger>
+      <DialogContent
+        className="flex h-[95vh] w-[95vw] flex-col gap-0 p-0 sm:max-w-[95vw]"
+        showCloseButton={false}
+      >
+        <DialogHeader className="border-b px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BarChart2 className="h-4 w-4 text-muted-foreground" />
+              <DialogTitle>Tracking Analytics</DialogTitle>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleOpenChange(false)}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </DialogHeader>
+
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={onApplyFilters}
+          />
+
+          {/* Stats section */}
+          {!fetching && !d && (
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+              <BarChart2 className="h-4 w-4 shrink-0 opacity-40" />
+              <span>No analytics data available for the selected filters.</span>
+            </div>
+          )}
+
+          {(fetching || d) && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <StatCard
+                title="Search Views"
+                value={d?.views.search_views.value ?? 0}
+                ctrItems={[`CTR: ${(d?.views.search_views.ctr ?? 0).toFixed(2)}%`]}
+                footerLabel="Total search page views"
+                icon={<Eye className="h-3 w-3" />}
+                iconBg="bg-red-500/15 text-red-500"
+                fetching={fetching}
+              />
+              <StatCard
+                title="Article Views"
+                value={d?.views.article_views.value ?? 0}
+                ctrItems={[]}
+                footerLabel="Total article page views"
+                icon={<Eye className="h-3 w-3" />}
+                iconBg="bg-emerald-500/15 text-emerald-500"
+                fetching={fetching}
+              />
+              <StatCard
+                title="Search Ad Clicks"
+                value={d?.clicks.search_ad_clicks.value ?? 0}
+                ctrItems={[
+                  `CTR: ${(d?.clicks.search_ad_clicks.ctr ?? 0).toFixed(2)}%`,
+                  `CTR LDP: ${(d?.clicks.search_ad_clicks.ctr_ldp ?? 0).toFixed(2)}%`,
+                ]}
+                footerLabel="Total search ad clicks"
+                icon={<Sparkles className="h-3 w-3" />}
+                iconBg="bg-yellow-500/15 text-yellow-500"
+                fetching={fetching}
+              />
+              <StatCard
+                title="Article Ad Clicks"
+                value={d?.clicks.article_ad_clicks.value ?? 0}
+                ctrItems={[`CTR: ${(d?.clicks.article_ad_clicks.ctr ?? 0).toFixed(2)}%`]}
+                footerLabel="Total article ad clicks"
+                icon={<MousePointerClick className="h-3 w-3" />}
+                iconBg="bg-blue-500/15 text-blue-500"
+                fetching={fetching}
+              />
+              <StatCard
+                title="Failed Search Ad Loads"
+                value={d?.loads.failed_search_ad_loads.value ?? 0}
+                ctrItems={[`CTR: ${(d?.loads.failed_search_ad_loads.ctr ?? 0).toFixed(2)}%`]}
+                footerLabel="Failed search ad loads"
+                icon={<AlertTriangle className="h-3 w-3" />}
+                iconBg="bg-orange-500/15 text-orange-500"
+                fetching={fetching}
+              />
+              <StatCard
+                title="Failed Article Ad Loads"
+                value={d?.loads.failed_article_ad_loads.value ?? 0}
+                ctrItems={[`CTR: ${(d?.loads.failed_article_ad_loads.ctr ?? 0).toFixed(2)}%`]}
+                footerLabel="Failed article ad loads"
+                icon={<AlertTriangle className="h-3 w-3" />}
+                iconBg="bg-orange-500/15 text-orange-500"
+                fetching={fetching}
+              />
+            </div>
+          )}
+
+          {/* Keyword tracking table */}
+          <div className="rounded-xl border border-border/70 bg-card shadow-sm">
+            {/* Table header with search */}
+            <div className="flex items-center gap-3 border-b border-border/70 px-4 py-3">
+              <KeyRound className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-semibold text-foreground">Keyword Tracking</span>
+              <div className="relative ml-auto">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={keywordSearch}
+                  onChange={(e) => setKeywordSearch(e.target.value)}
+                  placeholder="Search keyword…"
+                  className="h-8 w-52 pl-8 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Scrollable table */}
+            <div className="relative overflow-auto">
+              {keywordFetching && keywordData.length > 0 && (
+                <div className="absolute inset-0 z-20 flex items-start justify-end bg-background/40 pr-4 pt-4 backdrop-blur-[1px]">
+                  <div className="inline-flex items-center gap-1.5 rounded-md bg-card px-2.5 py-1.5 text-xs text-muted-foreground shadow-sm ring-1 ring-border/60">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Loading…
+                  </div>
+                </div>
+              )}
+              <Table className="text-[13px]">
+                <TableHeader className="sticky top-0 z-10">
+                  <TableRow className="h-14 border-border/70 bg-muted/45 hover:bg-muted/45">
+                    {KEYWORD_COLUMNS.map((col) => (
+                      <TableHead
+                        key={col.key}
+                        className={cn(
+                          'h-14 whitespace-nowrap bg-transparent text-[12px] font-semibold tracking-[0.08em] text-muted-foreground uppercase',
+                          col.className,
+                        )}
+                      >
+                        <KeywordSortHeader
+                          label={col.label}
+                          orderBy={col.orderBy}
+                          activeOrderBy={keywordState.order_by}
+                          activeOrder={keywordState.order}
+                          onSort={onKeywordSort}
+                        />
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {keywordFetching && keywordData.length === 0 && (
+                    <TableRow className="h-20 border-border/70 hover:bg-transparent">
+                      <TableCell
+                        colSpan={KEYWORD_COLUMNS.length}
+                        className="h-20 whitespace-normal text-center"
+                      >
+                        <div className="inline-flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Loading keywords...
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {!keywordFetching && keywordData.length === 0 && (
+                    <TableRow className="h-20 border-border/70 hover:bg-transparent">
+                      <TableCell
+                        colSpan={KEYWORD_COLUMNS.length}
+                        className="h-20 whitespace-normal text-center"
+                      >
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                          <KeyRound className="h-7 w-7 opacity-30" />
+                          <p className="text-sm">No keywords found.</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {keywordData.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      className="h-12 border-border/70 bg-background hover:bg-muted/20"
+                    >
+                      {KEYWORD_COLUMNS.map((col) => (
+                        <TableCell key={col.key} className={col.className}>
+                          {col.render(row)}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <KeywordPaginationBar
+              page={keywordState.page}
+              perPage={keywordState.per_page}
+              rowCount={keywordRowCount}
+              onPaginationChange={onKeywordPaginationChange}
+            />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export const TrackingAnalyticsDialog = memo(TrackingAnalyticsDialogInner)

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\Attribute\CampaignReportAttribute;
 use App\Models\Traits\Relationship\CampaignReportRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CampaignReport extends Model
 {
-    use CampaignReportRelationship, HasFactory;
+    use CampaignReportAttribute, CampaignReportRelationship, HasFactory;
 
     protected $table = 'campaign_reports';
 

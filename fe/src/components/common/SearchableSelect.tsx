@@ -63,7 +63,7 @@ function SearchableSelectInner({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            'w-full justify-between gap-1.5 font-normal',
+            'w-full overflow-hidden justify-between gap-1.5 font-normal',
             !selectedLabel && 'text-muted-foreground',
             className,
           )}

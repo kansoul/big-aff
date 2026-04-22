@@ -62,7 +62,7 @@ class GetRevenueTableAction
                 COALESCE(SUM(campaign_reports.r_revenue), 0) as monthly_revenue,
                 COALESCE(SUM(campaign_reports.a_spend), 0) as monthly_spend
             ", [$today, $today])
-            ->orderByDesc('monthly_revenue')
+            ->orderByRaw('COALESCE(SUM(campaign_reports.r_revenue), 0) DESC')
             ->get()
             ->map(function ($row) {
                 $dailyRevenue = (float) $row->daily_revenue;
@@ -114,7 +114,7 @@ class GetRevenueTableAction
                 COALESCE(SUM(campaign_reports.r_revenue), 0) as monthly_revenue,
                 COALESCE(SUM(campaign_reports.a_spend), 0) as monthly_spend
             ", [$today, $today])
-            ->orderByRaw('(monthly_revenue - monthly_spend) DESC')
+            ->orderByRaw('(COALESCE(SUM(campaign_reports.r_revenue), 0) - COALESCE(SUM(campaign_reports.a_spend), 0)) DESC')
             ->limit($limit)
             ->get()
             ->map(function ($row) {
