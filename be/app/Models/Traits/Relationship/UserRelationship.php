@@ -3,6 +3,7 @@
 namespace App\Models\Traits\Relationship;
 
 use App\Models\Account;
+use App\Models\Channel;
 use App\Models\File;
 use App\Models\Role;
 use App\Models\Site;
@@ -109,5 +110,18 @@ trait UserRelationship
     {
         return $this->belongsToMany(Account::class)
             ->withTimestamps();
+    }
+
+    /**
+     * Channels assigned to this user.
+     *
+     * @return BelongsToMany<Channel, $this>
+     */
+    public function channels(): BelongsToMany
+    {
+        return $this->belongsToMany(Channel::class, 'channel_user')
+            ->withTimestamps()
+            ->withPivot('deleted_at')
+            ->wherePivotNull('deleted_at');
     }
 }

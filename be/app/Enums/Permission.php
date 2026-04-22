@@ -54,6 +54,7 @@ enum Permission: string
     case ChannelsView = 'channels.view';                     // bit 26 →  67108864
     case ChannelsCreate = 'channels.create';                 // bit 27 →  134217728
     case ChannelsDelete = 'channels.delete';                 // bit 28 →  268435456
+    case ChannelsAssign = 'channels.assign';                 // bit 83 →  9671406556917033397649408
 
     // —— Follows ——
     case FollowsView = 'follows.view';                       // bit 29 →  536870912
