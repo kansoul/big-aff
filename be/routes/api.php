@@ -284,6 +284,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('campaign-reports')->group(function () {
+        Route::get('delivery-entities-reports/status-options', [AdsDeliveryEntitiesController::class, 'statusOptions'])
+            ->middleware('permission.scope:'.Permission::DeliveryEntitiesReportsView->value);
         Route::get('{campaignId}/delivery-entities-reports', [AdsDeliveryEntitiesController::class, 'index'])
             ->middleware('permission.scope:'.Permission::DeliveryEntitiesReportsView->value);
         Route::patch('{campaignId}/adsets/{adsetInsightId}/toggle-status', [AdsDeliveryEntitiesController::class, 'toggleAdsetStatus'])

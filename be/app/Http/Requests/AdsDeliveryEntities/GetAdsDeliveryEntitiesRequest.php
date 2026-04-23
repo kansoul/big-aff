@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\AdsDeliveryEntities;
 
+use App\Support\AdsDelivery\DeliveryEntityStatusDictionary;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class GetAdsDeliveryEntitiesRequest extends FormRequest
 {
@@ -21,7 +23,7 @@ class GetAdsDeliveryEntitiesRequest extends FormRequest
             'date_to' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
             'created_time_from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'created_time_to' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'after_or_equal:created_time_from'],
-            'status' => ['sometimes', 'nullable', 'string'],
+            'status' => ['sometimes', 'nullable', 'string', Rule::in(DeliveryEntityStatusDictionary::values())],
             'adset_id' => ['sometimes', 'nullable', 'string'],
             'adset_name' => ['sometimes', 'nullable', 'string'],
             'ad_id' => ['sometimes', 'nullable', 'string'],

@@ -2,7 +2,6 @@
 
 namespace App\Actions\AdsDeliveryEntities;
 
-use App\Models\Account;
 use App\Models\AdsetInsightsReport;
 use App\Services\Integrations\Ads\AdsStatusService;
 use App\Support\OwnershipFilter\OwnershipFilter;
@@ -23,13 +22,7 @@ class ToggleAdsetStatusAction
 
         $query = AdsetInsightsReport::query()->where('id', $adsetInsightId);
 
-        $ownership->applyThrough(
-            $query,
-            'account_id',
-            fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
-                ->whereIn('account_user.user_id', $ids)
-                ->select('accounts.id'),
-        );
+        $ownership->applyThroughAccount($query);
 
         $record = $query->firstOrFail();
 

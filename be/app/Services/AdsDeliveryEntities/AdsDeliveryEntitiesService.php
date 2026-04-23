@@ -3,6 +3,7 @@
 namespace App\Services\AdsDeliveryEntities;
 
 use App\Actions\AdsDeliveryEntities\GetAdsDeliveryEntitiesAction;
+use App\Actions\AdsDeliveryEntities\GetAdsDeliveryEntityStatusOptionsAction;
 use App\Actions\AdsDeliveryEntities\ToggleAdsetStatusAction;
 use App\Actions\AdsDeliveryEntities\ToggleAdStatusAction;
 use App\Models\AdsetInsightsReport;
@@ -12,6 +13,7 @@ class AdsDeliveryEntitiesService
 {
     public function __construct(
         private readonly GetAdsDeliveryEntitiesAction $getAdsDeliveryEntitiesAction,
+        private readonly GetAdsDeliveryEntityStatusOptionsAction $getAdsDeliveryEntityStatusOptionsAction,
         private readonly ToggleAdsetStatusAction $toggleAdsetStatusAction,
         private readonly ToggleAdStatusAction $toggleAdStatusAction,
     ) {}
@@ -23,6 +25,14 @@ class AdsDeliveryEntitiesService
     public function getByCampaignId(string $campaignId, array $filters): array
     {
         return $this->getAdsDeliveryEntitiesAction->execute($campaignId, $filters);
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    public function getStatusOptions(): array
+    {
+        return $this->getAdsDeliveryEntityStatusOptionsAction->execute();
     }
 
     /**

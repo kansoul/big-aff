@@ -19,6 +19,18 @@ class AdsDeliveryEntitiesController extends BaseController
     ) {}
 
     /**
+     * Status filter / display options for delivery entities (matches Filament adsets & ads tables).
+     */
+    public function statusOptions(): JsonResponse
+    {
+        return $this->sendResponse([
+            'data' => [
+                'statuses' => $this->service->getStatusOptions(),
+            ],
+        ]);
+    }
+
+    /**
      * Get saved adset and ads insight reports by campaign ID.
      *
      * @queryParam date_from string Start date (Y-m-d). Example: 2026-04-22
