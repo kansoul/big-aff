@@ -114,6 +114,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::SettingsSitesDelete->value);
         Route::post('{site}/assign-users', [SiteController::class, 'assignUsers'])
             ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
+        Route::get('{site}/user-options', [SiteController::class, 'userOptions'])
+            ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
     });
 
     Route::prefix('posts')->group(function () {

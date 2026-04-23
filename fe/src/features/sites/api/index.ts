@@ -41,6 +41,15 @@ export const sitesApi = {
       },
     }),
 
+  userOptions: (siteId: number) =>
+    axiosInstance.get<{
+      data: { id: number; name: string; email: string }[]
+      assigned_user_ids: number[]
+    }>(`/sites/${siteId}/user-options`),
+
+  assignUsers: (siteId: number, userIds: number[]) =>
+    axiosInstance.post(`/sites/${siteId}/assign-users`, { user_ids: userIds }),
+
   create: (params: SiteCreateApiParams) =>
     axiosInstance.post<{ data: Site }>('/sites', {
       name: params.name,

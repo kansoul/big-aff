@@ -5,13 +5,14 @@ import { toast } from 'sonner'
 
 import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { sitesApi } from '@/features/sites/api'
-import { SitesTableCard } from '@/features/sites/components/SitesTableCard'
+import { AssignSiteUsersDialog, SitesTableCard } from '@/features/sites/components'
 import { DeleteSiteDialog } from '@/features/sites/components/DeleteSiteDialog'
 import type { Site, SiteFilterParams, SiteOrderBy } from '@/features/sites/types'
 import { formatApiError } from '@/features/settings/components'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { PATHS, siteEditPath, siteViewPath } from '@/constants/paths'
 import { useAuthStore } from '@/hooks/useAuthStore'
+import type { AssignChildOption } from '@/features/users/components/AssignUsersChildrenPicker'
 
 type PaginationState = { pageIndex: number; pageSize: number }
 
@@ -36,6 +37,10 @@ export function SettingsSitesPage() {
   )
   const canDelete = useMemo(
     () => hasPermission(perms, PermissionSlugs.SettingsSitesDelete),
+    [perms],
+  )
+  const canAssign = useMemo(
+    () => hasPermission(perms, PermissionSlugs.SettingsSitesAssign),
     [perms],
   )
 
@@ -103,6 +108,45 @@ export function SettingsSitesPage() {
     }))
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))
   }, [])
+
+  // Assign users state
+  const [assigningSite, setAssigningSite] = useState<Site | null>(null)
+  const [assignOptions, setAssignOptions] = useState<AssignChildOption[]>([])
+  const [assignOptionsLoading, setAssignOptionsLoading] = useState(false)
+  const [assignUserIds, setAssignUserIds] = useState<number[]>([])
+  const [assigning, setAssigning] = useState(false)
+  const [assignFlashError, setAssignFlashError] = useState<string | null>(null)
+
+  const onAssignClick = useCallback(async (site: Site) => {
+    setAssigningSite(site)
+    setAssignUserIds([])
+    setAssignFlashError(null)
+    try {
+      setAssignOptionsLoading(true)
+      const res = await sitesApi.userOptions(site.id)
+      setAssignOptions(res.data.data as AssignChildOption[])
+      setAssignUserIds(res.data.assigned_user_ids)
+    } catch (err) {
+      setAssignFlashError(formatApiError(err))
+    } finally {
+      setAssignOptionsLoading(false)
+    }
+  }, [])
+
+  const onConfirmAssign = useCallback(async () => {
+    if (!assigningSite) return
+    try {
+      setAssigning(true)
+      setAssignFlashError(null)
+      await sitesApi.assignUsers(assigningSite.id, assignUserIds)
+      toast.success(`Assigned ${assignUserIds.length} user(s) to "${assigningSite.name}".`)
+      setAssigningSite(null)
+    } catch (err) {
+      setAssignFlashError(formatApiError(err))
+    } finally {
+      setAssigning(false)
+    }
+  }, [assigningSite, assignUserIds])
 
   const [deletingSite, setDeletingSite] = useState<Site | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -184,6 +228,8 @@ export function SettingsSitesPage() {
         onSortingChange={onSortingChange}
         canCreate={canCreate}
         onCreateClick={onCreateClick}
+        canAssign={canAssign}
+        onAssignClick={(site) => void onAssignClick(site)}
         onViewClick={onViewClick}
         canUpdate={canUpdate}
         onEditClick={onEditClick}
@@ -198,6 +244,19 @@ export function SettingsSitesPage() {
         onOpenChange={onDeleteDialogChange}
         deleting={deleting}
         onConfirmDelete={onConfirmDelete}
+      />
+      <AssignSiteUsersDialog
+        open={!!assigningSite}
+        onOpenChange={(open) => { if (!open) setAssigningSite(null) }}
+        site={assigningSite}
+        options={assignOptions}
+        optionsLoading={assignOptionsLoading}
+        canAssign={canAssign}
+        userIds={assignUserIds}
+        onUserIdsChange={setAssignUserIds}
+        saving={assigning}
+        flashError={assignFlashError}
+        onSave={() => void onConfirmAssign()}
       />
       <BulkDeleteDialog
         open={bulkDeleteOpen}

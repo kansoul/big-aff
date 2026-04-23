@@ -173,6 +173,25 @@ class SiteController extends BaseController
     }
 
     /**
+     * Site user options
+     *
+     * Return users available to assign to a site (excludes admins, filtered by ownership).
+     *
+     * @urlParam site integer required The site ID. Example: 1
+     *
+     * @response 200 {"data": [{"id": 1, "name": "John Doe", "email": "john@example.com"}]}
+     */
+    public function userOptions(Site $site): JsonResponse
+    {
+        $result = $this->siteService->userOptions($site);
+
+        return $this->sendResponse([
+            'data' => $result['options'],
+            'assigned_user_ids' => $result['assigned_user_ids'],
+        ]);
+    }
+
+    /**
      * Return site config based on the client's Origin/Referer host.
      *
      * @response 200 {"data": {"id": 1, "name": "My Site", "url": "https://mysite.com", "description": "A description", "status": "active", "settings": {}, "logo": null, "favicon": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}

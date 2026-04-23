@@ -7,7 +7,7 @@ import {
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
 } from 'mantine-react-table'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2, UserPlus } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
@@ -20,9 +20,11 @@ type PaginationState = { pageIndex: number; pageSize: number }
 type ActionMeta = {
   canUpdate: boolean
   canDelete: boolean
+  canAssign: boolean
   onView: (site: Site) => void
   onEdit: (site: Site) => void
   onDelete: (site: Site) => void
+  onAssign: (site: Site) => void
 }
 
 function getSitesColumns(meta: ActionMeta): MRT_ColumnDef<Site>[] {
@@ -74,24 +76,35 @@ function getSitesColumns(meta: ActionMeta): MRT_ColumnDef<Site>[] {
         return <span className="text-muted-foreground">{new Date(d).toLocaleString()}</span>
       },
     },
-    ...(meta.canUpdate || meta.canDelete
+    ...(meta.canUpdate || meta.canDelete || meta.canAssign
       ? [
           {
             id: 'actions',
             header: 'Action',
-            size: 200,
+            size: 230,
             enableSorting: false,
             enableGlobalFilter: false,
             enableHiding: false,
             mantineTableHeadCellProps: {
               sx: {
-                width: 200,
+                width: 230,
                 '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
               },
             },
-            mantineTableBodyCellProps: { style: { width: 200 } },
+            mantineTableBodyCellProps: { style: { width: 230 } },
             Cell: ({ row }: { row: { original: Site } }) => (
               <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                {meta.canAssign ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                    onClick={() => meta.onAssign(row.original)}
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Assign
+                  </Button>
+                ) : null}
                 {meta.canUpdate ? (
                   <Button
                     variant="ghost"
@@ -134,6 +147,8 @@ type SitesTableCardProps = {
   onSortingChange: (sorting: MRT_SortingState) => void
   canCreate: boolean
   onCreateClick: () => void
+  canAssign: boolean
+  onAssignClick: (site: Site) => void
   canUpdate: boolean
   onViewClick: (site: Site) => void
   onEditClick: (site: Site) => void
@@ -156,6 +171,8 @@ function SitesTableCardInner({
   onSortingChange,
   canCreate,
   onCreateClick,
+  canAssign,
+  onAssignClick,
   canUpdate,
   onViewClick,
   onEditClick,
@@ -169,13 +186,15 @@ function SitesTableCardInner({
   const columns = useMemo(
     () =>
       getSitesColumns({
+        canAssign,
         canUpdate,
         canDelete,
         onView: onViewClick,
         onEdit: onEditClick,
         onDelete: onDeleteClick,
+        onAssign: onAssignClick,
       }),
-    [canUpdate, canDelete, onViewClick, onEditClick, onDeleteClick],
+    [canAssign, canUpdate, canDelete, onViewClick, onEditClick, onDeleteClick, onAssignClick],
   )
 
   const sorting: MRT_SortingState = useMemo(

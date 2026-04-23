@@ -7,6 +7,7 @@ use App\Actions\Site\ConfigSiteAction;
 use App\Actions\Site\CreateSiteAction;
 use App\Actions\Site\DeleteSiteAction;
 use App\Actions\Site\GetSiteOptionsAction;
+use App\Actions\Site\GetSiteUserOptionsAction;
 use App\Actions\Site\ListSitesAction;
 use App\Actions\Site\UpdateSiteAction;
 use App\Models\Site;
@@ -22,6 +23,7 @@ class SiteService
         private readonly ListSitesAction $listSitesAction,
         private readonly AssignSiteAction $assignSiteAction,
         private readonly GetSiteOptionsAction $getSiteOptionsAction,
+        private readonly GetSiteUserOptionsAction $getSiteUserOptionsAction,
         private readonly ConfigSiteAction $configSiteAction
     ) {}
 
@@ -68,6 +70,14 @@ class SiteService
     public function assign(Site $site, array $userIds): void
     {
         $this->assignSiteAction->execute($site, $userIds);
+    }
+
+    /**
+     * @return array{options: Collection<int, array{id: int, name: string, email: string}>, assigned_user_ids: array<int>}
+     */
+    public function userOptions(Site $site): array
+    {
+        return $this->getSiteUserOptionsAction->execute($site);
     }
 
     public function config(string $domain): ?Site
