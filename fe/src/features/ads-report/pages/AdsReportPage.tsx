@@ -15,12 +15,14 @@ import {
   type SelectOption,
 } from '@/components/common/FilterPanel'
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
+import { campaignReportApi } from '@/features/campaign-report/api'
 import { teamsApi } from '@/features/teams/api'
 import type { TeamWithAccountOptions } from '@/features/teams/types'
 
 const DEFAULT_FILTERS: AdsReportStatsFilterParams = {
   date_from: dayjs().startOf('month').format('YYYY-MM-DD'),
   date_to: dayjs().endOf('month').format('YYYY-MM-DD'),
+  campaign_ids: [],
 }
 
 function parseDateRange(value: unknown): DateRangeValue | null {
@@ -60,11 +62,22 @@ export function AdsReportPage() {
 
   const [teamsWithAccounts, setTeamsWithAccounts] = useState<TeamWithAccountOptions[]>([])
   const [showTeamFilter, setShowTeamFilter] = useState(false)
+  const [allCampaigns, setAllCampaigns] = useState<
+    Array<{
+      campaign_id: string
+      campaign_name: string | null
+      account_id: string | null
+      ads_type: string | null
+    }>
+  >([])
 
   useEffect(() => {
     void teamsApi.accountOptions().then((res) => {
       setTeamsWithAccounts(res.data.data.teams)
       setShowTeamFilter(res.data.data.show_team_filter)
+    })
+    void campaignReportApi.filters().then((res) => {
+      setAllCampaigns(res.data.data.campaigns)
     })
   }, [])
 
@@ -107,6 +120,10 @@ export function AdsReportPage() {
           next.account_id = (value as string | null) ?? null
         }
 
+        if (field === 'campaign_ids') {
+          next.campaign_ids = value as string[]
+        }
+
         if (field === 'team_id' || field === 'ads_type') {
           const nextAccountIds = new Set(
             getAccountsForFilters(teamsWithAccounts, next.team_id, next.ads_type).map(
@@ -117,6 +134,10 @@ export function AdsReportPage() {
           if (next.account_id && !nextAccountIds.has(next.account_id)) {
             next.account_id = null
           }
+        }
+
+        if (field === 'team_id' || field === 'ads_type' || field === 'account_id') {
+          next.campaign_ids = []
         }
 
         return next
@@ -135,6 +156,21 @@ export function AdsReportPage() {
         getAccountsForFilters(teamsWithAccounts, filters.team_id, filters.ads_type),
       ),
     [teamsWithAccounts, filters.team_id, filters.ads_type],
+  )
+
+  const campaignOptions = useMemo<SelectOption[]>(
+    () =>
+      allCampaigns
+        .filter(
+          (c) =>
+            (!filters.account_id || c.account_id === filters.account_id) &&
+            (!filters.ads_type || c.ads_type === filters.ads_type),
+        )
+        .map((c) => ({
+          value: c.campaign_id,
+          label: c.campaign_name ?? c.campaign_id,
+        })),
+    [allCampaigns, filters.account_id, filters.ads_type],
   )
 
   const teamOptions = useMemo(() => teamsToOptions(teamsWithAccounts), [teamsWithAccounts])
@@ -184,10 +220,18 @@ export function AdsReportPage() {
         options: accountOptions,
         placeholder: 'All accounts',
       },
+      {
+        field: 'campaign_ids',
+        label: 'Campaigns',
+        type: 'multiselect',
+        value: filters.campaign_ids ?? [],
+        options: campaignOptions,
+        placeholder: 'All campaigns',
+      },
     )
 
     return fields
-  }, [filters, accountOptions, showTeamFilter, teamOptions])
+  }, [filters, accountOptions, campaignOptions, showTeamFilter, teamOptions])
 
   return (
     <div className="space-y-6">
