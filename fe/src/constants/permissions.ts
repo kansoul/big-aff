@@ -111,10 +111,12 @@ export const PermissionSlugs = {
   RevenueStatsView: 'revenue-stats.view',
   RevenueChartReportsView: 'revenue-chart-reports.view',
   CampaignReportsView: 'campaign-reports.view',
+  DeliveryEntitiesReportsView: 'delivery-entities-reports.view',
+  DeliveryEntitiesReportsUpdate: 'delivery-entities-reports.update',
   AnalyticsTrackingView: 'analytics-tracking.view',
   InactiveStylesView: 'inactive-styles.view',
   InactiveStylesDelete: 'inactive-styles.delete',
-  StyleReportRangeView: 'style-report-range.view',
+  ChannelReportRangeView: 'channel-report-range.view',
 
   // Google Conversions
   GoogleConversionsView: 'google-conversions.view',
@@ -529,19 +531,29 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           },
         ],
       },
-      {
-        id: 'campaign-reports',
-        label: 'Campaign Reports',
-        permissions: [
-          { key: 'CampaignReportsView', slug: PermissionSlugs.CampaignReportsView, label: 'View' },
-        ],
-      },
     ],
   },
   {
     id: 'reports',
     label: 'Reports & Analytics',
     screens: [
+      {
+        id: 'campaign-reports',
+        label: 'Campaign Reports',
+        permissions: [
+          { key: 'CampaignReportsView', slug: PermissionSlugs.CampaignReportsView, label: 'View' },
+          {
+            key: 'DeliveryEntitiesReportsView',
+            slug: PermissionSlugs.DeliveryEntitiesReportsView,
+            label: 'View Ads/Adset Report',
+          },
+          {
+            key: 'DeliveryEntitiesReportsUpdate',
+            slug: PermissionSlugs.DeliveryEntitiesReportsUpdate,
+            label: 'Toggle Ads/Adset Status',
+          },
+        ],
+      },
       {
         id: 'ads-report',
         label: 'Ads Report',
@@ -584,24 +596,12 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
         ],
       },
       {
-        id: 'inactive-styles',
-        label: 'Inactive Styles',
-        permissions: [
-          { key: 'InactiveStylesView', slug: PermissionSlugs.InactiveStylesView, label: 'View' },
-          {
-            key: 'InactiveStylesDelete',
-            slug: PermissionSlugs.InactiveStylesDelete,
-            label: 'Delete',
-          },
-        ],
-      },
-      {
-        id: 'style-report-range',
-        label: 'Style Report Range',
+        id: 'channel-report-range',
+        label: 'Channel Report Range',
         permissions: [
           {
-            key: 'StyleReportRangeView',
-            slug: PermissionSlugs.StyleReportRangeView,
+            key: 'ChannelReportRangeView',
+            slug: PermissionSlugs.ChannelReportRangeView,
             label: 'View',
           },
         ],

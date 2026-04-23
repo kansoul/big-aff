@@ -529,3 +529,105 @@ export interface CampaignScheduleUpdatePayload {
   is_active?: boolean
   campaign_ids?: string[]
 }
+
+// ─── Ads/Adset Delivery Entities ───────────────────────────────────────────────
+
+export type DeliveryEntityStatus =
+  | 'ACTIVE'
+  | 'PAUSED'
+  | 'PENDING_REVIEW'
+  | 'DISAPPROVED'
+  | 'PREAPPROVED'
+  | 'PENDING_BILLING_INFO'
+  | 'CAMPAIGN_PAUSED'
+  | 'ARCHIVED'
+  | 'ADSET_PAUSED'
+  | 'IN_PROCESS'
+  | 'WITH_ISSUES'
+  | (string & {})
+
+interface DeliveryInsightCommon {
+  id: number
+  campaign_id: string | null
+  account_id: string | null
+  status: DeliveryEntityStatus | null
+  status_toggleable: boolean
+  effective_status: string | null
+  daily_budget: number | null
+  spend: number | null
+  date_start: string | null
+  date_stop: string | null
+  impressions: number | null
+  clicks: number | null
+  reach: number | null
+  cpc: number | null
+  cpm: number | null
+  ctr: number | null
+  cpa: number | null
+  ad_clicks: number | null
+  article_views: number | null
+  search_views: number | null
+  search_click: number | null
+  inline_link_click_ctr: number | null
+  cost_per_inline_link_click: number | null
+  frequency: number | null
+  conversion_realtime: number
+  rpc_est: number | null
+  revenue_est: number | null
+  profit_realtime: number | null
+  roi_realtime: number | null
+  cpa_realtime: number | null
+  updated_time: string | null
+  created_time: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface AdsetInsightRow extends DeliveryInsightCommon {
+  adset_id: string | null
+  adset_name: string | null
+}
+
+export interface AdsInsightRow extends DeliveryInsightCommon {
+  ad_id: string | null
+  ad_name: string | null
+  adset_id: string | null
+}
+
+export interface DeliveryEntitiesFilterParams {
+  date_from?: string | null
+  date_to?: string | null
+  created_time_from?: string | null
+  created_time_to?: string | null
+  status?: string | null
+  adset_id?: string | null
+  adset_name?: string | null
+  ad_id?: string | null
+  ad_name?: string | null
+}
+
+export interface DeliveryEntitiesListResponse {
+  data: {
+    adsets: AdsetInsightRow[]
+    ads: AdsInsightRow[]
+  }
+}
+
+export interface DeliveryEntityStatusOption {
+  value: string
+  label: string
+}
+
+export interface DeliveryEntityStatusOptionsResponse {
+  data: {
+    statuses: DeliveryEntityStatusOption[]
+  }
+}
+
+export interface ToggleAdsetStatusResponse {
+  data: AdsetInsightRow
+}
+
+export interface ToggleAdStatusResponse {
+  data: AdsInsightRow
+}

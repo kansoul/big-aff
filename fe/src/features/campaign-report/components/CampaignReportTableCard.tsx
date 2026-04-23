@@ -13,6 +13,7 @@ import { useIsMobile } from '@/hooks/useMobile'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import type {
   CampaignReportDataRow,
   CampaignReportFilterParams,
@@ -22,6 +23,7 @@ import type {
   CampaignReportSummary,
 } from '@/features/campaign-report/types'
 import {
+  AdsAdsetDeliveryReportDialog,
   CampaignRulesDialog,
   CampaignSchedulesDialog,
   RevenueReportListDialog,
@@ -234,6 +236,7 @@ function getColumns(
   groupBy: CampaignReportGroupBy,
   toggling: Record<string, boolean>,
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void,
+  canViewDeliveryReports: boolean,
   dateFrom?: string | null,
   dateTo?: string | null,
 ): MRT_ColumnDef<TableRow>[] {
@@ -389,6 +392,34 @@ function getColumns(
             trigger={
               <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
                 View Analytics
+              </button>
+            }
+          />
+        </div>
+      )
+    },
+  }
+
+  const colAdsAdsetReport: MRT_ColumnDef<TableRow> = {
+    id: 'ads_adset_report',
+    header: 'Ads / Adset',
+    size: 150,
+    enableSorting: false,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      if (!canViewDeliveryReports) return <span className="text-muted-foreground/50">—</span>
+      const r = row.original
+      const recordDate = r.date_start ?? null
+      return (
+        <div onClick={(e) => e.stopPropagation()}>
+          <AdsAdsetDeliveryReportDialog
+            campaignId={r.campaign_id}
+            campaignName={r.campaign_name}
+            initialDateFrom={recordDate ?? dateFrom ?? null}
+            initialDateTo={recordDate ?? dateTo ?? null}
+            trigger={
+              <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
+                Ads / Adset Report
               </button>
             }
           />
@@ -565,6 +596,7 @@ function getColumns(
     colCampaignStatus,
     colCampaignOnOff,
     colTrackingAnalytic,
+    colAdsAdsetReport,
     colLink,
     colAdsType,
     colChannelName,
@@ -638,6 +670,7 @@ type Props = {
   filters: CampaignReportFilterParams
   summary: CampaignReportSummary | null
   toggling: Record<string, boolean>
+  userPermissions: string[]
   onPaginationChange: (page: number, perPage: number) => void
   onSortingChange: (orderBy: CampaignReportOrderBy | null, order: 'asc' | 'desc' | null) => void
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void
@@ -650,12 +683,17 @@ function CampaignReportTableCardInner({
   filters,
   summary,
   toggling,
+  userPermissions,
   onPaginationChange,
   onSortingChange,
   onToggleCampaignStatus,
 }: Props) {
   const grouped = Boolean(filters.group_by)
   const isMobile = useIsMobile()
+  const canViewDeliveryReports = useMemo(
+    () => hasPermission(userPermissions, PermissionSlugs.DeliveryEntitiesReportsView),
+    [userPermissions],
+  )
   const columns = useMemo(
     () =>
       getColumns(
@@ -664,6 +702,7 @@ function CampaignReportTableCardInner({
         filters.group_by ?? '',
         toggling,
         onToggleCampaignStatus,
+        canViewDeliveryReports,
         filters.date_from,
         filters.date_to,
       ),
@@ -673,6 +712,7 @@ function CampaignReportTableCardInner({
       filters.date_to,
       grouped,
       onToggleCampaignStatus,
+      canViewDeliveryReports,
       summary,
       toggling,
     ],

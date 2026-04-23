@@ -28,3 +28,8 @@ Schedule::command('reports:sync-all')
     ->everyFiveMinutes()
     ->name('sync-all-reports')
     ->withoutOverlapping(15);
+
+Schedule::command('reports:fetch-ads-adsets-by-facebook')
+    ->everyFiveMinutes()
+    ->name('fetch-ads-adsets-by-facebook')
+    ->withoutOverlapping(20);

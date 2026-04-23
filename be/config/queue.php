@@ -130,5 +130,6 @@ return [
         'all-reports-sync' => env('QUEUE_ALL_REPORTS_SYNC', 'all-reports-sync'),
         'receive-insights' => env('QUEUE_RECEIVE_INSIGHTS', 'receive-insights'),
         'ads-conversion' => env('QUEUE_ADS_CONVERSION', 'ads-conversion'),
+        'fetch-ads-adsets' => env('QUEUE_FETCH_ADS_ADSETS', 'fetch-ads-adsets'),
     ],
 ];

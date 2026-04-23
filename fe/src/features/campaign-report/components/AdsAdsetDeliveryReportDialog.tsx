@@ -1,0 +1,1056 @@
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import dayjs from 'dayjs'
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  BarChart3,
+  ChevronFirst,
+  ChevronLast,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Search,
+  X,
+} from 'lucide-react'
+import { toast } from 'sonner'
+
+import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import { StatusBadge } from '@/components/common/StatusBadge'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { cn } from '@/lib/utils'
+import { PermissionSlugs, hasPermission } from '@/constants/permissions'
+import { campaignReportApi } from '@/features/campaign-report/api'
+import type {
+  AdsInsightRow,
+  AdsetInsightRow,
+  DeliveryEntitiesFilterParams,
+  DeliveryEntityStatusOption,
+} from '@/features/campaign-report/types'
+import { formatApiError } from '@/features/settings/components'
+import { useAuthStore } from '@/hooks/useAuthStore'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type DeliveryTab = 'adsets' | 'ads'
+
+type GroupByKey = 'none' | 'date_start'
+
+type DeliveryRow = AdsetInsightRow | AdsInsightRow
+
+type Props = {
+  trigger: React.ReactNode
+  campaignId: string
+  campaignName?: string | null
+  initialDateFrom?: string | null
+  initialDateTo?: string | null
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const PER_PAGE_OPTIONS = [
+  { label: '10', value: '10' },
+  { label: '25', value: '25' },
+  { label: '50', value: '50' },
+  { label: '100', value: '100' },
+]
+
+// ─── Formatters ───────────────────────────────────────────────────────────────
+
+function formatUsd(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '-'
+  return `$${value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '-'
+  const d = dayjs(value)
+  return d.isValid() ? d.format('DD/MM/YYYY') : value
+}
+
+// ─── Pagination helper ────────────────────────────────────────────────────────
+
+function getPageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const delta = 2
+  const left = current - delta
+  const right = current + delta
+  const pages: (number | '...')[] = [1]
+  if (left > 2) pages.push('...')
+  for (let i = Math.max(2, left); i <= Math.min(total - 1, right); i++) pages.push(i)
+  if (right < total - 1) pages.push('...')
+  pages.push(total)
+  return pages
+}
+
+// ─── Sort header ──────────────────────────────────────────────────────────────
+
+type SortState = { column: string | null; direction: 'asc' | 'desc' | null }
+
+type SortHeaderProps = {
+  label: string
+  column?: string
+  sort: SortState
+  onSort: (column: string) => void
+}
+
+function SortHeader({ label, column, sort, onSort }: SortHeaderProps) {
+  if (!column) return <span>{label}</span>
+  const isActive = sort.column === column
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(column)}
+      className="inline-flex items-center gap-1 text-left hover:text-foreground"
+    >
+      {label}
+      {isActive && sort.direction === 'asc' ? (
+        <ArrowUp className="h-3 w-3" />
+      ) : isActive && sort.direction === 'desc' ? (
+        <ArrowDown className="h-3 w-3" />
+      ) : (
+        <ArrowUpDown className="h-3 w-3 opacity-40" />
+      )}
+    </button>
+  )
+}
+
+// ─── Pagination bar ───────────────────────────────────────────────────────────
+
+type PaginationBarProps = {
+  page: number
+  perPage: number
+  rowCount: number
+  onPaginationChange: (page: number, perPage: number) => void
+}
+
+function PaginationBar({ page, perPage, rowCount, onPaginationChange }: PaginationBarProps) {
+  const totalPages = Math.max(1, Math.ceil(rowCount / perPage))
+  const pageNumbers = getPageNumbers(page, totalPages)
+  const firstRow = rowCount === 0 ? 0 : (page - 1) * perPage + 1
+  const lastRow = Math.min(rowCount, page * perPage)
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 bg-muted/25 px-4 py-2.5">
+      <span className="text-xs text-muted-foreground">
+        {rowCount === 0 ? 'No results' : `Showing ${firstRow} to ${lastRow} of ${rowCount} results`}
+      </span>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Per page</span>
+        <Select value={String(perPage)} onValueChange={(v) => onPaginationChange(1, Number(v))}>
+          <SelectTrigger size="sm" className="w-16 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PER_PAGE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="ml-2 flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="hidden h-7 w-7 sm:inline-flex"
+            disabled={page <= 1}
+            onClick={() => onPaginationChange(1, perPage)}
+          >
+            <ChevronFirst className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-7 w-7"
+            disabled={page <= 1}
+            onClick={() => onPaginationChange(page - 1, perPage)}
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Button>
+          {pageNumbers.map((p, i) =>
+            p === '...' ? (
+              <span
+                key={`ellipsis-${i}`}
+                className="hidden h-7 w-7 items-center justify-center text-xs text-muted-foreground sm:flex"
+              >
+                …
+              </span>
+            ) : (
+              <Button
+                key={p}
+                variant={p === page ? 'secondary' : 'outline'}
+                size="icon"
+                className={cn(
+                  'hidden h-7 w-7 text-xs sm:inline-flex',
+                  p === page && 'font-semibold',
+                )}
+                disabled={p === page}
+                onClick={() => onPaginationChange(p, perPage)}
+              >
+                {p}
+              </Button>
+            ),
+          )}
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-7 w-7"
+            disabled={page >= totalPages}
+            onClick={() => onPaginationChange(page + 1, perPage)}
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="hidden h-7 w-7 sm:inline-flex"
+            disabled={page >= totalPages}
+            onClick={() => onPaginationChange(totalPages, perPage)}
+          >
+            <ChevronLast className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Column descriptors ───────────────────────────────────────────────────────
+
+type ColDef<TRow> = {
+  key: string
+  label: string
+  sortKey?: string
+  className?: string
+  render: (row: TRow) => React.ReactNode
+  summary?: 'sum' | null
+}
+
+// ─── Dialog body ──────────────────────────────────────────────────────────────
+
+function AdsAdsetDeliveryReportDialogInner({
+  trigger,
+  campaignId,
+  campaignName,
+  initialDateFrom,
+  initialDateTo,
+}: Props) {
+  const [open, setOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<DeliveryTab>('adsets')
+
+  const permissions = useAuthStore((s) => s.user?.permissions ?? [])
+  const canToggle = useMemo(
+    () => hasPermission(permissions, PermissionSlugs.DeliveryEntitiesReportsUpdate),
+    [permissions],
+  )
+
+  const buildInitialFilters = useCallback(
+    (): DeliveryEntitiesFilterParams => ({
+      date_from: initialDateFrom ?? null,
+      date_to: initialDateTo ?? null,
+      status: null,
+      adset_id: null,
+      adset_name: null,
+      ad_id: null,
+      ad_name: null,
+    }),
+    [initialDateFrom, initialDateTo],
+  )
+
+  const [filters, setFilters] = useState<DeliveryEntitiesFilterParams>(buildInitialFilters)
+  const [adsets, setAdsets] = useState<AdsetInsightRow[]>([])
+  const [ads, setAds] = useState<AdsInsightRow[]>([])
+  const [loading, setLoading] = useState(false)
+  const [toggling, setToggling] = useState<Record<string, boolean>>({})
+
+  const [statusOptions, setStatusOptions] = useState<DeliveryEntityStatusOption[]>([])
+  const statusFetchedRef = useRef(false)
+
+  const [groupBy, setGroupBy] = useState<GroupByKey>('none')
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(10)
+  const [sort, setSort] = useState<SortState>({ column: null, direction: null })
+
+  const loadData = useCallback(
+    async (activeFilters: DeliveryEntitiesFilterParams) => {
+      try {
+        setLoading(true)
+        const { data } = await campaignReportApi.listDeliveryEntities(campaignId, activeFilters)
+        setAdsets(data.data.adsets)
+        setAds(data.data.ads)
+      } catch (err) {
+        toast.error(formatApiError(err))
+      } finally {
+        setLoading(false)
+      }
+    },
+    [campaignId],
+  )
+
+  useEffect(() => {
+    if (!open) return
+    void loadData(filters)
+  }, [open, filters, loadData])
+
+  useEffect(() => {
+    if (!open || statusFetchedRef.current) return
+    statusFetchedRef.current = true
+    campaignReportApi
+      .deliveryEntityStatusOptions()
+      .then((res) => setStatusOptions(res.data.data.statuses))
+      .catch(() => toast.error('Failed to load status options'))
+  }, [open])
+
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      setOpen(next)
+      if (!next) {
+        setFilters(buildInitialFilters())
+        setAdsets([])
+        setAds([])
+        setActiveTab('adsets')
+        setSearch('')
+        setPage(1)
+        setSort({ column: null, direction: null })
+        setGroupBy('none')
+      }
+    },
+    [buildInitialFilters],
+  )
+
+  // Reset pagination/search when switching tab
+  useEffect(() => {
+    setPage(1)
+    setSearch('')
+    setSort({ column: null, direction: null })
+  }, [activeTab])
+
+  const statusSelectOptions = useMemo(
+    () => statusOptions.map((s) => ({ value: s.value, label: s.label })),
+    [statusOptions],
+  )
+
+  const filterFields = useMemo<FilterFieldDef[]>(() => {
+    const common: FilterFieldDef[] = [
+      {
+        field: 'date_range',
+        label: 'Date',
+        type: 'daterange',
+        value: {
+          from: filters.date_from ?? null,
+          to: filters.date_to ?? null,
+        },
+      },
+      {
+        field: 'status',
+        label: 'Status',
+        type: 'select',
+        value: filters.status ?? null,
+        options: statusSelectOptions,
+        placeholder: 'All',
+      },
+    ]
+    if (activeTab === 'adsets') {
+      return [
+        ...common,
+        {
+          field: 'adset_id',
+          label: 'Adset ID',
+          type: 'input',
+          value: filters.adset_id ?? null,
+          placeholder: 'Enter Adset ID',
+        },
+        {
+          field: 'adset_name',
+          label: 'Adset Name',
+          type: 'input',
+          value: filters.adset_name ?? null,
+          placeholder: 'Enter Adset Name',
+        },
+      ]
+    }
+    return [
+      ...common,
+      {
+        field: 'ad_id',
+        label: 'Ad ID',
+        type: 'input',
+        value: filters.ad_id ?? null,
+        placeholder: 'Enter Ad ID',
+      },
+      {
+        field: 'ad_name',
+        label: 'Ad Name',
+        type: 'input',
+        value: filters.ad_name ?? null,
+        placeholder: 'Enter Ad Name',
+      },
+    ]
+  }, [
+    activeTab,
+    filters.date_from,
+    filters.date_to,
+    filters.status,
+    filters.adset_id,
+    filters.adset_name,
+    filters.ad_id,
+    filters.ad_name,
+    statusSelectOptions,
+  ])
+
+  const onApplyFilters = useCallback((values: Record<string, unknown>) => {
+    const range = values.date_range as { from: string | null; to: string | null } | null
+    setFilters({
+      date_from: range?.from ?? null,
+      date_to: range?.to ?? null,
+      status: (values.status as string | null) ?? null,
+      adset_id: (values.adset_id as string | null) ?? null,
+      adset_name: (values.adset_name as string | null) ?? null,
+      ad_id: (values.ad_id as string | null) ?? null,
+      ad_name: (values.ad_name as string | null) ?? null,
+    })
+    setPage(1)
+  }, [])
+
+  const onFilterReset = useCallback(() => {
+    setFilters(buildInitialFilters())
+    setPage(1)
+  }, [buildInitialFilters])
+
+  const onClearActiveFilter = useCallback((key: keyof DeliveryEntitiesFilterParams) => {
+    setFilters((prev) => {
+      if (key === 'date_from' || key === 'date_to') {
+        return { ...prev, date_from: null, date_to: null }
+      }
+      return { ...prev, [key]: null }
+    })
+    setPage(1)
+  }, [])
+
+  // ── Toggle status ──────────────────────────────────────────────────────────
+
+  const onToggleAdsetStatus = useCallback(
+    async (row: AdsetInsightRow, checked: boolean) => {
+      if (!row.status_toggleable) return
+      const next: 'ACTIVE' | 'PAUSED' = checked ? 'ACTIVE' : 'PAUSED'
+      const key = `adset:${row.id}`
+      setToggling((prev) => ({ ...prev, [key]: true }))
+      try {
+        const { data } = await campaignReportApi.toggleAdsetStatus(campaignId, row.id, next)
+        setAdsets((prev) => prev.map((r) => (r.id === row.id ? data.data : r)))
+        toast.success(`Adset is now ${data.data.status}`)
+      } catch (err) {
+        toast.error(formatApiError(err))
+      } finally {
+        setToggling((prev) => ({ ...prev, [key]: false }))
+      }
+    },
+    [campaignId],
+  )
+
+  const onToggleAdStatus = useCallback(
+    async (row: AdsInsightRow, checked: boolean) => {
+      if (!row.status_toggleable) return
+      const next: 'ACTIVE' | 'PAUSED' = checked ? 'ACTIVE' : 'PAUSED'
+      const key = `ad:${row.id}`
+      setToggling((prev) => ({ ...prev, [key]: true }))
+      try {
+        const { data } = await campaignReportApi.toggleAdStatus(campaignId, row.id, next)
+        setAds((prev) => prev.map((r) => (r.id === row.id ? data.data : r)))
+        toast.success(`Ad is now ${data.data.status}`)
+      } catch (err) {
+        toast.error(formatApiError(err))
+      } finally {
+        setToggling((prev) => ({ ...prev, [key]: false }))
+      }
+    },
+    [campaignId],
+  )
+
+  // ── Column definitions (memoized per tab) ──────────────────────────────────
+
+  const adsetColumns = useMemo<ColDef<AdsetInsightRow>[]>(
+    () => [
+      {
+        key: 'adset_id',
+        label: 'Adset ID',
+        sortKey: 'adset_id',
+        className: 'min-w-[160px]',
+        render: (r) => <span className="font-mono text-[11px]">{r.adset_id ?? '-'}</span>,
+      },
+      {
+        key: 'adset_name',
+        label: 'Adset Name',
+        sortKey: 'adset_name',
+        className: 'min-w-[220px]',
+        render: (r) => (
+          <span className="text-xs text-foreground">
+            {r.adset_name ?? <span className="text-muted-foreground/50">-</span>}
+          </span>
+        ),
+      },
+      {
+        key: 'account_id',
+        label: 'Account ID',
+        sortKey: 'account_id',
+        className: 'min-w-[160px]',
+        render: (r) => <span className="font-mono text-[11px]">{r.account_id ?? '-'}</span>,
+      },
+      {
+        key: 'campaign_id',
+        label: 'Campaign ID',
+        sortKey: 'campaign_id',
+        className: 'min-w-[160px]',
+        render: (r) => <span className="font-mono text-[11px]">{r.campaign_id ?? '-'}</span>,
+      },
+      {
+        key: 'date_start',
+        label: 'Date',
+        sortKey: 'date_start',
+        className: 'min-w-[110px]',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-muted-foreground">
+            {formatDate(r.date_start)}
+          </span>
+        ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        sortKey: 'status',
+        className: 'min-w-[120px]',
+        render: (r) => <StatusBadge status={r.status} label={r.status ?? undefined} />,
+      },
+      {
+        key: 'toggle',
+        label: 'Off/On',
+        className: 'min-w-[80px]',
+        render: (r) => {
+          const key = `adset:${r.id}`
+          const isActive = (r.status ?? '').toUpperCase() === 'ACTIVE'
+          return (
+            <Switch
+              checked={isActive}
+              disabled={!r.status_toggleable || !canToggle || Boolean(toggling[key])}
+              aria-label={`Toggle status for adset ${r.adset_id ?? r.id}`}
+              onCheckedChange={(checked) => void onToggleAdsetStatus(r, checked)}
+            />
+          )
+        },
+      },
+      {
+        key: 'daily_budget',
+        label: 'Daily Budget',
+        sortKey: 'daily_budget',
+        className: 'min-w-[120px] text-right',
+        summary: 'sum',
+        render: (r) => <span className="tabular-nums text-xs">{formatUsd(r.daily_budget)}</span>,
+      },
+      {
+        key: 'revenue_est',
+        label: 'Revenue Est',
+        sortKey: 'revenue_est',
+        className: 'min-w-[120px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-emerald-500">{formatUsd(r.revenue_est)}</span>
+        ),
+      },
+      {
+        key: 'spend',
+        label: 'Spend',
+        sortKey: 'spend',
+        className: 'min-w-[110px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-muted-foreground">{formatUsd(r.spend)}</span>
+        ),
+      },
+    ],
+    [canToggle, onToggleAdsetStatus, toggling],
+  )
+
+  const adColumns = useMemo<ColDef<AdsInsightRow>[]>(
+    () => [
+      {
+        key: 'ad_id',
+        label: 'Ad ID',
+        sortKey: 'ad_id',
+        className: 'min-w-[160px]',
+        render: (r) => <span className="font-mono text-[11px]">{r.ad_id ?? '-'}</span>,
+      },
+      {
+        key: 'ad_name',
+        label: 'Ad Name',
+        sortKey: 'ad_name',
+        className: 'min-w-[220px]',
+        render: (r) => (
+          <span className="text-xs text-foreground">
+            {r.ad_name ?? <span className="text-muted-foreground/50">-</span>}
+          </span>
+        ),
+      },
+      {
+        key: 'account_id',
+        label: 'Account ID',
+        sortKey: 'account_id',
+        className: 'min-w-[160px]',
+        render: (r) => <span className="font-mono text-[11px]">{r.account_id ?? '-'}</span>,
+      },
+      {
+        key: 'campaign_id',
+        label: 'Campaign ID',
+        sortKey: 'campaign_id',
+        className: 'min-w-[160px]',
+        render: (r) => <span className="font-mono text-[11px]">{r.campaign_id ?? '-'}</span>,
+      },
+      {
+        key: 'date_start',
+        label: 'Date',
+        sortKey: 'date_start',
+        className: 'min-w-[110px]',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-muted-foreground">
+            {formatDate(r.date_start)}
+          </span>
+        ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        sortKey: 'status',
+        className: 'min-w-[120px]',
+        render: (r) => <StatusBadge status={r.status} label={r.status ?? undefined} />,
+      },
+      {
+        key: 'toggle',
+        label: 'Off/On',
+        className: 'min-w-[80px]',
+        render: (r) => {
+          const key = `ad:${r.id}`
+          const isActive = (r.status ?? '').toUpperCase() === 'ACTIVE'
+          return (
+            <Switch
+              checked={isActive}
+              disabled={!r.status_toggleable || !canToggle || Boolean(toggling[key])}
+              aria-label={`Toggle status for ad ${r.ad_id ?? r.id}`}
+              onCheckedChange={(checked) => void onToggleAdStatus(r, checked)}
+            />
+          )
+        },
+      },
+      {
+        key: 'revenue_est',
+        label: 'Revenue Est',
+        sortKey: 'revenue_est',
+        className: 'min-w-[120px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-emerald-500">{formatUsd(r.revenue_est)}</span>
+        ),
+      },
+      {
+        key: 'spend',
+        label: 'Spend',
+        sortKey: 'spend',
+        className: 'min-w-[110px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-muted-foreground">{formatUsd(r.spend)}</span>
+        ),
+      },
+    ],
+    [canToggle, onToggleAdStatus, toggling],
+  )
+
+  // ── Derived data: search + sort (grouping is visual only) ─────────────────
+
+  const rawRows: DeliveryRow[] = activeTab === 'adsets' ? adsets : ads
+
+  const filteredRows = useMemo(() => {
+    if (!search.trim()) return rawRows
+    const q = search.trim().toLowerCase()
+    if (activeTab === 'adsets') {
+      return (rawRows as AdsetInsightRow[]).filter((r) =>
+        [r.adset_id, r.adset_name, r.account_id, r.campaign_id]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q)),
+      )
+    }
+    return (rawRows as AdsInsightRow[]).filter((r) =>
+      [r.ad_id, r.ad_name, r.account_id, r.campaign_id, r.adset_id]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q)),
+    )
+  }, [rawRows, search, activeTab])
+
+  const sortedRows = useMemo(() => {
+    if (!sort.column || !sort.direction) return filteredRows
+    const { column, direction } = sort
+    const sign = direction === 'asc' ? 1 : -1
+    const toComparable = (value: unknown): number | string | null => {
+      if (value == null) return null
+      if (typeof value === 'number' || typeof value === 'string') return value
+      if (typeof value === 'boolean') return value ? 1 : 0
+      return null
+    }
+    return [...filteredRows].sort((a, b) => {
+      const av = toComparable((a as unknown as Record<string, unknown>)[column])
+      const bv = toComparable((b as unknown as Record<string, unknown>)[column])
+      if (av === null && bv === null) return 0
+      if (av === null) return -1 * sign
+      if (bv === null) return 1 * sign
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * sign
+      return String(av).localeCompare(String(bv)) * sign
+    })
+  }, [filteredRows, sort])
+
+  const totalCount = sortedRows.length
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(totalCount / perPage)))
+  const pageRows = useMemo(
+    () => sortedRows.slice((currentPage - 1) * perPage, currentPage * perPage),
+    [sortedRows, currentPage, perPage],
+  )
+
+  // Group rows by date when requested; summaries are kept for ALL rows
+  const groupedRows = useMemo(() => {
+    if (groupBy !== 'date_start') return null
+    const map = new Map<string, DeliveryRow[]>()
+    for (const row of pageRows) {
+      const key = row.date_start ?? '—'
+      const existing = map.get(key) ?? []
+      existing.push(row)
+      map.set(key, existing)
+    }
+    return Array.from(map.entries())
+  }, [pageRows, groupBy])
+
+  const onSortColumn = useCallback((column: string) => {
+    setSort((prev) => {
+      if (prev.column !== column) return { column, direction: 'asc' }
+      if (prev.direction === 'asc') return { column, direction: 'desc' }
+      if (prev.direction === 'desc') return { column: null, direction: null }
+      return { column, direction: 'asc' }
+    })
+  }, [])
+
+  const onPaginationChange = useCallback((nextPage: number, nextPerPage: number) => {
+    setPage(nextPage)
+    setPerPage(nextPerPage)
+  }, [])
+
+  // ── Render helpers tied to current tab ────────────────────────────────────
+
+  const columns = (activeTab === 'adsets' ? adsetColumns : adColumns) as ColDef<DeliveryRow>[]
+
+  const summaryTotals = useMemo(() => {
+    const totals: Record<string, number> = {}
+    for (const col of columns) {
+      if (col.summary !== 'sum') continue
+      totals[col.key] = sortedRows.reduce((sum, row) => {
+        const v = (row as unknown as Record<string, unknown>)[col.key]
+        const n = typeof v === 'number' ? v : Number(v ?? 0)
+        return Number.isFinite(n) ? sum + n : sum
+      }, 0)
+    }
+    return totals
+  }, [columns, sortedRows])
+
+  const activeChips = useMemo(() => {
+    const chips: Array<{ key: keyof DeliveryEntitiesFilterParams; label: string }> = []
+    if (filters.date_from || filters.date_to) {
+      chips.push({
+        key: 'date_from',
+        label: `Date: Period ${formatDate(filters.date_from)} - ${formatDate(filters.date_to)}`,
+      })
+    }
+    if (filters.status) {
+      const label = statusOptions.find((o) => o.value === filters.status)?.label ?? filters.status
+      chips.push({ key: 'status', label: `Status: ${label}` })
+    }
+    if (activeTab === 'adsets') {
+      if (filters.adset_id) chips.push({ key: 'adset_id', label: `Adset ID: ${filters.adset_id}` })
+      if (filters.adset_name)
+        chips.push({ key: 'adset_name', label: `Adset Name: ${filters.adset_name}` })
+    } else {
+      if (filters.ad_id) chips.push({ key: 'ad_id', label: `Ad ID: ${filters.ad_id}` })
+      if (filters.ad_name) chips.push({ key: 'ad_name', label: `Ad Name: ${filters.ad_name}` })
+    }
+    return chips
+  }, [filters, statusOptions, activeTab])
+
+  const title = campaignName
+    ? `Ads/Adset Report: ${campaignName}`
+    : `Ads/Adset Report: ${campaignId}`
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent
+        className="flex h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 p-0 sm:h-[92vh] sm:w-[92vw] sm:max-w-[1200px]"
+        showCloseButton={false}
+      >
+        <DialogHeader className="border-b px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <DialogTitle className="truncate">{title}</DialogTitle>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleOpenChange(false)}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </DialogHeader>
+
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as DeliveryTab)}>
+            <TabsList variant="line">
+              <TabsTrigger value="adsets">Adsets</TabsTrigger>
+              <TabsTrigger value="ads">Ads</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={onApplyFilters}
+          />
+
+          <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card shadow-sm">
+            {/* Table toolbar */}
+            <div className="flex flex-col gap-2 border-b border-border/70 px-4 py-3 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Group by</span>
+                <Select value={groupBy} onValueChange={(v) => setGroupBy(v as GroupByKey)}>
+                  <SelectTrigger size="sm" className="w-32 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">-</SelectItem>
+                    <SelectItem value="date_start">Date</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="relative w-full sm:ml-auto sm:w-64">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    setPage(1)
+                  }}
+                  placeholder="Search…"
+                  className="h-8 w-full pl-8 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Active chips */}
+            {activeChips.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 border-b border-border/70 px-4 py-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Active filters
+                </span>
+                {activeChips.map((chip) => (
+                  <Badge
+                    key={chip.key}
+                    variant="secondary"
+                    className="gap-1 text-[11px] font-normal"
+                  >
+                    {chip.label}
+                    <button
+                      type="button"
+                      onClick={() => onClearActiveFilter(chip.key)}
+                      className="text-muted-foreground transition-colors hover:text-foreground"
+                      aria-label={`Clear ${chip.label}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* Table */}
+            <div className="relative overflow-auto">
+              {loading && totalCount > 0 && (
+                <div className="absolute inset-0 z-20 flex items-start justify-end bg-background/40 pr-4 pt-4 backdrop-blur-[1px]">
+                  <div className="inline-flex items-center gap-1.5 rounded-md bg-card px-2.5 py-1.5 text-xs text-muted-foreground shadow-sm ring-1 ring-border/60">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Loading…
+                  </div>
+                </div>
+              )}
+              <Table className="text-[13px]">
+                <TableHeader className="sticky top-0 z-10">
+                  <TableRow className="h-12 border-border/70 bg-muted/45 hover:bg-muted/45">
+                    {columns.map((col) => (
+                      <TableHead
+                        key={col.key}
+                        className={cn(
+                          'h-12 whitespace-nowrap bg-transparent text-[11px] font-semibold uppercase tracking-wider text-muted-foreground',
+                          col.className,
+                        )}
+                      >
+                        <SortHeader
+                          label={col.label}
+                          column={col.sortKey}
+                          sort={sort}
+                          onSort={onSortColumn}
+                        />
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {loading && totalCount === 0 && (
+                    <TableRow className="h-20 border-border/70 hover:bg-transparent">
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-20 whitespace-normal text-center"
+                      >
+                        <div className="inline-flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Loading…
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {!loading && totalCount === 0 && (
+                    <TableRow className="h-20 border-border/70 hover:bg-transparent">
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-20 whitespace-normal text-center"
+                      >
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                          <BarChart3 className="h-7 w-7 opacity-30" />
+                          <p className="text-sm">No delivery data for the selected filters.</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {groupedRows
+                    ? groupedRows.map(([dateKey, rows]) => (
+                        <RowGroup key={dateKey} dateKey={dateKey} rows={rows} columns={columns} />
+                      ))
+                    : pageRows.map((row) => (
+                        <TableRow
+                          key={`${activeTab}-${row.id}`}
+                          className="h-12 border-border/70 bg-background hover:bg-muted/20"
+                        >
+                          {columns.map((col) => (
+                            <TableCell key={col.key} className={col.className}>
+                              {col.render(row)}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+
+                  {/* Summary row */}
+                  {totalCount > 0 && (
+                    <TableRow className="border-t border-border/70 bg-muted/30 hover:bg-muted/30">
+                      {columns.map((col, idx) => (
+                        <TableCell key={col.key} className={cn('font-semibold', col.className)}>
+                          {idx === 0 ? (
+                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                              Summary
+                            </span>
+                          ) : col.summary === 'sum' ? (
+                            <span className="tabular-nums text-xs font-semibold">
+                              {formatUsd(summaryTotals[col.key])}
+                            </span>
+                          ) : null}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <PaginationBar
+              page={currentPage}
+              perPage={perPage}
+              rowCount={totalCount}
+              onPaginationChange={onPaginationChange}
+            />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ─── Grouped rows helper ──────────────────────────────────────────────────────
+
+type RowGroupProps = {
+  dateKey: string
+  rows: DeliveryRow[]
+  columns: ColDef<DeliveryRow>[]
+}
+
+function RowGroup({ dateKey, rows, columns }: RowGroupProps) {
+  return (
+    <>
+      <TableRow className="bg-muted/40 hover:bg-muted/40">
+        <TableCell
+          colSpan={columns.length}
+          className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+        >
+          {formatDate(dateKey)} · {rows.length} record(s)
+        </TableCell>
+      </TableRow>
+      {rows.map((row) => (
+        <TableRow key={row.id} className="h-12 border-border/70 bg-background hover:bg-muted/20">
+          {columns.map((col) => (
+            <TableCell key={col.key} className={col.className}>
+              {col.render(row)}
+            </TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </>
+  )
+}
+
+export const AdsAdsetDeliveryReportDialog = memo(AdsAdsetDeliveryReportDialogInner)

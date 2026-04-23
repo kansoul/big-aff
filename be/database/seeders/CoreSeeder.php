@@ -103,7 +103,7 @@ class CoreSeeder extends Seeder
                     Permission::CampaignReportsView->value,
                     Permission::AnalyticsTrackingView->value,
                     Permission::AdsReportView->value,
-                    Permission::StyleReportRangeView->value,
+                    Permission::ChannelReportRangeView->value,
                     Permission::AccountsView->value,
                     Permission::CampaignsView->value,
                     Permission::ChannelsView->value,
