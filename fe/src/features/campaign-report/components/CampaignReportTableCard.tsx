@@ -17,6 +17,7 @@ import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import type {
   CampaignReportDataRow,
   CampaignReportFilterParams,
+  CampaignReportFiltersResponse,
   CampaignReportGroupBy,
   CampaignReportGroupRow,
   CampaignReportOrderBy,
@@ -25,6 +26,7 @@ import type {
 } from '@/features/campaign-report/types'
 import {
   AdsAdsetDeliveryReportDialog,
+  CampaignIdSelector,
   CampaignRulesDialog,
   CampaignSchedulesDialog,
   RevenueChartDialog,
@@ -679,6 +681,7 @@ type Props = {
   rowCount: number
   loading: boolean
   filters: CampaignReportFilterParams
+  filterOptions: CampaignReportFiltersResponse['data']
   summary: CampaignReportSummary | null
   toggling: Record<string, boolean>
   userPermissions: string[]
@@ -692,6 +695,7 @@ function CampaignReportTableCardInner({
   rowCount,
   loading,
   filters,
+  filterOptions,
   summary,
   toggling,
   userPermissions,
@@ -816,6 +820,7 @@ function CampaignReportTableCardInner({
       'mrt-row-expand': {
         mantineTableHeadCellProps: { display: 'none' },
         mantineTableBodyCellProps: { display: 'none' },
+        mantineTableFooterCellProps: { display: 'none' },
       },
     },
     enableColumnFilters: false,
@@ -954,6 +959,14 @@ function CampaignReportTableCardInner({
             trigger={
               <button className="inline-flex items-center gap-1.5 rounded border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">
                 Campaign Rules
+              </button>
+            }
+          />
+          <CampaignIdSelector
+            filterOptions={filterOptions}
+            trigger={
+              <button className="inline-flex items-center gap-1.5 rounded border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">
+                Campaign ID Selector
               </button>
             }
           />

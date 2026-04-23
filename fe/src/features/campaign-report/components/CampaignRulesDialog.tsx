@@ -50,7 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { cn } from '@/lib/utils'
+import { cn, getPageNumbers } from '@/lib/utils'
 import { campaignReportApi } from '@/features/campaign-report/api'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import type {
@@ -319,19 +319,6 @@ const PER_PAGE_OPTIONS = [
   { label: '50', value: '50' },
   { label: '100', value: '100' },
 ]
-
-function getPageNumbers(current: number, total: number): (number | '...')[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
-  const delta = 2
-  const left = current - delta
-  const right = current + delta
-  const pages: (number | '...')[] = [1]
-  if (left > 2) pages.push('...')
-  for (let i = Math.max(2, left); i <= Math.min(total - 1, right); i++) pages.push(i)
-  if (right < total - 1) pages.push('...')
-  pages.push(total)
-  return pages
-}
 
 type PaginationBarProps = {
   page: number

@@ -1,5 +1,11 @@
 import { axiosInstance } from '@/shared/api/axios'
 import type {
+  AdsetsSelectorFilterParams,
+  AdsetsSelectorListResponse,
+  AdsSelectorFilterParams,
+  AdsSelectorListResponse,
+  CampaignSelectorFilterParams,
+  CampaignSelectorListResponse,
   CampaignReportFilterParams,
   CampaignReportFiltersResponse,
   CampaignReportListResponse,
@@ -95,6 +101,59 @@ export const campaignReportApi = {
         ...(filters.campaign_id ? { campaign_id: filters.campaign_id } : {}),
         ...(filters.name ? { name: filters.name } : {}),
         ...(filters.is_active != null ? { is_active: filters.is_active } : {}),
+        ...(filters.order_by ? { order_by: filters.order_by } : {}),
+        ...(filters.order ? { order: filters.order } : {}),
+      },
+    }),
+
+  listCampaignSelector: (filters: CampaignSelectorFilterParams) =>
+    axiosInstance.get<CampaignSelectorListResponse>('/campaigns/selector', {
+      params: {
+        page: filters.page ?? 1,
+        per_page: filters.per_page ?? 30,
+        ...(filters.account_id ? { account_id: filters.account_id } : {}),
+        ...(filters.user_id != null ? { user_id: filters.user_id } : {}),
+        ...(filters.style_code ? { style_code: filters.style_code } : {}),
+        ...(filters.min_spend != null ? { min_spend: filters.min_spend } : {}),
+        ...(filters.min_revenue != null ? { min_revenue: filters.min_revenue } : {}),
+        ...(filters.min_profit != null ? { min_profit: filters.min_profit } : {}),
+        ...(filters.search ? { search: filters.search } : {}),
+        ...(filters.status ? { status: filters.status } : {}),
+        ...(filters.order_by ? { order_by: filters.order_by } : {}),
+        ...(filters.order ? { order: filters.order } : {}),
+      },
+    }),
+
+  listAdsSelector: (filters: AdsSelectorFilterParams) =>
+    axiosInstance.get<AdsSelectorListResponse>('/campaigns/ads/selector', {
+      params: {
+        page: filters.page ?? 1,
+        per_page: filters.per_page ?? 30,
+        ...(filters.account_id ? { account_id: filters.account_id } : {}),
+        ...(filters.adset_id ? { adset_id: filters.adset_id } : {}),
+        ...(filters.campaign_id ? { campaign_id: filters.campaign_id } : {}),
+        ...(filters.date_start_from ? { date_start_from: filters.date_start_from } : {}),
+        ...(filters.date_start_to ? { date_start_to: filters.date_start_to } : {}),
+        ...(filters.max_cpa != null ? { max_cpa: filters.max_cpa } : {}),
+        ...(filters.min_spend != null ? { min_spend: filters.min_spend } : {}),
+        ...(filters.search ? { search: filters.search } : {}),
+        ...(filters.order_by ? { order_by: filters.order_by } : {}),
+        ...(filters.order ? { order: filters.order } : {}),
+      },
+    }),
+
+  listAdsetsSelector: (filters: AdsetsSelectorFilterParams) =>
+    axiosInstance.get<AdsetsSelectorListResponse>('/campaigns/adsets/selector', {
+      params: {
+        page: filters.page ?? 1,
+        per_page: filters.per_page ?? 30,
+        ...(filters.account_id ? { account_id: filters.account_id } : {}),
+        ...(filters.campaign_id ? { campaign_id: filters.campaign_id } : {}),
+        ...(filters.date_start_from ? { date_start_from: filters.date_start_from } : {}),
+        ...(filters.date_start_to ? { date_start_to: filters.date_start_to } : {}),
+        ...(filters.max_cpa != null ? { max_cpa: filters.max_cpa } : {}),
+        ...(filters.min_spend != null ? { min_spend: filters.min_spend } : {}),
+        ...(filters.search ? { search: filters.search } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),
         ...(filters.order ? { order: filters.order } : {}),
       },

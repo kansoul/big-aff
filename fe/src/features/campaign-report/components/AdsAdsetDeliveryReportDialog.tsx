@@ -44,7 +44,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { cn } from '@/lib/utils'
+import { cn, getPageNumbers } from '@/lib/utils'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { campaignReportApi } from '@/features/campaign-report/api'
 import type {
@@ -97,21 +97,6 @@ function formatDate(value: string | null | undefined): string {
   if (!value) return '-'
   const d = dayjs(value)
   return d.isValid() ? d.format('DD/MM/YYYY') : value
-}
-
-// ─── Pagination helper ────────────────────────────────────────────────────────
-
-function getPageNumbers(current: number, total: number): (number | '...')[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
-  const delta = 2
-  const left = current - delta
-  const right = current + delta
-  const pages: (number | '...')[] = [1]
-  if (left > 2) pages.push('...')
-  for (let i = Math.max(2, left); i <= Math.min(total - 1, right); i++) pages.push(i)
-  if (right < total - 1) pages.push('...')
-  pages.push(total)
-  return pages
 }
 
 // ─── Sort header ──────────────────────────────────────────────────────────────

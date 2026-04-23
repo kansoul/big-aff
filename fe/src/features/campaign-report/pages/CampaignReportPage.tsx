@@ -351,6 +351,7 @@ export function CampaignReportPage() {
         rowCount={rowCount}
         loading={loading}
         filters={filters}
+        filterOptions={options}
         summary={grandSummary}
         toggling={toggling}
         userPermissions={userPermissions}
