@@ -2,8 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\AdClient;
 use App\Models\Campaign;
 use App\Models\CampaignReport;
+use App\Models\Channel;
 use App\Models\InsightChartReport;
 use App\Models\InsightReport;
 use App\Models\LinkData;
@@ -15,44 +17,73 @@ use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 
+/**
+ * Populates all analytical/report tables using the real identifiers seeded by AdsSeeder:
+ *   - insight_reports.account_id           → accounts.account_id (string business id)
+ *   - insight_reports.campaign_id          → campaigns.campaign_id
+ *   - insight_chart_reports.*              → idem
+ *   - campaign_reports.account_id          → accounts.account_id
+ *   - campaign_reports.campaign_id / name  → campaigns.*
+ *   - campaign_reports.style_code/channel_code → styles.code / channels.code
+ *   - revenue_reports.style_code/channel_code  → styles.code / channels.code
+ *   - revenue_reports.ad_client_id         → ad_clients.ad_client_id
+ *   - revenue_chart_reports.*              → idem (hourly)
+ *
+ * Reports are idempotent — a table is only seeded if it's currently empty.
+ */
 class ReportsSeeder extends Seeder
 {
-    private const DAYS = 30;
+    private const DAILY_DAYS = 30;
+
+    private const CHART_DAYS = 7;
+
+    private const CAMPAIGN_REPORT_DAYS = 14;
 
     public function run(): void
     {
-        $styles = Style::query()->limit(10)->get();
-        $campaigns = Campaign::query()
-            ->with('account')
-            ->limit(40)
-            ->get();
+        $campaigns = Campaign::query()->with('account')->get();
+        if ($campaigns->isEmpty()) {
+            return;
+        }
+
+        $styles = Style::query()->get();
+        $channels = Channel::query()->get();
+        $adClients = AdClient::query()->get();
+
         $linkDataByCampaignId = LinkData::query()
             ->whereNotNull('campaign_id')
-            ->limit(200)
             ->get()
             ->keyBy('campaign_id');
 
-        $this->seedRevenueReports($styles);
-        $this->seedRevenueChartReports($styles);
+        $this->seedRevenueReports($styles, $channels, $adClients);
+        $this->seedRevenueChartReports($styles, $channels, $adClients);
         $this->seedInsightReports($campaigns);
         $this->seedInsightChartReports($campaigns);
-        $this->seedCampaignReports($campaigns, $linkDataByCampaignId);
+        $this->seedCampaignReports($campaigns, $styles, $channels, $linkDataByCampaignId);
     }
 
     /**
      * @param  Collection<int, Style>  $styles
+     * @param  Collection<int, Channel>  $channels
+     * @param  Collection<int, AdClient>  $adClients
      */
-    private function seedRevenueReports(Collection $styles): void
+    private function seedRevenueReports(Collection $styles, Collection $channels, Collection $adClients): void
     {
-        if (RevenueReport::query()->exists()) {
+        if (RevenueReport::query()->exists() || $styles->isEmpty() || $channels->isEmpty()) {
             return;
         }
 
         foreach ($styles as $style) {
-            for ($day = self::DAYS; $day >= 0; $day--) {
+            $channel = $channels->random();
+            $adClientId = $adClients->isNotEmpty() ? $adClients->random()->ad_client_id : 'ca-pub-'.fake()->numerify('##############');
+
+            for ($day = self::DAILY_DAYS; $day >= 0; $day--) {
                 RevenueReport::factory()->create([
+                    'ad_client_id' => $adClientId,
                     'style_code' => $style->code,
                     'style_name' => $style->name,
+                    'channel_code' => $channel->code,
+                    'channel_name' => $channel->name,
                     'date' => Carbon::now()->subDays($day)->toDateString(),
                 ]);
             }
@@ -61,22 +92,30 @@ class ReportsSeeder extends Seeder
 
     /**
      * @param  Collection<int, Style>  $styles
+     * @param  Collection<int, Channel>  $channels
+     * @param  Collection<int, AdClient>  $adClients
      */
-    private function seedRevenueChartReports(Collection $styles): void
+    private function seedRevenueChartReports(Collection $styles, Collection $channels, Collection $adClients): void
     {
-        if (RevenueChartReport::query()->exists()) {
+        if (RevenueChartReport::query()->exists() || $styles->isEmpty() || $channels->isEmpty()) {
             return;
         }
 
         foreach ($styles as $style) {
-            for ($hoursAgo = 24 * 7; $hoursAgo >= 0; $hoursAgo--) {
+            $channel = $channels->random();
+            $adClientId = $adClients->isNotEmpty() ? $adClients->random()->ad_client_id : 'ca-pub-'.fake()->numerify('##############');
+
+            for ($hoursAgo = 24 * self::CHART_DAYS; $hoursAgo >= 0; $hoursAgo--) {
                 $datetime = Carbon::now()->subHours($hoursAgo)->startOfHour();
 
                 RevenueChartReport::query()->firstOrCreate(
                     ['style_code' => $style->code, 'datetime' => $datetime],
                     RevenueChartReport::factory()->make([
+                        'ad_client_id' => $adClientId,
                         'style_code' => $style->code,
                         'style_name' => $style->name,
+                        'channel_code' => $channel->code,
+                        'channel_name' => $channel->name,
                         'datetime' => $datetime,
                     ])->toArray(),
                 );
@@ -85,17 +124,19 @@ class ReportsSeeder extends Seeder
     }
 
     /**
-     * @param  Collection<int, Campaign>  $campaigns
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Campaign>  $campaigns
      */
-    private function seedInsightReports(Collection $campaigns): void
+    private function seedInsightReports(\Illuminate\Database\Eloquent\Collection $campaigns): void
     {
         if (InsightReport::query()->exists()) {
             return;
         }
 
         foreach ($campaigns as $campaign) {
-            for ($day = self::DAYS; $day >= 0; $day--) {
+            for ($day = self::DAILY_DAYS; $day >= 0; $day--) {
                 InsightReport::factory()->create([
+                    // account_id is the string business id (accounts.account_id),
+                    // mirroring the conversions table contract.
                     'account_id' => $campaign->account_id,
                     'campaign_id' => $campaign->campaign_id,
                     'date_start' => Carbon::now()->subDays($day)->toDateString(),
@@ -106,16 +147,16 @@ class ReportsSeeder extends Seeder
     }
 
     /**
-     * @param  Collection<int, Campaign>  $campaigns
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Campaign>  $campaigns
      */
-    private function seedInsightChartReports(Collection $campaigns): void
+    private function seedInsightChartReports(\Illuminate\Database\Eloquent\Collection $campaigns): void
     {
         if (InsightChartReport::query()->exists()) {
             return;
         }
 
         foreach ($campaigns as $campaign) {
-            for ($day = 7; $day >= 0; $day--) {
+            for ($day = self::CHART_DAYS; $day >= 0; $day--) {
                 InsightChartReport::factory()->create([
                     'account_id' => $campaign->account_id,
                     'campaign_id' => $campaign->campaign_id,
@@ -126,25 +167,31 @@ class ReportsSeeder extends Seeder
     }
 
     /**
-     * @param  Collection<int, Campaign>  $campaigns
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Campaign>  $campaigns
+     * @param  Collection<int, Style>  $styles
+     * @param  Collection<int, Channel>  $channels
      * @param  Collection<string, LinkData>  $linkDataByCampaignId
      */
-    private function seedCampaignReports(Collection $campaigns, Collection $linkDataByCampaignId): void
-    {
+    private function seedCampaignReports(
+        \Illuminate\Database\Eloquent\Collection $campaigns,
+        Collection $styles,
+        Collection $channels,
+        Collection $linkDataByCampaignId,
+    ): void {
         if (CampaignReport::query()->exists()) {
             return;
         }
 
-        $channelCodes = ['chan_tech', 'chan_lifestyle', 'chan_finance', 'chan_health', 'chan_sports'];
-
         foreach ($campaigns as $campaign) {
             $linkData = $linkDataByCampaignId->get($campaign->campaign_id);
+            $style = $styles->firstWhere('code', $linkData?->style_code) ?? ($styles->isNotEmpty() ? $styles->random() : null);
+            $channel = $channels->firstWhere('code', $linkData?->channel_code) ?? ($channels->isNotEmpty() ? $channels->random() : null);
 
-            for ($day = 14; $day >= 0; $day--) {
+            for ($day = self::CAMPAIGN_REPORT_DAYS; $day >= 0; $day--) {
                 $date = Carbon::now()->subDays($day)->toDateString();
 
                 $realtime = null;
-                if ($linkData && random_int(1, 10) <= 6) {
+                if ($linkData !== null) {
                     $realtime = RealtimeReport::query()->firstOrCreate(
                         ['event_time' => $date, 'link_data_id' => $linkData->id],
                         [
@@ -159,15 +206,20 @@ class ReportsSeeder extends Seeder
                 CampaignReport::factory()->create([
                     'realtime_report_id' => $realtime?->id,
                     'date_start' => $date,
-                    // ownership uses accounts.id (int) stored as string in campaign_reports.account_id
-                    'account_id' => (string) $campaign->account?->id,
+                    // account_id uses the string business id (accounts.account_id),
+                    // matching the conversions table and the user's data contract.
+                    'account_id' => $campaign->account_id,
                     'account_name' => $campaign->account?->account_name,
                     'campaign_id' => $campaign->campaign_id,
                     'campaign_name' => $campaign->campaign_name,
                     'campaign_status' => $campaign->status,
                     'ads_type' => $campaign->ads_type,
                     'daily_budget' => $campaign->daily_budget,
-                    'channel_code' => fake()->randomElement($channelCodes),
+                    'lifetime_budget' => $campaign->lifetime_budget,
+                    'style_code' => $style?->code,
+                    'style_name' => $style?->name,
+                    'channel_code' => $channel?->code,
+                    'channel_name' => $channel?->name,
                 ]);
             }
         }

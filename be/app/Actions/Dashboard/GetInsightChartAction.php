@@ -2,7 +2,8 @@
 
 namespace App\Actions\Dashboard;
 
-use App\Models\CampaignReport;
+use App\Models\InsightReport;
+use App\Models\RevenueReport;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,8 +12,8 @@ class GetInsightChartAction
 {
     /**
      * Returns all 6 revenue/spend metrics, each with current and previous period values.
-     * Spend is sourced from CampaignReport (a_spend).
-     * Revenue is sourced from RevenueReport (estimated_earnings), joined via channel_code + date.
+     * Spend is sourced from InsightReport (spend).
+     * Revenue is sourced from RevenueReport (estimated_earnings), filtered by channel ownership.
      *
      * @return array{
      *   daily_spend:    array{today: float, yesterday: float},
@@ -38,57 +39,65 @@ class GetInsightChartAction
         ];
     }
 
-    private function baseQuery(OwnershipFilter $ownership): Builder
+    private function spendBaseQuery(OwnershipFilter $ownership): Builder
     {
-        $query = CampaignReport::query()
-            ->leftJoin('revenue_reports as rr', function ($join) {
-                $join->on('rr.channel_code', '=', 'campaign_reports.channel_code')
-                    ->whereColumn('rr.date', 'campaign_reports.date_start');
-            });
-
+        $query = InsightReport::query();
         $ownership->applyThroughAccount($query);
+
+        return $query;
+    }
+
+    private function revenueBaseQuery(OwnershipFilter $ownership): Builder
+    {
+        $query = RevenueReport::query();
+        $ownership->applyThroughChannel($query);
 
         return $query;
     }
 
     private function daily(OwnershipFilter $ownership, Carbon $now, string $type): array
     {
-        $base = $this->baseQuery($ownership);
-
         return [
-            'today' => $this->sumColumn(clone $base, $type, $now->toDateString(), $now->toDateString()),
-            'yesterday' => $this->sumColumn(clone $base, $type, $now->copy()->subDay()->toDateString(), $now->copy()->subDay()->toDateString()),
+            'today' => $this->sumPeriod($ownership, $type, $now->toDateString(), $now->toDateString()),
+            'yesterday' => $this->sumPeriod($ownership, $type, $now->copy()->subDay()->toDateString(), $now->copy()->subDay()->toDateString()),
         ];
     }
 
     private function weekly(OwnershipFilter $ownership, Carbon $now, string $type): array
     {
-        $base = $this->baseQuery($ownership);
-
         return [
-            'this_week' => $this->sumColumn(clone $base, $type, $now->copy()->startOfWeek()->toDateString(), $now->copy()->endOfWeek()->toDateString()),
-            'last_week' => $this->sumColumn(clone $base, $type, $now->copy()->subWeek()->startOfWeek()->toDateString(), $now->copy()->subWeek()->endOfWeek()->toDateString()),
+            'this_week' => $this->sumPeriod($ownership, $type, $now->copy()->startOfWeek()->toDateString(), $now->copy()->endOfWeek()->toDateString()),
+            'last_week' => $this->sumPeriod($ownership, $type, $now->copy()->subWeek()->startOfWeek()->toDateString(), $now->copy()->subWeek()->endOfWeek()->toDateString()),
         ];
     }
 
     private function monthly(OwnershipFilter $ownership, Carbon $now, string $type): array
     {
-        $base = $this->baseQuery($ownership);
-
         return [
-            'this_month' => $this->sumColumn(clone $base, $type, $now->copy()->startOfMonth()->toDateString(), $now->copy()->endOfMonth()->toDateString()),
-            'last_month' => $this->sumColumn(clone $base, $type, $now->copy()->subMonth()->startOfMonth()->toDateString(), $now->copy()->subMonth()->endOfMonth()->toDateString()),
+            'this_month' => $this->sumPeriod($ownership, $type, $now->copy()->startOfMonth()->toDateString(), $now->copy()->endOfMonth()->toDateString()),
+            'last_month' => $this->sumPeriod($ownership, $type, $now->copy()->subMonth()->startOfMonth()->toDateString(), $now->copy()->subMonth()->endOfMonth()->toDateString()),
         ];
     }
 
-    private function sumColumn(Builder $query, string $type, string $from, string $to): float
+    private function sumPeriod(OwnershipFilter $ownership, string $type, string $from, string $to): float
     {
-        $column = $type === 'spend' ? 'campaign_reports.a_spend' : 'rr.estimated_earnings';
+        if ($type === 'spend') {
+            $query = $this->spendBaseQuery($ownership);
+
+            return round(
+                (float) $query->whereDate('date_start', '>=', $from)
+                    ->whereDate('date_start', '<=', $to)
+                    ->sum('spend'),
+                2,
+            );
+        }
+
+        $query = $this->revenueBaseQuery($ownership);
 
         return round(
-            (float) $query->whereDate('campaign_reports.date_start', '>=', $from)
-                ->whereDate('campaign_reports.date_start', '<=', $to)
-                ->sum($column),
+            (float) $query->whereDate('date', '>=', $from)
+                ->whereDate('date', '<=', $to)
+                ->sum('estimated_earnings'),
             2,
         );
     }

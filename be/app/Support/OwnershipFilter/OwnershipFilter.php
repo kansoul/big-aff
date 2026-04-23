@@ -126,6 +126,11 @@ final readonly class OwnershipFilter
      * Ownership is determined by which accounts the allowed users have access to,
      * not by `accounts.created_by`.
      *
+     * The subquery returns `accounts.account_id` (the string business ID used by
+     * `insight_reports`, `campaign_reports`, etc.) to match the `account_id` column
+     * convention on report tables, mirroring how `applyThroughChannel` returns
+     * `channels.code`.
+     *
      * @template TModel of \Illuminate\Database\Eloquent\Model
      *
      * @param  Builder<TModel>  $query
@@ -138,7 +143,7 @@ final readonly class OwnershipFilter
             $column,
             fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
                 ->whereIn('account_user.user_id', $ids)
-                ->select('accounts.id'),
+                ->select('accounts.account_id'),
         );
     }
 
