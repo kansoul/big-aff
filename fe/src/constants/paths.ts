@@ -33,7 +33,7 @@ export const PATHS = {
   adClients: '/ad-clients',
   adsReport: '/ads-report',
   styleReport: '/style-report',
-  revenueReport: '/revenue-report',
+  teamReport: '/team-report',
   campaignRuleSettings: '/campaign-rule-settings',
   googleConversions: '/google-conversions',
   campaignReport: '/campaign-report',

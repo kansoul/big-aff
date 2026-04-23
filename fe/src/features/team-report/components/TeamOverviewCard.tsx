@@ -2,10 +2,10 @@ import { Banknote, BarChart3, Monitor, TrendingDown, TrendingUp } from 'lucide-r
 import type { ComponentType } from 'react'
 
 import { Card, CardContent } from '@/components/ui/card'
-import type { RevenueOverviewData } from '@/features/revenue-report/types'
+import type { TeamOverviewData } from '@/features/team-report/types'
 
 type Props = {
-  data: RevenueOverviewData | null
+  data: TeamOverviewData | null
   loading: boolean
 }
 
@@ -25,7 +25,7 @@ function formatRoi(value: number): string {
   return `${value.toFixed(2)}%`
 }
 
-function buildItems(d: RevenueOverviewData): StatItem[] {
+function buildItems(d: TeamOverviewData): StatItem[] {
   return [
     {
       label: 'Revenue',
@@ -58,7 +58,7 @@ function buildItems(d: RevenueOverviewData): StatItem[] {
   ]
 }
 
-export function RevenueOverviewCard({ data, loading }: Props) {
+export function TeamOverviewCard({ data, loading }: Props) {
   if (loading) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

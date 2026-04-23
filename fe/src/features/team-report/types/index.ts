@@ -1,22 +1,22 @@
-export interface RevenueReportFilterParams {
+export interface TeamReportFilterParams {
   date_from?: string | null
   date_to?: string | null
   team_ids?: number[]
   user_ids?: number[]
 }
 
-export interface RevenueOverviewData {
+export interface TeamOverviewData {
   revenue: number
   spend: number
   profit: number
   roi: number
 }
 
-export interface RevenueOverviewResponse {
-  data: RevenueOverviewData
+export interface TeamOverviewResponse {
+  data: TeamOverviewData
 }
 
-export interface RevenueByTeamRow {
+export interface TeamReportByTeamRow {
   team_id: number
   team_name: string
   revenue: number
@@ -25,11 +25,11 @@ export interface RevenueByTeamRow {
   roi: number
 }
 
-export interface RevenueByTeamResponse {
-  data: RevenueByTeamRow[]
+export interface TeamReportByTeamResponse {
+  data: TeamReportByTeamRow[]
 }
 
-export interface RevenueByUserRow {
+export interface TeamReportByUserRow {
   user_id: number
   user_name: string
   team_id: number
@@ -40,6 +40,6 @@ export interface RevenueByUserRow {
   roi: number
 }
 
-export interface RevenueByUserResponse {
-  data: RevenueByUserRow[]
+export interface TeamReportByUserResponse {
+  data: TeamReportByUserRow[]
 }

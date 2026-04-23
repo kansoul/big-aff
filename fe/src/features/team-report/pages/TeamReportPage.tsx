@@ -1,26 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import { toast } from 'sonner'
-
-import { revenueReportApi } from '@/features/revenue-report/api'
-import {
-  RevenueByTeamTableCard,
-  RevenueByUserTableCard,
-  RevenueOverviewCard,
-} from '@/features/revenue-report/components'
+import { teamReportApi } from '@/features/team-report/api'
 import type {
-  RevenueByTeamRow,
-  RevenueByUserRow,
-  RevenueOverviewData,
-  RevenueReportFilterParams,
-} from '@/features/revenue-report/types'
+  TeamReportByTeamRow,
+  TeamReportByUserRow,
+  TeamOverviewData,
+  TeamReportFilterParams,
+} from '@/features/team-report/types'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
 import { teamsApi } from '@/features/teams/api'
 import { usersApi } from '@/features/users/api/users'
 import type { SelectOption } from '@/components/common/FilterPanel'
+import { TeamOverviewCard } from '../components/TeamOverviewCard'
+import { TeamReportByTeamTableCard } from '../components/TeamByTeamTableCard'
+import { TeamReportByUserTableCard } from '../components/TeamByUserTableCard'
 
-const DEFAULT_FILTERS: RevenueReportFilterParams = {
+const DEFAULT_FILTERS: TeamReportFilterParams = {
   date_from: dayjs().startOf('month').format('YYYY-MM-DD'),
   date_to: dayjs().endOf('month').format('YYYY-MM-DD'),
   team_ids: [],
@@ -44,15 +41,15 @@ function toSelectOptions(items: { id: number; name: string }[]): SelectOption[] 
   return items.map((item) => ({ value: String(item.id), label: item.name }))
 }
 
-export function RevenueReportPage() {
-  const [filters, setFilters] = useState<RevenueReportFilterParams>(DEFAULT_FILTERS)
+export function TeamReportPage() {
+  const [filters, setFilters] = useState<TeamReportFilterParams>(DEFAULT_FILTERS)
 
   const [teamOptions, setTeamOptions] = useState<SelectOption[]>([])
   const [userOptions, setUserOptions] = useState<SelectOption[]>([])
 
-  const [overview, setOverview] = useState<RevenueOverviewData | null>(null)
-  const [byTeam, setByTeam] = useState<RevenueByTeamRow[]>([])
-  const [byUser, setByUser] = useState<RevenueByUserRow[]>([])
+  const [overview, setOverview] = useState<TeamOverviewData | null>(null)
+  const [byTeam, setByTeam] = useState<TeamReportByTeamRow[]>([])
+  const [byUser, setByUser] = useState<TeamReportByUserRow[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -64,19 +61,19 @@ export function RevenueReportPage() {
     )
   }, [])
 
-  const loadData = useCallback(async (activeFilters: RevenueReportFilterParams) => {
+  const loadData = useCallback(async (activeFilters: TeamReportFilterParams) => {
     try {
       setLoading(true)
       const [overviewRes, byTeamRes, byUserRes] = await Promise.all([
-        revenueReportApi.overview(activeFilters),
-        revenueReportApi.byTeam(activeFilters),
-        revenueReportApi.byUser(activeFilters),
+        teamReportApi.overview(activeFilters),
+        teamReportApi.byTeam(activeFilters),
+        teamReportApi.byUser(activeFilters),
       ])
       setOverview(overviewRes.data.data)
       setByTeam(byTeamRes.data.data)
       setByUser(byUserRes.data.data)
     } catch {
-      toast.error('Failed to load revenue report data.')
+      toast.error('Failed to load data.')
     } finally {
       setLoading(false)
     }
@@ -140,12 +137,9 @@ export function RevenueReportPage() {
         applyMode
         onApply={onApplyFilters}
       />
-
-      <RevenueOverviewCard data={overview} loading={loading} />
-
-      <RevenueByTeamTableCard data={byTeam} loading={loading} />
-
-      <RevenueByUserTableCard data={byUser} loading={loading} />
+      <TeamOverviewCard data={overview} loading={loading} />
+      <TeamReportByTeamTableCard data={byTeam} loading={loading} />
+      <TeamReportByUserTableCard data={byUser} loading={loading} />
     </div>
   )
 }
