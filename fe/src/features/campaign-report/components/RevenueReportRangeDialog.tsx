@@ -8,6 +8,7 @@ import {
   Search,
   Trash2,
   X,
+  CalendarRange,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -321,7 +322,7 @@ function RangeRow({
             type="button"
             onClick={() => applyQuickRange(minutes)}
             disabled={!range.start_date || !range.start_time}
-            className="rounded border border-border/60 bg-background px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+            className="cursor-pointer rounded-md bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
             {label}
           </button>
@@ -531,7 +532,7 @@ export function RevenueReportRangeDialog({
     (): RangeState => ({
       _id: crypto.randomUUID(),
       start_date: initialDateFrom ?? initialDate ?? '',
-      start_time: '',
+      start_time: '00:00',
       end_date: initialDateTo ?? initialDate ?? '',
       end_time: '',
       channel_codes: initialChannelCodes ?? [],
@@ -642,7 +643,13 @@ export function RevenueReportRangeDialog({
       >
         <DialogHeader className="border-b px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <DialogTitle>Revenue Report Range</DialogTitle>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                <CalendarRange className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <DialogTitle>Revenue Report Range</DialogTitle>
+            </div>
+
             <button
               type="button"
               onClick={() => handleOpenChange(false)}
