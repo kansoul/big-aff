@@ -138,8 +138,8 @@ enum Permission: string
     case InactiveStylesView = 'inactive-styles.view';          // bit 73 →  9444732965739290427392
     case InactiveStylesDelete = 'inactive-styles.delete';      // bit 74 →  18889465931478580854784
 
-    // —— Style Report Range ——
-    case StyleReportRangeView = 'style-report-range.view';     // bit 75 →  37778931862957161709568
+    // —— Channel Report Range ——
+    case ChannelReportRangeView = 'channel-report-range.view';     // bit 75 →  37778931862957161709568
 
     // —— Google Conversions ——
     case GoogleConversionsView = 'google-conversions.view';    // bit 76 →  75557863725914323419136

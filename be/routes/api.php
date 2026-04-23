@@ -368,6 +368,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('keywords', [AnalyticsTrackingController::class, 'keywords']);
         });
 
+    // Don't need
     Route::prefix('inactive-styles')->group(function () {
         Route::get('/', [InactiveStyleController::class, 'index'])
             ->middleware('permission.scope:'.Permission::InactiveStylesView->value);
@@ -378,7 +379,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('style-report-range')
-        ->middleware('permission.scope:'.Permission::StyleReportRangeView->value)
+        ->middleware('permission.scope:'.Permission::ChannelReportRangeView->value)
         ->group(function () {
             Route::post('query', [StyleReportRangeController::class, 'query']);
         });

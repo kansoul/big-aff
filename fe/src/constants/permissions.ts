@@ -116,7 +116,7 @@ export const PermissionSlugs = {
   AnalyticsTrackingView: 'analytics-tracking.view',
   InactiveStylesView: 'inactive-styles.view',
   InactiveStylesDelete: 'inactive-styles.delete',
-  StyleReportRangeView: 'style-report-range.view',
+  ChannelReportRangeView: 'channel-report-range.view',
 
   // Google Conversions
   GoogleConversionsView: 'google-conversions.view',
@@ -531,6 +531,12 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    id: 'reports',
+    label: 'Reports & Analytics',
+    screens: [
       {
         id: 'campaign-reports',
         label: 'Campaign Reports',
@@ -548,12 +554,6 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           },
         ],
       },
-    ],
-  },
-  {
-    id: 'reports',
-    label: 'Reports & Analytics',
-    screens: [
       {
         id: 'ads-report',
         label: 'Ads Report',
@@ -596,24 +596,12 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
         ],
       },
       {
-        id: 'inactive-styles',
-        label: 'Inactive Styles',
-        permissions: [
-          { key: 'InactiveStylesView', slug: PermissionSlugs.InactiveStylesView, label: 'View' },
-          {
-            key: 'InactiveStylesDelete',
-            slug: PermissionSlugs.InactiveStylesDelete,
-            label: 'Delete',
-          },
-        ],
-      },
-      {
-        id: 'style-report-range',
-        label: 'Style Report Range',
+        id: 'channel-report-range',
+        label: 'Channel Report Range',
         permissions: [
           {
-            key: 'StyleReportRangeView',
-            slug: PermissionSlugs.StyleReportRangeView,
+            key: 'ChannelReportRangeView',
+            slug: PermissionSlugs.ChannelReportRangeView,
             label: 'View',
           },
         ],
