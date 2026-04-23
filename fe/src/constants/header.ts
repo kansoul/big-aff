@@ -107,22 +107,22 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     name: 'Report',
     items: [
       {
-        name: 'Ads Report',
+        name: 'Spend Report',
         href: PATHS.adsReport,
         icon: Target,
         requiredPermission: PermissionSlugs.AdsReportView,
-      },
-      {
-        name: 'Team Report',
-        href: PATHS.teamReport,
-        icon: CircleDollarSign,
-        requiredPermission: PermissionSlugs.RevenueStatsView,
       },
       {
         name: 'Revenue Report',
         href: PATHS.revenueReport,
         icon: ReceiptEuroIcon,
         requiredPermission: PermissionSlugs.RevenueReportsView,
+      },
+      {
+        name: 'Team Report',
+        href: PATHS.teamReport,
+        icon: CircleDollarSign,
+        requiredPermission: PermissionSlugs.RevenueStatsView,
       },
       {
         name: 'Campaign Report',

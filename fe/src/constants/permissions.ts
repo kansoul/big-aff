@@ -611,15 +611,6 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           },
         ],
       },
-      {
-        id: 'dashboard',
-        label: 'Dashboard Report',
-        permissions: [
-          { key: 'DashboardStatView', slug: PermissionSlugs.DashboardStatView, label: 'View' },
-          { key: 'DashboardTeamView', slug: PermissionSlugs.DashboardTeamView, label: 'View' },
-          { key: 'DashboardUserView', slug: PermissionSlugs.DashboardUserView, label: 'View' },
-        ],
-      },
     ],
   },
   {
