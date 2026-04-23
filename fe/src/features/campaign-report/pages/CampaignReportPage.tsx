@@ -131,42 +131,33 @@ export function CampaignReportPage() {
     void loadData(filters)
   }, [loadData, filters])
 
-  const onToggleCampaignStatus = useCallback(
-    async (campaignId: string, checked: boolean, adsType: string | null) => {
-      const isFacebook = (adsType ?? '').toLowerCase() === 'facebook'
-      const next: 'ACTIVE' | 'PAUSED' = checked ? 'ACTIVE' : 'PAUSED'
+  const onToggleCampaignStatus = useCallback(async (campaignId: string, checked: boolean) => {
+    const next: 'ACTIVE' | 'PAUSED' = checked ? 'ACTIVE' : 'PAUSED'
 
-      setToggling((prev) => ({ ...prev, [campaignId]: true }))
-      try {
-        if (isFacebook && next === 'ACTIVE') {
-          toast.error('Facebook ads only support pausing campaigns.')
-          return
-        }
+    setToggling((prev) => ({ ...prev, [campaignId]: true }))
+    try {
+      const { data } = await campaignReportApi.toggleStatus(campaignId, next)
+      const updatedStatus = data.data.status
 
-        const { data } = await campaignReportApi.toggleStatus(campaignId, next)
-        const updatedStatus = data.data.status
+      const applyStatus = (r: CampaignReportRow): CampaignReportRow =>
+        r.campaign_id === campaignId ? { ...r, campaign_status: updatedStatus } : r
 
-        const applyStatus = (r: CampaignReportRow): CampaignReportRow =>
-          r.campaign_id === campaignId ? { ...r, campaign_status: updatedStatus } : r
+      setRows((prev) =>
+        prev.map((row) => {
+          if ('is_group' in row && row.is_group === true) {
+            return { ...row, items: row.items.map(applyStatus) }
+          }
+          return applyStatus(row as CampaignReportRow)
+        }),
+      )
 
-        setRows((prev) =>
-          prev.map((row) => {
-            if ('is_group' in row && row.is_group === true) {
-              return { ...row, items: row.items.map(applyStatus) }
-            }
-            return applyStatus(row as CampaignReportRow)
-          }),
-        )
-
-        toast.success(`Campaign is now ${updatedStatus}`)
-      } catch (err) {
-        toast.error(formatApiError(err))
-      } finally {
-        setToggling((prev) => ({ ...prev, [campaignId]: false }))
-      }
-    },
-    [],
-  )
+      toast.success(`Campaign is now ${updatedStatus}`)
+    } catch (err) {
+      toast.error(formatApiError(err))
+    } finally {
+      setToggling((prev) => ({ ...prev, [campaignId]: false }))
+    }
+  }, [])
 
   const onApplyFilters = useCallback((values: Record<string, unknown>) => {
     const range = parseDateRange(values.date_range)
@@ -354,8 +345,8 @@ export function CampaignReportPage() {
         toggling={toggling}
         onPaginationChange={onPaginationChange}
         onSortingChange={onSortingChange}
-        onToggleCampaignStatus={(campaignId, checked, adsType) =>
-          void onToggleCampaignStatus(campaignId, checked, adsType)
+        onToggleCampaignStatus={(campaignId, checked) =>
+          void onToggleCampaignStatus(campaignId, checked)
         }
       />
     </div>

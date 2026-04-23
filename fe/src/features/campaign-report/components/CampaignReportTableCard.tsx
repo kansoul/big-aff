@@ -233,7 +233,7 @@ function getColumns(
   grouped: boolean,
   groupBy: CampaignReportGroupBy,
   toggling: Record<string, boolean>,
-  onToggleCampaignStatus: (campaignId: string, checked: boolean, adsType: string | null) => void,
+  onToggleCampaignStatus: (campaignId: string, checked: boolean) => void,
   dateFrom?: string | null,
   dateTo?: string | null,
 ): MRT_ColumnDef<TableRow>[] {
@@ -339,7 +339,7 @@ function getColumns(
             disabled={Boolean(toggling[r.campaign_id])}
             aria-label={`Toggle status for ${r.campaign_id}`}
             onCheckedChange={(checked) => {
-              void onToggleCampaignStatus(r.campaign_id, checked, r.ads_type)
+              void onToggleCampaignStatus(r.campaign_id, checked)
             }}
           />
         </div>
@@ -640,7 +640,7 @@ type Props = {
   toggling: Record<string, boolean>
   onPaginationChange: (page: number, perPage: number) => void
   onSortingChange: (orderBy: CampaignReportOrderBy | null, order: 'asc' | 'desc' | null) => void
-  onToggleCampaignStatus: (campaignId: string, checked: boolean, adsType: string | null) => void
+  onToggleCampaignStatus: (campaignId: string, checked: boolean) => void
 }
 
 function CampaignReportTableCardInner({
