@@ -175,7 +175,7 @@ export function CreateAdClientDialog({ open, onOpenChange, onSuccess }: CreateAd
                   void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
                 }}
               >
-                Create & Create Another
+                Create & create another
               </Button>
               <Button type="submit" disabled={submitting} className="gap-1.5">
                 {submitting ? (

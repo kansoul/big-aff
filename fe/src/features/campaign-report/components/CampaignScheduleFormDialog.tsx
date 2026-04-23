@@ -26,7 +26,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -42,7 +41,6 @@ const schema = z.object({
   name: z.string().min(1, 'Name is required').max(255, 'Name must be at most 255 characters'),
   turn_on_time: z.string().nullable().optional(),
   turn_off_time: z.string().nullable().optional(),
-  is_active: z.boolean(),
   campaign_ids_text: z
     .string()
     .refine((v) => parseCampaignIds(v).length > 0, 'At least one campaign ID is required'),
@@ -73,7 +71,6 @@ const DEFAULT_VALUES: FormValues = {
   name: '',
   turn_on_time: null,
   turn_off_time: null,
-  is_active: true,
   campaign_ids_text: '',
 }
 
@@ -86,6 +83,8 @@ type CampaignScheduleFormDialogProps = {
   onSuccess: () => void
 }
 
+type SubmitMode = 'submit' | 'create_another'
+
 export function CampaignScheduleFormDialog({
   open,
   onOpenChange,
@@ -94,6 +93,7 @@ export function CampaignScheduleFormDialog({
 }: CampaignScheduleFormDialogProps) {
   const isEdit = !!editItem
   const [submitting, setSubmitting] = useState(false)
+  const [submitMode, setSubmitMode] = useState<SubmitMode>('submit')
   const [formError, setFormError] = useState<string | null>(null)
 
   const form = useForm<FormValues>({
@@ -109,7 +109,6 @@ export function CampaignScheduleFormDialog({
         name: editItem.name,
         turn_on_time: toHHMM(editItem.turn_on_time),
         turn_off_time: toHHMM(editItem.turn_off_time),
-        is_active: editItem.is_active,
         campaign_ids_text: editItem.campaign_ids.join('\n'),
       })
     } else {
@@ -117,7 +116,7 @@ export function CampaignScheduleFormDialog({
     }
   }, [open, editItem, form])
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (values: FormValues, mode: SubmitMode = 'submit') => {
     try {
       setFormError(null)
       setSubmitting(true)
@@ -125,23 +124,33 @@ export function CampaignScheduleFormDialog({
         name: values.name,
         turn_on_time: toHHMM(values.turn_on_time),
         turn_off_time: toHHMM(values.turn_off_time),
-        is_active: values.is_active,
         campaign_ids: parseCampaignIds(values.campaign_ids_text),
       }
       if (isEdit && editItem) {
         await campaignReportApi.updateCampaignSchedule(editItem.id, payload)
         toast.success('Schedule updated successfully')
+        onOpenChange(false)
+        onSuccess()
       } else {
         await campaignReportApi.createCampaignSchedule(payload)
         toast.success('Schedule created successfully')
+        onSuccess()
+        if (mode === 'create_another') {
+          form.reset(DEFAULT_VALUES)
+          return
+        }
+        onOpenChange(false)
       }
-      onOpenChange(false)
-      onSuccess()
     } catch (err) {
       setFormError(formatApiError(err))
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const submitForm = (mode: SubmitMode = 'submit') => {
+    setSubmitMode(mode)
+    void form.handleSubmit((values) => onSubmit(values, mode))()
   }
 
   return (
@@ -154,7 +163,8 @@ export function CampaignScheduleFormDialog({
         <Form {...form}>
           <form
             onSubmit={(e) => {
-              void form.handleSubmit(onSubmit)(e)
+              e.preventDefault()
+              submitForm('submit')
             }}
             className="flex flex-col gap-4"
           >
@@ -234,23 +244,6 @@ export function CampaignScheduleFormDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="is_active"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3">
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={submitting}
-                    />
-                  </FormControl>
-                  <FormLabel className="mt-0!">Active</FormLabel>
-                </FormItem>
-              )}
-            />
-
             {formError ? (
               <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4 shrink-0" />
@@ -267,19 +260,58 @@ export function CampaignScheduleFormDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting} className="gap-1.5">
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    {isEdit ? 'Saving…' : 'Creating…'}
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-3.5 w-3.5" />
-                    {isEdit ? 'Save Changes' : 'Create Schedule'}
-                  </>
-                )}
-              </Button>
+              {isEdit ? (
+                <Button type="submit" disabled={submitting} className="gap-1.5">
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-3.5 w-3.5" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={submitting}
+                    className="gap-1.5"
+                    onClick={() => submitForm('create_another')}
+                  >
+                    {submitting && submitMode === 'create_another' ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Creating…
+                      </>
+                    ) : (
+                      'Create & create another'
+                    )}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="gap-1.5"
+                    onClick={() => setSubmitMode('submit')}
+                  >
+                    {submitting && submitMode === 'submit' ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Creating…
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-3.5 w-3.5" />
+                        Create
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </form>
         </Form>

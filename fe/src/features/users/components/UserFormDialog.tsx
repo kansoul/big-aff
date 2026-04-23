@@ -179,7 +179,7 @@ export function UserFormDialog({
                     void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
                   }}
                 >
-                  Create & Create Another
+                  Create & create another
                 </Button>
               ) : null}
               <Button type="submit" disabled={submitting || roles.length === 0} className="gap-1.5">

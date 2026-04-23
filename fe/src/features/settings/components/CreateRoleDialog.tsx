@@ -129,7 +129,7 @@ export function CreateRoleDialog({
                   )()
                 }}
               >
-                Create & Create Another
+                Create & create another
               </Button>
               <Button type="submit" disabled={submitting}>
                 {submitting ? 'Saving…' : 'Create role'}
