@@ -21,7 +21,14 @@ class ConversionFactory extends Factory
     public function definition(): array
     {
         return [
-            'account_id' => Account::factory(),
+            'account_id' => function () {
+                $account = Account::query()->inRandomOrder()->first();
+                if ($account) {
+                    return $account->account_id;
+                }
+
+                return Account::factory()->create()->account_id;
+            },
             'article_view' => fake()->optional(0.8)->bothify('av_##########'),
             'rsu_click' => fake()->optional(0.8)->bothify('rc_##########'),
             'search_view' => fake()->optional(0.8)->bothify('sv_##########'),

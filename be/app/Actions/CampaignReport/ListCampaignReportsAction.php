@@ -2,7 +2,6 @@
 
 namespace App\Actions\CampaignReport;
 
-use App\Models\Account;
 use App\Models\CampaignReport;
 use App\Models\RealtimeReport;
 use App\Support\OwnershipFilter\OwnershipFilter;
@@ -103,13 +102,7 @@ class ListCampaignReportsAction
 
         $query = CampaignReport::query();
 
-        $ownership->applyThrough(
-            $query,
-            'account_id',
-            fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
-                ->whereIn('account_user.user_id', $ids)
-                ->select('accounts.id'),
-        );
+        $ownership->applyThroughAccount($query);
 
         if (! empty($filters['date_from'])) {
             $query->whereDate('date_start', '>=', $filters['date_from']);

@@ -2,7 +2,6 @@
 
 namespace App\Actions\RevenueChartReport;
 
-use App\Models\Channel;
 use App\Models\RevenueChartReport;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
@@ -42,11 +41,7 @@ class ListRevenueChartReportsAction
                 DB::raw('funnel_clicks - COALESCE(LAG(funnel_clicks) OVER (PARTITION BY channel_code, DATE(datetime) ORDER BY datetime), 0) as real_funnel_clicks'),
             ]);
 
-        $ownership->applyThrough(
-            $query,
-            'channel_code',
-            fn (array $ids) => Channel::whereIn('created_by', $ids)->select('code'),
-        );
+        $ownership->applyThroughChannel($query);
 
         if (! empty($filters['date_from'])) {
             $query->where('datetime', '>=', Carbon::parse($filters['date_from'])->startOfDay());

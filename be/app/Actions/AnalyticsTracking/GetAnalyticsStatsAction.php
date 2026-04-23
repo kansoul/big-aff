@@ -3,7 +3,6 @@
 namespace App\Actions\AnalyticsTracking;
 
 use App\Enums\EventAdLoadType;
-use App\Models\Account;
 use App\Models\Campaign;
 use App\Models\EventAdLoad;
 use App\Models\InsightReport;
@@ -31,7 +30,7 @@ class GetAnalyticsStatsAction
 
         // ── InsightReport stats (views + clicks) ─────────────────────────────
         $insightQuery = InsightReport::query();
-        $ownership->applyThrough($insightQuery, 'account_id', fn (array $ids) => Account::whereIn('created_by', $ids)->select('account_id'));
+        $ownership->applyThroughAccount($insightQuery);
 
         $insightQuery
             ->when($dateFrom, fn ($q) => $q->whereDate('date_start', '>=', $dateFrom))
@@ -45,7 +44,6 @@ class GetAnalyticsStatsAction
             COALESCE(SUM(ad_clicks), 0)      AS total_ad_clicks,
             COALESCE(SUM(search_clicks), 0)  AS total_search_clicks
         ')->first();
-
         $searchViews = (int) $totals->total_search_views;
         $articleViews = (int) $totals->total_article_views;
         $adClicks = (int) $totals->total_ad_clicks;

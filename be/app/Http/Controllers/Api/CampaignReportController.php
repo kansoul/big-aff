@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\CampaignReport\ToggleCampaignReportStatusAction;
-use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\CampaignReport\ListCampaignReportsRequest;
 use App\Http\Requests\CampaignReport\ToggleCampaignReportStatusRequest;
 use App\Http\Resources\CampaignReportResource;
