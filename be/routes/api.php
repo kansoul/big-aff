@@ -285,6 +285,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('campaigns')->group(function () {
         Route::get('selector', [CampaignController::class, 'listCampaignSelectorAction']);
+        Route::get('adsets/selector', [CampaignController::class, 'listAdsetSelectorAction']);
+        Route::get('ads/selector', [CampaignController::class, 'listAdsSelectorAction']);
     });
 
     Route::prefix('campaign-reports')->group(function () {

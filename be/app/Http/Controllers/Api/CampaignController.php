@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Campaign\ListAdsetsRequest;
+use App\Http\Requests\Campaign\ListAdsRequest;
 use App\Http\Requests\Campaign\ListCampaignsRequest;
+use App\Http\Resources\Campaign\AdsetSelectorResource;
+use App\Http\Resources\Campaign\AdsSelectorResource;
 use App\Http\Resources\Campaign\CampaignResource;
 use App\Services\Campaign\CampaignService;
 use Illuminate\Http\JsonResponse;
@@ -33,6 +37,32 @@ class CampaignController extends BaseController
 
         return $this->sendResponse([
             'data' => CampaignResource::collection($paginator->items()),
+            'pagination' => $this->parsePagination($paginator),
+        ]);
+    }
+
+    /**
+     * List adsets for campaign ID selector.
+     */
+    public function listAdsetSelectorAction(ListAdsetsRequest $request): JsonResponse
+    {
+        $paginator = $this->service->listAdsetSelectorAction($request->validated());
+
+        return $this->sendResponse([
+            'data' => AdsetSelectorResource::collection($paginator->items()),
+            'pagination' => $this->parsePagination($paginator),
+        ]);
+    }
+
+    /**
+     * List ads for campaign ID selector.
+     */
+    public function listAdsSelectorAction(ListAdsRequest $request): JsonResponse
+    {
+        $paginator = $this->service->listAdsSelectorAction($request->validated());
+
+        return $this->sendResponse([
+            'data' => AdsSelectorResource::collection($paginator->items()),
             'pagination' => $this->parsePagination($paginator),
         ]);
     }
