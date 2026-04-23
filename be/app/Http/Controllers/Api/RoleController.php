@@ -80,4 +80,16 @@ class RoleController extends BaseController
 
         return $this->sendResponse([], Response::HTTP_NO_CONTENT);
     }
+
+    /**
+     * Role options
+     *
+     * Return a flat list of roles for use in select/dropdown inputs.
+     *
+     * @response 200 {"data": [{"id": 1, "name": "Admin"}]}
+     */
+    public function options(): JsonResponse
+    {
+        return $this->sendResponse(['data' => $this->roleService->options()]);
+    }
 }

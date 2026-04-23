@@ -8,6 +8,8 @@ export const rolesApi = {
     return response.data.data
   },
 
+  listOptions: () => axiosInstance.get<{ data: { id: number; name: string }[] }>('/roles/options'),
+
   async create(payload: RoleCreatePayload): Promise<Role> {
     const response = await axiosInstance.post<ApiResponse<Role>>('/roles', payload)
     return response.data.data

@@ -202,6 +202,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.$updateBits);
         Route::delete('{role}', [RoleController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::SettingsRolesDelete->value);
+        Route::get('/options', [RoleController::class, 'options'])
+            ->middleware('permission.scope:'.Permission::SettingsUsersCreate->value);
     });
 
     Route::prefix('keyword-sets')->group(function () {

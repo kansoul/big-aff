@@ -6,6 +6,7 @@ use App\Actions\Role\CreateRoleAction;
 use App\Actions\Role\DeleteRoleAction;
 use App\Actions\Role\ListRolesAction;
 use App\Actions\Role\UpdateRoleAction;
+use App\Enums\Permission;
 use App\Models\Role;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -45,5 +46,13 @@ class RoleService
     public function delete(Role $role): void
     {
         $this->deleteRoleAction->execute($role);
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string}>
+     */
+    public function options(): array
+    {
+        return $this->listRolesAction->execute()->whereNotIn('permissions', [Permission::FULL_ACCESS_SENTINEL])->toArray();
     }
 }

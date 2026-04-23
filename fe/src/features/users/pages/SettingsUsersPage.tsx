@@ -24,11 +24,24 @@ import {
 } from '@/features/users/types'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
-import type { ManagedUser, Role } from '@/shared/types'
+import type { ManagedUser } from '@/shared/types'
 
 type PaginationState = { pageIndex: number; pageSize: number }
+type RoleOption = { id: number; name: string }
 
 const DEFAULT_FILTERS: UserFilterParams = { order: null, order_by: null }
+
+function normalizeRoleOptions(data: unknown): RoleOption[] {
+  if (Array.isArray(data)) {
+    return data as RoleOption[]
+  }
+
+  if (data && typeof data === 'object') {
+    return Object.values(data) as RoleOption[]
+  }
+
+  return []
+}
 
 export function SettingsUsersPage() {
   const user = useAuthStore((s) => s.user)
@@ -49,7 +62,7 @@ export function SettingsUsersPage() {
 
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [rowCount, setRowCount] = useState(0)
-  const [roles, setRoles] = useState<Role[]>([])
+  const [roles, setRoles] = useState<RoleOption[]>([])
   const [loading, setLoading] = useState(true)
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
@@ -96,14 +109,14 @@ export function SettingsUsersPage() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const [usersRes, roleList] = await Promise.all([
+        const [usersRes, roleOptionsRes] = await Promise.all([
           usersApi.list(pagination.pageIndex + 1, pagination.pageSize, filters),
-          rolesApi.list(),
+          rolesApi.listOptions(),
         ])
         if (!ignore) {
           setUsers(usersRes.data.data)
           setRowCount(usersRes.data.pagination.total)
-          setRoles(roleList)
+          setRoles(normalizeRoleOptions(roleOptionsRes.data.data))
         }
       } catch (err) {
         if (!ignore) {
