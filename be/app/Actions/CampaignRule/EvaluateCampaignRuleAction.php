@@ -4,11 +4,11 @@ namespace App\Actions\CampaignRule;
 
 use App\Enums\EntityTypeEnum;
 use App\Enums\RuleActionMode;
+use App\Jobs\SendTelegramWarningJob;
 use App\Models\Campaign;
 use App\Models\CampaignApplyRule;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -178,7 +178,12 @@ class EvaluateCampaignRuleAction
             $message .= str_pad('Revenue', $pad).str_pad('$'.$revenue, $pad).$ruleRev."\n";
             $message .= "```\n";
 
-            $this->sendTelegram($message, $telegramChatId);
+            SendTelegramWarningJob::dispatch(
+                $message,
+                (string) $campaign->campaign_id,
+                '',
+                $telegramChatId,
+            );
         } catch (Throwable $e) {
             Log::channel('tracking_events')->error('[EvaluateCampaignRuleAction] Notification error', [
                 'rule_id' => $rule->id,
@@ -186,25 +191,5 @@ class EvaluateCampaignRuleAction
                 'error' => $e->getMessage(),
             ]);
         }
-    }
-
-    /**
-     * Send a Telegram message, optionally to an override chat ID.
-     * Falls back to the configured default chat when no override is provided.
-     */
-    private function sendTelegram(string $message, ?string $chatId): void
-    {
-        $botToken = config('services.telegram.bot_token');
-        $resolvedChatId = $chatId ?: config('services.telegram.chat_id');
-
-        if (empty($botToken) || empty($resolvedChatId)) {
-            return;
-        }
-
-        Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
-            'chat_id' => $resolvedChatId,
-            'text' => $message,
-            'parse_mode' => 'Markdown',
-        ]);
     }
 }

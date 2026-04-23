@@ -2,12 +2,14 @@
 
 namespace App\Actions\Dashboard;
 
+use App\Enums\Permission;
 use App\Enums\TeamRole;
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -36,16 +38,19 @@ class GetRevenueTableAction
         $userIds = $spendByUser->keys()
             ->merge($revenueByUser->keys())
             ->unique()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->all();
 
         $userInfo = $this->userInfo($userIds);
 
         $userRows = $this->buildUserRows($userIds, $spendByUser, $revenueByUser, $userInfo);
+        /** @var User $user */
+        $user = Auth::user();
+        $user->load('role');
 
         return [
-            'by_team' => $this->byTeam($userRows),
-            'top_users' => $this->topUsers($userRows, $limit),
+            'by_team' => $user->hasPermissionFlag(Permission::DashboardTeamView) ? $this->byTeam($userRows) : [],
+            'top_users' => $user->hasPermissionFlag(Permission::DashboardUserView) ? $this->topUsers($userRows, $limit) : [],
         ];
     }
 
@@ -249,7 +254,7 @@ class GetRevenueTableAction
                     ],
                 ];
             })
-            ->sortByDesc(fn ($row) => $row['monthly']['revenue'])
+            ->sortByDesc(fn($row) => $row['monthly']['revenue'])
             ->values();
     }
 
@@ -286,7 +291,7 @@ class GetRevenueTableAction
                     ],
                 ];
             })
-            ->sortByDesc(fn ($row) => $row['monthly']['revenue'] - $row['monthly']['spend'])
+            ->sortByDesc(fn($row) => $row['monthly']['revenue'] - $row['monthly']['spend'])
             ->take($limit)
             ->values();
     }

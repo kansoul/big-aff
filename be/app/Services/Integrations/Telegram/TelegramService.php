@@ -17,9 +17,15 @@ class TelegramService
         $this->chatId = config('services.telegram.chat_id');
     }
 
-    public function sendMessage(string $message): bool
+    /**
+     * @param  ?string  $chatIdOverride  When set, sends to this chat instead of the default from config.
+     * @param  string  $parseMode  Telegram parse_mode, e.g. HTML or Markdown.
+     */
+    public function sendMessage(string $message, ?string $chatIdOverride = null): bool
     {
-        if (empty($this->botToken) || empty($this->chatId)) {
+        $chatId = $chatIdOverride ?? $this->chatId;
+
+        if (empty($this->botToken) || empty($chatId)) {
             Log::warning('Telegram bot token or chat ID is not configured.');
 
             return false;
@@ -29,7 +35,7 @@ class TelegramService
             $url = "https://api.telegram.org/bot{$this->botToken}/sendMessage";
 
             $response = Http::post($url, [
-                'chat_id' => $this->chatId,
+                'chat_id' => $chatId,
                 'text' => $message,
                 'parse_mode' => 'HTML',
             ]);

@@ -414,7 +414,8 @@ export interface CampaignRuleRow {
   end_hour: string | null
   user: { id?: number; name?: string | null; email?: string | null } | null
   apply_rules_count: number
-  campaign_ids: string[]
+  /** FB campaign_id, or mixed FB ad_id / adset_id (matches entity_type). */
+  entity_ids: string[]
   created_at: string
   updated_at: string
 }
@@ -433,7 +434,7 @@ export interface CampaignRuleCreatePayload {
   min_spend_adset?: number | null
   start_hour?: string | null
   end_hour?: string | null
-  campaign_ids?: string[] | null
+  entity_ids?: string[] | null
 }
 
 export interface CampaignRuleUpdatePayload {
@@ -450,7 +451,7 @@ export interface CampaignRuleUpdatePayload {
   min_spend_adset?: number | null
   start_hour?: string | null
   end_hour?: string | null
-  campaign_ids?: string[] | null
+  entity_ids?: string[] | null
 }
 
 export interface CampaignRuleSingleResponse {

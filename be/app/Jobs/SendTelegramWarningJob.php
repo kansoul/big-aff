@@ -27,7 +27,8 @@ class SendTelegramWarningJob implements ShouldBeUnique, ShouldQueue
     public function __construct(
         protected string $message,
         protected string $campaignId,
-        protected string $adsLinkId = ''
+        protected string $adsLinkId = '',
+        protected ?string $chatIdOverride = null,
     ) {
         $this->onQueue('warning');
     }
@@ -45,6 +46,6 @@ class SendTelegramWarningJob implements ShouldBeUnique, ShouldQueue
      */
     public function handle(TelegramService $telegramService): void
     {
-        $telegramService->sendMessage($this->message);
+        $telegramService->sendMessage($this->message, $this->chatIdOverride);
     }
 }

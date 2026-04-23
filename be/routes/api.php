@@ -322,8 +322,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('dashboard')->group(function () {
-        Route::get('insight-stats', [DashboardController::class, 'insightStats']);
-        Route::get('revenue-table', [DashboardController::class, 'revenueTable']);
+        Route::get('insight-stats', [DashboardController::class, 'insightStats'])->middleware('permission.scope:'.Permission::DashboardStatView->value);
+        Route::get('revenue-table', [DashboardController::class, 'revenueTable'])->middleware('permission.scope:'.Permission::DashboardTeamView->value.'|'.Permission::DashboardUserView->value);
     });
 
     Route::prefix('revenue-reports')->group(function () {
@@ -346,10 +346,10 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('chart', [RevenueChartReportController::class, 'chart']);
         });
 
-    Route::prefix('revenue-stats')->middleware('permission.scope:'.Permission::RevenueStatsView->value)->group(function () {
-        Route::get('overview', [RevenueStatsController::class, 'overview']);
-        Route::get('by-team', [RevenueStatsController::class, 'byTeam']);
-        Route::get('by-user', [RevenueStatsController::class, 'byUser']);
+    Route::prefix('revenue-stats')->group(function () {
+        Route::get('overview', [RevenueStatsController::class, 'overview'])->middleware('permission.scope:'.Permission::DashboardStatView->value);
+        Route::get('by-team', [RevenueStatsController::class, 'byTeam'])->middleware('permission.scope:'.Permission::DashboardTeamView->value);
+        Route::get('by-user', [RevenueStatsController::class, 'byUser'])->middleware('permission.scope:'.Permission::DashboardUserView->value);
     });
 
     Route::prefix('google-conversions')->group(function () {
@@ -381,7 +381,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('style-report-range')
-        ->middleware('permission.scope:'.Permission::ChannelReportRangeView->value)
+        ->middleware('permission.scope:'.Permission::RevenueReportRangeView->value)
         ->group(function () {
             Route::post('query', [StyleReportRangeController::class, 'query']);
         });
