@@ -2,7 +2,6 @@
 
 namespace App\Actions\RevenueChartReport;
 
-use App\Models\Channel;
 use App\Models\RevenueChartReport;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
@@ -61,11 +60,7 @@ class GetRevenueChartReportAction
             ->groupBy('datetime')
             ->orderBy('datetime');
 
-        $ownership->applyThrough(
-            $query,
-            'channel_code',
-            fn (array $ids) => Channel::whereIn('created_by', $ids)->select('code'),
-        );
+        $ownership->applyThroughChannel($query);
 
         if (! empty($filters['channel_codes'])) {
             $query->whereIn('channel_code', $filters['channel_codes']);

@@ -47,7 +47,7 @@ class GetAdsReportStatsAction
 
         // Insight stats (spend, reach)
         $insightQuery = InsightReport::query();
-        $ownership->applyThrough($insightQuery, 'account_id', fn (array $ids) => Account::whereIn('created_by', $ids)->select('account_id'));
+        $ownership->applyThroughAccount($insightQuery);
 
         if ($dateFrom) {
             $insightQuery->whereDate('date_start', '>=', $dateFrom);

@@ -172,12 +172,6 @@ class CampaignReportFilterService
      */
     private function applyAccountOwnership($query, OwnershipFilter $ownership): void
     {
-        $ownership->applyThrough(
-            $query,
-            'account_id',
-            fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
-                ->whereIn('account_user.user_id', $ids)
-                ->select('accounts.id'),
-        );
+        $ownership->applyThroughAccount($query);
     }
 }

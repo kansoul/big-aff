@@ -2,7 +2,6 @@
 
 namespace App\Services\RevenueStats;
 
-use App\Models\Account;
 use App\Models\CampaignReport;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -85,13 +84,7 @@ class RevenueStatsService
             ->join('accounts as a', 'a.id', '=', 'campaign_reports.account_id');
 
         $ownership = OwnershipFilter::forAuthUser();
-        $ownership->applyThrough(
-            $query,
-            'campaign_reports.account_id',
-            fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
-                ->whereIn('account_user.user_id', $ids)
-                ->select('accounts.id'),
-        );
+        $ownership->applyThroughAccount($query, 'campaign_reports.account_id');
 
         if (! empty($filters['date_from'])) {
             $query->whereDate('campaign_reports.date_start', '>=', $filters['date_from']);

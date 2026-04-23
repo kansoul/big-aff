@@ -3,6 +3,8 @@
 namespace App\Support\OwnershipFilter;
 
 use App\Enums\TeamRole;
+use App\Models\Account;
+use App\Models\Channel;
 use App\Models\TeamUser;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -117,6 +119,48 @@ final readonly class OwnershipFilter
         }
 
         $query->whereIn($column, $subquery($this->allowedUserIds));
+    }
+
+    /**
+     * Apply ownership through the `account_user` pivot table.
+     * Ownership is determined by which accounts the allowed users have access to,
+     * not by `accounts.created_by`.
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @param  string  $column  Foreign key column on the current model (default: 'account_id')
+     */
+    public function applyThroughAccount(Builder $query, string $column = 'account_id'): void
+    {
+        $this->applyThrough(
+            $query,
+            $column,
+            fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
+                ->whereIn('account_user.user_id', $ids)
+                ->select('accounts.id'),
+        );
+    }
+
+    /**
+     * Apply ownership through the `channel_user` pivot table.
+     * Ownership is determined by which channels the allowed users have access to,
+     * not by `channels.created_by`.
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @param  string  $column  Foreign key column on the current model (default: 'channel_code')
+     */
+    public function applyThroughChannel(Builder $query, string $column = 'channel_code'): void
+    {
+        $this->applyThrough(
+            $query,
+            $column,
+            fn (array $ids) => Channel::join('channel_user', 'channel_user.channel_id', '=', 'channels.id')
+                ->whereIn('channel_user.user_id', $ids)
+                ->select('channels.code'),
+        );
     }
 
     public function isAdmin(): bool

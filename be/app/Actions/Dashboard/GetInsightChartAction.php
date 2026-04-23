@@ -2,7 +2,6 @@
 
 namespace App\Actions\Dashboard;
 
-use App\Models\Account;
 use App\Models\CampaignReport;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
@@ -47,13 +46,7 @@ class GetInsightChartAction
                     ->whereColumn('rr.date', 'campaign_reports.date_start');
             });
 
-        $ownership->applyThrough(
-            $query,
-            'account_id',
-            fn(array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
-                ->whereIn('account_user.user_id', $ids)
-                ->select('accounts.id'),
-        );
+        $ownership->applyThroughAccount($query);
 
         return $query;
     }
