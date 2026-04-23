@@ -26,7 +26,6 @@ import {
   AdsAdsetDeliveryReportDialog,
   CampaignRulesDialog,
   CampaignSchedulesDialog,
-  RevenueReportListDialog,
   RevenueReportRangeDialog,
   TrackingAnalyticsDialog,
 } from '@/features/campaign-report/components'
@@ -192,7 +191,7 @@ function GroupLabelCell({
                 </button>
               }
             />
-            <RevenueReportListDialog
+            {/* <RevenueReportListDialog
               initialDateFrom={dateFrom}
               initialDateTo={dateTo}
               initialChannelCodes={channelCode ? [channelCode] : undefined}
@@ -201,7 +200,7 @@ function GroupLabelCell({
                   View Revenue List
                 </button>
               }
-            />
+            /> */}
           </div>
         )}
       </div>

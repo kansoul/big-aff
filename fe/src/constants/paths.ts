@@ -37,6 +37,7 @@ export const PATHS = {
   campaignRuleSettings: '/campaign-rule-settings',
   googleConversions: '/google-conversions',
   campaignReport: '/campaign-report',
+  revenueReport: '/revenue-report',
   logs: '/logs',
 } as const
 

@@ -23,6 +23,7 @@ import {
   Users,
   UsersRound,
   Wallet,
+  ReceiptEuroIcon,
 } from 'lucide-react'
 
 export type NavSubItem = {
@@ -116,6 +117,12 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         href: PATHS.teamReport,
         icon: CircleDollarSign,
         requiredPermission: PermissionSlugs.RevenueStatsView,
+      },
+      {
+        name: 'Revenue Report',
+        href: PATHS.revenueReport,
+        icon: ReceiptEuroIcon,
+        requiredPermission: PermissionSlugs.RevenueReportsView,
       },
       {
         name: 'Campaign Report',
