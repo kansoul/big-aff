@@ -89,7 +89,7 @@ const schema = z
     title: z.string().min(1, 'Title is required').max(255, 'Max 255 characters'),
     code_rule: z.string().optional(),
     entity_type: z.enum(['campaign', 'ad_adset'], { message: 'Entity type is required' }),
-    campaign_ids_text: z.string().min(1, 'Campaign IDs is required'),
+    entity_ids_text: z.string().min(1, 'Entity IDs is required'),
     // Campaign auto-off conditions
     min_roi: z
       .string()
@@ -176,7 +176,7 @@ const DEFAULT_VALUES: FormValues = {
   title: '',
   code_rule: '',
   entity_type: 'campaign',
-  campaign_ids_text: '',
+  entity_ids_text: '',
   min_roi: '',
   min_profit: '',
   min_conversion: '',
@@ -237,7 +237,7 @@ export function CampaignRuleFormDialog({
         title: editItem.title,
         code_rule: editItem.code_rule ?? '',
         entity_type: editItem.entity_type,
-        campaign_ids_text: editItem.campaign_ids.join('\n'),
+        entity_ids_text: editItem.entity_ids.join('\n'),
         min_roi: editItem.min_roi ?? '',
         min_profit: editItem.min_profit ?? '',
         min_conversion: editItem.min_conversion != null ? String(editItem.min_conversion) : '',
@@ -255,14 +255,14 @@ export function CampaignRuleFormDialog({
   }, [open, editItem, form])
 
   const buildPayload = (values: FormValues) => {
-    const campaignIds = parseCampaignIds(values.campaign_ids_text ?? '')
+    const entityIds = parseCampaignIds(values.entity_ids_text ?? '')
     const commonPayload = {
       title: values.title,
       entity_type: values.entity_type,
       expired_at: values.expired_at ?? null,
       start_hour: values.start_hour || null,
       end_hour: values.end_hour || null,
-      campaign_ids: campaignIds,
+      entity_ids: entityIds,
     }
 
     if (values.entity_type === 'campaign') {
@@ -405,7 +405,7 @@ export function CampaignRuleFormDialog({
             {/* Campaign IDs */}
             <FormField
               control={form.control}
-              name="campaign_ids_text"
+              name="entity_ids_text"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>

@@ -59,7 +59,7 @@ class CampaignRuleController extends BaseController
      *
      * @bodyParam title string required Rule title. Example: Morning rule
      * @bodyParam entity_type string required campaign or ad_adset. Example: campaign
-     * @bodyParam campaign_ids integer[] IDs of campaigns to apply the rule to. Example: [1, 2]
+     * @bodyParam entity_ids string[] Targets for this rule: FB `campaign_id` when entity_type=campaign, or mixed FB `ad_id` / `adset_id` when entity_type=ad_adset (ad checked first, then adset). Example: ["1234567890"]
      * @bodyParam min_roi number Minimum ROI %. Example: 10
      * @bodyParam min_profit number Minimum profit. Example: 50
      * @bodyParam min_revenue number Minimum revenue threshold. Example: 100

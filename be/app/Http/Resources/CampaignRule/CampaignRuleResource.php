@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources\CampaignRule;
 
+use App\Enums\EntityTypeEnum;
+use App\Models\AdsetInsightsReport;
+use App\Models\AdsInsightsReport;
 use App\Models\Campaign;
 use App\Models\CampaignRule;
 use Illuminate\Http\Request;
@@ -47,14 +50,53 @@ class CampaignRuleResource extends JsonResource
             ]),
 
             'apply_rules_count' => $this->whenLoaded('applyRules', fn () => $this->applyRules->count()),
-            'campaign_ids' => $this->whenLoaded('applyRules', fn () => $this->applyRules
-                ->where('sourceable_type', Campaign::class)
-                ->pluck('sourceable_id')
-                ->values()
-            ),
+            'entity_ids' => $this->whenLoaded('applyRules', fn () => $this->resolveEntityIdsForResponse()),
 
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function resolveEntityIdsForResponse(): array
+    {
+        $type = $this->entity_type;
+
+        if ($type === EntityTypeEnum::Campaign) {
+            return $this->resolveSourceableExternalIds(Campaign::class, 'campaign_id');
+        }
+
+        return $this->applyRules
+            ->whereIn('sourceable_type', [AdsInsightsReport::class, AdsetInsightsReport::class])
+            ->pluck('sourceable_id')
+            ->map(static fn (mixed $id): string => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  class-string  $sourceableType
+     * @return array<int, string>
+     */
+    private function resolveSourceableExternalIds(string $sourceableType, string $externalColumn): array
+    {
+        $numericIds = $this->applyRules
+            ->where('sourceable_type', $sourceableType)
+            ->pluck('sourceable_id')
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($numericIds)) {
+            return [];
+        }
+
+        return match ($sourceableType) {
+            Campaign::class => Campaign::whereIn('id', $numericIds)->pluck($externalColumn)->values()->all(),
+            default => [],
+        };
     }
 }

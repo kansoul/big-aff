@@ -116,7 +116,7 @@ export const PermissionSlugs = {
   AnalyticsTrackingView: 'analytics-tracking.view',
   InactiveStylesView: 'inactive-styles.view',
   InactiveStylesDelete: 'inactive-styles.delete',
-  ChannelReportRangeView: 'channel-report-range.view',
+  RevenueReportRangeView: 'revenue-report-range.view',
 
   // Google Conversions
   GoogleConversionsView: 'google-conversions.view',
@@ -130,6 +130,11 @@ export const PermissionSlugs = {
 
   // Files
   FilesView: 'files.view',
+
+  // Dashboard
+  DashboardStatView: 'dashboard.stats.view',
+  DashboardTeamView: 'dashboard.teams.view',
+  DashboardUserView: 'dashboard.users.view',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -597,13 +602,22 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
       },
       {
         id: 'channel-report-range',
-        label: 'Channel Report Range',
+        label: 'Revenue Report Range',
         permissions: [
           {
-            key: 'ChannelReportRangeView',
-            slug: PermissionSlugs.ChannelReportRangeView,
+            key: 'RevenueReportRangeView',
+            slug: PermissionSlugs.RevenueReportRangeView,
             label: 'View',
           },
+        ],
+      },
+      {
+        id: 'dashboard',
+        label: 'Dashboard Report',
+        permissions: [
+          { key: 'DashboardStatView', slug: PermissionSlugs.DashboardStatView, label: 'View' },
+          { key: 'DashboardTeamView', slug: PermissionSlugs.DashboardTeamView, label: 'View' },
+          { key: 'DashboardUserView', slug: PermissionSlugs.DashboardUserView, label: 'View' },
         ],
       },
     ],

@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { hasPermission, PermissionSlugs } from '@/constants/permissions'
 import {
   Table,
   TableBody,
@@ -256,7 +257,20 @@ function buildStatsCards(stats: InsightStatsData): StatsCardData[] {
 }
 
 export function DashboardPage() {
-  const isAdmin = useAuthStore((s) => s.user?.is_admin ?? false)
+  const permissions = useAuthStore((s) => s.user?.permissions ?? [])
+  const canViewStats = useMemo(
+    () => hasPermission(permissions, PermissionSlugs.DashboardStatView),
+    [permissions],
+  )
+  const canViewTeamTable = useMemo(
+    () => hasPermission(permissions, PermissionSlugs.DashboardTeamView),
+    [permissions],
+  )
+  const canViewUserTable = useMemo(
+    () => hasPermission(permissions, PermissionSlugs.DashboardUserView),
+    [permissions],
+  )
+  const canLoadRevenueTable = canViewTeamTable || canViewUserTable
 
   const [statsLoading, setStatsLoading] = useState(true)
   const [tableLoading, setTableLoading] = useState(true)
@@ -265,6 +279,12 @@ export function DashboardPage() {
 
   // ── load 6 stats cards ───────────────────────────────────────────────────
   const loadStats = useCallback(async () => {
+    if (!canViewStats) {
+      setStatsCards(INITIAL_STATS)
+      setStatsLoading(false)
+      return
+    }
+
     try {
       setStatsLoading(true)
       const res = await dashboardApi.insightStats()
@@ -274,11 +294,12 @@ export function DashboardPage() {
     } finally {
       setStatsLoading(false)
     }
-  }, [])
+  }, [canViewStats])
 
-  // ── load revenue table (admin only) ──────────────────────────────────────
+  // ── load revenue table (teams/users permission) ──────────────────────────
   const loadRevenueTable = useCallback(async () => {
-    if (!isAdmin) {
+    if (!canLoadRevenueTable) {
+      setRevenueTable(null)
       setTableLoading(false)
       return
     }
@@ -291,7 +312,7 @@ export function DashboardPage() {
     } finally {
       setTableLoading(false)
     }
-  }, [isAdmin])
+  }, [canLoadRevenueTable])
 
   useEffect(() => {
     void loadStats()
@@ -322,11 +343,17 @@ export function DashboardPage() {
             Welcome to the Workspace
           </h1>
           <p className="text-zinc-300 text-base sm:text-lg max-w-xl leading-relaxed">
-            Your campaigns are running. Monthly revenue this month:{' '}
-            <span className="text-emerald-400 font-bold inline-flex items-center gap-1">
-              <ArrowUpRight className="w-4 h-4" />
-              {statsLoading ? '...' : statsCards[2]?.primaryValue}
-            </span>
+            {canViewStats ? (
+              <>
+                Your campaigns are running. Monthly revenue this month:{' '}
+                <span className="text-emerald-400 font-bold inline-flex items-center gap-1">
+                  <ArrowUpRight className="w-4 h-4" />
+                  {statsLoading ? '...' : statsCards[2]?.primaryValue}
+                </span>
+              </>
+            ) : (
+              'Your dashboard sections are shown based on your permissions.'
+            )}
           </p>
         </div>
 
@@ -342,14 +369,16 @@ export function DashboardPage() {
       </div>
 
       {/* 6 Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {statsCards.map((card, idx) => (
-          <StatsCard key={idx} {...card} loading={statsLoading} index={idx} />
-        ))}
-      </div>
+      {canViewStats && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {statsCards.map((card, idx) => (
+            <StatsCard key={idx} {...card} loading={statsLoading} index={idx} />
+          ))}
+        </div>
+      )}
 
-      {/* Team Breakdown Table (admin only) */}
-      {isAdmin && (
+      {/* Team Breakdown Table */}
+      {canViewTeamTable && (
         <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden flex flex-col bg-card mt-2">
           <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-border/50 pb-5 pt-6 bg-muted/20">
             <div>
@@ -494,8 +523,8 @@ export function DashboardPage() {
         </Card>
       )}
 
-      {/* Top Users Table (admin only) */}
-      {isAdmin && (
+      {/* Top Users Table */}
+      {canViewUserTable && (
         <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden flex flex-col bg-card">
           <CardHeader className="border-b border-border/50 pb-5 pt-6 bg-muted/20">
             <CardTitle className="text-lg font-bold">Top Users by Revenue</CardTitle>
@@ -625,6 +654,17 @@ export function DashboardPage() {
               </TableBody>
             </Table>
           </div>
+        </Card>
+      )}
+
+      {!canViewStats && !canViewTeamTable && !canViewUserTable && (
+        <Card className="rounded-2xl border-border/50 shadow-sm bg-card">
+          <CardHeader>
+            <CardTitle className="text-lg">No dashboard data permission</CardTitle>
+            <CardDescription>
+              Please contact your administrator to grant dashboard view permissions.
+            </CardDescription>
+          </CardHeader>
         </Card>
       )}
     </div>

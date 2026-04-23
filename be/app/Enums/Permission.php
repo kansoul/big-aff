@@ -138,8 +138,8 @@ enum Permission: string
     case InactiveStylesView = 'inactive-styles.view';          // bit 73 →  9444732965739290427392
     case InactiveStylesDelete = 'inactive-styles.delete';      // bit 74 →  18889465931478580854784
 
-    // —— Channel Report Range ——
-    case ChannelReportRangeView = 'channel-report-range.view';     // bit 75 →  37778931862957161709568
+    // —— Revenue Report Range ——
+    case RevenueReportRangeView = 'revenue-report-range.view';     // bit 75 →  37778931862957161709568
 
     // —— Google Conversions ——
     case GoogleConversionsView = 'google-conversions.view';    // bit 76 →  75557863725914323419136
@@ -157,9 +157,19 @@ enum Permission: string
     case FilesView = 'files.view';                             // bit 82 →  4835703278458516698824704
 
     // —— Delivery Entities Reports ——
-    case DeliveryEntitiesReportsView = 'delivery-entities-reports.view';
-    case DeliveryEntitiesReportsUpdate = 'delivery-entities-reports.update';
+    case DeliveryEntitiesReportsView = 'delivery-entities-reports.view'; // bit 83 →  9671406556917033397649408
+    case DeliveryEntitiesReportsUpdate = 'delivery-entities-reports.update'; // bit 84 →  19342813113834066795298816
 
+    // Dashboard
+    case DashboardStatView = 'dashboard.stats.view';     // bit 85 →  37778931862957161709568
+
+    // —— Revenue Report Range ——
+    case DashboardTeamView = 'dashboard.teams.view';     // bit 86 →  75557863725914323419136
+
+    // —— Revenue Report Range ——
+    case DashboardUserView = 'dashboard.users.view';     // bit 87 →  151115727451828646838272
+
+    // —— Revenue Report Range ——
     /**
      * Bit value for this permission as a decimal string (2^index).
      * Uses GMP to support arbitrarily large bit positions.

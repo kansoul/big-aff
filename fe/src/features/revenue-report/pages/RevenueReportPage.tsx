@@ -37,9 +37,7 @@ function parseDateRange(value: unknown): DateRangeValue | null {
 
 function parseIds(value: unknown): number[] {
   if (!Array.isArray(value)) return []
-  return value
-    .map((v) => Number(v))
-    .filter((n) => !Number.isNaN(n))
+  return value.map((v) => Number(v)).filter((n) => !Number.isNaN(n))
 }
 
 function toSelectOptions(items: { id: number; name: string }[]): SelectOption[] {

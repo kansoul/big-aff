@@ -60,6 +60,59 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
                 );
             });
         });
+
+        $this->dispatchRuleEvaluationJobs($data);
+    }
+
+    /**
+     * Dispatch per-entity jobs to evaluate ad/adset rules for ACTIVE records
+     * fetched on $this->date.
+     *
+     * @param  array{adsets: array<int, array<string, mixed>>, ads: array<int, array<string, mixed>>}  $data
+     */
+    private function dispatchRuleEvaluationJobs(array $data): void
+    {
+        if (! empty($data['adsets'])) {
+            $adsetIds = array_values(array_unique(array_filter(
+                array_column($data['adsets'], 'adset_id'),
+            )));
+
+            if (! empty($adsetIds)) {
+                AdsetInsightsReport::query()
+                    ->whereIn('adset_id', $adsetIds)
+                    ->where('status', 'ACTIVE')
+                    ->whereDate('date_start', $this->date)
+                    ->pluck('adset_id')
+                    ->each(function (string $adsetId): void {
+                        EvaluateAdAdsetRuleJob::dispatch(
+                            AdsetInsightsReport::class,
+                            $adsetId,
+                            $this->date,
+                        );
+                    });
+            }
+        }
+
+        if (! empty($data['ads'])) {
+            $adIds = array_values(array_unique(array_filter(
+                array_column($data['ads'], 'ad_id'),
+            )));
+
+            if (! empty($adIds)) {
+                AdsInsightsReport::query()
+                    ->whereIn('ad_id', $adIds)
+                    ->where('status', 'ACTIVE')
+                    ->whereDate('date_start', $this->date)
+                    ->pluck('ad_id')
+                    ->each(function (string $adId): void {
+                        EvaluateAdAdsetRuleJob::dispatch(
+                            AdsInsightsReport::class,
+                            $adId,
+                            $this->date,
+                        );
+                    });
+            }
+        }
     }
 
     public function failed(Throwable $e): void
