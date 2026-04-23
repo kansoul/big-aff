@@ -471,6 +471,113 @@ export interface CampaignScheduleUpdatePayload {
   campaign_ids?: string[]
 }
 
+// ─── Campaign ID Selector ─────────────────────────────────────────────────────
+
+export type CampaignSelectorOrderBy =
+  | 'campaign_id'
+  | 'campaign_name'
+  | 'total_spend'
+  | 'total_revenue'
+  | 'profit'
+
+export interface CampaignSelectorRow {
+  campaign_id: string
+  campaign_name: string | null
+  account_id: string | null
+  account_name: string | null
+  total_spend: number
+  total_revenue: number
+  profit: number
+}
+
+export interface CampaignSelectorFilterParams {
+  account_id?: string | null
+  user_id?: number | null
+  style_code?: string | null
+  min_profit?: number | null
+  min_revenue?: number | null
+  min_spend?: number | null
+  search?: string | null
+  status?: string | null
+  order?: 'asc' | 'desc' | null
+  order_by?: CampaignSelectorOrderBy | null
+  page?: number
+  per_page?: number
+}
+
+export interface CampaignSelectorListResponse {
+  data: CampaignSelectorRow[]
+  pagination: CampaignReportPagination
+}
+
+// ─── Ads Selector ─────────────────────────────────────────────────────────────
+
+export type AdsSelectorOrderBy = 'ad_id' | 'ad_name' | 'spend' | 'cpa' | 'date_start'
+
+export interface AdsSelectorRow {
+  ad_id: string | null
+  ad_name: string | null
+  adset_id: string | null
+  campaign_id: string | null
+  account_id: string | null
+  date_start: string | null
+  spend: number
+  cpa: number
+}
+
+export interface AdsSelectorFilterParams {
+  account_id?: string | null
+  adset_id?: string | null
+  campaign_id?: string | null
+  date_start_from?: string | null
+  date_start_to?: string | null
+  max_cpa?: number | null
+  min_spend?: number | null
+  order?: 'asc' | 'desc' | null
+  order_by?: AdsSelectorOrderBy | null
+  page?: number | null
+  per_page?: number | null
+  search?: string | null
+}
+
+export interface AdsSelectorListResponse {
+  data: AdsSelectorRow[]
+  pagination: CampaignReportPagination
+}
+
+// ─── Adsets Selector ──────────────────────────────────────────────────────────
+
+export type AdsetsSelectorOrderBy = 'adset_id' | 'adset_name' | 'spend' | 'cpa' | 'date_start'
+
+export interface AdsetsSelectorRow {
+  adset_id: string | null
+  adset_name: string | null
+  campaign_id: string | null
+  account_id: string | null
+  date_start: string | null
+  spend: number
+  cpa: number
+}
+
+export interface AdsetsSelectorFilterParams {
+  account_id?: string | null
+  campaign_id?: string | null
+  date_start_from?: string | null
+  date_start_to?: string | null
+  max_cpa?: number | null
+  min_spend?: number | null
+  order?: 'asc' | 'desc' | null
+  order_by?: AdsetsSelectorOrderBy | null
+  page?: number | null
+  per_page?: number | null
+  search?: string | null
+}
+
+export interface AdsetsSelectorListResponse {
+  data: AdsetsSelectorRow[]
+  pagination: CampaignReportPagination
+}
+
 // ─── Ads/Adset Delivery Entities ───────────────────────────────────────────────
 
 export type DeliveryEntityStatus =

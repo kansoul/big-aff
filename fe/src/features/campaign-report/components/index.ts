@@ -1,6 +1,7 @@
 export { AdsAdsetDeliveryReportDialog } from './AdsAdsetDeliveryReportDialog'
 export { CampaignReportTableCard } from './CampaignReportTableCard'
 export { CampaignReportSummaryCard } from './CampaignReportSummaryCard'
+export { CampaignIdSelector } from './CampaignIdSelector'
 export { CampaignSchedulesDialog } from './CampaignSchedulesDialog'
 export { CampaignRulesDialog } from './CampaignRulesDialog'
 export { RevenueReportRangeDialog } from './RevenueReportRangeDialog'
