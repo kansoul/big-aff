@@ -22,6 +22,7 @@ import {
 } from '@/components/common/FilterPanel'
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
 import { formatApiError } from '@/features/settings/components'
+import { useAuthStore } from '@/hooks/useAuthStore'
 
 type FilterOptions = CampaignReportFiltersResponse['data']
 
@@ -87,6 +88,8 @@ function parseGroupBy(value: unknown): CampaignReportGroupBy {
 
 export function CampaignReportPage() {
   const [filters, setFilters] = useState<CampaignReportFilterParams>(DEFAULT_FILTERS)
+
+  const userPermissions = useAuthStore((s) => s.user?.permissions ?? [])
 
   const [options, setOptions] = useState<FilterOptions>(EMPTY_OPTIONS)
 
@@ -343,6 +346,7 @@ export function CampaignReportPage() {
         filters={filters}
         summary={grandSummary}
         toggling={toggling}
+        userPermissions={userPermissions}
         onPaginationChange={onPaginationChange}
         onSortingChange={onSortingChange}
         onToggleCampaignStatus={(campaignId, checked) =>

@@ -14,12 +14,17 @@ import type {
   CampaignScheduleListResponse,
   CampaignScheduleSingleResponse,
   CampaignScheduleUpdatePayload,
+  DeliveryEntitiesFilterParams,
+  DeliveryEntitiesListResponse,
+  DeliveryEntityStatusOptionsResponse,
   KeywordTrackingFilterParams,
   KeywordTrackingListResponse,
   RevenueReportFilterParams,
   RevenueReportListResponse,
   StyleReportRangeQueryPayload,
   StyleReportRangeQueryResponse,
+  ToggleAdsetStatusResponse,
+  ToggleAdStatusResponse,
   TrackingAnalyticsFilterParams,
   TrackingAnalyticsResponse,
 } from '@/features/campaign-report/types'
@@ -137,4 +142,39 @@ export const campaignReportApi = {
         ...(filters.order ? { order: filters.order } : {}),
       },
     }),
+
+  listDeliveryEntities: (campaignId: string, filters: DeliveryEntitiesFilterParams) =>
+    axiosInstance.get<DeliveryEntitiesListResponse>(
+      `/campaign-reports/${encodeURIComponent(campaignId)}/delivery-entities-reports`,
+      {
+        params: {
+          ...(filters.date_from ? { date_from: filters.date_from } : {}),
+          ...(filters.date_to ? { date_to: filters.date_to } : {}),
+          ...(filters.created_time_from ? { created_time_from: filters.created_time_from } : {}),
+          ...(filters.created_time_to ? { created_time_to: filters.created_time_to } : {}),
+          ...(filters.status ? { status: filters.status } : {}),
+          ...(filters.adset_id ? { adset_id: filters.adset_id } : {}),
+          ...(filters.adset_name ? { adset_name: filters.adset_name } : {}),
+          ...(filters.ad_id ? { ad_id: filters.ad_id } : {}),
+          ...(filters.ad_name ? { ad_name: filters.ad_name } : {}),
+        },
+      },
+    ),
+
+  deliveryEntityStatusOptions: () =>
+    axiosInstance.get<DeliveryEntityStatusOptionsResponse>(
+      '/campaign-reports/delivery-entities-reports/status-options',
+    ),
+
+  toggleAdsetStatus: (campaignId: string, adsetInsightId: number, status: 'ACTIVE' | 'PAUSED') =>
+    axiosInstance.patch<ToggleAdsetStatusResponse>(
+      `/campaign-reports/${encodeURIComponent(campaignId)}/adsets/${adsetInsightId}/toggle-status`,
+      { status },
+    ),
+
+  toggleAdStatus: (campaignId: string, adsInsightId: number, status: 'ACTIVE' | 'PAUSED') =>
+    axiosInstance.patch<ToggleAdStatusResponse>(
+      `/campaign-reports/${encodeURIComponent(campaignId)}/ads/${adsInsightId}/toggle-status`,
+      { status },
+    ),
 }

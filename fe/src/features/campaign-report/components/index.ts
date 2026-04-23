@@ -1,3 +1,4 @@
+export { AdsAdsetDeliveryReportDialog } from './AdsAdsetDeliveryReportDialog'
 export { CampaignReportTableCard } from './CampaignReportTableCard'
 export { CampaignReportSummaryCard } from './CampaignReportSummaryCard'
 export { CampaignSchedulesDialog } from './CampaignSchedulesDialog'

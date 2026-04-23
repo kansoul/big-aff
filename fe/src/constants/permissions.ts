@@ -111,6 +111,8 @@ export const PermissionSlugs = {
   RevenueStatsView: 'revenue-stats.view',
   RevenueChartReportsView: 'revenue-chart-reports.view',
   CampaignReportsView: 'campaign-reports.view',
+  DeliveryEntitiesReportsView: 'delivery-entities-reports.view',
+  DeliveryEntitiesReportsUpdate: 'delivery-entities-reports.update',
   AnalyticsTrackingView: 'analytics-tracking.view',
   InactiveStylesView: 'inactive-styles.view',
   InactiveStylesDelete: 'inactive-styles.delete',
@@ -534,6 +536,16 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
         label: 'Campaign Reports',
         permissions: [
           { key: 'CampaignReportsView', slug: PermissionSlugs.CampaignReportsView, label: 'View' },
+          {
+            key: 'DeliveryEntitiesReportsView',
+            slug: PermissionSlugs.DeliveryEntitiesReportsView,
+            label: 'View Ads/Adset Report',
+          },
+          {
+            key: 'DeliveryEntitiesReportsUpdate',
+            slug: PermissionSlugs.DeliveryEntitiesReportsUpdate,
+            label: 'Toggle Ads/Adset Status',
+          },
         ],
       },
     ],
