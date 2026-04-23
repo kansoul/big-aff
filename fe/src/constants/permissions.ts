@@ -543,6 +543,25 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
     label: 'Reports & Analytics',
     screens: [
       {
+        id: 'ads-report',
+        label: 'Spend Report',
+        permissions: [{ key: 'AdsReportView', slug: PermissionSlugs.AdsReportView, label: 'View' }],
+      },
+      {
+        id: 'revenue-reports',
+        label: 'Revenue Report',
+        permissions: [
+          { key: 'RevenueReportsView', slug: PermissionSlugs.RevenueReportsView, label: 'View' },
+        ],
+      },
+      {
+        id: 'revenue-stats',
+        label: 'Team Report',
+        permissions: [
+          { key: 'RevenueStatsView', slug: PermissionSlugs.RevenueStatsView, label: 'View' },
+        ],
+      },
+      {
         id: 'campaign-reports',
         label: 'Campaign Reports',
         permissions: [
@@ -557,56 +576,19 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
             slug: PermissionSlugs.DeliveryEntitiesReportsUpdate,
             label: 'Toggle Ads/Adset Status',
           },
-        ],
-      },
-      {
-        id: 'ads-report',
-        label: 'Ads Report',
-        permissions: [{ key: 'AdsReportView', slug: PermissionSlugs.AdsReportView, label: 'View' }],
-      },
-      {
-        id: 'revenue-reports',
-        label: 'Revenue Reports',
-        permissions: [
-          { key: 'RevenueReportsView', slug: PermissionSlugs.RevenueReportsView, label: 'View' },
-        ],
-      },
-      {
-        id: 'revenue-stats',
-        label: 'Revenue Stats',
-        permissions: [
-          { key: 'RevenueStatsView', slug: PermissionSlugs.RevenueStatsView, label: 'View' },
-        ],
-      },
-      {
-        id: 'revenue-chart-reports',
-        label: 'Revenue Chart Reports',
-        permissions: [
           {
-            key: 'RevenueChartReportsView',
-            slug: PermissionSlugs.RevenueChartReportsView,
+            key: 'RevenueReportRangeView',
+            slug: PermissionSlugs.RevenueReportRangeView,
             label: 'View',
           },
-        ],
-      },
-      {
-        id: 'analytics-tracking',
-        label: 'Analytics Tracking',
-        permissions: [
           {
             key: 'AnalyticsTrackingView',
             slug: PermissionSlugs.AnalyticsTrackingView,
             label: 'View',
           },
-        ],
-      },
-      {
-        id: 'channel-report-range',
-        label: 'Revenue Report Range',
-        permissions: [
           {
-            key: 'RevenueReportRangeView',
-            slug: PermissionSlugs.RevenueReportRangeView,
+            key: 'RevenueChartReportsView',
+            slug: PermissionSlugs.RevenueChartReportsView,
             label: 'View',
           },
         ],
