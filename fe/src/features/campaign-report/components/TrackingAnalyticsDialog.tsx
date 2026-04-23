@@ -349,6 +349,8 @@ type TrackingAnalyticsDialogProps = {
   initialDate?: string | null
   initialCampaignId?: string | null
   initialAccountId?: string | null
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 function TrackingAnalyticsDialogInner({
@@ -356,8 +358,20 @@ function TrackingAnalyticsDialogInner({
   initialDate,
   initialCampaignId,
   initialAccountId,
+  open: controlledOpen,
+  onOpenChange,
 }: TrackingAnalyticsDialogProps) {
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const isControlled = typeof controlledOpen === 'boolean'
+  const open = isControlled ? controlledOpen : uncontrolledOpen
+
+  const setDialogOpen = useCallback(
+    (next: boolean) => {
+      if (!isControlled) setUncontrolledOpen(next)
+      onOpenChange?.(next)
+    },
+    [isControlled, onOpenChange],
+  )
 
   // Stats
   const [fetching, setFetching] = useState(false)
@@ -456,7 +470,7 @@ function TrackingAnalyticsDialogInner({
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
-      setOpen(next)
+      setDialogOpen(next)
       if (!next) {
         setFilters({
           date_from: initialDate ?? null,
@@ -472,7 +486,7 @@ function TrackingAnalyticsDialogInner({
         fetchedOptionsRef.current = false
       }
     },
-    [initialDate, initialCampaignId, initialAccountId],
+    [initialDate, initialCampaignId, initialAccountId, setDialogOpen],
   )
 
   const onApplyFilters = useCallback((values: Record<string, unknown>) => {
@@ -566,9 +580,13 @@ function TrackingAnalyticsDialogInner({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger ?? <Button size="sm">Tracking Analytics</Button>}
-      </DialogTrigger>
+      {trigger ? (
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : !isControlled ? (
+        <DialogTrigger asChild>
+          <Button size="sm">Tracking Analytics</Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent
         className="flex h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 p-0 sm:h-[95vh] sm:w-[95vw] sm:max-w-[95vw]"
         showCloseButton={false}

@@ -342,6 +342,8 @@ export type RevenueChartDialogProps = {
   initialChannelCodes?: string[]
   initialDateFrom?: string | null
   initialDateTo?: string | null
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export function RevenueChartDialog({
@@ -349,8 +351,12 @@ export function RevenueChartDialog({
   initialChannelCodes,
   initialDateFrom,
   initialDateTo,
+  open: controlledOpen,
+  onOpenChange,
 }: RevenueChartDialogProps) {
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const isControlled = typeof controlledOpen === 'boolean'
+  const open = isControlled ? controlledOpen : uncontrolledOpen
   const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([])
   const [filters, setFilters] = useState<ChartFilters>(() => ({
     channel_codes: initialChannelCodes ?? [],
@@ -388,13 +394,14 @@ export function RevenueChartDialog({
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
-      setOpen(next)
+      if (!isControlled) setUncontrolledOpen(next)
+      onOpenChange?.(next)
       if (!next) {
         setFilters(makeInitialFilters())
         setChartData(null)
       }
     },
-    [makeInitialFilters],
+    [isControlled, makeInitialFilters, onOpenChange],
   )
 
   const handleApply = useCallback((values: Record<string, unknown>) => {
@@ -460,7 +467,13 @@ export function RevenueChartDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{trigger ?? <Button size="sm">Revenue Chart</Button>}</DialogTrigger>
+      {trigger ? (
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : !isControlled ? (
+        <DialogTrigger asChild>
+          <Button size="sm">Revenue Chart</Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent
         className="flex h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 p-0 sm:h-[95vh] sm:w-[95vw] sm:max-w-[95vw]"
         showCloseButton={false}

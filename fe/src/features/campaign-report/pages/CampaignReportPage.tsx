@@ -162,6 +162,13 @@ export function CampaignReportPage() {
     }
   }, [])
 
+  const handleToggleCampaignStatus = useCallback(
+    (campaignId: string, checked: boolean) => {
+      void onToggleCampaignStatus(campaignId, checked)
+    },
+    [onToggleCampaignStatus],
+  )
+
   const onApplyFilters = useCallback((values: Record<string, unknown>) => {
     const range = parseDateRange(values.date_range)
     setFilters((prev) => ({
@@ -349,9 +356,7 @@ export function CampaignReportPage() {
         userPermissions={userPermissions}
         onPaginationChange={onPaginationChange}
         onSortingChange={onSortingChange}
-        onToggleCampaignStatus={(campaignId, checked) =>
-          void onToggleCampaignStatus(campaignId, checked)
-        }
+        onToggleCampaignStatus={handleToggleCampaignStatus}
       />
     </div>
   )

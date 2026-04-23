@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import {
   MantineReactTable,
   MRT_ShowHideColumnsButton,
@@ -20,6 +20,7 @@ import type {
   CampaignReportGroupBy,
   CampaignReportGroupRow,
   CampaignReportOrderBy,
+  CampaignReportRow,
   CampaignReportSummary,
 } from '@/features/campaign-report/types'
 import {
@@ -34,6 +35,12 @@ import {
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type TableRow = CampaignReportDataRow
+
+type RevenueDialogTarget = {
+  channelCode?: string
+  dateFrom?: string | null
+  dateTo?: string | null
+}
 type MetricKey = keyof CampaignReportSummary
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
@@ -166,11 +173,15 @@ function GroupLabelCell({
   isChannelGroup,
   dateFrom,
   dateTo,
+  onOpenRevenueRange,
+  onOpenRevenueChart,
 }: {
   row: CampaignReportGroupRow
   isChannelGroup: boolean
   dateFrom?: string | null
   dateTo?: string | null
+  onOpenRevenueRange: (target: RevenueDialogTarget) => void
+  onOpenRevenueChart: (target: RevenueDialogTarget) => void
 }) {
   const channelCode = typeof row.group_key === 'string' ? row.group_key : undefined
   return (
@@ -182,36 +193,18 @@ function GroupLabelCell({
         <span className="text-[11px] text-muted-foreground">{row.record_count} record(s)</span>
         {isChannelGroup && (
           <div className="flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
-            <RevenueReportRangeDialog
-              initialChannelCodes={channelCode ? [channelCode] : undefined}
-              initialDateFrom={dateFrom}
-              initialDateTo={dateTo}
-              trigger={
-                <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
-                  View Revenue Range
-                </button>
-              }
-            />
-            <RevenueChartDialog
-              initialChannelCodes={channelCode ? [channelCode] : undefined}
-              initialDateFrom={dateFrom}
-              initialDateTo={dateTo}
-              trigger={
-                <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
-                  View Chart
-                </button>
-              }
-            />
-            {/* <RevenueReportListDialog
-              initialDateFrom={dateFrom}
-              initialDateTo={dateTo}
-              initialChannelCodes={channelCode ? [channelCode] : undefined}
-              trigger={
-                <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
-                  View Revenue List
-                </button>
-              }
-            /> */}
+            <button
+              className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted"
+              onClick={() => onOpenRevenueRange({ channelCode, dateFrom, dateTo })}
+            >
+              View Revenue Range
+            </button>
+            <button
+              className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted"
+              onClick={() => onOpenRevenueChart({ channelCode, dateFrom, dateTo })}
+            >
+              View Chart
+            </button>
           </div>
         )}
       </div>
@@ -246,9 +239,13 @@ function getColumns(
   groupBy: CampaignReportGroupBy,
   toggling: Record<string, boolean>,
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void,
+  onOpenTrackingAnalytics: (row: CampaignReportRow) => void,
+  onOpenAdsAdsetReport: (row: CampaignReportRow) => void,
   canViewDeliveryReports: boolean,
   dateFrom?: string | null,
   dateTo?: string | null,
+  onOpenRevenueRange?: (target: RevenueDialogTarget) => void,
+  onOpenRevenueChart?: (target: RevenueDialogTarget) => void,
 ): MRT_ColumnDef<TableRow>[] {
   // Shortcuts to avoid passing summary repeatedly
   const usd = (key: MetricKey, header: string, size: number) =>
@@ -272,6 +269,18 @@ function getColumns(
               isChannelGroup={groupBy === 'channel_code'}
               dateFrom={dateFrom}
               dateTo={dateTo}
+              onOpenRevenueRange={
+                onOpenRevenueRange ??
+                (() => {
+                  /* empty */
+                })
+              }
+              onOpenRevenueChart={
+                onOpenRevenueChart ??
+                (() => {
+                  /* empty */
+                })
+              }
             />
           ) : (
             <GroupSubRowCell row={row.original} />
@@ -394,18 +403,15 @@ function getColumns(
       if (isGroupRow(row.original)) return null
       const r = row.original
       return (
-        <div onClick={(e) => e.stopPropagation()}>
-          <TrackingAnalyticsDialog
-            initialDate={r.date_start ?? undefined}
-            initialCampaignId={r.campaign_id ?? undefined}
-            initialAccountId={r.account_id != null ? String(r.account_id) : undefined}
-            trigger={
-              <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
-                View Analytics
-              </button>
-            }
-          />
-        </div>
+        <button
+          className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted"
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenTrackingAnalytics(r)
+          }}
+        >
+          View Analytics
+        </button>
       )
     },
   }
@@ -419,21 +425,16 @@ function getColumns(
       if (isGroupRow(row.original)) return null
       if (!canViewDeliveryReports) return <span className="text-muted-foreground/50">—</span>
       const r = row.original
-      const recordDate = r.date_start ?? null
       return (
-        <div onClick={(e) => e.stopPropagation()}>
-          <AdsAdsetDeliveryReportDialog
-            campaignId={r.campaign_id}
-            campaignName={r.campaign_name}
-            initialDateFrom={recordDate ?? dateFrom ?? null}
-            initialDateTo={recordDate ?? dateTo ?? null}
-            trigger={
-              <button className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted">
-                Ads / Adset Report
-              </button>
-            }
-          />
-        </div>
+        <button
+          className="inline-flex items-center gap-1 rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted"
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenAdsAdsetReport(r)
+          }}
+        >
+          Ads / Adset Report
+        </button>
       )
     },
   }
@@ -700,6 +701,55 @@ function CampaignReportTableCardInner({
 }: Props) {
   const grouped = Boolean(filters.group_by)
   const isMobile = useIsMobile()
+  const [trackingDialogOpen, setTrackingDialogOpen] = useState(false)
+  const [trackingDialogTarget, setTrackingDialogTarget] = useState<CampaignReportRow | null>(null)
+  const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false)
+  const [deliveryDialogTarget, setDeliveryDialogTarget] = useState<CampaignReportRow | null>(null)
+  const [revenueRangeOpen, setRevenueRangeOpen] = useState(false)
+  const [revenueRangeTarget, setRevenueRangeTarget] = useState<RevenueDialogTarget | null>(null)
+  const [revenueChartOpen, setRevenueChartOpen] = useState(false)
+  const [revenueChartTarget, setRevenueChartTarget] = useState<RevenueDialogTarget | null>(null)
+
+  const openTrackingAnalytics = useCallback((row: CampaignReportRow) => {
+    setTrackingDialogTarget(row)
+    setTrackingDialogOpen(true)
+  }, [])
+
+  const openDeliveryReport = useCallback((row: CampaignReportRow) => {
+    setDeliveryDialogTarget(row)
+    setDeliveryDialogOpen(true)
+  }, [])
+
+  const onTrackingDialogOpenChange = useCallback((next: boolean) => {
+    setTrackingDialogOpen(next)
+    if (!next) setTrackingDialogTarget(null)
+  }, [])
+
+  const onDeliveryDialogOpenChange = useCallback((next: boolean) => {
+    setDeliveryDialogOpen(next)
+    if (!next) setDeliveryDialogTarget(null)
+  }, [])
+
+  const openRevenueRange = useCallback((target: RevenueDialogTarget) => {
+    setRevenueRangeTarget(target)
+    setRevenueRangeOpen(true)
+  }, [])
+
+  const openRevenueChart = useCallback((target: RevenueDialogTarget) => {
+    setRevenueChartTarget(target)
+    setRevenueChartOpen(true)
+  }, [])
+
+  const onRevenueRangeOpenChange = useCallback((next: boolean) => {
+    setRevenueRangeOpen(next)
+    if (!next) setRevenueRangeTarget(null)
+  }, [])
+
+  const onRevenueChartOpenChange = useCallback((next: boolean) => {
+    setRevenueChartOpen(next)
+    if (!next) setRevenueChartTarget(null)
+  }, [])
+
   const canViewDeliveryReports = useMemo(
     () => hasPermission(userPermissions, PermissionSlugs.DeliveryEntitiesReportsView),
     [userPermissions],
@@ -712,9 +762,13 @@ function CampaignReportTableCardInner({
         filters.group_by ?? '',
         toggling,
         onToggleCampaignStatus,
+        openTrackingAnalytics,
+        openDeliveryReport,
         canViewDeliveryReports,
         filters.date_from,
         filters.date_to,
+        openRevenueRange,
+        openRevenueChart,
       ),
     [
       filters.group_by,
@@ -722,9 +776,13 @@ function CampaignReportTableCardInner({
       filters.date_to,
       grouped,
       onToggleCampaignStatus,
+      openTrackingAnalytics,
+      openDeliveryReport,
       canViewDeliveryReports,
       summary,
       toggling,
+      openRevenueRange,
+      openRevenueChart,
     ],
   )
 
@@ -741,8 +799,12 @@ function CampaignReportTableCardInner({
   const table = useMantineReactTable({
     data,
     columns,
-    getRowId: (row) =>
-      isGroupRow(row) ? `group:${String(row.group_key ?? 'null')}` : String(row.id),
+    getRowId: (row, index, parentRow) =>
+      isGroupRow(row)
+        ? `group:${String(row.group_key ?? 'null')}`
+        : parentRow
+          ? `${parentRow.id}:${String(row.id)}:${index}`
+          : `${String(row.id)}:${index}`,
     getSubRows: (row) => (isGroupRow(row) ? row.items : []),
     manualPagination: true,
     manualSorting: true,
@@ -803,12 +865,18 @@ function CampaignReportTableCardInner({
         onSortingChange(next[0].id as CampaignReportOrderBy, next[0].desc ? 'desc' : 'asc')
       }
     },
+    enableRowVirtualization: true,
+    rowVirtualizerProps: { overscan: 5 },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
     mantineTableContainerProps: {
       className: 'campaign-report-table-container',
-      sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
+      sx: {
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        maxHeight: 'calc(100vh - 220px)',
+      },
     },
     mantineTableBodyRowProps: ({ row }) => {
       const isGroup = grouped && (row.getCanExpand() || isGroupRow(row.original))
@@ -901,7 +969,60 @@ function CampaignReportTableCardInner({
     ),
   })
 
-  return <MantineReactTable table={table} />
+  return (
+    <>
+      <MantineReactTable table={table} />
+
+      {trackingDialogTarget && (
+        <TrackingAnalyticsDialog
+          open={trackingDialogOpen}
+          onOpenChange={onTrackingDialogOpenChange}
+          initialDate={trackingDialogTarget.date_start ?? undefined}
+          initialCampaignId={trackingDialogTarget.campaign_id ?? undefined}
+          initialAccountId={
+            trackingDialogTarget.account_id != null
+              ? String(trackingDialogTarget.account_id)
+              : undefined
+          }
+        />
+      )}
+
+      {deliveryDialogTarget && (
+        <AdsAdsetDeliveryReportDialog
+          open={deliveryDialogOpen}
+          onOpenChange={onDeliveryDialogOpenChange}
+          campaignId={deliveryDialogTarget.campaign_id}
+          campaignName={deliveryDialogTarget.campaign_name}
+          initialDateFrom={deliveryDialogTarget.date_start ?? filters.date_from ?? null}
+          initialDateTo={deliveryDialogTarget.date_start ?? filters.date_to ?? null}
+        />
+      )}
+
+      {revenueRangeTarget && (
+        <RevenueReportRangeDialog
+          open={revenueRangeOpen}
+          onOpenChange={onRevenueRangeOpenChange}
+          initialChannelCodes={
+            revenueRangeTarget.channelCode ? [revenueRangeTarget.channelCode] : undefined
+          }
+          initialDateFrom={revenueRangeTarget.dateFrom}
+          initialDateTo={revenueRangeTarget.dateTo}
+        />
+      )}
+
+      {revenueChartTarget && (
+        <RevenueChartDialog
+          open={revenueChartOpen}
+          onOpenChange={onRevenueChartOpenChange}
+          initialChannelCodes={
+            revenueChartTarget.channelCode ? [revenueChartTarget.channelCode] : undefined
+          }
+          initialDateFrom={revenueChartTarget.dateFrom}
+          initialDateTo={revenueChartTarget.dateTo}
+        />
+      )}
+    </>
+  )
 }
 
 export const CampaignReportTableCard = memo(CampaignReportTableCardInner)

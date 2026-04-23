@@ -519,6 +519,8 @@ type RevenueReportRangeDialogProps = {
   initialDateFrom?: string | null
   initialDateTo?: string | null
   initialChannelCodes?: string[]
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export function RevenueReportRangeDialog({
@@ -527,6 +529,8 @@ export function RevenueReportRangeDialog({
   initialDateFrom,
   initialDateTo,
   initialChannelCodes,
+  open: controlledOpen,
+  onOpenChange,
 }: RevenueReportRangeDialogProps) {
   const makeInitialRange = useCallback(
     (): RangeState => ({
@@ -540,7 +544,9 @@ export function RevenueReportRangeDialog({
     [initialDate, initialDateFrom, initialDateTo, initialChannelCodes],
   )
 
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const isControlled = typeof controlledOpen === 'boolean'
+  const open = isControlled ? controlledOpen : uncontrolledOpen
   const [ranges, setRanges] = useState<RangeState[]>(() => [makeInitialRange()])
   const [fieldErrors, setFieldErrors] = useState<Record<string, RangeErrors>>({})
   const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([])
@@ -595,14 +601,15 @@ export function RevenueReportRangeDialog({
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
-      setOpen(next)
+      if (!isControlled) setUncontrolledOpen(next)
+      onOpenChange?.(next)
       if (!next) {
         setRanges([makeInitialRange()])
         setFieldErrors({})
         setResults([])
       }
     },
-    [makeInitialRange],
+    [isControlled, makeInitialRange, onOpenChange],
   )
 
   function handleReset() {
@@ -634,9 +641,13 @@ export function RevenueReportRangeDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger ?? <Button size="sm">Revenue Report Range</Button>}
-      </DialogTrigger>
+      {trigger ? (
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : !isControlled ? (
+        <DialogTrigger asChild>
+          <Button size="sm">Revenue Report Range</Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent
         className="flex h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 p-0 sm:h-[95vh] sm:w-[95vw] sm:max-w-[95vw]"
         showCloseButton={false}
