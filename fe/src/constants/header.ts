@@ -115,7 +115,7 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         name: 'Revenue Report',
         href: PATHS.revenueReport,
         icon: CircleDollarSign,
-        requiredPermission: PermissionSlugs.RevenueReportsView,
+        requiredPermission: PermissionSlugs.RevenueStatsView,
       },
       {
         name: 'Campaign Report',

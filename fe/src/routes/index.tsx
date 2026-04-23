@@ -292,7 +292,7 @@ export const router = createBrowserRouter([
               const { RevenueReportPage } =
                 await import('@/features/revenue-report/pages/RevenueReportPage')
               return {
-                Component: withPermission(RevenueReportPage, PermissionSlugs.RevenueReportsView),
+                Component: withPermission(RevenueReportPage, PermissionSlugs.RevenueStatsView),
               }
             },
             handle: { title: 'Revenue Report' },

@@ -322,8 +322,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('dashboard')->group(function () {
-        Route::get('insight-stats', [DashboardController::class, 'insightStats']);
-        Route::get('revenue-table', [DashboardController::class, 'revenueTable']);
+        Route::get('insight-stats', [DashboardController::class, 'insightStats'])->middleware('permission.scope:'.Permission::DashboardStatView->value);
+        Route::get('revenue-table', [DashboardController::class, 'revenueTable'])->middleware('permission.scope:'.Permission::DashboardTeamView->value.'|'.Permission::DashboardUserView->value);
     });
 
     Route::prefix('revenue-reports')->group(function () {

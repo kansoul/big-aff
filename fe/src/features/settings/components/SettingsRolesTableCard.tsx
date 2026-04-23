@@ -23,6 +23,10 @@ type ActionMeta = {
   onDeleteRow: (role: Role) => void
 }
 
+function isSystemRole(role: Role): boolean {
+  return role.permissions.includes('*')
+}
+
 function getRolesColumns(meta: ActionMeta): MRT_ColumnDef<Role>[] {
   const { canUpdate, canAssign, canDelete, onEditRow, onDeleteRow } = meta
 
@@ -61,9 +65,10 @@ function getRolesColumns(meta: ActionMeta): MRT_ColumnDef<Role>[] {
             mantineTableBodyCellProps: { style: { width: 200 } },
             Cell: ({ row }: { row: { original: Role } }) => {
               const role = row.original
+              const lockedRole = isSystemRole(role)
               return (
                 <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-                  {canUpdate || canAssign ? (
+                  {(canUpdate || canAssign) && !lockedRole ? (
                     <Button
                       type="button"
                       variant="ghost"
@@ -76,7 +81,7 @@ function getRolesColumns(meta: ActionMeta): MRT_ColumnDef<Role>[] {
                       Edit
                     </Button>
                   ) : null}
-                  {canDelete ? (
+                  {canDelete && !lockedRole ? (
                     <Button
                       type="button"
                       variant="ghost"
@@ -133,7 +138,10 @@ function SettingsRolesTableCardInner({
     [canUpdate, canAssign, canDelete, onEditRow, onDeleteRow],
   )
   const rowSelection = useMemo<MRT_RowSelectionState>(
-    () => Object.fromEntries(roles.map((row) => [String(row.id), selectedIds.has(row.id)])),
+    () =>
+      Object.fromEntries(
+        roles.map((row) => [String(row.id), !isSystemRole(row) && selectedIds.has(row.id)]),
+      ),
     [roles, selectedIds],
   )
 
@@ -145,7 +153,7 @@ function SettingsRolesTableCardInner({
     enableGlobalFilter: true,
     positionGlobalFilter: 'left',
     enableColumnPinning: !isMobile,
-    enableRowSelection: canDelete,
+    enableRowSelection: canDelete ? ({ original }) => !isSystemRole(original) : false,
     initialState: {
       showGlobalFilter: true,
       density: 'md',
@@ -161,7 +169,9 @@ function SettingsRolesTableCardInner({
       onSelectionChange(() => {
         const next = new Set<number>()
         for (const [idStr, checked] of Object.entries(newSelection)) {
-          if (checked) next.add(Number(idStr))
+          if (!checked) continue
+          const role = roles.find((item) => String(item.id) === idStr)
+          if (role && !isSystemRole(role)) next.add(Number(idStr))
         }
         return next
       })

@@ -270,6 +270,7 @@ export function DashboardPage() {
     () => hasPermission(permissions, PermissionSlugs.DashboardUserView),
     [permissions],
   )
+
   const canLoadRevenueTable = canViewTeamTable || canViewUserTable
 
   const [statsLoading, setStatsLoading] = useState(true)

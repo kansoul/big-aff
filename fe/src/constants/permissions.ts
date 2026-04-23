@@ -623,6 +623,25 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
     ],
   },
   {
+    id: 'dashboard-report',
+    label: 'Dashboard Report',
+    screens: [
+      {
+        id: 'dashboard',
+        label: 'Dashboard',
+        permissions: [
+          {
+            key: 'DashboardStatView',
+            slug: PermissionSlugs.DashboardStatView,
+            label: 'Stats View',
+          },
+          { key: 'DashboardTeamView', slug: PermissionSlugs.DashboardTeamView, label: 'Team View' },
+          { key: 'DashboardUserView', slug: PermissionSlugs.DashboardUserView, label: 'User View' },
+        ],
+      },
+    ],
+  },
+  {
     id: 'google-conversions',
     label: 'Google Conversions',
     screens: [
