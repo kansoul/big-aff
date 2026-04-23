@@ -10,8 +10,6 @@ import type {
 } from '@/features/team-report/types'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
-import { teamsApi } from '@/features/teams/api'
-import { usersApi } from '@/features/users/api/users'
 import type { SelectOption } from '@/components/common/FilterPanel'
 import { TeamOverviewCard } from '../components/TeamOverviewCard'
 import { TeamReportByTeamTableCard } from '../components/TeamByTeamTableCard'
@@ -37,12 +35,19 @@ function parseIds(value: unknown): number[] {
   return value.map((v) => Number(v)).filter((n) => !Number.isNaN(n))
 }
 
+function parseOptionalId(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null
+  const parsed = Number(value)
+  return Number.isNaN(parsed) ? null : parsed
+}
+
 function toSelectOptions(items: { id: number; name: string }[]): SelectOption[] {
   return items.map((item) => ({ value: String(item.id), label: item.name }))
 }
 
 export function TeamReportPage() {
   const [filters, setFilters] = useState<TeamReportFilterParams>(DEFAULT_FILTERS)
+  const [selectedTeamIdForOptions, setSelectedTeamIdForOptions] = useState<number | null>(null)
 
   const [teamOptions, setTeamOptions] = useState<SelectOption[]>([])
   const [userOptions, setUserOptions] = useState<SelectOption[]>([])
@@ -53,13 +58,41 @@ export function TeamReportPage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    void Promise.all([teamsApi.listOptions(), usersApi.listOptions()]).then(
-      ([teamsRes, usersRes]) => {
-        setTeamOptions(toSelectOptions(teamsRes.data.data))
-        setUserOptions(toSelectOptions(usersRes.data.data))
-      },
-    )
+    void teamReportApi
+      .teamOptions()
+      .then((response) => {
+        setTeamOptions(toSelectOptions(response.data.data))
+      })
+      .catch(() => {
+        toast.error('Failed to load team options.')
+      })
   }, [])
+
+  const selectedTeamId = useMemo(() => {
+    const [teamId] = filters.team_ids ?? []
+    return teamId ?? null
+  }, [filters.team_ids])
+
+  useEffect(() => {
+    setSelectedTeamIdForOptions(selectedTeamId)
+  }, [selectedTeamId])
+
+  useEffect(() => {
+    if (!selectedTeamIdForOptions) {
+      setUserOptions([])
+      return
+    }
+
+    void teamReportApi
+      .userOptions(selectedTeamIdForOptions)
+      .then((response) => {
+        setUserOptions(toSelectOptions(response.data.data))
+      })
+      .catch(() => {
+        setUserOptions([])
+        toast.error('Failed to load user options.')
+      })
+  }, [selectedTeamIdForOptions])
 
   const loadData = useCallback(async (activeFilters: TeamReportFilterParams) => {
     try {
@@ -85,16 +118,28 @@ export function TeamReportPage() {
 
   const onApplyFilters = useCallback((values: Record<string, unknown>) => {
     const range = parseDateRange(values.date_range)
+    const nextTeamId = parseOptionalId(values.team_id)
+    const nextUserIds = parseIds(values.user_ids)
+
     setFilters({
       date_from: range?.from ?? null,
       date_to: range?.to ?? null,
-      team_ids: parseIds(values.team_ids),
-      user_ids: parseIds(values.user_ids),
+      team_ids: nextTeamId ? [nextTeamId] : [],
+      user_ids: nextTeamId ? nextUserIds : [],
     })
   }, [])
 
   const onResetFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS)
+    setSelectedTeamIdForOptions(null)
+  }, [])
+
+  const onDraftFieldChange = useCallback((field: string, value: unknown) => {
+    if (field !== 'team_id') {
+      return
+    }
+
+    setSelectedTeamIdForOptions(parseOptionalId(value))
   }, [])
 
   const filterFields = useMemo<FilterFieldDef[]>(
@@ -110,10 +155,10 @@ export function TeamReportPage() {
         placeholder: 'Select date range',
       },
       {
-        field: 'team_ids',
+        field: 'team_id',
         label: 'Team',
-        type: 'multiselect',
-        value: filters.team_ids?.map(String) ?? [],
+        type: 'select',
+        value: selectedTeamIdForOptions ? String(selectedTeamIdForOptions) : null,
         options: teamOptions,
         placeholder: 'All teams',
       },
@@ -123,10 +168,13 @@ export function TeamReportPage() {
         type: 'multiselect',
         value: filters.user_ids?.map(String) ?? [],
         options: userOptions,
-        placeholder: 'All users',
+        disabled: !selectedTeamIdForOptions,
+        placeholder: selectedTeamIdForOptions
+          ? 'All users in selected team'
+          : 'Select a team first',
       },
     ],
-    [filters, teamOptions, userOptions],
+    [filters, selectedTeamIdForOptions, teamOptions, userOptions],
   )
 
   return (
@@ -135,6 +183,7 @@ export function TeamReportPage() {
         fields={filterFields}
         onReset={onResetFilters}
         applyMode
+        onDraftFieldChange={onDraftFieldChange}
         onApply={onApplyFilters}
       />
       <TeamOverviewCard data={overview} loading={loading} />

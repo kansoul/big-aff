@@ -5,6 +5,9 @@ namespace App\Services\RevenueStats;
 use App\Actions\RevenueStats\GetRevenueStatsByTeamAction;
 use App\Actions\RevenueStats\GetRevenueStatsByUserAction;
 use App\Actions\RevenueStats\GetRevenueStatsOverviewAction;
+use App\Actions\RevenueStats\GetRevenueStatsTeamOptionsAction;
+use App\Actions\RevenueStats\GetRevenueStatsUserOptionsAction;
+use App\Models\Team;
 use Illuminate\Support\Collection;
 
 class RevenueStatsService
@@ -13,6 +16,8 @@ class RevenueStatsService
         private readonly GetRevenueStatsOverviewAction $getRevenueStatsOverviewAction,
         private readonly GetRevenueStatsByTeamAction $getRevenueStatsByTeamAction,
         private readonly GetRevenueStatsByUserAction $getRevenueStatsByUserAction,
+        private readonly GetRevenueStatsTeamOptionsAction $getRevenueStatsTeamOptionsAction,
+        private readonly GetRevenueStatsUserOptionsAction $getRevenueStatsUserOptionsAction,
     ) {}
 
     /**
@@ -59,5 +64,21 @@ class RevenueStatsService
     public function byUser(array $filters): Collection
     {
         return $this->getRevenueStatsByUserAction->execute($filters);
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string}>
+     */
+    public function teamOptions(): Collection
+    {
+        return $this->getRevenueStatsTeamOptionsAction->execute();
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string}>
+     */
+    public function userOptions(Team $team): Collection
+    {
+        return $this->getRevenueStatsUserOptionsAction->execute($team);
     }
 }

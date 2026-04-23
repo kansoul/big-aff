@@ -20,7 +20,7 @@ class RevenueStatsRequest extends FormRequest
         return [
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
-            'team_ids' => ['nullable', 'array'],
+            'team_ids' => ['nullable', 'array', 'required_with:user_ids', 'min:1'],
             'team_ids.*' => ['integer', 'exists:teams,id'],
             'user_ids' => ['nullable', 'array'],
             'user_ids.*' => ['integer', 'exists:users,id'],

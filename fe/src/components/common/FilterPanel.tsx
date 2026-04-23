@@ -35,6 +35,7 @@ export type MultiSelectFilterField = BaseField & {
   type: 'multiselect'
   value: string[]
   options: SelectOption[]
+  disabled?: boolean
 }
 
 export type InputFilterField = BaseField & {
@@ -79,6 +80,7 @@ type ApplyModeProps = {
   applyMode: true
   onFieldChange?: never
   onApply: (values: Record<string, unknown>) => void
+  onDraftFieldChange?: (field: string, value: unknown) => void
 }
 
 export type FilterPanelProps = (AutoModeProps | ApplyModeProps) & {
@@ -116,6 +118,7 @@ function SelectFieldRenderer({ field, onChange }: FieldRendererProps<SelectFilte
 function MultiSelectFieldRenderer({ field, onChange }: FieldRendererProps<MultiSelectFilterField>) {
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState(false)
+  const isDisabled = field.disabled ?? false
 
   const filtered = useMemo(
     () =>
@@ -144,10 +147,18 @@ function MultiSelectFieldRenderer({ field, onChange }: FieldRendererProps<MultiS
         : `${selectedLabels.length} selected`
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={isDisabled ? false : open}
+      onOpenChange={(nextOpen) => {
+        if (!isDisabled) {
+          setOpen(nextOpen)
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"
+          disabled={isDisabled}
           className={cn(
             'h-8 w-full justify-between gap-1.5 px-2.5 text-xs font-normal',
             field.value.length === 0 && 'text-muted-foreground',
@@ -155,7 +166,7 @@ function MultiSelectFieldRenderer({ field, onChange }: FieldRendererProps<MultiS
           )}
         >
           <span className="flex-1 truncate text-left">{triggerText}</span>
-          {field.value.length > 0 ? (
+          {field.value.length > 0 && !isDisabled ? (
             <span
               role="button"
               aria-label="Clear selection"
@@ -291,6 +302,7 @@ function FilterPanelInner(props: FilterPanelProps) {
   function handleChange(field: string, value: unknown) {
     if (props.applyMode) {
       setDraft((prev) => ({ ...prev, [field]: value }))
+      props.onDraftFieldChange?.(field, value)
     } else {
       props.onFieldChange?.(field, value)
     }
