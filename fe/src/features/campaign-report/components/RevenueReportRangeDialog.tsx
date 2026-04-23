@@ -8,6 +8,7 @@ import {
   Search,
   Trash2,
   X,
+  CalendarRange,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -321,7 +322,7 @@ function RangeRow({
             type="button"
             onClick={() => applyQuickRange(minutes)}
             disabled={!range.start_date || !range.start_time}
-            className="rounded border border-border/60 bg-background px-2 py-0.5 text-[11px] text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+            className="cursor-pointer rounded-md bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
             {label}
           </button>
@@ -518,6 +519,8 @@ type RevenueReportRangeDialogProps = {
   initialDateFrom?: string | null
   initialDateTo?: string | null
   initialChannelCodes?: string[]
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export function RevenueReportRangeDialog({
@@ -526,12 +529,14 @@ export function RevenueReportRangeDialog({
   initialDateFrom,
   initialDateTo,
   initialChannelCodes,
+  open: controlledOpen,
+  onOpenChange,
 }: RevenueReportRangeDialogProps) {
   const makeInitialRange = useCallback(
     (): RangeState => ({
       _id: crypto.randomUUID(),
       start_date: initialDateFrom ?? initialDate ?? '',
-      start_time: '',
+      start_time: '00:00',
       end_date: initialDateTo ?? initialDate ?? '',
       end_time: '',
       channel_codes: initialChannelCodes ?? [],
@@ -539,7 +544,9 @@ export function RevenueReportRangeDialog({
     [initialDate, initialDateFrom, initialDateTo, initialChannelCodes],
   )
 
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const isControlled = typeof controlledOpen === 'boolean'
+  const open = isControlled ? controlledOpen : uncontrolledOpen
   const [ranges, setRanges] = useState<RangeState[]>(() => [makeInitialRange()])
   const [fieldErrors, setFieldErrors] = useState<Record<string, RangeErrors>>({})
   const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([])
@@ -548,6 +555,7 @@ export function RevenueReportRangeDialog({
   const fetchedRef = useRef(false)
 
   useEffect(() => {
+    if (!open) return
     if (fetchedRef.current) return
     fetchedRef.current = true
     channelsApi
@@ -556,7 +564,7 @@ export function RevenueReportRangeDialog({
       .catch(() => {
         toast.error('Failed to fetch channel options')
       })
-  }, [])
+  }, [open])
 
   function updateRange(id: string, patch: Partial<RangeState>, clearField?: keyof RangeErrors) {
     setRanges((prev) => prev.map((r) => (r._id === id ? { ...r, ...patch } : r)))
@@ -593,14 +601,15 @@ export function RevenueReportRangeDialog({
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
-      setOpen(next)
+      if (!isControlled) setUncontrolledOpen(next)
+      onOpenChange?.(next)
       if (!next) {
         setRanges([makeInitialRange()])
         setFieldErrors({})
         setResults([])
       }
     },
-    [makeInitialRange],
+    [isControlled, makeInitialRange, onOpenChange],
   )
 
   function handleReset() {
@@ -632,16 +641,26 @@ export function RevenueReportRangeDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger ?? <Button size="sm">Revenue Report Range</Button>}
-      </DialogTrigger>
+      {trigger ? (
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : !isControlled ? (
+        <DialogTrigger asChild>
+          <Button size="sm">Revenue Report Range</Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent
         className="flex h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 p-0 sm:h-[95vh] sm:w-[95vw] sm:max-w-[95vw]"
         showCloseButton={false}
       >
         <DialogHeader className="border-b px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <DialogTitle>Revenue Report Range</DialogTitle>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                <CalendarRange className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <DialogTitle>Revenue Report Range</DialogTitle>
+            </div>
+
             <button
               type="button"
               onClick={() => handleOpenChange(false)}

@@ -180,7 +180,7 @@ export function TeamFormDialog({ open, onOpenChange, team, onSuccess }: TeamForm
                     void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
                   }}
                 >
-                  Create & Create Another
+                  Create & create another
                 </Button>
               ) : null}
               <Button type="submit" disabled={submitting} className="gap-1.5">

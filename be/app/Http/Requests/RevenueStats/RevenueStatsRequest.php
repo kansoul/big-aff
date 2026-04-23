@@ -20,10 +20,14 @@ class RevenueStatsRequest extends FormRequest
         return [
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
-            'team_ids' => ['nullable', 'array'],
+            'team_ids' => ['nullable', 'array', 'required_with:user_ids', 'min:1'],
             'team_ids.*' => ['integer', 'exists:teams,id'],
             'user_ids' => ['nullable', 'array'],
             'user_ids.*' => ['integer', 'exists:users,id'],
+            'account_ids' => ['nullable', 'array'],
+            'account_ids.*' => ['integer', 'exists:accounts,id'],
+            'channel_codes' => ['nullable', 'array'],
+            'channel_codes.*' => ['string', 'exists:channels,code'],
         ];
     }
 }

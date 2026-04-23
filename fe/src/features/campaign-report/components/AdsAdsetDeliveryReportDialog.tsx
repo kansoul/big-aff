@@ -65,11 +65,13 @@ type GroupByKey = 'none' | 'date_start'
 type DeliveryRow = AdsetInsightRow | AdsInsightRow
 
 type Props = {
-  trigger: React.ReactNode
+  trigger?: React.ReactNode
   campaignId: string
   campaignName?: string | null
   initialDateFrom?: string | null
   initialDateTo?: string | null
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -264,8 +266,20 @@ function AdsAdsetDeliveryReportDialogInner({
   campaignName,
   initialDateFrom,
   initialDateTo,
+  open: controlledOpen,
+  onOpenChange,
 }: Props) {
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const isControlled = typeof controlledOpen === 'boolean'
+  const open = isControlled ? controlledOpen : uncontrolledOpen
+
+  const setDialogOpen = useCallback(
+    (next: boolean) => {
+      if (!isControlled) setUncontrolledOpen(next)
+      onOpenChange?.(next)
+    },
+    [isControlled, onOpenChange],
+  )
   const [activeTab, setActiveTab] = useState<DeliveryTab>('adsets')
 
   const permissions = useAuthStore((s) => s.user?.permissions ?? [])
@@ -334,7 +348,7 @@ function AdsAdsetDeliveryReportDialogInner({
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
-      setOpen(next)
+      setDialogOpen(next)
       if (!next) {
         setFilters(buildInitialFilters())
         setAdsets([])
@@ -346,7 +360,7 @@ function AdsAdsetDeliveryReportDialogInner({
         setGroupBy('none')
       }
     },
-    [buildInitialFilters],
+    [buildInitialFilters, setDialogOpen],
   )
 
   // Reset pagination/search when switching tab
@@ -816,7 +830,13 @@ function AdsAdsetDeliveryReportDialogInner({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger ? (
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : !isControlled ? (
+        <DialogTrigger asChild>
+          <Button size="sm">Ads / Adset Report</Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent
         className="flex h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 p-0 sm:h-[92vh] sm:w-[92vw] sm:max-w-[1200px]"
         showCloseButton={false}

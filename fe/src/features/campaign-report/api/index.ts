@@ -19,8 +19,6 @@ import type {
   DeliveryEntityStatusOptionsResponse,
   KeywordTrackingFilterParams,
   KeywordTrackingListResponse,
-  RevenueReportFilterParams,
-  RevenueReportListResponse,
   StyleReportRangeQueryPayload,
   StyleReportRangeQueryResponse,
   ToggleAdsetStatusResponse,
@@ -60,19 +58,6 @@ export const campaignReportApi = {
       `/campaign-reports/${encodeURIComponent(campaignId)}/toggle-status`,
       { status },
     ),
-
-  listRevenue: (filters: RevenueReportFilterParams) =>
-    axiosInstance.get<RevenueReportListResponse>('/revenue-reports', {
-      params: {
-        page: filters.page ?? 1,
-        per_page: filters.per_page ?? 15,
-        ...(filters.channel_codes?.length ? { 'channel_codes[]': filters.channel_codes } : {}),
-        ...(filters.date_from ? { date_from: filters.date_from } : {}),
-        ...(filters.date_to ? { date_to: filters.date_to } : {}),
-        ...(filters.order_by ? { order_by: filters.order_by } : {}),
-        ...(filters.order ? { order: filters.order } : {}),
-      },
-    }),
 
   queryRange: (payload: StyleReportRangeQueryPayload) =>
     axiosInstance.post<StyleReportRangeQueryResponse>('/style-report-range/query', payload),

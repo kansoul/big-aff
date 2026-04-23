@@ -2,110 +2,83 @@
 
 namespace App\Services\RevenueStats;
 
-use App\Models\CampaignReport;
-use App\Support\OwnershipFilter\OwnershipFilter;
-use Illuminate\Database\Eloquent\Builder;
+use App\Actions\RevenueStats\GetRevenueStatsByTeamAction;
+use App\Actions\RevenueStats\GetRevenueStatsByUserAction;
+use App\Actions\RevenueStats\GetRevenueStatsOverviewAction;
+use App\Actions\RevenueStats\GetRevenueStatsTeamOptionsAction;
+use App\Actions\RevenueStats\GetRevenueStatsUserOptionsAction;
+use App\Models\Team;
 use Illuminate\Support\Collection;
 
 class RevenueStatsService
 {
+    public function __construct(
+        private readonly GetRevenueStatsOverviewAction $getRevenueStatsOverviewAction,
+        private readonly GetRevenueStatsByTeamAction $getRevenueStatsByTeamAction,
+        private readonly GetRevenueStatsByUserAction $getRevenueStatsByUserAction,
+        private readonly GetRevenueStatsTeamOptionsAction $getRevenueStatsTeamOptionsAction,
+        private readonly GetRevenueStatsUserOptionsAction $getRevenueStatsUserOptionsAction,
+    ) {}
+
     /**
-     * @param  array{date_from?: string|null, date_to?: string|null, team_ids?: int[]|null, user_ids?: int[]|null}  $filters
+     * @param  array{
+     *     date_from?: string|null,
+     *     date_to?: string|null,
+     *     team_ids?: int[]|null,
+     *     user_ids?: int[]|null,
+     *     account_ids?: int[]|null,
+     *     channel_codes?: string[]|null
+     * }  $filters
      * @return array{revenue: float, spend: float, profit: float, roi: float}
      */
     public function overview(array $filters): array
     {
-        $row = $this->baseQuery($filters)
-            ->selectRaw('
-                COALESCE(SUM(campaign_reports.r_revenue), 0) as revenue,
-                COALESCE(SUM(campaign_reports.a_spend), 0) as spend
-            ')
-            ->first();
-
-        $revenue = (float) ($row->revenue ?? 0);
-        $spend = (float) ($row->spend ?? 0);
-        $profit = $revenue - $spend;
-        $roi = $spend > 0 ? ($profit / $spend) * 100 : 0;
-
-        return compact('revenue', 'spend', 'profit', 'roi');
+        return $this->getRevenueStatsOverviewAction->execute($filters);
     }
 
     /**
-     * @param  array{date_from?: string|null, date_to?: string|null, team_ids?: int[]|null, user_ids?: int[]|null}  $filters
+     * @param  array{
+     *     date_from?: string|null,
+     *     date_to?: string|null,
+     *     team_ids?: int[]|null,
+     *     user_ids?: int[]|null,
+     *     account_ids?: int[]|null,
+     *     channel_codes?: string[]|null
+     * }  $filters
      */
     public function byTeam(array $filters): Collection
     {
-        return $this->baseQuery($filters)
-            ->join('account_user as au', 'au.account_id', '=', 'a.id')
-            ->leftJoin('team_user as tu', 'tu.user_id', '=', 'au.user_id')
-            ->leftJoin('teams as t', 't.id', '=', 'tu.team_id')
-            ->groupBy('tu.team_id', 't.name')
-            ->selectRaw("
-                COALESCE(tu.team_id, 0) as team_id,
-                COALESCE(t.name, '(No team)') as team_name,
-                COALESCE(SUM(campaign_reports.r_revenue), 0) as revenue,
-                COALESCE(SUM(campaign_reports.a_spend), 0) as spend,
-                COALESCE(SUM(campaign_reports.r_revenue), 0) - COALESCE(SUM(campaign_reports.a_spend), 0) as profit
-            ")
-            ->orderByDesc('revenue')
-            ->get();
+        return $this->getRevenueStatsByTeamAction->execute($filters);
     }
 
     /**
-     * @param  array{date_from?: string|null, date_to?: string|null, team_ids?: int[]|null, user_ids?: int[]|null}  $filters
+     * @param  array{
+     *     date_from?: string|null,
+     *     date_to?: string|null,
+     *     team_ids?: int[]|null,
+     *     user_ids?: int[]|null,
+     *     account_ids?: int[]|null,
+     *     channel_codes?: string[]|null
+     * }  $filters
      */
     public function byUser(array $filters): Collection
     {
-        return $this->baseQuery($filters)
-            ->join('account_user as au', 'au.account_id', '=', 'a.id')
-            ->leftJoin('users as u', 'u.id', '=', 'au.user_id')
-            ->leftJoin('team_user as tu', 'tu.user_id', '=', 'au.user_id')
-            ->leftJoin('teams as t', 't.id', '=', 'tu.team_id')
-            ->groupBy('au.user_id', 'u.name', 'tu.team_id', 't.name')
-            ->selectRaw("
-                au.user_id as user_id,
-                COALESCE(u.name, '(Unknown)') as user_name,
-                COALESCE(tu.team_id, 0) as team_id,
-                COALESCE(t.name, '(No team)') as team_name,
-                COALESCE(SUM(campaign_reports.r_revenue), 0) as revenue,
-                COALESCE(SUM(campaign_reports.a_spend), 0) as spend,
-                COALESCE(SUM(campaign_reports.r_revenue), 0) - COALESCE(SUM(campaign_reports.a_spend), 0) as profit
-            ")
-            ->orderByRaw('(revenue - spend) DESC')
-            ->get();
+        return $this->getRevenueStatsByUserAction->execute($filters);
     }
 
     /**
-     * @param  array{date_from?: string|null, date_to?: string|null, team_ids?: int[]|null, user_ids?: int[]|null}  $filters
+     * @return Collection<int, array{id: int, name: string}>
      */
-    private function baseQuery(array $filters): Builder
+    public function teamOptions(): Collection
     {
-        $query = CampaignReport::query()
-            ->join('accounts as a', 'a.id', '=', 'campaign_reports.account_id');
+        return $this->getRevenueStatsTeamOptionsAction->execute();
+    }
 
-        $ownership = OwnershipFilter::forAuthUser();
-        $ownership->applyThroughAccount($query, 'campaign_reports.account_id');
-
-        if (! empty($filters['date_from'])) {
-            $query->whereDate('campaign_reports.date_start', '>=', $filters['date_from']);
-        }
-
-        if (! empty($filters['date_to'])) {
-            $query->whereDate('campaign_reports.date_start', '<=', $filters['date_to']);
-        }
-
-        if (! empty($filters['team_ids'])) {
-            $query->whereIn('a.team_id', $filters['team_ids']);
-        }
-
-        if (! empty($filters['user_ids'])) {
-            $query->whereIn('campaign_reports.account_id', function ($sub) use ($filters) {
-                $sub->select('account_id')
-                    ->from('account_user')
-                    ->whereIn('user_id', $filters['user_ids']);
-            });
-        }
-
-        return $query;
+    /**
+     * @return Collection<int, array{id: int, name: string}>
+     */
+    public function userOptions(Team $team): Collection
+    {
+        return $this->getRevenueStatsUserOptionsAction->execute($team);
     }
 }

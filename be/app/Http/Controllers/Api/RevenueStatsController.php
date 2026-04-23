@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\RevenueStats\RevenueStatsRequest;
 use App\Http\Resources\RevenueStats\TeamRevenueResource;
 use App\Http\Resources\RevenueStats\UserRevenueResource;
+use App\Models\Team;
 use App\Services\RevenueStats\RevenueStatsService;
 use Illuminate\Http\JsonResponse;
 
@@ -75,6 +76,20 @@ class RevenueStatsController extends BaseController
 
         return $this->sendResponse([
             'data' => UserRevenueResource::collection($rows),
+        ]);
+    }
+
+    public function teamOptions(): JsonResponse
+    {
+        return $this->sendResponse([
+            'data' => $this->revenueStatsService->teamOptions(),
+        ]);
+    }
+
+    public function userOptions(Team $team): JsonResponse
+    {
+        return $this->sendResponse([
+            'data' => $this->revenueStatsService->userOptions($team),
         ]);
     }
 }

@@ -6,7 +6,6 @@ use App\Http\Requests\Dashboard\RevenueTableRequest;
 use App\Services\Dashboard\DashboardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * @tags Dashboard

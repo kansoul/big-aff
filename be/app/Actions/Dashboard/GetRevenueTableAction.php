@@ -38,7 +38,7 @@ class GetRevenueTableAction
         $userIds = $spendByUser->keys()
             ->merge($revenueByUser->keys())
             ->unique()
-            ->map(fn($id) => (int) $id)
+            ->map(fn ($id) => (int) $id)
             ->all();
 
         $userInfo = $this->userInfo($userIds);
@@ -254,7 +254,7 @@ class GetRevenueTableAction
                     ],
                 ];
             })
-            ->sortByDesc(fn($row) => $row['monthly']['revenue'])
+            ->sortByDesc(fn ($row) => $row['monthly']['revenue'])
             ->values();
     }
 
@@ -291,7 +291,7 @@ class GetRevenueTableAction
                     ],
                 ];
             })
-            ->sortByDesc(fn($row) => $row['monthly']['revenue'] - $row['monthly']['spend'])
+            ->sortByDesc(fn ($row) => $row['monthly']['revenue'] - $row['monthly']['spend'])
             ->take($limit)
             ->values();
     }

@@ -20,9 +20,10 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import type { UserCreateFormValues, UserUpdateFormValues } from '@/features/users/types'
-import type { ManagedUser, Role } from '@/shared/types'
+import type { ManagedUser } from '@/shared/types'
 
 type UserFormValues = UserCreateFormValues | UserUpdateFormValues
+type RoleOption = { id: number; name: string }
 
 type UserFormDialogProps = {
   open: boolean
@@ -30,7 +31,7 @@ type UserFormDialogProps = {
   user?: ManagedUser | null
   formError: string | null
   form: UseFormReturn<UserFormValues>
-  roles: Role[]
+  roles: RoleOption[]
   submitting: boolean
   onSubmit: (
     values: UserFormValues,
@@ -179,7 +180,7 @@ export function UserFormDialog({
                     void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
                   }}
                 >
-                  Create & Create Another
+                  Create & create another
                 </Button>
               ) : null}
               <Button type="submit" disabled={submitting || roles.length === 0} className="gap-1.5">

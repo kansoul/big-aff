@@ -3,7 +3,7 @@ import { MantineReactTable, type MRT_ColumnDef, useMantineReactTable } from 'man
 import { BarChart3 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
-import type { RevenueByUserRow } from '@/features/revenue-report/types'
+import type { TeamReportByTeamRow } from '@/features/team-report/types'
 
 function formatUsd(value: number): string {
   return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -13,21 +13,15 @@ function formatRoi(value: number): string {
   return `${value.toFixed(2)}%`
 }
 
-function getColumns(): MRT_ColumnDef<RevenueByUserRow>[] {
+function getColumns(): MRT_ColumnDef<TeamReportByTeamRow>[] {
   return [
-    {
-      accessorKey: 'user_name',
-      header: 'User',
-      size: 200,
-      Cell: ({ row }) => (
-        <span className="font-medium text-foreground">{row.original.user_name}</span>
-      ),
-    },
     {
       accessorKey: 'team_name',
       header: 'Team',
-      size: 180,
-      Cell: ({ row }) => <span className="text-muted-foreground">{row.original.team_name}</span>,
+      size: 200,
+      Cell: ({ row }) => (
+        <span className="font-medium text-foreground">{row.original.team_name}</span>
+      ),
     },
     {
       accessorKey: 'revenue',
@@ -77,11 +71,11 @@ function getColumns(): MRT_ColumnDef<RevenueByUserRow>[] {
 }
 
 type Props = {
-  data: RevenueByUserRow[]
+  data: TeamReportByTeamRow[]
   loading: boolean
 }
 
-function RevenueByUserTableCardInner({ data, loading }: Props) {
+function TeamByTeamTableCardInner({ data, loading }: Props) {
   const columns = useMemo(() => getColumns(), [])
 
   const table = useMantineReactTable({
@@ -99,7 +93,7 @@ function RevenueByUserTableCardInner({ data, loading }: Props) {
     renderEmptyRowsFallback: () => (
       <div className="flex flex-col items-center gap-2 py-10 text-center">
         <BarChart3 className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No user data found.</p>
+        <p className="text-sm text-muted-foreground">No team data found.</p>
       </div>
     ),
   })
@@ -107,11 +101,11 @@ function RevenueByUserTableCardInner({ data, loading }: Props) {
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        Revenue by User
+        Revenue by Team
       </h3>
       <MantineReactTable table={table} />
     </div>
   )
 }
 
-export const RevenueByUserTableCard = memo(RevenueByUserTableCardInner)
+export const TeamReportByTeamTableCard = memo(TeamByTeamTableCardInner)

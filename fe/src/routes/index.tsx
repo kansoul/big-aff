@@ -13,10 +13,11 @@ const LoginPage = lazy(() =>
   import('@/features/auth/pages/LoginPage').then((m) => ({ default: m.LoginPage })),
 )
 
-function withPermission(Page: ComponentType, permission: string): ComponentType {
+function withPermission(Page: ComponentType, permission?: string): ComponentType {
+  if (!permission) return Page
   function PermissionGuard() {
     return (
-      <RequirePermission permission={permission}>
+      <RequirePermission permission={permission!}>
         <Page />
       </RequirePermission>
     )
@@ -287,15 +288,14 @@ export const router = createBrowserRouter([
             handle: { title: 'Ads Report' },
           },
           {
-            path: routeSegment(PATHS.revenueReport),
+            path: routeSegment(PATHS.teamReport),
             lazy: async () => {
-              const { RevenueReportPage } =
-                await import('@/features/revenue-report/pages/RevenueReportPage')
+              const { TeamReportPage } = await import('@/features/team-report/pages/TeamReportPage')
               return {
-                Component: withPermission(RevenueReportPage, PermissionSlugs.RevenueStatsView),
+                Component: withPermission(TeamReportPage, PermissionSlugs.RevenueStatsView),
               }
             },
-            handle: { title: 'Revenue Report' },
+            handle: { title: 'Team Report' },
           },
           {
             path: routeSegment(PATHS.googleConversions),
@@ -321,6 +321,17 @@ export const router = createBrowserRouter([
               }
             },
             handle: { title: 'Campaign Report' },
+          },
+          {
+            path: routeSegment(PATHS.revenueReport),
+            lazy: async () => {
+              const { RevenueReportPage } =
+                await import('@/features/revenue-report/pages/RevenueReportPage')
+              return {
+                Component: withPermission(RevenueReportPage, PermissionSlugs.RevenueReportsView),
+              }
+            },
+            handle: { title: 'Revenue Report' },
           },
           {
             path: routeSegment(PATHS.logs),

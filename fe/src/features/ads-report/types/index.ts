@@ -28,6 +28,7 @@ export interface AdsReportStatsResponse {
 export interface AdsReportStatsFilterParams {
   account_id?: string | null
   ads_type?: AdsReportAdsType | null
+  campaign_ids?: string[]
   date_from?: string | null
   date_to?: string | null
   team_id?: number | null
