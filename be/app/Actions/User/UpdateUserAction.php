@@ -2,6 +2,7 @@
 
 namespace App\Actions\User;
 
+use App\Actions\Auth\InvalidateUserRemoteSessionsAction;
 use App\Models\User;
 use App\Models\UserParentChild;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -9,6 +10,10 @@ use Illuminate\Support\Facades\Auth;
 
 class UpdateUserAction
 {
+    public function __construct(
+        private readonly InvalidateUserRemoteSessionsAction $invalidateUserRemoteSessions,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $data
      *
@@ -27,6 +32,10 @@ class UpdateUserAction
             unset($data['password']);
         }
 
+        $passwordChanging = array_key_exists('password', $data)
+            && is_string($data['password'])
+            && $data['password'] !== '';
+
         if (array_key_exists('parent_id', $data)) {
             $parentId = $data['parent_id'];
             unset($data['parent_id']);
@@ -43,6 +52,15 @@ class UpdateUserAction
 
         if ($data !== []) {
             $user->update($data);
+        }
+
+        if ($passwordChanging) {
+            $exceptSessionId = null;
+            if ((int) $auth->id === (int) $user->id && request()->hasSession()) {
+                $exceptSessionId = request()->session()->getId();
+            }
+
+            $this->invalidateUserRemoteSessions->execute($user->fresh(), $exceptSessionId);
         }
 
         $user->load(['role', 'assignedParentLink.parentUser']);
