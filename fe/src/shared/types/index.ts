@@ -12,10 +12,16 @@ export interface ManagedUser {
   name: string
   email: string
   role_id: number | null
+  style_id: number | null
   role: {
     id: number
     name: string
     permissions: string[]
+  } | null
+  style: {
+    id: number
+    code: string
+    name: string
   } | null
   parent_id: number | null
   parent: {

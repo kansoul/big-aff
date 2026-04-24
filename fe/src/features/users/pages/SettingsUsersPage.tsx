@@ -7,6 +7,8 @@ import { toast } from 'sonner'
 import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { rolesApi } from '@/features/settings/api/roles'
 import { formatApiError } from '@/features/settings/components'
+import { stylesApi } from '@/features/styles/api'
+import type { StyleOption } from '@/features/styles/types'
 import { usersApi } from '@/features/users/api/users'
 import {
   DeleteUserDialog,
@@ -59,10 +61,12 @@ export function SettingsUsersPage() {
     () => hasPermission(perms, PermissionSlugs.SettingsUsersDelete),
     [perms],
   )
+  const canViewStyles = useMemo(() => hasPermission(perms, PermissionSlugs.StylesView), [perms])
 
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [roles, setRoles] = useState<RoleOption[]>([])
+  const [styleOptions, setStyleOptions] = useState<StyleOption[]>([])
   const [loading, setLoading] = useState(true)
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
@@ -85,6 +89,7 @@ export function SettingsUsersPage() {
       email: '',
       password: '',
       role_id: 0,
+      style_id: null,
     },
   })
 
@@ -95,6 +100,7 @@ export function SettingsUsersPage() {
       email: '',
       password: '',
       role_id: 0,
+      style_id: null,
     },
   })
 
@@ -109,14 +115,18 @@ export function SettingsUsersPage() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const [usersRes, roleOptionsRes] = await Promise.all([
+        const [usersRes, roleOptionsRes, styleOptionsRes] = await Promise.all([
           usersApi.list(pagination.pageIndex + 1, pagination.pageSize, filters),
           rolesApi.listOptions(),
+          canViewStyles ? stylesApi.options() : Promise.resolve(null),
         ])
         if (!ignore) {
           setUsers(usersRes.data.data)
           setRowCount(usersRes.data.pagination.total)
           setRoles(normalizeRoleOptions(roleOptionsRes.data.data))
+          if (styleOptionsRes) {
+            setStyleOptions(styleOptionsRes.data)
+          }
         }
       } catch (err) {
         if (!ignore) {
@@ -134,7 +144,7 @@ export function SettingsUsersPage() {
     return () => {
       ignore = true
     }
-  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
+  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal, canViewStyles])
 
   const onSortingChange = useCallback((sorting: MRT_SortingState) => {
     const first = sorting[0] ?? null
@@ -157,6 +167,7 @@ export function SettingsUsersPage() {
           email: '',
           password: '',
           role_id: firstRoleId,
+          style_id: null,
         })
       } else {
         setFormError(null)
@@ -172,6 +183,7 @@ export function SettingsUsersPage() {
         email: editUser.email,
         password: '',
         role_id: editUser.role_id ?? roles[0]?.id ?? 0,
+        style_id: editUser.style_id ?? null,
       })
     }
   }, [editUser, editForm, roles])
@@ -190,6 +202,7 @@ export function SettingsUsersPage() {
         email: values.email,
         password: values.password,
         role_id: values.role_id,
+        ...(canViewStyles ? { style_id: values.style_id ?? null } : {}),
       })
       const firstRoleId = roles[0]?.id ?? 0
       createForm.reset({
@@ -197,6 +210,7 @@ export function SettingsUsersPage() {
         email: '',
         password: '',
         role_id: firstRoleId,
+        style_id: null,
       })
       if (!options?.createAnother) {
         setCreateOpen(false)
@@ -220,6 +234,7 @@ export function SettingsUsersPage() {
         name: values.name,
         email: values.email,
         role_id: values.role_id,
+        ...(canViewStyles ? { style_id: values.style_id ?? null } : {}),
       }
       if (values.password.length > 0) {
         payload.password = values.password
@@ -349,6 +364,7 @@ export function SettingsUsersPage() {
         formError={formError}
         form={createForm}
         roles={roles}
+        styleOptions={canViewStyles ? styleOptions : undefined}
         submitting={submitting}
         onSubmit={onCreateSubmit}
       />
@@ -359,6 +375,7 @@ export function SettingsUsersPage() {
         formError={formError}
         form={editForm}
         roles={roles}
+        styleOptions={canViewStyles ? styleOptions : undefined}
         submitting={submitting}
         onSubmit={onEditSubmit}
       />

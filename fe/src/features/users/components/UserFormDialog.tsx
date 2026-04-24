@@ -24,6 +24,7 @@ import type { ManagedUser } from '@/shared/types'
 
 type UserFormValues = UserCreateFormValues | UserUpdateFormValues
 type RoleOption = { id: number; name: string }
+type StyleOption = { id: number; code: string; name: string }
 
 type UserFormDialogProps = {
   open: boolean
@@ -32,6 +33,7 @@ type UserFormDialogProps = {
   formError: string | null
   form: UseFormReturn<UserFormValues>
   roles: RoleOption[]
+  styleOptions?: StyleOption[]
   submitting: boolean
   onSubmit: (
     values: UserFormValues,
@@ -48,10 +50,12 @@ export function UserFormDialog({
   formError,
   form,
   roles,
+  styleOptions,
   submitting,
   onSubmit,
 }: UserFormDialogProps) {
   const isEdit = !!user
+  const showStyleField = styleOptions && styleOptions.length > 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -154,6 +158,34 @@ export function UserFormDialog({
                 </FormItem>
               )}
             />
+
+            {showStyleField ? (
+              <FormField
+                control={form.control}
+                name="style_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Style</FormLabel>
+                    <FormControl>
+                      <SearchableSelect
+                        value={field.value ? String(field.value) : undefined}
+                        onValueChange={(value) => field.onChange(value ? Number(value) : null)}
+                        options={[
+                          { label: '— None —', value: '' },
+                          ...styleOptions.map((style) => ({
+                            label: `${style.name} (${style.code})`,
+                            value: String(style.id),
+                          })),
+                        ]}
+                        placeholder="Select style"
+                        disabled={submitting}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
 
             {formError && open ? (
               <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">

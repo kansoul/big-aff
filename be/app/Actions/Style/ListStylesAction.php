@@ -4,7 +4,6 @@ namespace App\Actions\Style;
 
 use App\Models\Style;
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -18,15 +17,7 @@ class ListStylesAction
      */
     public function execute(array $filters, User $user): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = Style::query();
-
-        $ownership->applyTo($query);
-
-        if (! $user->is_full_access && $user->style_id !== null) {
-            $query->where('id', $user->style_id);
-        }
 
         $query->when(! empty($filters['query']), function ($q) use ($filters): void {
             $search = $filters['query'];

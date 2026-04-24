@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\User;
 
+use App\Enums\Permission;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -25,13 +26,21 @@ class UpdateUserRequest extends FormRequest
         /** @var User $model */
         $model = $this->route('user');
 
-        return [
+        $auth = $this->user();
+
+        $rules = [
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($model->id)],
             'password' => ['sometimes', 'nullable', 'string', 'min:8'],
             'role_id' => ['sometimes', 'integer', 'exists:roles,id'],
             'parent_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
         ];
+
+        if ($auth && ($auth->is_admin || $auth->hasPermissionFlag(Permission::StylesView))) {
+            $rules['style_id'] = ['sometimes', 'nullable', 'integer', 'exists:styles,id'];
+        }
+
+        return $rules;
     }
 
     /**

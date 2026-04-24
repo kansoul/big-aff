@@ -73,6 +73,7 @@ class StyleController extends BaseController
 
         return $this->sendResponse([
             'data' => $styles->map(fn (Style $style) => [
+                'id' => $style->id,
                 'code' => $style->code,
                 'name' => $style->name,
             ]),

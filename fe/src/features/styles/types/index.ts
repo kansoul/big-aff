@@ -32,6 +32,7 @@ export interface StyleBulkCreateResponse {
 }
 
 export interface StyleOption {
+  id: number
   code: string
   name: string
 }

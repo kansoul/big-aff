@@ -25,6 +25,7 @@ class ManagedUserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'role_id' => $this->role_id,
+            'style_id' => $this->style_id,
             'role' => $this->whenLoaded('role', function () {
                 if ($this->role === null) {
                     return null;
@@ -34,6 +35,17 @@ class ManagedUserResource extends JsonResource
                     'id' => $this->role->id,
                     'name' => $this->role->name,
                     'permissions' => $this->role->getPermissionSlugs(),
+                ];
+            }),
+            'style' => $this->whenLoaded('style', function () {
+                if ($this->style === null) {
+                    return null;
+                }
+
+                return [
+                    'id' => $this->style->id,
+                    'code' => $this->style->code,
+                    'name' => $this->style->name,
                 ];
             }),
             'parent_id' => $this->assignedParentLink?->parent_user_id,

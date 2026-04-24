@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\User;
 
+use App\Enums\Permission;
 use App\Enums\TeamRole;
 use App\Models\TeamUser;
 use App\Models\User;
@@ -24,13 +25,19 @@ class StoreUserRequest extends FormRequest
         $auth = $this->user();
         $requiresParent = $auth !== null && ! $auth->managesAllUsers();
 
-        return [
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'role_id' => ['required', 'integer', 'exists:roles,id'],
             'team_id' => ['nullable', 'integer', 'exists:teams,id'],
         ];
+
+        if ($auth && ($auth->is_admin || $auth->hasPermissionFlag(Permission::StylesView))) {
+            $rules['style_id'] = ['nullable', 'integer', 'exists:styles,id'];
+        }
+
+        return $rules;
     }
 
     /**
