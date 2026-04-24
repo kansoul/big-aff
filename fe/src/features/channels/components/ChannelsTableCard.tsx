@@ -7,7 +7,7 @@ import {
   MRT_ShowHideColumnsButton,
   MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
-import { Hash, Plus, Trash2 } from 'lucide-react'
+import { Hash, Plus, Trash2, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -19,7 +19,9 @@ type ChannelsTableCardProps = {
   channels: Channel[]
   canCreate: boolean
   canDelete: boolean
+  canAssign: boolean
   onAddClick: () => void
+  onAssignClick: () => void
   onDeleteRow: (row: Channel) => void
   selectedIds: Set<number>
   onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
@@ -92,7 +94,9 @@ function ChannelsTableCardInner({
   channels,
   canCreate,
   canDelete,
+  canAssign,
   onAddClick,
+  onAssignClick,
   onDeleteRow,
   selectedIds,
   onSelectionChange,
@@ -157,6 +161,20 @@ function ChannelsTableCardInner({
             >
               <Trash2 className="h-3.5 w-3.5" />
               Delete ({selectedIds.size})
+            </Button>
+            <div className="mx-1 h-5 w-px bg-border" />
+          </>
+        ) : null}
+        {canAssign ? (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+              onClick={onAssignClick}
+            >
+              <Users className="h-3.5 w-3.5" />
+              Assign
             </Button>
             <div className="mx-1 h-5 w-px bg-border" />
           </>
