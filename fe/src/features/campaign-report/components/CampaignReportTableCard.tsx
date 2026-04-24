@@ -307,12 +307,18 @@ function getColumns(
     header: 'Account',
     size: 180,
     enableSorting: !grouped,
-    Cell: ({ row }) =>
-      isGroupRow(row.original) ? null : (
-        <span className="text-xs text-muted-foreground">
-          {row.original.account_name ?? row.original.account_id ?? '—'}
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const label = row.original.account_name ?? row.original.account_id ?? '—'
+      return (
+        <span
+          className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-muted-foreground"
+          title={String(label)}
+        >
+          {label}
         </span>
-      ),
+      )
+    },
   }
 
   const colCampaignName: MRT_ColumnDef<TableRow> = {
@@ -350,7 +356,7 @@ function getColumns(
   const colCampaignOnOff: MRT_ColumnDef<TableRow> = {
     id: 'campaign_onoff',
     header: 'On/Off',
-    size: 80,
+    size: 100,
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
@@ -380,17 +386,16 @@ function getColumns(
       if (isGroupRow(row.original)) return null
       const link = getRowArticleLink(row.original)
       if (!link) return <span className="text-muted-foreground/50">—</span>
-      const display = link.length > 70 ? link.slice(0, 70) + '…' : link
       return (
         <a
-          className="font-mono text-[11px] text-primary underline-offset-4 hover:underline"
+          className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[11px] text-primary underline-offset-4 hover:underline"
           href={link}
           target="_blank"
           rel="noopener noreferrer"
           title={link}
           onClick={(e) => e.stopPropagation()}
         >
-          {display}
+          {link}
         </a>
       )
     },
@@ -399,7 +404,7 @@ function getColumns(
   const colTrackingAnalytic: MRT_ColumnDef<TableRow> = {
     id: 'tracking_analytic',
     header: 'Tracking Analytic',
-    size: 150,
+    size: 180,
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
@@ -444,7 +449,7 @@ function getColumns(
   const colAdsType: MRT_ColumnDef<TableRow> = {
     accessorKey: 'ads_type',
     header: 'Ads Type',
-    size: 110,
+    size: 130,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return <span className="text-muted-foreground/50">—</span>
       const val = row.original.ads_type
@@ -491,6 +496,17 @@ function getColumns(
         </span>
       )
     },
+    Footer: () =>
+      summary ? (
+        <span
+          className={cn(
+            'tabular-nums text-xs font-semibold',
+            summary.profit >= 0 ? 'text-emerald-500' : 'text-rose-500',
+          )}
+        >
+          {formatUsd(toNumber(summary.profit))}
+        </span>
+      ) : null,
   }
 
   const colRoi: MRT_ColumnDef<TableRow> = {
@@ -510,13 +526,24 @@ function getColumns(
         </span>
       )
     },
+    Footer: () =>
+      summary ? (
+        <span
+          className={cn(
+            'tabular-nums text-xs font-semibold',
+            summary.roi >= 0 ? 'text-emerald-500' : 'text-rose-500',
+          )}
+        >
+          {formatRoi(toNumber(summary.roi))}
+        </span>
+      ) : null,
   }
 
   // ── Realtime (rt_*) columns ──
   const colRtClickAdCount: MRT_ColumnDef<TableRow> = {
     id: 'rt_click_ad_count',
     header: '🟢 Realtime Clicks',
-    size: 130,
+    size: 180,
     accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.click_ad_count ?? 0)),
     enableSorting: false,
     Cell: ({ row }) => {
@@ -615,59 +642,59 @@ function getColumns(
     colChannelName,
 
     // ── Revenue & spend ──
-    usd('r_revenue', '🟡 Revenue', 120),
-    usd('a_spend', '🔵 Spending', 120),
+    usd('r_revenue', '🟡 Revenue', 160),
+    usd('a_spend', '🔵 Spending', 160),
     colProfit,
     colRoi,
 
     // ── Conversions ──
     colRtClickAdCount, // 🟢 Real-time Conv.
-    count('r_conversion', 'Rev. Conv.', 110), // 🟡 Conv.
-    count('a_conversion', '🔵 ADS Conv.', 110), // 🔵 ADS Conv.
+    count('r_conversion', 'Rev. Conv.', 150), // 🟡 Conv.
+    count('a_conversion', '🔵 ADS Conv.', 150), // 🔵 ADS Conv.
 
     // ── Search impressions & RPM ──
     count('r_impressions', '🟡 Impressions', 160),
-    ratio('r_impressions_rpm', '🟡 Impr. RPM', 120),
-    ratio('r_rpc', '🟡 RPC', 100),
+    ratio('r_impressions_rpm', '🟡 Impr. RPM', 150),
+    ratio('r_rpc', '🟡 RPC', 120),
 
     // ── CPA ──
-    ratio('r_cpa', '🟡 Revenue CPA', 130),
-    ratio('a_cpa', '🔵 ADS CPA', 110),
+    ratio('r_cpa', '🟡 Revenue CPA', 180),
+    ratio('a_cpa', '🔵 ADS CPA', 150),
 
     // ── Search views ──
     colRtViewSearchCount, // 🟢 Realtime Search Views
-    count('r_search_views', '🟡 SearchViews', 160), // 🟡 SearchViews
-    count('a_search_views', '🔵 ADS SearchView', 140), // 🔵 ADS SearchView
+    count('r_search_views', '🟡 SearchViews', 180), // 🟡 SearchViews
+    count('a_search_views', '🔵 ADS SearchView', 200), // 🔵 ADS SearchView
 
     // ── Keyword / funnel ──
     colRtClickKeywordCount, // 🟢 Realtime Keyword Clicks
-    count('a_clicks', '🔵 Supply clicks', 110), // 🔵 Supply clicks
-    count('r_funnel_clicks', '🟡 Funnel Clicks', 140), // 🟡 Funnel Clicks
-    count('r_funnel_requests', '🟡 Funnel Requests', 150), // 🟡 Funnel Requests
-    count('r_funnel_impressions', '🟡 Funnel Impr.', 140), // 🟡 Funnel Impressions
-    ratio('r_funnel_rpm', '🟡 Funnel RPM', 120), // 🟡 Funnel RPM
+    count('a_clicks', '🔵 Supply clicks', 170), // 🔵 Supply clicks
+    count('r_funnel_clicks', '🟡 Funnel Clicks', 170), // 🟡 Funnel Clicks
+    count('r_funnel_requests', '🟡 Funnel Requests', 210), // 🟡 Funnel Requests
+    count('r_funnel_impressions', '🟡 Funnel Impr.', 180), // 🟡 Funnel Impressions
+    ratio('r_funnel_rpm', '🟡 Funnel RPM', 160), // 🟡 Funnel RPM
 
     // ── Ad requests ──
-    count('r_ad_requests', '🟡 Ad Requests', 130),
-    ratio('r_ad_requests_rpm', '🟡 Req. RPM', 110),
+    count('r_ad_requests', '🟡 Ad Requests', 170),
+    ratio('r_ad_requests_rpm', '🟡 Req. RPM', 160),
 
     // ── ADS platform metrics ──
-    ratio('a_ctr_link', '🔵 ADS CTR', 110),
-    count('a_article_views', '🔵 Landingpage view', 150),
-    ratio('a_cpc_link', '🔵 ADS CPC Link', 110),
-    count('a_reach', '🔵 ADS Reach', 110),
-    count('a_impressions', '🔵 ADS Impressions', 120),
-    ratio('a_cpm', '🔵 CPM', 100),
-    ratio('a_frequency', '🔵 Frequency', 110),
-    ratio('a_ctr', '🔵 FB CTR (All)', 100),
+    { ...ratio('a_ctr_link', '🔵 ADS CTR', 160), Footer: undefined },
+    { ...count('a_article_views', '🔵 Landingpage view', 200), Footer: undefined },
+    { ...ratio('a_cpc_link', '🔵 ADS CPC Link', 190), Footer: undefined },
+    { ...count('a_reach', '🔵 ADS Reach', 160), Footer: undefined },
+    { ...count('a_impressions', '🔵 ADS Impressions', 200), Footer: undefined },
+    { ...ratio('a_cpm', '🔵 CPM', 160), Footer: undefined },
+    { ...ratio('a_frequency', '🔵 Frequency', 160), Footer: undefined },
+    { ...ratio('a_ctr', '🔵 FB CTR (All)', 160), Footer: undefined },
 
     // ── Budget ──
-    usd('daily_budget', '🔵 Daily Budget', 130),
-    usd('lifetime_budget', '🔵 Lifetime Budget', 140),
+    { ...usd('daily_budget', '🔵 Daily Budget', 180), Footer: undefined },
+    { ...usd('lifetime_budget', '🔵 Lifetime Budget', 200), Footer: undefined },
 
     // ── Remaining ADS cols ──
-    count('a_ad_clicks', '🔵 Ad Clicks', 110),
-    ratio('a_cpc', '🔵 ADS CPC', 100),
+    { ...count('a_ad_clicks', '🔵 Ad Clicks', 160), Footer: undefined },
+    { ...ratio('a_cpc', '🔵 ADS CPC', 160), Footer: undefined },
 
     // ── Remaining realtime ──
     colRtViewArticleCount,
@@ -713,6 +740,21 @@ function CampaignReportTableCardInner({
   const [revenueRangeTarget, setRevenueRangeTarget] = useState<RevenueDialogTarget | null>(null)
   const [revenueChartOpen, setRevenueChartOpen] = useState(false)
   const [revenueChartTarget, setRevenueChartTarget] = useState<RevenueDialogTarget | null>(null)
+  const [userColumnVisibility, setUserColumnVisibility] = useState<Record<string, boolean>>({})
+
+  const forcedColumnVisibility = useMemo(
+    () =>
+      (grouped ? { date_start: false, campaign_name: false } : { group_label: false }) as Record<
+        string,
+        boolean
+      >,
+    [grouped],
+  )
+
+  const columnVisibility = useMemo(
+    () => ({ ...userColumnVisibility, ...forcedColumnVisibility }),
+    [userColumnVisibility, forcedColumnVisibility],
+  )
 
   const openTrackingAnalytics = useCallback((row: CampaignReportRow) => {
     setTrackingDialogTarget(row)
@@ -826,6 +868,19 @@ function CampaignReportTableCardInner({
     enableColumnFilters: false,
     enableGlobalFilter: false,
     enableColumnPinning: !isMobile,
+    mantineTableHeadCellProps: {
+      sx: {
+        '& .mantine-TableHeadCell-Content-Wrapper': {
+          overflow: 'visible',
+          textOverflow: 'clip',
+          whiteSpace: 'normal',
+          wordBreak: 'break-word',
+        },
+        '& .mantine-TableHeadCell-Content-Labels': {
+          flexWrap: 'wrap',
+        },
+      },
+    },
     enableRowSelection: false,
     positionToolbarAlertBanner: 'none',
     mantinePaginationProps: {
@@ -850,9 +905,17 @@ function CampaignReportTableCardInner({
       columnPinning: {
         left: pinnedLeftColumns,
       },
-      columnVisibility: grouped
-        ? { date_start: false, campaign_name: false }
-        : { group_label: false },
+      columnVisibility,
+    },
+    onColumnVisibilityChange: (updater) => {
+      setUserColumnVisibility((prev) => {
+        const next =
+          typeof updater === 'function' ? updater({ ...prev, ...forcedColumnVisibility }) : updater
+        // Strip forced keys so forced visibility always wins
+        const filtered = { ...next }
+        for (const key of Object.keys(forcedColumnVisibility)) delete filtered[key]
+        return filtered
+      })
     },
     onPaginationChange: (updater) => {
       const current = {

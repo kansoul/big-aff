@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { postsApi } from '@/features/posts/api'
-import { AssignUserPostsTableCard, type UserPostAssignmentRow } from '@/features/posts/components/AssignUserPostsTableCard'
+import {
+  AssignUserPostsTableCard,
+  type UserPostAssignmentRow,
+} from '@/features/posts/components/AssignUserPostsTableCard'
 import type { AssignPostOption } from '@/features/posts/components/AssignUserPostsPicker'
 import { usersApi } from '@/features/users/api/users'
 import { formatApiError } from '@/features/settings/components'
@@ -48,7 +51,7 @@ export function AssignUserPostsPage() {
         ])
 
         if (!ignore) {
-          const rows: UserPostAssignmentRow[] = assignmentsRes.data.data.data.map((u) => ({
+          const rows: UserPostAssignmentRow[] = assignmentsRes.data.data.map((u) => ({
             id: u.id,
             name: u.name,
             email: u.email,
