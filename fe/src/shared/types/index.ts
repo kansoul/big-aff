@@ -28,6 +28,7 @@ export interface ManagedUser {
     id: number
     name: string
   } | null
+  assigned_post_ids?: number[]
   created_at: string | null
   updated_at: string | null
 }

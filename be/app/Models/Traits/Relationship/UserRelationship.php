@@ -5,6 +5,7 @@ namespace App\Models\Traits\Relationship;
 use App\Models\Account;
 use App\Models\Channel;
 use App\Models\File;
+use App\Models\Post;
 use App\Models\Role;
 use App\Models\Site;
 use App\Models\Style;
@@ -99,6 +100,16 @@ trait UserRelationship
     public function campaignRuleSetting(): HasOne
     {
         return $this->hasOne(UserCampaignRuleSetting::class);
+    }
+
+    /**
+     * Posts assigned to this user (view-only access).
+     *
+     * @return BelongsToMany<Post, $this>
+     */
+    public function assignedPosts(): BelongsToMany
+    {
+        return $this->belongsToMany(Post::class, 'post_user')->withTimestamps();
     }
 
     /**

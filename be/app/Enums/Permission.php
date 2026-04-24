@@ -169,6 +169,8 @@ enum Permission: string
     // —— Revenue Report Range ——
     case DashboardUserView = 'dashboard.users.view';     // bit 87 →  151115727451828646838272
 
+    case PostsAssign = 'posts.assign';                           // bit 88 →  309237645312422682265739264
+
     // —— Revenue Report Range ——
     /**
      * Bit value for this permission as a decimal string (2^index).

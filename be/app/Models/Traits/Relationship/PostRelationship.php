@@ -51,4 +51,14 @@ trait PostRelationship
     {
         return $this->belongsToMany(KeywordSet::class, 'post_keyword_sets')->using(PostKeywordSet::class);
     }
+
+    /**
+     * Users assigned to this post (view-only access).
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function assignedUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'post_user')->withTimestamps();
+    }
 }
