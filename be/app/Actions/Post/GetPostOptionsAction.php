@@ -5,6 +5,7 @@ namespace App\Actions\Post;
 use App\Models\Post;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class GetPostOptionsAction
 {
@@ -13,12 +14,21 @@ class GetPostOptionsAction
      */
     public function execute(): Collection
     {
+        $ownership = OwnershipFilter::forAuthUser();
+
         $query = Post::query()
             ->select(['id', 'title', 'slug'])
             ->with('keywordSets:id,name')
             ->orderBy('title');
 
-        OwnershipFilter::forAuthUser()->applyTo($query);
+        if (! $ownership->isAdmin()) {
+            $allowedIds = $ownership->allowedUserIds();
+            $authUserId = Auth::id();
+            $query->where(function ($q) use ($allowedIds, $authUserId): void {
+                $q->whereIn('created_by', $allowedIds)
+                    ->orWhereHas('assignedUsers', fn ($q2) => $q2->where('users.id', $authUserId));
+            });
+        }
 
         return $query->get()
             ->map(fn (Post $post) => [

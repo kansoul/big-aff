@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { postsApi } from '@/features/posts/api'
 import { PostsTableCard, DeletePostDialog } from '@/features/posts/components'
+import { AssignPostsDialog } from '@/features/posts/components/AssignPostsDialog'
 import { formatApiError } from '@/features/settings/components'
 import type { Post, PostFilterParams, PostOrderBy } from '@/features/posts/types'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
@@ -38,6 +39,7 @@ export function PostsPage() {
   const canUpdate = useMemo(() => hasPermission(perms, PermissionSlugs.PostsUpdate), [perms])
   const canDelete = useMemo(() => hasPermission(perms, PermissionSlugs.PostsDelete), [perms])
   const canPublish = useMemo(() => hasPermission(perms, PermissionSlugs.PostsPublish), [perms])
+  const canAssignPosts = useMemo(() => hasPermission(perms, PermissionSlugs.PostsAssign), [perms])
 
   const [data, setData] = useState<Post[]>([])
   const [rowCount, setRowCount] = useState(0)
@@ -45,6 +47,7 @@ export function PostsPage() {
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
   const [filters, setFilters] = useState<PostFilterParams>(DEFAULT_FILTERS)
+  const [assignPostsOpen, setAssignPostsOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Post | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
@@ -226,7 +229,9 @@ export function PostsPage() {
         canUpdate={canUpdate}
         canDelete={canDelete}
         canPublish={canPublish}
+        canAssignPosts={canAssignPosts}
         onAddClick={onAddClick}
+        onAssignPostsClick={() => setAssignPostsOpen(true)}
         onViewRow={onViewRow}
         onEditRow={onEditRow}
         onDeleteRow={onDeleteRow}
@@ -242,6 +247,8 @@ export function PostsPage() {
         onOpenChange={onDeleteOpenChange}
         onSuccess={() => void loadData()}
       />
+
+      <AssignPostsDialog open={assignPostsOpen} onOpenChange={setAssignPostsOpen} />
 
       <BulkDeleteDialog
         open={bulkDeleteOpen}

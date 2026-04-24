@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Post\ListUsersWithPostsAction;
+use App\Http\Requests\Post\AssignUserPostsRequest;
+use App\Http\Requests\Post\ListUsersWithPostsRequest;
 use App\Http\Requests\User\ListUsersRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
@@ -24,6 +27,7 @@ class UserController extends BaseController
     public function __construct(
         private readonly UserService $userService,
         private readonly TeamService $teamService,
+        private readonly ListUsersWithPostsAction $listUsersWithPostsAction,
     ) {}
 
     /**
@@ -115,6 +119,52 @@ class UserController extends BaseController
         return $this->sendResponse([
             'data' => $this->teamService->userTeamOptions($user),
         ]);
+    }
+
+    /**
+     * List users with their assigned posts
+     *
+     * Return a paginated list of users the auth actor can manage,
+     * each including the IDs of posts currently assigned to them.
+     *
+     * @response 200 {"data": [{"id": 1, "name": "User", "email": "user@example.com", "assigned_post_ids": [3, 7]}], "pagination": {"total": 1, "per_page": 30, "current_page": 1, "last_page": 1}}
+     */
+    public function listUsersWithPosts(ListUsersWithPostsRequest $request): JsonResponse
+    {
+        $paginator = $this->listUsersWithPostsAction->execute($request->validated());
+
+        $data = collect($paginator->items())->map(fn (User $user) => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'assigned_post_ids' => $user->assignedPosts->pluck('id')->values()->all(),
+        ]);
+
+        return $this->sendResponse([
+            'data' => $data,
+            'pagination' => $this->parsePagination($paginator),
+        ]);
+    }
+
+    /**
+     * Assign posts to user
+     *
+     * Sync a list of posts assigned to a user for view-only access.
+     * Send an empty array to remove all assigned posts.
+     *
+     * @urlParam user integer required The user ID. Example: 2
+     *
+     * @bodyParam post_ids integer[] required Array of post IDs to assign. Example: [1, 2, 3]
+     *
+     * @response 200 {"message": "Posts assigned successfully."}
+     * @response 403 {"message": "This action is unauthorized."}
+     * @response 404 {"message": "No query results for model [App\\Models\\User] 2"}
+     */
+    public function assignPosts(AssignUserPostsRequest $request, User $user): JsonResponse
+    {
+        $this->userService->assignPosts($user, $request->validated()['post_ids']);
+
+        return $this->sendResponse(['message' => 'Posts assigned successfully.']);
     }
 
     /**

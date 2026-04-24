@@ -7,7 +7,16 @@ import {
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
 } from 'mantine-react-table'
-import { EyeOff, FileText, Globe, GlobeLock, Pencil, Plus, Trash2 } from 'lucide-react'
+import {
+  ClipboardList,
+  EyeOff,
+  FileText,
+  Globe,
+  GlobeLock,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
@@ -207,7 +216,9 @@ type PostsTableCardProps = {
   canUpdate: boolean
   canDelete: boolean
   canPublish: boolean
+  canAssignPosts: boolean
   onAddClick: () => void
+  onAssignPostsClick: () => void
   onViewRow: (row: Post) => void
   onEditRow: (row: Post) => void
   onDeleteRow: (row: Post) => void
@@ -232,7 +243,9 @@ function PostsTableCardInner({
   canUpdate,
   canDelete,
   canPublish,
+  canAssignPosts,
   onAddClick,
+  onAssignPostsClick,
   onViewRow,
   onEditRow,
   onDeleteRow,
@@ -433,6 +446,20 @@ function PostsTableCardInner({
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 Delete ({selectedIds.size})
+              </Button>
+              <div className="mx-1 h-5 w-px bg-border" />
+            </>
+          ) : null}
+          {canAssignPosts ? (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                onClick={onAssignPostsClick}
+              >
+                <ClipboardList className="h-3.5 w-3.5" />
+                Assign Posts
               </Button>
               <div className="mx-1 h-5 w-px bg-border" />
             </>

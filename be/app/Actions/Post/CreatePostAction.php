@@ -21,6 +21,8 @@ class CreatePostAction
 
             $post = Post::create($data);
 
+            $post->assignedUsers()->attach(Auth::id());
+
             if (! empty($keywordSetIds)) {
                 $post->keywordSets()->sync($keywordSetIds);
             }

@@ -28,6 +28,7 @@ export const PermissionSlugs = {
   PostsUpdate: 'posts.update',
   PostsDelete: 'posts.delete',
   PostsPublish: 'posts.publish',
+  PostsAssign: 'posts.assign',
 
   // Categories
   CategoriesView: 'categories.view',
@@ -290,6 +291,7 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           { key: 'PostsUpdate', slug: PermissionSlugs.PostsUpdate, label: 'Update' },
           { key: 'PostsDelete', slug: PermissionSlugs.PostsDelete, label: 'Delete' },
           { key: 'PostsPublish', slug: PermissionSlugs.PostsPublish, label: 'Publish' },
+          { key: 'PostsAssign', slug: PermissionSlugs.PostsAssign, label: 'Assign' },
         ],
       },
     ],
