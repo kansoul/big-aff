@@ -7,6 +7,7 @@ import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { formatApiError } from '@/features/settings/components'
 import { channelsApi } from '@/features/channels/api'
 import {
+  AssignUserChannelsDialog,
   BulkCreateChannelDialog,
   ChannelsTableCard,
   DeleteChannelDialog,
@@ -25,6 +26,7 @@ export function ChannelsPage() {
 
   const canCreate = useMemo(() => hasPermission(perms, PermissionSlugs.ChannelsCreate), [perms])
   const canDelete = useMemo(() => hasPermission(perms, PermissionSlugs.ChannelsDelete), [perms])
+  const canAssign = useMemo(() => hasPermission(perms, PermissionSlugs.ChannelsAssign), [perms])
 
   const [channels, setChannels] = useState<Channel[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,6 +40,7 @@ export function ChannelsPage() {
   const [importSuccessCount, setImportSuccessCount] = useState(0)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [assignOpen, setAssignOpen] = useState(false)
 
   const createForm = useForm<ChannelBulkCreateFormValues>({
     resolver: zodResolver(channelBulkCreateSchema),
@@ -155,12 +158,15 @@ export function ChannelsPage() {
         channels={channels}
         canCreate={canCreate}
         canDelete={canDelete}
+        canAssign={canAssign}
         onAddClick={onAddClick}
+        onAssignClick={() => setAssignOpen(true)}
         onDeleteRow={onDeleteRow}
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         onBulkDeleteClick={onBulkDeleteClick}
       />
+      <AssignUserChannelsDialog open={assignOpen} onOpenChange={setAssignOpen} />
       <BulkCreateChannelDialog
         open={createOpen}
         onOpenChange={onCreateOpenChange}

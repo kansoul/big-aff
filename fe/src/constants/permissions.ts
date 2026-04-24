@@ -45,6 +45,7 @@ export const PermissionSlugs = {
   ChannelsView: 'channels.view',
   ChannelsCreate: 'channels.create',
   ChannelsDelete: 'channels.delete',
+  ChannelsAssign: 'channels.assign',
 
   // Follows
   FollowsView: 'follows.view',
@@ -338,6 +339,7 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           { key: 'ChannelsView', slug: PermissionSlugs.ChannelsView, label: 'View' },
           { key: 'ChannelsCreate', slug: PermissionSlugs.ChannelsCreate, label: 'Create' },
           { key: 'ChannelsDelete', slug: PermissionSlugs.ChannelsDelete, label: 'Delete' },
+          { key: 'ChannelsAssign', slug: PermissionSlugs.ChannelsAssign, label: 'Assign users' },
         ],
       },
     ],
