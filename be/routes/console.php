@@ -33,3 +33,8 @@ Schedule::command('reports:fetch-ads-adsets-by-facebook')
     ->everyFiveMinutes()
     ->name('fetch-ads-adsets-by-facebook')
     ->withoutOverlapping(20);
+
+Schedule::command('campaigns:run-schedules')
+    ->name('run-campaign-schedules')
+    ->withoutOverlapping(30)
+    ->everyFiveMinutes();
