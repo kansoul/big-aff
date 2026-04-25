@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { Account, AccountFilterParams } from '@/features/accounts/types'
+import { ACCOUNT_STATUS_OPTIONS } from '@/features/accounts/types'
 import type { SearchableSelectOption } from '@/components/common/SearchableSelect'
 import { AssignUserAccountsDialog } from './AssignUserAccountsDialog'
 
@@ -272,9 +273,10 @@ function AccountsTableCardInner({
       {
         field: 'status',
         label: 'Status',
-        type: 'input',
+        type: 'select',
         value: filters.status ?? null,
-        placeholder: 'e.g. active',
+        options: [...ACCOUNT_STATUS_OPTIONS],
+        placeholder: 'All statuses',
       },
       {
         field: 'business_center_id',
@@ -327,7 +329,9 @@ function AccountsTableCardInner({
           values.ads_type === 'unknown'
             ? values.ads_type
             : undefined,
-        status: typeof values.status === 'string' ? values.status : undefined,
+        status: ACCOUNT_STATUS_OPTIONS.some((option) => option.value === values.status)
+          ? (values.status as AccountFilterParams['status'])
+          : undefined,
         business_center_id: parseNullableId(values.business_center_id),
         team_id: parseNullableId(values.team_id),
       })

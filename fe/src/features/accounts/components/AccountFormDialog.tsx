@@ -31,7 +31,11 @@ import type {
   AccountCreateFormValues,
   AccountUpdateFormValues,
 } from '@/features/accounts/types'
-import { accountCreateSchema, accountUpdateSchema } from '@/features/accounts/types'
+import {
+  ACCOUNT_STATUS_OPTIONS,
+  accountCreateSchema,
+  accountUpdateSchema,
+} from '@/features/accounts/types'
 import { formatApiError } from '@/features/settings/components'
 import { teamsApi } from '@/features/teams/api'
 
@@ -39,12 +43,6 @@ const ADS_TYPE_OPTIONS = [
   { value: 'facebook', label: 'Facebook' },
   { value: 'google', label: 'Google' },
 ] as const
-
-const STATUS_OPTIONS = [
-  { value: 'active', label: 'Active' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'die', label: 'Die' },
-]
 
 type TeamMember = { id: number; name: string; email: string }
 
@@ -294,7 +292,7 @@ export function CreateAccountDialog({
                     <SearchableSelect
                       value={field.value ?? undefined}
                       onValueChange={field.onChange}
-                      options={STATUS_OPTIONS}
+                      options={[...ACCOUNT_STATUS_OPTIONS]}
                       placeholder="Select status"
                       disabled={submitting}
                     />
@@ -650,7 +648,7 @@ export function EditAccountDialog({
                     <SearchableSelect
                       value={field.value ?? undefined}
                       onValueChange={(value) => field.onChange(value === '__none__' ? null : value)}
-                      options={[...STATUS_OPTIONS]}
+                      options={[...ACCOUNT_STATUS_OPTIONS]}
                       placeholder="Select status"
                       disabled={submitting}
                     />

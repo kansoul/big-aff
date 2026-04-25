@@ -1,5 +1,11 @@
 import { z } from 'zod'
 
+export const ACCOUNT_STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'die', label: 'Die' },
+] as const
+
 export type AccountAdsType = 'facebook' | 'google' | 'unknown'
 export type AccountOrderBy =
   | 'id'
