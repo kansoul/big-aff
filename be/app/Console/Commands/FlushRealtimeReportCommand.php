@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
 
 class FlushRealtimeReportCommand extends Command
 {
@@ -20,13 +21,11 @@ class FlushRealtimeReportCommand extends Command
     public function handle(): void
     {
         $keys = $this->scanKeys('tracking_daily:*');
-
         if (empty($keys)) {
             return;
         }
 
         $rows = $this->collectRows($keys);
-
         if (empty($rows)) {
             return;
         }
@@ -46,12 +45,17 @@ class FlushRealtimeReportCommand extends Command
     private function scanKeys(string $pattern): array
     {
         $keys = [];
-        $cursor = '0';
+        $cursor = 0;
 
         do {
-            [$cursor, $found] = Redis::scan($cursor, 'MATCH', $pattern, 'COUNT', 200);
+            $result = Redis::scan($cursor, $pattern, 200);
+            if ($result === false) {
+                break;
+            }
+            [$cursor, $found] = $result;
             $keys = array_merge($keys, $found ?? []);
-        } while ($cursor !== '0');
+            $cursor = (int) $cursor;
+        } while ($cursor !== 0);
 
         return array_unique($keys);
     }
@@ -72,9 +76,9 @@ class FlushRealtimeReportCommand extends Command
 
         $rows = [];
         $now = now();
-
         foreach ($keys as $key) {
-            $parts = explode(':', $key, 3);
+            $normalizedKey = $this->normalizeRedisKey($key);
+            $parts = explode(':', $normalizedKey, 3);
 
             if (count($parts) !== 3) {
                 continue;
@@ -83,7 +87,7 @@ class FlushRealtimeReportCommand extends Command
             [, $date, $linkDataId] = $parts;
 
             /** @var list<string> $hash */
-            $hash = Redis::eval($script, 1, $key);
+            $hash = Redis::eval($script, 1, $normalizedKey);
 
             if (empty($hash)) {
                 continue;
@@ -105,6 +109,17 @@ class FlushRealtimeReportCommand extends Command
         }
 
         return $rows;
+    }
+
+    private function normalizeRedisKey(string $key): string
+    {
+        $prefix = (string) config('database.redis.options.prefix', '');
+
+        if ($prefix !== '' && Str::startsWith($key, $prefix)) {
+            return (string) Str::after($key, $prefix);
+        }
+
+        return $key;
     }
 
     /**
