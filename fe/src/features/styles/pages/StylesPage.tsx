@@ -35,7 +35,6 @@ export function StylesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [importErrors, setImportErrors] = useState<string[]>([])
-  const [importSuccessCount, setImportSuccessCount] = useState(0)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
 
@@ -66,7 +65,6 @@ export function StylesPage() {
       if (open) {
         setFormError(null)
         setImportErrors([])
-        setImportSuccessCount(0)
         createForm.reset({ lines: '' })
       }
     },
@@ -78,9 +76,34 @@ export function StylesPage() {
       setFormError(null)
       setSubmitting(true)
       const result = await stylesApi.bulkCreate(values)
-      setImportErrors(result.errors ?? [])
-      setImportSuccessCount(result.data?.length ?? 0)
-      if (result.data?.length > 0) {
+      const errors = result.errors ?? []
+      const successCount = result.data?.length ?? 0
+      setImportErrors(errors)
+      if (successCount > 0) {
+        toast.success(`${successCount} style(s) created successfully.`)
+        createForm.reset({ lines: '' })
+        await loadData()
+        if (errors.length === 0) {
+          setCreateOpen(false)
+        }
+      }
+    } catch (err) {
+      setFormError(formatApiError(err))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const onCreateAnotherSubmit = async (values: StyleBulkCreateFormValues) => {
+    try {
+      setFormError(null)
+      setSubmitting(true)
+      const result = await stylesApi.bulkCreate(values)
+      const errors = result.errors ?? []
+      const successCount = result.data?.length ?? 0
+      setImportErrors(errors)
+      if (successCount > 0) {
+        toast.success(`${successCount} style(s) created successfully.`)
         createForm.reset({ lines: '' })
         await loadData()
       }
@@ -144,7 +167,6 @@ export function StylesPage() {
   const onAddClick = useCallback(() => {
     setFormError(null)
     setImportErrors([])
-    setImportSuccessCount(0)
     setCreateOpen(true)
   }, [])
 
@@ -168,8 +190,8 @@ export function StylesPage() {
         submitting={submitting}
         formError={formError}
         importErrors={importErrors}
-        importSuccessCount={importSuccessCount}
         onSubmit={onCreateSubmit}
+        onSubmitAnother={onCreateAnotherSubmit}
       />
       <DeleteStyleDialog
         style={deleteRow}

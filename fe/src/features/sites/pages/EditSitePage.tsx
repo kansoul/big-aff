@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AlertCircle, ArrowLeft, Eye, Loader2, Save } from 'lucide-react'
@@ -26,7 +26,7 @@ export function EditSitePage() {
   const [siteData, setSiteData] = useState<SiteDetail | null>(null)
 
   const form = useForm<SiteCreateFormValues>({
-    resolver: zodResolver(siteCreateSchema) as any, // TODO: fix zodResolver type
+    resolver: zodResolver(siteCreateSchema) as Resolver<SiteCreateFormValues>,
     defaultValues: {
       name: '',
       url: '',
@@ -100,15 +100,16 @@ export function EditSitePage() {
           <Button
             type="button"
             variant="ghost"
-            size="icon"
-            className="h-8 w-8"
+            size="sm"
+            className="h-8 gap-1.5 px-2 text-sm text-muted-foreground hover:text-foreground"
+            aria-label="Back to Sites"
             onClick={() => {
               void navigate(PATHS.settingsSites)
             }}
           >
             <ArrowLeft className="h-4 w-4" />
+            Back to Sites
           </Button>
-          <span className="text-sm text-muted-foreground">Back to Sites</span>
         </div>
         <div className="flex items-center gap-2">
           {siteData && (

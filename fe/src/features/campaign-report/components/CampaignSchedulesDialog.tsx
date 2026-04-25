@@ -199,6 +199,7 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
           size="icon"
           className="hidden h-7 w-7 sm:inline-flex"
           disabled={page <= 1}
+          aria-label="First page"
           onClick={() => onPaginationChange(1, perPage)}
         >
           <ChevronFirst className="h-3.5 w-3.5" />
@@ -208,6 +209,7 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
           size="icon"
           className="h-7 w-7"
           disabled={page <= 1}
+          aria-label="Previous page"
           onClick={() => onPaginationChange(page - 1, perPage)}
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -238,6 +240,7 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
           size="icon"
           className="h-7 w-7"
           disabled={page >= totalPages}
+          aria-label="Next page"
           onClick={() => onPaginationChange(page + 1, perPage)}
         >
           <ChevronRight className="h-3.5 w-3.5" />
@@ -247,6 +250,7 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
           size="icon"
           className="hidden h-7 w-7 sm:inline-flex"
           disabled={page >= totalPages}
+          aria-label="Last page"
           onClick={() => onPaginationChange(totalPages, perPage)}
         >
           <ChevronLast className="h-3.5 w-3.5" />
@@ -559,26 +563,30 @@ function CampaignSchedulesDialogInner({
                           onCheckedChange={() => void handleToggleActive(row)}
                         />
                       </TableCell>
-                      <TableCell className="w-15 text-right">
+                      <TableCell className="min-w-[150px] text-right">
                         <div className="flex items-center justify-end gap-0.5">
                           <Button
                             variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            size="sm"
+                            className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                            aria-label={`Edit schedule ${row.name}`}
                             onClick={() => {
                               setEditItem(row)
                               setFormOpen(true)
                             }}
                           >
                             <Pencil className="h-3.5 w-3.5" />
+                            Edit
                           </Button>
                           <Button
                             variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            size="sm"
+                            className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
+                            aria-label={`Delete schedule ${row.name}`}
                             onClick={() => setDeleteItem(row)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
+                            Delete
                           </Button>
                         </div>
                       </TableCell>

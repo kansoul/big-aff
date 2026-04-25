@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react'
+import { memo, useState } from 'react'
 import { Loader2, Save, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -48,17 +48,13 @@ type PostIdsTextareaProps = {
 
 function PostIdsTextarea({ value, disabled, onChange }: PostIdsTextareaProps) {
   const [text, setText] = useState(() => idsToText(value))
-
-  useEffect(() => {
-    if (hasSelectionDiff(parsePostIds(text), value)) {
-      setText(idsToText(value))
-    }
-  }, [value]) // eslint-disable-line react-hooks/exhaustive-deps
+  const parsedTextIds = parsePostIds(text)
+  const displayText = hasSelectionDiff(parsedTextIds, value) ? idsToText(value) : text
 
   return (
     <Textarea
       disabled={disabled}
-      value={text}
+      value={displayText}
       placeholder="Enter post IDs, one per line or comma separated"
       className="min-h-[120px] max-h-[240px] font-mono text-sm"
       onChange={(e) => {

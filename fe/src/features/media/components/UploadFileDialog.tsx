@@ -141,14 +141,17 @@ export function UploadFileDialog({
                   <span className="shrink-0 text-xs text-muted-foreground">
                     {(selectedFile.size / 1024).toFixed(1)} KB
                   </span>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={handleClearFile}
-                    className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+                    className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground hover:text-destructive"
                     aria-label="Remove file"
                   >
                     <X className="h-3.5 w-3.5" />
-                  </button>
+                    Remove
+                  </Button>
                 </div>
               ) : (
                 <Input

@@ -248,14 +248,17 @@ function RangeRow({
           {index + 1}
         </span>
         {canRemove && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onRemove}
-            className="text-destructive/60 transition-colors hover:text-destructive"
+            className="h-7 gap-1 px-2 text-xs text-destructive/60 hover:text-destructive"
             aria-label="Remove range"
           >
-            <Trash2 className="h-4 w-4" />
-          </button>
+            <Trash2 className="h-3.5 w-3.5" />
+            Remove
+          </Button>
         )}
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">

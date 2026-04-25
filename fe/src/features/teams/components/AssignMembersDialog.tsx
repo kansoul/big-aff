@@ -65,9 +65,7 @@ export function AssignMembersDialog({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onOpenChange(false)}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>
-            {team ? `Manage Members · ${team.name}` : 'Manage Members'}
-          </DialogTitle>
+          <DialogTitle>{team ? `Manage Members · ${team.name}` : 'Manage Members'}</DialogTitle>
           <DialogDescription>
             Assign users to each role. A user can only belong to one role at a time.
           </DialogDescription>

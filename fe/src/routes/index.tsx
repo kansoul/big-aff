@@ -69,7 +69,9 @@ export const router = createBrowserRouter([
             path: routeSegment(PATHS.media),
             lazy: async () => {
               const { MediaPage } = await import('@/features/media/pages/MediaPage')
-              return { Component: MediaPage }
+              return {
+                Component: withPermission(MediaPage, PermissionSlugs.FilesView),
+              }
             },
             handle: { title: 'Media' },
           },

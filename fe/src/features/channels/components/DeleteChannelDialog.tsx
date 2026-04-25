@@ -23,7 +23,11 @@ type DeleteChannelDialogProps = {
   onSuccess: () => void
 }
 
-export function DeleteChannelDialog({ channel, onOpenChange, onSuccess }: DeleteChannelDialogProps) {
+export function DeleteChannelDialog({
+  channel,
+  onOpenChange,
+  onSuccess,
+}: DeleteChannelDialogProps) {
   const [deleting, setDeleting] = useState(false)
 
   const onConfirm = async () => {

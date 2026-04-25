@@ -150,9 +150,12 @@ export function PostsPage() {
             note: row.note,
             description: row.description,
             content: row.content,
+            feature_media_id: row.feature_media_id,
             status: row.status,
             type: row.type ?? 'normal',
             category_id: row.category_id,
+            published_at: row.published_at,
+            keyword_set_ids: row.keyword_sets?.map((ks) => ks.id) ?? null,
             is_hidden: !row.is_hidden,
           })
           toast.success(row.is_hidden ? 'Post unhidden successfully' : 'Post hidden successfully')

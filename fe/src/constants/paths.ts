@@ -12,8 +12,6 @@ export const PATHS = {
   postsView: '/posts/:id',
   postsEdit: '/posts/:id/edit',
   settingsUsers: '/users',
-  settingsUsersAssign: '/users-assign',
-  settingsUsersAssignAccounts: '/users-accounts',
   settingsRoles: '/roles',
   settingsSites: '/sites',
   settingsSitesCreate: '/sites/create',
@@ -24,15 +22,11 @@ export const PATHS = {
   styles: '/styles',
   follows: '/follows',
   teams: '/teams',
-  teamsAssignUsers: '/teams-assign-users',
   adsLinks: '/ads-links',
   businessCenters: '/business-centers',
-  businessCentersCreate: '/business-centers/create',
-  businessCentersEdit: '/business-centers/:id/edit',
   accounts: '/accounts',
   adClients: '/ad-clients',
   adsReport: '/ads-report',
-  styleReport: '/style-report',
   teamReport: '/team-report',
   campaignRuleSettings: '/campaign-rule-settings',
   googleConversions: '/google-conversions',
@@ -46,8 +40,6 @@ export const postEditPath = (id: number | string) => `/posts/${id}/edit`
 
 export const siteViewPath = (id: number | string) => `/sites/${id}`
 export const siteEditPath = (id: number | string) => `/sites/${id}/edit`
-
-export const businessCenterEditPath = (id: number | string) => `/business-centers/${id}/edit`
 
 /** Identifies a top-level nav group; set on route `handle.navSection` and optional `NavItem.navSection`. */
 export const NAV_SECTIONS = {

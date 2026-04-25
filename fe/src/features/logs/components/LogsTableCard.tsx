@@ -1,10 +1,16 @@
 import { memo, useMemo } from 'react'
-import { MantineReactTable, useMantineReactTable, type MRT_ColumnDef } from 'mantine-react-table'
+import {
+  MantineReactTable,
+  MRT_ShowHideColumnsButton,
+  useMantineReactTable,
+  type MRT_ColumnDef,
+} from 'mantine-react-table'
 import { RefreshCw, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { LogLevelBadge } from '@/features/logs/components/LogLevelBadge'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { LogEntry, LogFilters, LogPagination } from '@/features/logs/types'
 
 const LOG_LEVEL_OPTIONS: { label: string; value: string }[] = [
@@ -81,6 +87,8 @@ export const LogsTableCard = memo(function LogsTableCard({
   onClear,
   onRowClick,
 }: Props) {
+  const isMobile = useIsMobile()
+
   const fileSelectOptions = useMemo(
     () => fileOptions.map((f) => ({ label: f, value: f })),
     [fileOptions],
@@ -122,6 +130,13 @@ export const LogsTableCard = memo(function LogsTableCard({
     rowCount: pagination.total,
     enableSorting: false,
     enableColumnActions: false,
+    enableColumnPinning: !isMobile,
+    mantineTableContainerProps: {
+      style: {
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+      },
+    },
     enableGlobalFilter: false,
     enableFilters: false,
     enableFullScreenToggle: false,
@@ -144,9 +159,10 @@ export const LogsTableCard = memo(function LogsTableCard({
       onClick: () => onRowClick(row.original),
       style: { cursor: 'pointer' },
     }),
-    renderTopToolbar: () => (
+    renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
         <div className="flex w-full items-center justify-end gap-2">
+          <MRT_ShowHideColumnsButton table={t} />
           <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading}>
             <RefreshCw className={`mr-1 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh

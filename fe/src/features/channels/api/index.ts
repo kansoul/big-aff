@@ -6,6 +6,17 @@ import type {
   ChannelOption,
 } from '@/features/channels/types'
 import type { ChannelOptionForAssign } from '@/features/channels/types/userChannelAssignments'
+
+type UserChannelAssignmentsResponse = {
+  data: Array<{
+    user_id: number
+    name: string
+    email: string
+    channels: ChannelOptionForAssign[]
+  }>
+  pagination: { total: number; per_page: number; current_page: number; last_page: number }
+}
+
 export const channelsApi = {
   async list(params?: {
     query?: string
@@ -35,11 +46,11 @@ export const channelsApi = {
     query?: string
     per_page?: number
     page?: number
-  }): Promise<{
-    data: Array<{ user_id: number; name: string; email: string; channels: ChannelOptionForAssign[] }>
-    pagination: { total: number; per_page: number; current_page: number; last_page: number }
-  }> {
-    const res = await axiosInstance.get('/users/channel-assignments', { params })
+  }): Promise<UserChannelAssignmentsResponse> {
+    const res = await axiosInstance.get<UserChannelAssignmentsResponse>(
+      '/users/channel-assignments',
+      { params },
+    )
     return res.data
   },
 

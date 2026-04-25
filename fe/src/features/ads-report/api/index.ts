@@ -1,6 +1,9 @@
 import { axiosInstance } from '@/shared/api/axios'
 import { isNil } from '@/lib/utils'
-import type { AdsReportStatsFilterParams, AdsReportStatsResponse } from '@/features/ads-report/types'
+import type {
+  AdsReportStatsFilterParams,
+  AdsReportStatsResponse,
+} from '@/features/ads-report/types'
 
 export const adsReportApi = {
   stats: (filters: AdsReportStatsFilterParams) =>
