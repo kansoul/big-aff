@@ -208,7 +208,7 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
     {
       id: 'actions',
       header: 'Actions',
-      size: 100,
+      size: 150,
       enableSorting: false,
       enableGlobalFilter: false,
       enableHiding: false,
@@ -225,20 +225,21 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
                 aria-label="Edit"
                 onClick={() => onEditRow(link)}
               >
                 <Pencil className="h-3.5 w-3.5" />
+                Edit
               </Button>
             ) : null}
             {isOwner ? (
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
                 aria-label={link.is_hidden ? 'Show' : 'Hide'}
                 onClick={() => onToggleHide(link)}
               >
@@ -247,6 +248,7 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
                 ) : (
                   <EyeOff className="h-3.5 w-3.5" />
                 )}
+                {link.is_hidden ? 'Show' : 'Hide'}
               </Button>
             ) : null}
           </div>

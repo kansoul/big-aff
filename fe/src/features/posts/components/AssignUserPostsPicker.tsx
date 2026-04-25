@@ -40,9 +40,7 @@ function AssignUserPostsPickerInner({
 
   const filtered = useMemo(() => {
     if (!q) return options
-    return options.filter(
-      (o) => o.title.toLowerCase().includes(q) || String(o.id).includes(q),
-    )
+    return options.filter((o) => o.title.toLowerCase().includes(q) || String(o.id).includes(q))
   }, [options, q])
 
   const toggle = (id: number) => {

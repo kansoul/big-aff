@@ -149,8 +149,8 @@ export function LogsPage() {
             setPerPage(p)
             setPage(1)
           }}
-          onRefresh={refresh}
-          onClear={handleClearLogs}
+          onRefresh={() => void refresh()}
+          onClear={() => void handleClearLogs()}
           onRowClick={setSelectedEntry}
         />
       </div>

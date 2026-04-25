@@ -3,7 +3,10 @@ import { AlertCircle, Search } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { channelsApi } from '@/features/channels/api'
-import type { ChannelOptionForAssign, UserChannelAssignmentRow } from '@/features/channels/types/userChannelAssignments'
+import type {
+  ChannelOptionForAssign,
+  UserChannelAssignmentRow,
+} from '@/features/channels/types/userChannelAssignments'
 import { AssignUserChannelsTableCard } from '@/features/channels/components/AssignUserChannelsTableCard'
 
 import { formatApiError } from '@/features/settings/components'

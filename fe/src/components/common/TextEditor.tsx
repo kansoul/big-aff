@@ -222,7 +222,8 @@ export const TextEditor = memo(function TextEditor({
 
   const handleLinkOpen = useCallback(() => {
     if (!editor) return
-    setLinkUrl(editor.getAttributes('link').href ?? '')
+    const href = editor.getAttributes('link').href
+    setLinkUrl(typeof href === 'string' ? href : '')
     setLinkOpen(true)
   }, [editor])
 

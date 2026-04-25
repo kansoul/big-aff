@@ -36,6 +36,7 @@ export function LogEntryDetailDrawer({ entry, onClose }: Props) {
               variant="ghost"
               size="icon-sm"
               onClick={copyRaw}
+              aria-label="Copy raw entry"
               title="Copy raw entry"
               className="mr-4"
             >

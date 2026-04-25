@@ -131,22 +131,24 @@ function getColumns({ onDeleteFile, onPreviewClick }: ColumnMeta): MRT_ColumnDef
     {
       id: 'actions',
       header: 'Action',
-      size: 80,
+      size: 90,
       enableSorting: false,
       enableHiding: false,
       mantineTableHeadCellProps: {
-        sx: { width: 80, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+        sx: { width: 90, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
       },
-      mantineTableBodyCellProps: { style: { width: 80 } },
+      mantineTableBodyCellProps: { style: { width: 90 } },
       Cell: ({ row }) => (
         <div className="flex justify-end">
           <Button
             variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+            size="sm"
+            className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
+            aria-label={`Delete ${row.original.original_name}`}
             onClick={() => onDeleteFile(row.original)}
           >
             <Trash2 className="h-3.5 w-3.5" />
+            Delete
           </Button>
         </div>
       ),

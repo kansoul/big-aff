@@ -71,38 +71,40 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdClient>[] {
     {
       id: 'actions',
       header: 'Action',
-      size: 80,
+      size: 150,
       enableSorting: false,
       enableGlobalFilter: false,
       enableHiding: false,
       mantineTableHeadCellProps: {
-        sx: { width: 80, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+        sx: { width: 150, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
       },
-      mantineTableBodyCellProps: { style: { width: 80 } },
+      mantineTableBodyCellProps: { style: { width: 150 } },
       Cell: ({ row }: { row: { original: AdClient } }) => (
         <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
           {canUpdate ? (
             <Button
               type="button"
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              size="sm"
+              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
               aria-label={`Edit ${row.original.ad_client_id}`}
               onClick={() => onEditRow(row.original)}
             >
               <Pencil className="h-3.5 w-3.5" />
+              Edit
             </Button>
           ) : null}
           {canDelete ? (
             <Button
               type="button"
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              size="sm"
+              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
               aria-label={`Delete ${row.original.ad_client_id}`}
               onClick={() => onDeleteRow(row.original)}
             >
               <Trash2 className="h-3.5 w-3.5" />
+              Delete
             </Button>
           ) : null}
         </div>

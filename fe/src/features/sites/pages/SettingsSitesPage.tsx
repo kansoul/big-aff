@@ -247,7 +247,9 @@ export function SettingsSitesPage() {
       />
       <AssignSiteUsersDialog
         open={!!assigningSite}
-        onOpenChange={(open) => { if (!open) setAssigningSite(null) }}
+        onOpenChange={(open) => {
+          if (!open) setAssigningSite(null)
+        }}
         site={assigningSite}
         options={assignOptions}
         optionsLoading={assignOptionsLoading}

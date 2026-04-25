@@ -244,42 +244,46 @@ export function KeywordSetPickerDialog({
             {
               id: 'actions',
               header: 'Action',
-              size: 80,
+              size: 150,
               enableSorting: false,
               enableHiding: false,
               mantineTableHeadCellProps: {
                 sx: {
-                  width: 80,
+                  width: 150,
                   '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
                 },
               },
-              mantineTableBodyCellProps: { style: { width: 80 } },
+              mantineTableBodyCellProps: { style: { width: 150 } },
               Cell: ({ row }: { row: { original: KeywordSet } }) => (
                 <div className="flex justify-end gap-0.5">
                   {canUpdate && (
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      size="sm"
+                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                      aria-label={`Edit ${row.original.name}`}
                       onClick={(e) => {
                         e.stopPropagation()
                         setEditTarget(row.original)
                       }}
                     >
                       <Pencil className="h-3.5 w-3.5" />
+                      Edit
                     </Button>
                   )}
                   {canDelete && (
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      size="sm"
+                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
+                      aria-label={`Delete ${row.original.name}`}
                       onClick={(e) => {
                         e.stopPropagation()
                         setDeleteTarget(row.original)
                       }}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
+                      Delete
                     </Button>
                   )}
                 </div>

@@ -86,7 +86,11 @@ export function ImportBulkDialog({ open, onOpenChange, onSuccess }: ImportBulkDi
           >
             Cancel
           </Button>
-          <Button type="button" disabled={submitting || !lines.trim()} onClick={handleSubmit}>
+          <Button
+            type="button"
+            disabled={submitting || !lines.trim()}
+            onClick={() => void handleSubmit()}
+          >
             {submitting ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />

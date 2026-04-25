@@ -18,6 +18,7 @@ import {
   Trash2,
 } from 'lucide-react'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
@@ -80,6 +81,37 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
       Cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
+      accessorKey: 'type',
+      header: 'Type',
+      size: 100,
+      enableSorting: false,
+      Cell: ({ row }) => {
+        const type = row.original.type
+        if (!type) return <span className="text-muted-foreground/30 text-xs">—</span>
+        const config: Record<
+          string,
+          { label: string; variant: 'secondary' | 'warning' | 'outline' }
+        > = {
+          normal: { label: 'Normal', variant: 'secondary' },
+          ai: { label: 'AI', variant: 'warning' },
+          wordpress: { label: 'WordPress', variant: 'outline' },
+        }
+        const { label, variant } = config[type] ?? { label: type, variant: 'outline' }
+        return <Badge variant={variant}>{label}</Badge>
+      },
+    },
+    {
+      accessorKey: 'category',
+      header: 'Category',
+      size: 130,
+      enableSorting: false,
+      Cell: ({ row }) => {
+        const category = row.original.category
+        if (!category) return <span className="text-muted-foreground/30 text-xs">—</span>
+        return <span className="text-muted-foreground text-xs">{category.name}</span>
+      },
+    },
+    {
       accessorKey: 'created_by',
       header: 'User',
       size: 90,
@@ -98,16 +130,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
           {row.original.note ?? <span className="opacity-30">—</span>}
         </span>
       ),
-    },
-    {
-      accessorKey: 'published_at',
-      header: 'Published At',
-      size: 150,
-      Cell: ({ row }) => {
-        const d = row.original.published_at
-        if (!d) return <span className="text-muted-foreground/50">—</span>
-        return <span className="text-muted-foreground">{new Date(d).toLocaleString()}</span>
-      },
     },
     {
       id: 'actions',
@@ -406,7 +428,7 @@ function PostsTableCardInner({
       sorting,
       showLoadingOverlay: loading,
       rowSelection,
-      columnPinning: { right: isMobile ? [] : ['actions'] },
+      // columnPinning: { right: isMobile ? [] : ['actions'] },
     },
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =

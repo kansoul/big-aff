@@ -357,6 +357,7 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
           size="icon"
           className="hidden h-7 w-7 sm:inline-flex"
           disabled={page <= 1}
+          aria-label="First page"
           onClick={() => onPaginationChange(1, perPage)}
         >
           <ChevronFirst className="h-3.5 w-3.5" />
@@ -366,6 +367,7 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
           size="icon"
           className="h-7 w-7"
           disabled={page <= 1}
+          aria-label="Previous page"
           onClick={() => onPaginationChange(page - 1, perPage)}
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -396,6 +398,7 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
           size="icon"
           className="h-7 w-7"
           disabled={page >= totalPages}
+          aria-label="Next page"
           onClick={() => onPaginationChange(page + 1, perPage)}
         >
           <ChevronRight className="h-3.5 w-3.5" />
@@ -405,6 +408,7 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
           size="icon"
           className="hidden h-7 w-7 sm:inline-flex"
           disabled={page >= totalPages}
+          aria-label="Last page"
           onClick={() => onPaginationChange(totalPages, perPage)}
         >
           <ChevronLast className="h-3.5 w-3.5" />

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Control, FieldPath, FieldValues } from 'react-hook-form'
 import {
   MantineReactTable,
+  MRT_ShowHideColumnsButton,
   useMantineReactTable,
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
@@ -212,12 +213,15 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
     enableColumnActions: false,
     enableFullScreenToggle: false,
     enableDensityToggle: false,
-    enableHiding: false,
     enablePagination: false,
     positionToolbarAlertBanner: 'none',
     initialState: { density: 'md' },
     mantineTableContainerProps: { sx: { maxHeight: 320, overflowY: 'auto' } },
-    renderTopToolbar: () => null,
+    renderTopToolbar: ({ table: t }) => (
+      <div className="flex justify-end border-b border-border px-2 py-1">
+        <MRT_ShowHideColumnsButton table={t} />
+      </div>
+    ),
     renderBottomToolbar: () => (
       <div className="flex items-center justify-between border-t border-border px-3 py-2">
         <div className="flex items-center gap-2">
@@ -243,6 +247,7 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
             size="icon"
             className="size-7"
             disabled={pageIndex === 0}
+            aria-label="First page"
             onClick={() => {
               setLoading(true)
               setPageIndex(0)
@@ -256,6 +261,7 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
             size="icon"
             className="size-7"
             disabled={pageIndex === 0}
+            aria-label="Previous page"
             onClick={() => {
               setLoading(true)
               setPageIndex((p) => p - 1)
@@ -269,6 +275,7 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
             size="icon"
             className="size-7"
             disabled={pageIndex >= totalPages - 1}
+            aria-label="Next page"
             onClick={() => {
               setLoading(true)
               setPageIndex((p) => p + 1)
@@ -282,6 +289,7 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
             size="icon"
             className="size-7"
             disabled={pageIndex >= totalPages - 1}
+            aria-label="Last page"
             onClick={() => {
               setLoading(true)
               setPageIndex(totalPages - 1)
@@ -618,25 +626,27 @@ export function MediaPickerInput({
           <div className="flex shrink-0 gap-1">
             <Button
               type="button"
-              size="icon"
+              size="sm"
               variant="ghost"
-              className="size-7"
+              className="h-7 gap-1 px-2 text-xs"
               disabled={disabled}
+              aria-label="Change media"
               onClick={() => setOpen(true)}
-              title="Change"
             >
               <Pencil className="size-3.5" />
+              Change
             </Button>
             <Button
               type="button"
-              size="icon"
+              size="sm"
               variant="ghost"
-              className="size-7 text-muted-foreground hover:text-destructive"
+              className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-destructive"
               disabled={disabled}
+              aria-label="Remove media"
               onClick={handleClear}
-              title="Remove"
             >
               <X className="size-3.5" />
+              Remove
             </Button>
           </div>
         </div>

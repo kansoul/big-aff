@@ -77,6 +77,6 @@ export const postsApi = {
 export const userOptionsApi = {
   async list(): Promise<{ label: string; value: string }[]> {
     const res = await axiosInstance.get<{ data: { id: number; name: string }[] }>('/users/options')
-    return res.data.data.map(u => ({ label: u.name, value: String(u.id) }))
-  }
+    return res.data.data.map((u) => ({ label: u.name, value: String(u.id) }))
+  },
 }

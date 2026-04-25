@@ -39,7 +39,7 @@ export function NotFoundPage() {
         <Button
           size="lg"
           className="min-w-36 gap-2 font-semibold"
-          onClick={() => navigate(PATHS.dashboard)}
+          onClick={() => void navigate(PATHS.dashboard)}
         >
           Go to Dashboard
         </Button>
@@ -47,14 +47,17 @@ export function NotFoundPage() {
           variant="outline"
           size="lg"
           className="min-w-36 gap-2 font-semibold"
-          onClick={() => navigate(-1)}
+          onClick={() => void navigate(-1)}
         >
           Go Back
         </Button>
       </div>
 
       {/* Decorative dots */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+        aria-hidden="true"
+      >
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-[600px] w-[600px] rounded-full bg-primary/5 blur-3xl" />
         <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
       </div>

@@ -1,5 +1,5 @@
 import type { UseFormReturn } from 'react-hook-form'
-import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -27,8 +27,8 @@ type BulkCreateStyleDialogProps = {
   submitting: boolean
   formError: string | null
   importErrors: string[]
-  importSuccessCount: number
   onSubmit: (values: StyleBulkCreateFormValues) => void | Promise<void>
+  onSubmitAnother: (values: StyleBulkCreateFormValues) => void | Promise<void>
 }
 
 export function BulkCreateStyleDialog({
@@ -38,8 +38,8 @@ export function BulkCreateStyleDialog({
   submitting,
   formError,
   importErrors,
-  importSuccessCount,
   onSubmit,
+  onSubmitAnother,
 }: BulkCreateStyleDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,13 +57,6 @@ export function BulkCreateStyleDialog({
           </div>
         ) : null}
 
-        {importSuccessCount > 0 ? (
-          <div className="flex items-start gap-2 rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-700">
-            <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
-            <p>{importSuccessCount} style(s) created successfully.</p>
-          </div>
-        ) : null}
-
         {importErrors.length > 0 ? (
           <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-700 space-y-1">
             <p className="font-medium">Some lines had errors:</p>
@@ -76,12 +69,7 @@ export function BulkCreateStyleDialog({
         ) : null}
 
         <Form {...form}>
-          <form
-            onSubmit={(e) => {
-              void form.handleSubmit(onSubmit)(e)
-            }}
-            className="space-y-4"
-          >
+          <form className="space-y-4">
             <FormField
               control={form.control}
               name="lines"
@@ -105,7 +93,19 @@ export function BulkCreateStyleDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={() => void form.handleSubmit(onSubmitAnother)()}
+              >
+                {submitting ? 'Creating…' : 'Create & create another'}
+              </Button>
+              <Button
+                type="button"
+                disabled={submitting}
+                onClick={() => void form.handleSubmit(onSubmit)()}
+              >
                 {submitting ? 'Creating…' : 'Create'}
               </Button>
             </DialogFooter>

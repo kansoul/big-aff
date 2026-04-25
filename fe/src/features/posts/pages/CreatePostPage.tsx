@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, ArrowLeft, Loader2, Save } from 'lucide-react'
@@ -51,7 +51,7 @@ export function CreatePostPage() {
   }, [loadCategories])
 
   const form = useForm<PostFormValues>({
-    resolver: zodResolver(postFormSchema) as any,
+    resolver: zodResolver(postFormSchema) as Resolver<PostFormValues>,
     defaultValues: {
       title: '',
       slug: '',
@@ -107,13 +107,14 @@ export function CreatePostPage() {
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className="h-8 w-8"
+          size="sm"
+          className="h-8 gap-1.5 px-2 text-sm text-muted-foreground hover:text-foreground"
+          aria-label="Back to Posts"
           onClick={() => void navigate(PATHS.posts)}
         >
           <ArrowLeft className="h-4 w-4" />
+          Back to Posts
         </Button>
-        <span className="text-sm text-muted-foreground">Back to Posts</span>
       </div>
 
       <Form {...form}>

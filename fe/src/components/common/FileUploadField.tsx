@@ -129,14 +129,15 @@ export function FileUploadInput({
           </div>
           <Button
             type="button"
-            size="icon"
+            size="sm"
             variant="ghost"
-            className="size-7 shrink-0"
+            className="h-7 shrink-0 gap-1 px-2 text-xs"
             disabled={disabled}
+            aria-label="Change file"
             onClick={() => fileInputRef.current?.click()}
-            title="Change"
           >
             <Pencil className="size-3.5" />
+            Change
           </Button>
           <input
             ref={fileInputRef}
@@ -195,25 +196,27 @@ export function FileUploadInput({
           <div className="flex shrink-0 gap-1">
             <Button
               type="button"
-              size="icon"
+              size="sm"
               variant="ghost"
-              className="size-7"
+              className="h-7 gap-1 px-2 text-xs"
               disabled={disabled}
+              aria-label="Change file"
               onClick={() => fileInputRef.current?.click()}
-              title="Change"
             >
               <Pencil className="size-3.5" />
+              Change
             </Button>
             <Button
               type="button"
-              size="icon"
+              size="sm"
               variant="ghost"
-              className="size-7 text-muted-foreground hover:text-destructive"
+              className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-destructive"
               disabled={disabled}
+              aria-label="Remove file"
               onClick={handleClear}
-              title="Remove"
             >
               <X className="size-3.5" />
+              Remove
             </Button>
           </div>
           <input

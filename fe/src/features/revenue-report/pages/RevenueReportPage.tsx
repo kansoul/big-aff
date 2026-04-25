@@ -22,7 +22,7 @@ function getColumns(): MRT_ColumnDef<RevenueReportRow>[] {
     {
       accessorKey: 'date',
       header: 'Date',
-      size: 110,
+      size: 150,
       enableSorting: true,
       Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.date}</span>,
     },

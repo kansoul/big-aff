@@ -209,7 +209,9 @@ export function BusinessCentersPage() {
       />
       <EditBusinessCenterDialog
         businessCenter={editingItem}
-        onOpenChange={(open) => { if (!open) setEditingItem(null) }}
+        onOpenChange={(open) => {
+          if (!open) setEditingItem(null)
+        }}
         onSuccess={loadData}
       />
       <DeleteBusinessCenterDialog
