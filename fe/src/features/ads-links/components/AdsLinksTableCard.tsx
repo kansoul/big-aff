@@ -8,6 +8,7 @@ import {
 import { AlertCircle, Copy, Eye, EyeOff, Pencil, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -29,6 +30,7 @@ import type {
 } from '@/features/ads-links/types'
 
 import { buildCopyLink } from '@/lib/ads-link'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 async function copyToClipboard(text: string): Promise<void> {
   await navigator.clipboard.writeText(text)
@@ -115,17 +117,43 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
       accessorKey: 'site',
       header: 'Site',
       size: 140,
-      Cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.site?.name ?? '—'}</span>
-      ),
+      Cell: ({ row }) => {
+        const name = row.original.site?.name
+        if (!name) return <span className="text-muted-foreground">—</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="truncate block text-muted-foreground max-w-full">{name}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {name}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
+      },
     },
     {
       accessorKey: 'post',
       header: 'Post',
       size: 180,
-      Cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.post?.title ?? '—'}</span>
-      ),
+      Cell: ({ row }) => {
+        const title = row.original.post?.title
+        if (!title) return <span className="text-muted-foreground">—</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="truncate block text-muted-foreground max-w-full">{title}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {title}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
+      },
     },
     {
       accessorKey: 'channel_code',
@@ -205,56 +233,73 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
         )
       },
     },
-    {
-      id: 'actions',
-      header: 'Actions',
-      size: 150,
-      enableSorting: false,
-      enableGlobalFilter: false,
-      enableHiding: false,
-      mantineTableHeadCellProps: {
-        sx: { '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
-      },
-      Cell: ({ row }: { row: { original: AdsLink } }) => {
-        const link = row.original
-        const isOwner = link.created_by === currentUserId
+    ...(canUpdate
+      ? [
+          {
+            id: 'actions',
+            header: 'Actions',
+            size: 150,
+            enableSorting: false,
+            enableGlobalFilter: false,
+            enableHiding: false,
+            mantineTableHeadCellProps: {
+              sx: { '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+            },
+            Cell: ({ row }: { row: { original: AdsLink } }) => {
+              const link = row.original
+              const isOwner = link.created_by === currentUserId
+              if (!isOwner) return null
 
-        return (
-          <div className="flex justify-end gap-0.5">
-            {canUpdate && isOwner ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-                aria-label="Edit"
-                onClick={() => onEditRow(link)}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </Button>
-            ) : null}
-            {isOwner ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-                aria-label={link.is_hidden ? 'Show' : 'Hide'}
-                onClick={() => onToggleHide(link)}
-              >
-                {link.is_hidden ? (
-                  <Eye className="h-3.5 w-3.5" />
-                ) : (
-                  <EyeOff className="h-3.5 w-3.5" />
-                )}
-                {link.is_hidden ? 'Show' : 'Hide'}
-              </Button>
-            ) : null}
-          </div>
-        )
-      },
-    },
+              return (
+                <TooltipProvider>
+                  <div className="flex justify-end gap-0.5">
+                    {canUpdate ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                            aria-label="Edit"
+                            onClick={() => onEditRow(link)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Edit
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                          aria-label={link.is_hidden ? 'Show' : 'Hide'}
+                          onClick={() => onToggleHide(link)}
+                        >
+                          {link.is_hidden ? (
+                            <Eye className="h-3.5 w-3.5" />
+                          ) : (
+                            <EyeOff className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        {link.is_hidden ? 'Show' : 'Hide'}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TooltipProvider>
+              )
+            },
+          } satisfies MRT_ColumnDef<AdsLink>,
+        ]
+      : []),
   ]
 }
 
@@ -386,6 +431,79 @@ function AdsLinksTableCardInner({
     [filters, posts, sites, channels, users],
   )
 
+  const activeChips = useMemo<ActiveFilterChip[]>(() => {
+    const chips: ActiveFilterChip[] = []
+
+    if (filters.post_id) {
+      const opt = posts.find((post) => post.id === filters.post_id)
+      chips.push({
+        key: 'post_id',
+        label: 'Post',
+        displayValue: opt?.title ?? String(filters.post_id),
+      })
+    }
+    if (filters.site_id) {
+      const opt = sites.find((site) => site.id === filters.site_id)
+      chips.push({
+        key: 'site_id',
+        label: 'Site',
+        displayValue: opt?.name ?? String(filters.site_id),
+      })
+    }
+    if (filters.channel_code) {
+      const opt = channels.find((channel) => channel.code === filters.channel_code)
+      chips.push({
+        key: 'channel_code',
+        label: 'Channel',
+        displayValue: opt?.name ?? filters.channel_code,
+      })
+    }
+    if (filters.is_hidden === 0 || filters.is_hidden === 1) {
+      chips.push({
+        key: 'is_hidden',
+        label: 'Status',
+        displayValue: filters.is_hidden === 1 ? 'Hidden' : 'Active',
+      })
+    }
+    if (filters.date_range?.from || filters.date_range?.to) {
+      chips.push({
+        key: 'date_range',
+        label: 'Created date',
+        displayValue: `${filters.date_range?.from ?? '…'} -> ${filters.date_range?.to ?? '…'}`,
+      })
+    }
+    if (filters.created_by) {
+      const opt = users.find((user) => user.id === filters.created_by)
+      chips.push({
+        key: 'created_by',
+        label: 'Created by',
+        displayValue: opt?.name ?? String(filters.created_by),
+      })
+    }
+    if (filters.pixel_id) {
+      chips.push({
+        key: 'pixel_id',
+        label: 'Facebook Pixel ID',
+        displayValue: filters.pixel_id,
+      })
+    }
+    if (filters.googleid) {
+      chips.push({ key: 'googleid', label: 'Google ID', displayValue: filters.googleid })
+    }
+
+    return chips
+  }, [filters, posts, sites, channels, users])
+
+  function handleRemoveChip(key: string) {
+    if (key === 'date_range') {
+      onFilterChange({ date_range: null })
+    } else if (key === 'is_hidden') {
+      onFilterChange({ is_hidden: null })
+    } else {
+      onFilterChange({ [key]: null } as Partial<AdsLinkFilterParams>)
+    }
+  }
+
   const table = useMantineReactTable({
     data: adsLinks,
     columns,
@@ -394,7 +512,6 @@ function AdsLinksTableCardInner({
     positionGlobalFilter: 'left',
     initialState: {
       showGlobalFilter: true,
-      density: 'md',
     },
     // Server-side pagination
     manualPagination: true,
@@ -431,37 +548,58 @@ function AdsLinksTableCardInner({
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
     localization: { rowsPerPage: 'Per Page' },
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <p className="text-sm text-muted-foreground">No ads links found.</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <AlertCircle className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No ads links found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting your filters or create a new link.
+          </p>
+        </div>
       </div>
     ),
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        {/* Action buttons */}
-        <div className="flex w-full items-center justify-end gap-2">
-          {canCreate && (
-            <>
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-foreground">Ads Links</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {totalRows.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {canCreate && (
               <Button
                 size="sm"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
                 onClick={onAddClick}
               >
                 <Plus className="h-3.5 w-3.5" />
                 New Link
               </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          )}
-          <MRT_ShowHideColumnsButton table={t} />
+            )}
+            {canCreate && <div className="h-4 w-px bg-border" />}
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
         </div>
-        <FilterPanel
-          fields={filterFields}
-          onReset={onFilterReset}
-          applyMode
-          onApply={onFilterChange}
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={onFilterChange}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={handleRemoveChip}
+          onClearAll={onFilterReset}
         />
       </div>
     ),
+    enableRowSelection: false,
   })
 
   return (

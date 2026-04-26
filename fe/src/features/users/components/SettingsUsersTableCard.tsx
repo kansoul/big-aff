@@ -9,9 +9,9 @@ import {
   MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
-
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { UserFilterParams } from '@/features/users/types'
 import type { ManagedUser } from '@/shared/types'
@@ -21,26 +21,52 @@ type PaginationState = { pageIndex: number; pageSize: number }
 type ActionMeta = {
   currentUserId: number | undefined
   canUpdate: boolean
-  canDelete: boolean
+  hasDeletableRows: boolean
   onEditRow: (row: ManagedUser) => void
   onDeleteRow: (row: ManagedUser) => void
 }
 
 function getUsersColumns(meta: ActionMeta): MRT_ColumnDef<ManagedUser>[] {
-  const { canUpdate, canDelete, currentUserId, onEditRow, onDeleteRow } = meta
+  const { canUpdate, hasDeletableRows, currentUserId, onEditRow, onDeleteRow } = meta
 
   return [
     {
       accessorKey: 'name',
       header: 'Name',
       size: 140,
-      Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
+      Cell: ({ row }) => (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="truncate block font-medium text-foreground max-w-full">
+                {row.original.name}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+              {row.original.name}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
     },
     {
       accessorKey: 'email',
       header: 'Email',
       size: 160,
-      Cell: ({ row }) => <span className="text-muted-foreground">{row.original.email}</span>,
+      Cell: ({ row }) => (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="truncate block text-muted-foreground max-w-full">
+                {row.original.email}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs break-all text-xs">
+              {row.original.email}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
     },
     {
       id: 'role_id',
@@ -73,53 +99,65 @@ function getUsersColumns(meta: ActionMeta): MRT_ColumnDef<ManagedUser>[] {
         return <span className="text-muted-foreground">{new Date(updatedAt).toLocaleString()}</span>
       },
     },
-    ...(canUpdate || canDelete
+    ...(canUpdate || hasDeletableRows
       ? [
           {
             id: 'actions',
             header: 'Actions',
-            size: 80,
+            size: 148,
             enableSorting: false,
             enableGlobalFilter: false,
             enableHiding: false,
             mantineTableHeadCellProps: {
               sx: {
-                width: 200,
+                width: 148,
                 '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
               },
             },
-            mantineTableBodyCellProps: { style: { width: 200 } },
+            mantineTableBodyCellProps: { style: { width: 148 } },
             Cell: ({ row }: { row: { original: ManagedUser } }) => {
               const u = row.original
               return (
-                <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-                  {canUpdate ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-                      aria-label={`Edit ${u.name}`}
-                      onClick={() => onEditRow(u)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit
-                    </Button>
-                  ) : null}
-                  {canDelete && u.id !== currentUserId ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-                      aria-label={`Delete ${u.name}`}
-                      onClick={() => onDeleteRow(u)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Delete
-                    </Button>
-                  ) : null}
-                </div>
+                <TooltipProvider>
+                  <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                    {canUpdate ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => onEditRow(u)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Edit
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                    {hasDeletableRows && u.id !== currentUserId ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => onDeleteRow(u)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Delete
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                  </div>
+                </TooltipProvider>
               )
             },
           } satisfies MRT_ColumnDef<ManagedUser>,
@@ -168,9 +206,10 @@ function SettingsUsersTableCardInner({
   onBulkDeleteClick,
 }: SettingsUsersTableCardProps) {
   const isMobile = useIsMobile()
+  const hasDeletableRows = canDelete && users.some((row) => row.id !== currentUserId)
   const columns = useMemo(
-    () => getUsersColumns({ currentUserId, canUpdate, canDelete, onEditRow, onDeleteRow }),
-    [currentUserId, canUpdate, canDelete, onEditRow, onDeleteRow],
+    () => getUsersColumns({ currentUserId, canUpdate, hasDeletableRows, onEditRow, onDeleteRow }),
+    [currentUserId, canUpdate, hasDeletableRows, onEditRow, onDeleteRow],
   )
 
   const sorting: MRT_SortingState = useMemo(
@@ -249,38 +288,29 @@ function SettingsUsersTableCardInner({
             <Button
               size="sm"
               variant="destructive"
-              className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+              className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
               onClick={onBulkDeleteClick}
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Delete ({selectedIds.size})
+              Delete {selectedIds.size} selected
             </Button>
-            <div className="mx-1 h-5 w-px bg-border" />
+            <div className="h-4 w-px bg-border" />
           </>
         ) : null}
         {canCreate ? (
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-            onClick={onAddClick}
-          >
+          <Button size="sm" className="h-7 gap-1.5 px-2.5 text-xs font-medium" onClick={onAddClick}>
             <Plus className="h-3.5 w-3.5" />
             Add User
           </Button>
         ) : null}
-        <div className="mx-1 h-5 w-px bg-border" />
+        {canCreate && <div className="h-4 w-px bg-border" />}
         <MRT_ToggleGlobalFilterButton table={t} />
         <MRT_ShowHideColumnsButton table={t} />
       </div>
     ),
-    renderEmptyRowsFallback: () => null,
   })
 
-  return (
-    <>
-      <MantineReactTable table={table} />
-    </>
-  )
+  return <MantineReactTable table={table} />
 }
 
 export const SettingsUsersTableCard = memo(SettingsUsersTableCardInner)

@@ -1,15 +1,17 @@
 import { memo, useMemo } from 'react'
 import {
   MantineReactTable,
+  MRT_GlobalFilterTextInput,
   useMantineReactTable,
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
   MRT_ShowHideColumnsButton,
   MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Shield, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { Role } from '@/shared/types'
 
@@ -18,7 +20,7 @@ import { describeRolePermissions } from './roleSettingsUtils'
 type ActionMeta = {
   canUpdate: boolean
   canAssign: boolean
-  canDelete: boolean
+  hasDeletableRows: boolean
   onEditRow: (role: Role) => void
   onDeleteRow: (role: Role) => void
 }
@@ -28,7 +30,7 @@ function isSystemRole(role: Role): boolean {
 }
 
 function getRolesColumns(meta: ActionMeta): MRT_ColumnDef<Role>[] {
-  const { canUpdate, canAssign, canDelete, onEditRow, onDeleteRow } = meta
+  const { canUpdate, canAssign, hasDeletableRows, onEditRow, onDeleteRow } = meta
 
   return [
     {
@@ -41,60 +43,82 @@ function getRolesColumns(meta: ActionMeta): MRT_ColumnDef<Role>[] {
       accessorKey: 'permissions',
       header: 'Permissions',
       size: 200,
-      Cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {describeRolePermissions(row.original.permissions)}
-        </span>
-      ),
+      Cell: ({ row }) => {
+        const desc = describeRolePermissions(row.original.permissions)
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="truncate block text-muted-foreground max-w-full">{desc}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {desc}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
+      },
     },
-    ...(canUpdate || canAssign || canDelete
+    ...(canUpdate || canAssign || hasDeletableRows
       ? [
           {
             id: 'actions',
             header: 'Actions',
-            size: 200,
+            size: 148,
             enableSorting: false,
             enableGlobalFilter: false,
             enableHiding: false,
             mantineTableHeadCellProps: {
               sx: {
-                width: 200,
+                width: 148,
                 '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
               },
             },
-            mantineTableBodyCellProps: { style: { width: 200 } },
+            mantineTableBodyCellProps: { style: { width: 148 } },
             Cell: ({ row }: { row: { original: Role } }) => {
               const role = row.original
               const lockedRole = isSystemRole(role)
               return (
-                <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-                  {(canUpdate || canAssign) && !lockedRole ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-                      aria-label={`Edit ${role.name}`}
-                      onClick={() => onEditRow(role)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit
-                    </Button>
-                  ) : null}
-                  {canDelete && !lockedRole ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-                      aria-label={`Delete ${role.name}`}
-                      onClick={() => onDeleteRow(role)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Delete
-                    </Button>
-                  ) : null}
-                </div>
+                <TooltipProvider>
+                  <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                    {(canUpdate || canAssign) && !lockedRole ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => onEditRow(role)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Edit
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                    {hasDeletableRows && !lockedRole ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => onDeleteRow(role)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Delete
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                  </div>
+                </TooltipProvider>
               )
             },
           } satisfies MRT_ColumnDef<Role>,
@@ -133,9 +157,10 @@ function SettingsRolesTableCardInner({
   onBulkDeleteClick,
 }: SettingsRolesTableCardProps) {
   const isMobile = useIsMobile()
+  const hasDeletableRows = canDelete && roles.some((row) => !isSystemRole(row))
   const columns = useMemo(
-    () => getRolesColumns({ canUpdate, canAssign, canDelete, onEditRow, onDeleteRow }),
-    [canUpdate, canAssign, canDelete, onEditRow, onDeleteRow],
+    () => getRolesColumns({ canUpdate, canAssign, hasDeletableRows, onEditRow, onDeleteRow }),
+    [canUpdate, canAssign, hasDeletableRows, onEditRow, onDeleteRow],
   )
   const rowSelection = useMemo<MRT_RowSelectionState>(
     () =>
@@ -184,45 +209,69 @@ function SettingsRolesTableCardInner({
       placeholder: 'Search by role name…',
       sx: { minWidth: 'clamp(120px, 40vw, 260px)' },
     },
-    renderToolbarInternalActions: ({ table: t }) => (
-      <div className="flex items-center gap-1">
-        {canDelete && selectedIds.size > 0 ? (
-          <>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-              onClick={onBulkDeleteClick}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete ({selectedIds.size})
-            </Button>
-            <div className="mx-1 h-5 w-px bg-border" />
-          </>
+    renderTopToolbar: ({ table: t }) => (
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <Shield className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold text-foreground">Roles</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {roles.length.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {canDelete && selectedIds.size > 0 ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
+                  onClick={onBulkDeleteClick}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete {selectedIds.size} selected
+                </Button>
+                <div className="h-4 w-px bg-border" />
+              </>
+            ) : null}
+            {canCreate ? (
+              <Button
+                size="sm"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
+                onClick={onAddClick}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Role
+              </Button>
+            ) : null}
+            {canCreate && <div className="h-4 w-px bg-border" />}
+            <MRT_ToggleGlobalFilterButton table={t} />
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
+        </div>
+        {t.getState().showGlobalFilter ? (
+          <div className="border-t border-border/60 px-4 py-3">
+            <MRT_GlobalFilterTextInput table={t} />
+          </div>
         ) : null}
-        {canCreate ? (
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-            onClick={onAddClick}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Role
-          </Button>
-        ) : null}
-        <div className="mx-1 h-5 w-px bg-border" />
-        <MRT_ToggleGlobalFilterButton table={t} />
-        <MRT_ShowHideColumnsButton table={t} />
       </div>
     ),
-    renderEmptyRowsFallback: () => null,
+    renderEmptyRowsFallback: () => (
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Shield className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No roles found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting your search or add a new role.
+          </p>
+        </div>
+      </div>
+    ),
   })
 
-  return (
-    <>
-      <MantineReactTable table={table} />
-    </>
-  )
+  return <MantineReactTable table={table} />
 }
 
 export const SettingsRolesTableCard = memo(SettingsRolesTableCardInner)

@@ -8,10 +8,12 @@ import {
 } from 'mantine-react-table'
 import { FolderOpen, Pencil, Plus, Trash2 } from 'lucide-react'
 
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { Category, CategoryFilterParams } from '@/features/categories/types'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 type ActionMeta = {
   canUpdate: boolean
@@ -29,7 +31,20 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Category>[] {
       accessorKey: 'name',
       header: 'Name',
       size: 200,
-      Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
+      Cell: ({ row }) => (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="truncate block font-medium text-foreground max-w-full">
+                {row.original.name}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+              {row.original.name}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
     },
     {
       accessorKey: 'description',
@@ -39,7 +54,18 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Category>[] {
       Cell: ({ row }) => {
         const desc = row.original.description
         if (!desc) return <span className="text-muted-foreground/50">—</span>
-        return <span className="line-clamp-2 text-muted-foreground">{desc}</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="line-clamp-2 text-muted-foreground cursor-default">{desc}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {desc}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
       },
     },
     {
@@ -52,48 +78,67 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Category>[] {
         return <span className="text-muted-foreground">{new Date(d).toLocaleString()}</span>
       },
     },
-    {
-      id: 'actions',
-      header: 'Action',
-      size: 200,
-      enableSorting: false,
-      enableGlobalFilter: false,
-      enableHiding: false,
-      mantineTableHeadCellProps: {
-        sx: { width: 200, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
-      },
-      mantineTableBodyCellProps: { style: { width: 200 } },
-      Cell: ({ row }: { row: { original: Category } }) => (
-        <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-          {canUpdate ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-              aria-label={`Edit ${row.original.name}`}
-              onClick={() => onEditRow(row.original)}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit
-            </Button>
-          ) : null}
-          {canDelete ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-              aria-label={`Delete ${row.original.name}`}
-              onClick={() => onDeleteRow(row.original)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete
-            </Button>
-          ) : null}
-        </div>
-      ),
-    } satisfies MRT_ColumnDef<Category>,
+    ...(canUpdate || canDelete
+      ? [
+          {
+            id: 'actions',
+            header: 'Action',
+            size: 148,
+            enableSorting: false,
+            enableGlobalFilter: false,
+            enableHiding: false,
+            mantineTableHeadCellProps: {
+              sx: {
+                width: 148,
+                '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
+              },
+            },
+            mantineTableBodyCellProps: { style: { width: 148 } },
+            Cell: ({ row }: { row: { original: Category } }) => (
+              <TooltipProvider>
+                <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  {canUpdate ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => onEditRow(row.original)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Edit
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                  {canDelete ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => onDeleteRow(row.original)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Delete
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
+              </TooltipProvider>
+            ),
+          } satisfies MRT_ColumnDef<Category>,
+        ]
+      : []),
   ]
 }
 
@@ -166,6 +211,12 @@ function CategoriesTableCardInner({
     [data, selectedIds],
   )
 
+  const activeChips = useMemo<ActiveFilterChip[]>(
+    () =>
+      filters.query ? [{ key: 'query', label: 'Keyword', displayValue: `"${filters.query}"` }] : [],
+    [filters.query],
+  )
+
   const table = useMantineReactTable({
     data,
     columns,
@@ -233,49 +284,70 @@ function CategoriesTableCardInner({
     }),
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        <div className="flex w-full items-center justify-end gap-2">
-          {canDelete && selectedIds.size > 0 ? (
-            <>
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <FolderOpen className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold text-foreground">Categories</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {rowCount.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {canDelete && selectedIds.size > 0 ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
+                  onClick={onBulkDeleteClick}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete {selectedIds.size} selected
+                </Button>
+                <div className="h-4 w-px bg-border" />
+              </>
+            ) : null}
+            {canCreate ? (
               <Button
                 size="sm"
-                variant="destructive"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-                onClick={onBulkDeleteClick}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete ({selectedIds.size})
-              </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          {canCreate ? (
-            <>
-              <Button
-                size="sm"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
                 onClick={onAddClick}
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Category
               </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          <MRT_ShowHideColumnsButton table={t} />
+            ) : null}
+            {canCreate && <div className="h-4 w-px bg-border" />}
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
         </div>
-        <FilterPanel
-          fields={filterFields}
-          onReset={onFilterReset}
-          applyMode
-          onApply={onFilterChange}
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={onFilterChange}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={() => onFilterChange({ query: null })}
+          onClearAll={onFilterReset}
         />
       </div>
     ),
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <FolderOpen className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No categories found.</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <FolderOpen className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No categories found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting your filters or add a new category.
+          </p>
+        </div>
       </div>
     ),
   })

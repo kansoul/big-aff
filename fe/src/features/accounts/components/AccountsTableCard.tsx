@@ -8,9 +8,11 @@ import {
 } from 'mantine-react-table'
 import { Pencil, Plus, Trash2, UserCheck, Wallet } from 'lucide-react'
 
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Switch } from '@/components/ui/switch'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { Account, AccountFilterParams } from '@/features/accounts/types'
@@ -19,6 +21,12 @@ import type { SearchableSelectOption } from '@/components/common/SearchableSelec
 import { AssignUserAccountsDialog } from './AssignUserAccountsDialog'
 
 type ToggleField = 'is_special' | 'sync_to_mcc'
+
+const ADS_TYPE_OPTIONS = [
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'google', label: 'Google' },
+  { value: 'unknown', label: 'Unknown' },
+] as const
 
 type ActionMeta = {
   canUpdate: boolean
@@ -50,7 +58,20 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
       Cell: ({ row }) => {
         const accountName = row.original.account_name
         if (!accountName) return <span className="text-muted-foreground/50">-</span>
-        return <span className="font-medium text-foreground">{accountName}</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="truncate block font-medium text-foreground max-w-full">
+                  {accountName}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {accountName}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
       },
     },
     {
@@ -61,7 +82,20 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
       Cell: ({ row }) => {
         const businessCenter = row.original.business_center
         if (!businessCenter) return <span className="text-muted-foreground/50">-</span>
-        return <span className="text-muted-foreground">{businessCenter.name}</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="truncate block text-muted-foreground max-w-full">
+                  {businessCenter.name}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {businessCenter.name}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
       },
     },
     {
@@ -72,7 +106,18 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
       Cell: ({ row }) => {
         const team = row.original.team
         if (!team) return <span className="text-muted-foreground/50">-</span>
-        return <span className="text-muted-foreground">{team.name}</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="truncate block text-muted-foreground max-w-full">{team.name}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {team.name}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
       },
     },
     {
@@ -140,48 +185,67 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
         return <span className="text-muted-foreground">{new Date(createdAt).toLocaleString()}</span>
       },
     },
-    {
-      id: 'actions',
-      header: 'Actions',
-      size: 170,
-      enableSorting: false,
-      enableGlobalFilter: false,
-      enableHiding: false,
-      mantineTableHeadCellProps: {
-        sx: { width: 170, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
-      },
-      mantineTableBodyCellProps: { style: { width: 170 } },
-      Cell: ({ row }: { row: { original: Account } }) => (
-        <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-          {canUpdate ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-              aria-label={`Edit ${row.original.account_id}`}
-              onClick={() => onEditRow(row.original)}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit
-            </Button>
-          ) : null}
-          {canDelete ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-              aria-label={`Delete ${row.original.account_id}`}
-              onClick={() => onDeleteRow(row.original)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete
-            </Button>
-          ) : null}
-        </div>
-      ),
-    } satisfies MRT_ColumnDef<Account>,
+    ...(canUpdate || canDelete
+      ? [
+          {
+            id: 'actions',
+            header: 'Actions',
+            size: 148,
+            enableSorting: false,
+            enableGlobalFilter: false,
+            enableHiding: false,
+            mantineTableHeadCellProps: {
+              sx: {
+                width: 148,
+                '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
+              },
+            },
+            mantineTableBodyCellProps: { style: { width: 148 } },
+            Cell: ({ row }: { row: { original: Account } }) => (
+              <TooltipProvider>
+                <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  {canUpdate ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => onEditRow(row.original)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Edit
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                  {canDelete ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => onDeleteRow(row.original)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Delete
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
+              </TooltipProvider>
+            ),
+          } satisfies MRT_ColumnDef<Account>,
+        ]
+      : []),
   ]
 }
 
@@ -264,11 +328,7 @@ function AccountsTableCardInner({
         label: 'Ads Type',
         type: 'select',
         value: filters.ads_type ?? null,
-        options: [
-          { value: 'facebook', label: 'Facebook' },
-          { value: 'google', label: 'Google' },
-          { value: 'unknown', label: 'Unknown' },
-        ],
+        options: [...ADS_TYPE_OPTIONS],
       },
       {
         field: 'status',
@@ -339,6 +399,60 @@ function AccountsTableCardInner({
     [onFilterChange],
   )
 
+  const activeChips = useMemo<ActiveFilterChip[]>(() => {
+    const chips: ActiveFilterChip[] = []
+
+    if (filters.query) {
+      chips.push({ key: 'query', label: 'Keyword', displayValue: `"${filters.query}"` })
+    }
+    if (filters.ads_type) {
+      const opt = ADS_TYPE_OPTIONS.find((option) => option.value === filters.ads_type)
+      chips.push({
+        key: 'ads_type',
+        label: 'Ads Type',
+        displayValue: opt?.label ?? filters.ads_type,
+      })
+    }
+    if (filters.status) {
+      const opt = ACCOUNT_STATUS_OPTIONS.find((option) => option.value === filters.status)
+      chips.push({
+        key: 'status',
+        label: 'Status',
+        displayValue: opt?.label ?? filters.status,
+      })
+    }
+    if (filters.business_center_id != null) {
+      const opt = businessCenterOptions.find(
+        (option) => option.value === String(filters.business_center_id),
+      )
+      chips.push({
+        key: 'business_center_id',
+        label: 'Business Center',
+        displayValue: opt?.label ?? String(filters.business_center_id),
+      })
+    }
+    if (filters.team_id != null) {
+      const opt = teamOptions.find((option) => option.value === String(filters.team_id))
+      chips.push({
+        key: 'team_id',
+        label: 'Team',
+        displayValue: opt?.label ?? String(filters.team_id),
+      })
+    }
+
+    return chips
+  }, [filters, businessCenterOptions, teamOptions])
+
+  function handleRemoveChip(key: string) {
+    if (key === 'business_center_id') {
+      onFilterChange({ business_center_id: undefined })
+    } else if (key === 'team_id') {
+      onFilterChange({ team_id: undefined })
+    } else {
+      onFilterChange({ [key]: null } as Partial<AccountFilterParams>)
+    }
+  }
+
   const table = useMantineReactTable({
     data,
     columns,
@@ -401,63 +515,81 @@ function AccountsTableCardInner({
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        <div className="flex w-full items-center justify-end gap-2">
-          {canDelete && selectedIds.size > 0 ? (
-            <>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-                onClick={onBulkDeleteClick}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete ({selectedIds.size})
-              </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          {canAssign ? (
-            <>
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <Wallet className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold text-foreground">Accounts</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {rowCount.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {canDelete && selectedIds.size > 0 ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
+                  onClick={onBulkDeleteClick}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete {selectedIds.size} selected
+                </Button>
+                <div className="h-4 w-px bg-border" />
+              </>
+            ) : null}
+            {canAssign ? (
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
                 onClick={() => setAssignOpen(true)}
               >
                 <UserCheck className="h-3.5 w-3.5" />
                 Assign Accounts
               </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          {canCreate ? (
-            <>
+            ) : null}
+            {canCreate ? (
               <Button
                 size="sm"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
                 onClick={onAddClick}
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Account
               </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          <MRT_ShowHideColumnsButton table={t} />
+            ) : null}
+            {(canAssign || canCreate) && <div className="h-4 w-px bg-border" />}
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
         </div>
-        <FilterPanel
-          fields={filterFields}
-          onReset={onFilterReset}
-          applyMode
-          onApply={onApplyFilters}
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={onApplyFilters}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={handleRemoveChip}
+          onClearAll={onFilterReset}
         />
       </div>
     ),
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <Wallet className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No accounts found.</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Wallet className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No accounts found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting your filters or add a new account.
+          </p>
+        </div>
       </div>
     ),
   })

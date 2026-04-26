@@ -7,13 +7,15 @@ import {
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
 } from 'mantine-react-table'
-import { Pencil, Plus, Trash2, UserPlus } from 'lucide-react'
+import { Globe, Pencil, Plus, Trash2, UserPlus } from 'lucide-react'
 
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { Site, SiteFilterParams } from '@/features/sites/types'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 type PaginationState = { pageIndex: number; pageSize: number }
 
@@ -27,27 +29,55 @@ type ActionMeta = {
   onAssign: (site: Site) => void
 }
 
+const SITE_STATUS_OPTIONS = [
+  { label: 'Active', value: 'active' },
+  { label: 'Maintenance', value: 'maintenance' },
+  { label: 'Suspended', value: 'suspended' },
+] as const
+
 function getSitesColumns(meta: ActionMeta): MRT_ColumnDef<Site>[] {
   return [
     {
       accessorKey: 'name',
       header: 'Name',
       size: 180,
-      Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
+      Cell: ({ row }) => (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="truncate block font-medium text-foreground max-w-full">
+                {row.original.name}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+              {row.original.name}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
     },
     {
       accessorKey: 'url',
       header: 'URL',
       size: 220,
       Cell: ({ row }) => (
-        <a
-          href={row.original.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary underline underline-offset-2 hover:opacity-80 truncate max-w-full"
-        >
-          {row.original.url}
-        </a>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={row.original.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2 hover:opacity-80 truncate block max-w-full"
+              >
+                {row.original.url}
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs break-all text-xs">
+              {row.original.url}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       ),
     },
     {
@@ -81,53 +111,73 @@ function getSitesColumns(meta: ActionMeta): MRT_ColumnDef<Site>[] {
           {
             id: 'actions',
             header: 'Action',
-            size: 230,
+            size: 148,
             enableSorting: false,
             enableGlobalFilter: false,
             enableHiding: false,
             mantineTableHeadCellProps: {
               sx: {
-                width: 230,
+                width: 148,
                 '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
               },
             },
-            mantineTableBodyCellProps: { style: { width: 230 } },
+            mantineTableBodyCellProps: { style: { width: 148 } },
             Cell: ({ row }: { row: { original: Site } }) => (
-              <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-                {meta.canAssign ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-                    onClick={() => meta.onAssign(row.original)}
-                  >
-                    <UserPlus className="h-3.5 w-3.5" />
-                    Assign
-                  </Button>
-                ) : null}
-                {meta.canUpdate ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-                    onClick={() => meta.onEdit(row.original)}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    Edit
-                  </Button>
-                ) : null}
-                {meta.canDelete ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-                    onClick={() => meta.onDelete(row.original)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Delete
-                  </Button>
-                ) : null}
-              </div>
+              <TooltipProvider>
+                <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  {meta.canAssign ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => meta.onAssign(row.original)}
+                        >
+                          <UserPlus className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Assign
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                  {meta.canUpdate ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => meta.onEdit(row.original)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Edit
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                  {meta.canDelete ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => meta.onDelete(row.original)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Delete
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
+              </TooltipProvider>
             ),
           } satisfies MRT_ColumnDef<Site>,
         ]
@@ -220,15 +270,33 @@ function SitesTableCardInner({
         label: 'Status',
         type: 'select',
         value: filters.status ?? null,
-        options: [
-          { label: 'Active', value: 'active' },
-          { label: 'Maintenance', value: 'maintenance' },
-          { label: 'Suspended', value: 'suspended' },
-        ],
+        options: [...SITE_STATUS_OPTIONS],
       },
     ],
     [filters],
   )
+
+  const activeChips = useMemo<ActiveFilterChip[]>(() => {
+    const chips: ActiveFilterChip[] = []
+
+    if (filters.keyword) {
+      chips.push({ key: 'keyword', label: 'Keyword', displayValue: `"${filters.keyword}"` })
+    }
+    if (filters.status) {
+      const opt = SITE_STATUS_OPTIONS.find((option) => option.value === filters.status)
+      chips.push({
+        key: 'status',
+        label: 'Status',
+        displayValue: opt?.label ?? filters.status,
+      })
+    }
+
+    return chips
+  }, [filters.keyword, filters.status])
+
+  function handleRemoveChip(key: string) {
+    onFilterChange({ [key]: null } as Partial<SiteFilterParams>)
+  }
 
   const table = useMantineReactTable({
     data,
@@ -286,46 +354,71 @@ function SitesTableCardInner({
     }),
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        <div className="flex w-full items-center justify-end gap-2">
-          {canDelete && selectedIds.size > 0 ? (
-            <>
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-foreground">Sites</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {rowCount.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {canDelete && selectedIds.size > 0 ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
+                  onClick={onBulkDeleteClick}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete {selectedIds.size} selected
+                </Button>
+                <div className="h-4 w-px bg-border" />
+              </>
+            ) : null}
+            {canCreate ? (
               <Button
                 size="sm"
-                variant="destructive"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-                onClick={onBulkDeleteClick}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete ({selectedIds.size})
-              </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          {canCreate ? (
-            <>
-              <Button
-                size="sm"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
                 onClick={onCreateClick}
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Site
               </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          <MRT_ShowHideColumnsButton table={t} />
+            ) : null}
+            {canCreate && <div className="h-4 w-px bg-border" />}
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
         </div>
-        <FilterPanel
-          fields={filterFields}
-          onReset={onFilterReset}
-          applyMode
-          onApply={onFilterChange}
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={onFilterChange}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={handleRemoveChip}
+          onClearAll={onFilterReset}
         />
       </div>
     ),
-    renderEmptyRowsFallback: () => null,
+    renderEmptyRowsFallback: () => (
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Globe className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No sites found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting your filters or add a new site.
+          </p>
+        </div>
+      </div>
+    ),
   })
 
   return <MantineReactTable table={table} />

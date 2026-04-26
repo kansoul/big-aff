@@ -1,5 +1,10 @@
 import { memo, useMemo } from 'react'
-import { MantineReactTable, type MRT_ColumnDef, useMantineReactTable } from 'mantine-react-table'
+import {
+  MantineReactTable,
+  MRT_ShowHideColumnsButton,
+  type MRT_ColumnDef,
+  useMantineReactTable,
+} from 'mantine-react-table'
 import { BarChart3 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
@@ -95,11 +100,33 @@ function TeamByUserTableCardInner({ data, loading }: Props) {
     enableRowSelection: false,
     initialState: { density: 'md' },
     state: { showLoadingOverlay: loading },
-    mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
+    renderTopToolbar: ({ table: t }) => (
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <BarChart3 className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold text-foreground">Revenue by User</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {data.length.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
+        </div>
+      </div>
+    ),
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-10 text-center">
-        <BarChart3 className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No user data found.</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <BarChart3 className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No user report rows found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting the selected date range or filters.
+          </p>
+        </div>
       </div>
     ),
   })

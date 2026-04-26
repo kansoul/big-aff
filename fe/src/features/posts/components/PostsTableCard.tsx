@@ -17,9 +17,12 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react'
+import dayjs from 'dayjs'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
 import { StatusBadge } from '@/components/common/StatusBadge'
@@ -28,6 +31,22 @@ import { LANGUAGE_OPTIONS } from '@/constants/languages'
 import { userOptionsApi } from '@/features/posts/api'
 import { categoriesApi } from '@/features/categories/api'
 import type { Post, PostFilterParams } from '@/features/posts/types'
+
+const STATUS_OPTIONS = [
+  { label: 'Draft', value: 'draft' },
+  { label: 'Published', value: 'published' },
+  { label: 'Archived', value: 'archived' },
+  { label: 'Trash', value: 'trash' },
+]
+const TYPE_OPTIONS = [
+  { label: 'Normal', value: 'normal' },
+  { label: 'AI', value: 'ai' },
+  { label: 'Wordpress', value: 'wordpress' },
+]
+const HIDDEN_OPTIONS = [
+  { label: 'Visible', value: '0' },
+  { label: 'Hidden', value: '1' },
+]
 
 type PaginationState = { pageIndex: number; pageSize: number }
 
@@ -42,6 +61,13 @@ type ActionMeta = {
   onPublishRow: (row: Post, publish: boolean) => void
 }
 
+const TYPE_CONFIG: Record<string, { label: string; variant: 'secondary' | 'warning' | 'outline' }> =
+  {
+    normal: { label: 'Normal', variant: 'secondary' },
+    ai: { label: 'AI', variant: 'warning' },
+    wordpress: { label: 'WordPress', variant: 'outline' },
+  }
+
 function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
   const { canUpdate, canDelete, canPublish, onEditRow, onDeleteRow, onToggleHidden, onPublishRow } =
     meta
@@ -50,29 +76,75 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
     {
       accessorKey: 'id',
       header: 'ID',
-      size: 70,
-      Cell: ({ row }) => <span className="text-xs text-muted-foreground">#{row.original.id}</span>,
+      size: 65,
+      Cell: ({ row }) => (
+        <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+      ),
     },
     {
       accessorKey: 'feature_media',
       header: 'Image',
-      size: 70,
+      size: 72,
       enableSorting: false,
       Cell: ({ row }) => {
         const media = row.original.feature_media
-        if (!media) return <span className="text-muted-foreground/30 text-xs">—</span>
+        if (!media)
+          return (
+            <div className="flex h-10 w-16 items-center justify-center rounded-md border border-dashed border-border/50 bg-muted/40">
+              <FileText className="h-3.5 w-3.5 text-muted-foreground/30" />
+            </div>
+          )
         return (
-          <img src={media.url} alt={row.original.title} className="h-9 w-14 rounded object-cover" />
+          <img
+            src={media.url}
+            alt={row.original.title}
+            className="h-10 w-16 rounded-md border border-border/40 object-cover shadow-sm"
+          />
         )
       },
     },
     {
       accessorKey: 'title',
       header: 'Title',
-      size: 220,
-      Cell: ({ row }) => (
-        <span className="font-medium text-foreground line-clamp-2">{row.original.title}</span>
-      ),
+      size: 240,
+      Cell: ({ row }) => {
+        const { title, is_hidden, slug } = row.original
+        return (
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
+              {is_hidden && (
+                <EyeOff className="h-3 w-3 shrink-0 text-muted-foreground/50" aria-label="Hidden" />
+              )}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="truncate text-sm font-medium text-foreground leading-snug">
+                      {title}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                    {title}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            {slug && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="truncate text-[11px] text-muted-foreground/60 font-mono">
+                      /{slug}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs break-all text-xs">
+                    /{slug}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        )
+      },
     },
     {
       accessorKey: 'status',
@@ -88,15 +160,7 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
       Cell: ({ row }) => {
         const type = row.original.type
         if (!type) return <span className="text-muted-foreground/30 text-xs">—</span>
-        const config: Record<
-          string,
-          { label: string; variant: 'secondary' | 'warning' | 'outline' }
-        > = {
-          normal: { label: 'Normal', variant: 'secondary' },
-          ai: { label: 'AI', variant: 'warning' },
-          wordpress: { label: 'WordPress', variant: 'outline' },
-        }
-        const { label, variant } = config[type] ?? { label: type, variant: 'outline' }
+        const { label, variant } = TYPE_CONFIG[type] ?? { label: type, variant: 'outline' }
         return <Badge variant={variant}>{label}</Badge>
       },
     },
@@ -108,7 +172,20 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
       Cell: ({ row }) => {
         const category = row.original.category
         if (!category) return <span className="text-muted-foreground/30 text-xs">—</span>
-        return <span className="text-muted-foreground text-xs">{category.name}</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="truncate block px-2 py-0.5 text-[11px] font-medium text-muted-foreground max-w-full">
+                  {category.name}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {category.name}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
       },
     },
     {
@@ -117,110 +194,152 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
       size: 90,
       enableSorting: false,
       Cell: ({ row }) => (
-        <span className="text-muted-foreground text-xs">{row.original.created_by ?? '—'}</span>
+        <span className="text-xs text-muted-foreground">{row.original.created_by ?? '—'}</span>
       ),
     },
     {
       accessorKey: 'note',
       header: 'Note',
-      size: 150,
+      size: 160,
       enableSorting: false,
-      Cell: ({ row }) => (
-        <span className="text-muted-foreground text-xs line-clamp-2">
-          {row.original.note ?? <span className="opacity-30">—</span>}
-        </span>
-      ),
+      Cell: ({ row }) =>
+        row.original.note ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="line-clamp-2 text-xs text-muted-foreground cursor-default">
+                  {row.original.note}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {row.original.note}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <span className="text-muted-foreground/25 text-xs">—</span>
+        ),
     },
-    {
-      id: 'actions',
-      header: 'Action',
-      size: 290,
-      enableSorting: false,
-      enableGlobalFilter: false,
-      enableHiding: false,
-      mantineTableHeadCellProps: {
-        sx: { width: 290, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
-      },
-      mantineTableBodyCellProps: { style: { width: 290 } },
-      Cell: ({ row }: { row: { original: Post } }) => (
-        <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-          {canUpdate ? (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={`h-8 gap-1.5 px-2 text-xs font-medium ${
-                  row.original.is_hidden
-                    ? 'text-destructive focus:text-destructive hover:text-destructive'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                aria-label={
-                  row.original.is_hidden
-                    ? `Unhide ${row.original.title}`
-                    : `Hide ${row.original.title}`
-                }
-                onClick={() => onToggleHidden(row.original)}
-              >
-                <EyeOff className="h-3.5 w-3.5" />
-                {row.original.is_hidden ? 'Unhide' : 'Hide'}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-                aria-label={`Edit ${row.original.title}`}
-                onClick={() => onEditRow(row.original)}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </Button>
-            </>
-          ) : null}
-          {canPublish ? (
-            row.original.status === 'published' ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-                aria-label={`Unpublish ${row.original.title}`}
-                onClick={() => onPublishRow(row.original, false)}
-              >
-                <GlobeLock className="h-3.5 w-3.5" />
-                Unpublish
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-                aria-label={`Publish ${row.original.title}`}
-                onClick={() => onPublishRow(row.original, true)}
-              >
-                <Globe className="h-3.5 w-3.5" />
-                Publish
-              </Button>
-            )
-          ) : null}
-          {canDelete ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-              aria-label={`Delete ${row.original.title}`}
-              onClick={() => onDeleteRow(row.original)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete
-            </Button>
-          ) : null}
-        </div>
-      ),
-    } satisfies MRT_ColumnDef<Post>,
+    ...(canUpdate || canDelete || canPublish
+      ? [
+          {
+            id: 'actions',
+            header: 'Actions',
+            size: 148,
+            enableSorting: false,
+            enableGlobalFilter: false,
+            enableHiding: false,
+            mantineTableHeadCellProps: {
+              sx: {
+                width: 148,
+                '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
+              },
+            },
+            mantineTableBodyCellProps: { style: { width: 148 } },
+            Cell: ({ row }: { row: { original: Post } }) => (
+              <TooltipProvider>
+                <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  {canUpdate ? (
+                    <>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={`h-7 w-7 ${
+                              row.original.is_hidden
+                                ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                            onClick={() => onToggleHidden(row.original)}
+                          >
+                            <EyeOff className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          {row.original.is_hidden ? 'Unhide' : 'Hide'}
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => onEditRow(row.original)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Edit
+                        </TooltipContent>
+                      </Tooltip>
+                    </>
+                  ) : null}
+                  {canPublish ? (
+                    row.original.status === 'published' ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => onPublishRow(row.original, false)}
+                          >
+                            <GlobeLock className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Unpublish
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-blue-600"
+                            onClick={() => onPublishRow(row.original, true)}
+                          >
+                            <Globe className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Publish
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  ) : null}
+                  {canDelete ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => onDeleteRow(row.original)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Delete
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
+              </TooltipProvider>
+            ),
+          } satisfies MRT_ColumnDef<Post>,
+        ]
+      : []),
   ]
 }
 
@@ -338,23 +457,14 @@ function PostsTableCardInner({
         label: 'Status',
         type: 'select',
         value: filters.status ?? null,
-        options: [
-          { label: 'Draft', value: 'draft' },
-          { label: 'Published', value: 'published' },
-          { label: 'Archived', value: 'archived' },
-          { label: 'Trash', value: 'trash' },
-        ],
+        options: STATUS_OPTIONS,
       },
       {
         field: 'type',
         label: 'Type',
         type: 'select',
         value: filters.type ?? null,
-        options: [
-          { label: 'Normal', value: 'normal' },
-          { label: 'AI', value: 'ai' },
-          { label: 'Wordpress', value: 'wordpress' },
-        ],
+        options: TYPE_OPTIONS,
       },
       {
         field: 'lang',
@@ -395,14 +505,78 @@ function PostsTableCardInner({
           filters.is_hidden !== undefined && filters.is_hidden !== null
             ? String(filters.is_hidden)
             : null,
-        options: [
-          { label: 'Visible', value: '0' },
-          { label: 'Hidden', value: '1' },
-        ],
+        options: HIDDEN_OPTIONS,
       },
     ],
     [filters, userOptions, categoryOptions],
   )
+
+  const activeChips = useMemo<ActiveFilterChip[]>(() => {
+    const chips: ActiveFilterChip[] = []
+
+    if (filters.query) {
+      chips.push({ key: 'query', label: 'Search', displayValue: `"${filters.query}"` })
+    }
+    if (filters.status) {
+      const opt = STATUS_OPTIONS.find((o) => o.value === filters.status)
+      chips.push({ key: 'status', label: 'Status', displayValue: opt?.label ?? filters.status })
+    }
+    if (filters.type) {
+      const opt = TYPE_OPTIONS.find((o) => o.value === filters.type)
+      chips.push({ key: 'type', label: 'Type', displayValue: opt?.label ?? filters.type })
+    }
+    if (filters.lang) {
+      const opt = LANGUAGE_OPTIONS.find((o) => o.value === filters.lang)
+      chips.push({ key: 'lang', label: 'Language', displayValue: opt?.label ?? filters.lang })
+    }
+    if (filters.category_id) {
+      const opt = categoryOptions.find((o) => o.value === String(filters.category_id))
+      chips.push({
+        key: 'category_id',
+        label: 'Category',
+        displayValue: opt?.label ?? String(filters.category_id),
+      })
+    }
+    if (filters.created_by) {
+      const opt = userOptions.find((o) => o.value === String(filters.created_by))
+      chips.push({
+        key: 'created_by',
+        label: 'Creator',
+        displayValue: opt?.label ?? String(filters.created_by),
+      })
+    }
+    if (filters.created_at_from || filters.created_at_to) {
+      const from = filters.created_at_from
+        ? dayjs(filters.created_at_from).format('MMM D, YYYY')
+        : '…'
+      const to = filters.created_at_to ? dayjs(filters.created_at_to).format('MMM D, YYYY') : '…'
+      chips.push({ key: 'created_at', label: 'Created', displayValue: `${from} → ${to}` })
+    }
+    if (filters.is_hidden !== undefined && filters.is_hidden !== null) {
+      const opt = HIDDEN_OPTIONS.find((o) => o.value === String(filters.is_hidden))
+      chips.push({
+        key: 'is_hidden',
+        label: 'Visibility',
+        displayValue: opt?.label ?? String(filters.is_hidden),
+      })
+    }
+
+    return chips
+  }, [filters, categoryOptions, userOptions])
+
+  function handleRemoveChip(key: string) {
+    if (key === 'created_at') {
+      onFilterChange({ created_at_from: null, created_at_to: null })
+    } else if (key === 'category_id') {
+      onFilterChange({ category_id: null })
+    } else if (key === 'created_by') {
+      onFilterChange({ created_by: null })
+    } else if (key === 'is_hidden') {
+      onFilterChange({ is_hidden: null })
+    } else {
+      onFilterChange({ [key]: null } as Partial<PostFilterParams>)
+    }
+  }
 
   const table = useMantineReactTable({
     data,
@@ -456,71 +630,95 @@ function PostsTableCardInner({
     }),
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        <div className="flex w-full items-center justify-end gap-2">
-          {canDelete && selectedIds.size > 0 ? (
-            <>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-                onClick={onBulkDeleteClick}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete ({selectedIds.size})
-              </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          {canAssignPosts ? (
-            <>
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        {/* Action bar */}
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <FileText className="h-4 w-4 text-muted-foreground/60" />
+              <span className="text-sm font-semibold text-foreground">Posts</span>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                {rowCount.toLocaleString()}
+              </span>
+            </div>
+            {canDelete && selectedIds.size > 0 ? (
+              <>
+                <div className="h-4 w-px bg-border" />
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
+                  onClick={onBulkDeleteClick}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete {selectedIds.size} selected
+                </Button>
+              </>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {canAssignPosts ? (
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
                 onClick={onAssignPostsClick}
               >
                 <ClipboardList className="h-3.5 w-3.5" />
                 Assign Posts
               </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          {canCreate ? (
-            <>
+            ) : null}
+            {canCreate ? (
               <Button
                 size="sm"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
                 onClick={onAddClick}
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Post
               </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          <MRT_ShowHideColumnsButton table={t} />
+            ) : null}
+            {(canAssignPosts || canCreate) && <div className="h-4 w-px bg-border" />}
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
         </div>
-        <FilterPanel
-          fields={filterFields}
-          onReset={onFilterReset}
-          applyMode
-          onApply={(values) => {
-            const { created_at, ...rest } = values
-            const range = created_at as DateRangeValue | undefined
-            onFilterChange({
-              ...(rest as Partial<PostFilterParams>),
-              created_at_from: range?.from ?? null,
-              created_at_to: range?.to ?? null,
-            })
-          }}
+
+        {/* Filter panel — flush, no inner border */}
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={(values) => {
+              const { created_at, ...rest } = values
+              const range = created_at as DateRangeValue | undefined
+              onFilterChange({
+                ...(rest as Partial<PostFilterParams>),
+                created_at_from: range?.from ?? null,
+                created_at_to: range?.to ?? null,
+              })
+            }}
+          />
+        </div>
+
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={handleRemoveChip}
+          onClearAll={onFilterReset}
         />
       </div>
     ),
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <FileText className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No posts found.</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <FileText className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No posts found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting your filters or add a new post.
+          </p>
+        </div>
       </div>
     ),
   })
