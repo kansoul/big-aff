@@ -8,7 +8,6 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Str;
 
 class FlushRealtimeReportCommand extends Command
 {
@@ -34,28 +33,40 @@ class FlushRealtimeReportCommand extends Command
             $this->upsertChunk($chunk);
         }
 
-        $this->line('Flushed '.count($rows).' tracking_daily rows from Redis.');
+        $this->line('Flushed ' . count($rows) . ' tracking_daily rows from Redis.');
     }
 
     /**
      * Use SCAN (non-blocking) instead of KEYS to avoid blocking the Redis event
      *
+     * phpredis scan() uses a reference cursor and returns keys directly.
+     * The configured prefix is NOT auto-applied to SCAN patterns, so we
+     * must add it manually and strip it from the returned keys.
+     *
      * @return string[]
      */
     private function scanKeys(string $pattern): array
     {
+        $prefix = (string) config('database.redis.options.prefix', '');
+        $prefixedPattern = $prefix . $pattern;
+
+        /** @var \Redis $client */
+        $client = Redis::connection()->client();
+
         $keys = [];
-        $cursor = 0;
+        $cursor = null;
 
         do {
-            $result = Redis::scan($cursor, $pattern, 200);
-            if ($result === false) {
-                break;
+            $found = $client->scan($cursor, $prefixedPattern, 200);
+
+            if ($found !== false && ! empty($found)) {
+                foreach ($found as $key) {
+                    $keys[] = $prefix !== '' && str_starts_with($key, $prefix)
+                        ? substr($key, strlen($prefix))
+                        : $key;
+                }
             }
-            [$cursor, $found] = $result;
-            $keys = array_merge($keys, $found ?? []);
-            $cursor = (int) $cursor;
-        } while ($cursor !== 0);
+        } while ($cursor > 0);
 
         return array_unique($keys);
     }
@@ -77,8 +88,7 @@ class FlushRealtimeReportCommand extends Command
         $rows = [];
         $now = now();
         foreach ($keys as $key) {
-            $normalizedKey = $this->normalizeRedisKey($key);
-            $parts = explode(':', $normalizedKey, 3);
+            $parts = explode(':', $key, 3);
 
             if (count($parts) !== 3) {
                 continue;
@@ -87,7 +97,7 @@ class FlushRealtimeReportCommand extends Command
             [, $date, $linkDataId] = $parts;
 
             /** @var list<string> $hash */
-            $hash = Redis::eval($script, 1, $normalizedKey);
+            $hash = Redis::eval($script, 1, $key);
 
             if (empty($hash)) {
                 continue;
@@ -109,17 +119,6 @@ class FlushRealtimeReportCommand extends Command
         }
 
         return $rows;
-    }
-
-    private function normalizeRedisKey(string $key): string
-    {
-        $prefix = (string) config('database.redis.options.prefix', '');
-
-        if ($prefix !== '' && Str::startsWith($key, $prefix)) {
-            return (string) Str::after($key, $prefix);
-        }
-
-        return $key;
     }
 
     /**
