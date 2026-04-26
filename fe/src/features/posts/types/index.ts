@@ -72,7 +72,7 @@ export interface PostFilterParams {
 
 export const postFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
-  slug: z.string().min(1, 'Slug is required').max(255),
+  slug: z.string().max(255).nullable().optional(),
   lang: z.string().max(10).nullable().optional(),
   description: z.string().nullable().optional(),
   content: z.string().nullable().optional(),

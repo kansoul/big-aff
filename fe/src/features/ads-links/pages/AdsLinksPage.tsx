@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 
 import { formatApiError } from '@/features/settings/components'
 import {
@@ -158,7 +159,9 @@ export function AdsLinksPage() {
       }
       await loadData(filters)
     } catch (err) {
-      setFormError(formatApiError(err))
+      const msg = formatApiError(err)
+      setFormError(msg)
+      toast.error(msg)
     } finally {
       setSubmitting(false)
     }
@@ -180,7 +183,9 @@ export function AdsLinksPage() {
       setEditRow(null)
       await loadData(filters)
     } catch (err) {
-      setFormError(formatApiError(err))
+      const msg = formatApiError(err)
+      setFormError(msg)
+      toast.error(msg)
     } finally {
       setSubmitting(false)
     }

@@ -35,7 +35,6 @@ export const postsApi = {
   create: (values: PostCreateFormValues) =>
     axiosInstance.post<{ data: Post }>('/posts', {
       title: values.title,
-      slug: values.slug,
       lang: toNullable(values.lang),
       note: toNullable(values.note),
       description: toNullable(values.description),
@@ -54,7 +53,6 @@ export const postsApi = {
   update: (id: number, values: PostUpdateFormValues) =>
     axiosInstance.put<{ data: Post }>(`/posts/${id}`, {
       title: values.title,
-      slug: values.slug,
       lang: toNullable(values.lang),
       note: toNullable(values.note),
       description: toNullable(values.description),

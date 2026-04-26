@@ -22,7 +22,6 @@ class StorePostRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'unique:posts,slug'],
             'lang' => ['nullable', 'string', 'max:10'],
             'note' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],

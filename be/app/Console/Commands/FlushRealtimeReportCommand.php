@@ -33,7 +33,7 @@ class FlushRealtimeReportCommand extends Command
             $this->upsertChunk($chunk);
         }
 
-        $this->line('Flushed ' . count($rows) . ' tracking_daily rows from Redis.');
+        $this->line('Flushed '.count($rows).' tracking_daily rows from Redis.');
     }
 
     /**
@@ -48,7 +48,7 @@ class FlushRealtimeReportCommand extends Command
     private function scanKeys(string $pattern): array
     {
         $prefix = (string) config('database.redis.options.prefix', '');
-        $prefixedPattern = $prefix . $pattern;
+        $prefixedPattern = $prefix.$pattern;
 
         /** @var \Redis $client */
         $client = Redis::connection()->client();
