@@ -8,6 +8,7 @@ import {
 import { BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { Badge } from '@/components/ui/badge'
 import { channelsApi } from '@/features/channels/api'
@@ -301,6 +302,42 @@ export function RevenueReportPage() {
     [filters.date_from, filters.date_to, filters.channel_codes, channelOptions],
   )
 
+  const activeChips = useMemo<ActiveFilterChip[]>(() => {
+    const chips: ActiveFilterChip[] = []
+
+    if (filters.date_from || filters.date_to) {
+      chips.push({
+        key: 'date_range',
+        label: 'Date',
+        displayValue: `${filters.date_from ?? '…'} -> ${filters.date_to ?? '…'}`,
+      })
+    }
+    if ((filters.channel_codes?.length ?? 0) > 0) {
+      const labels = (filters.channel_codes ?? []).map((code) => {
+        const option = channelOptions.find((channel) => channel.code === code)
+        return option?.name ?? code
+      })
+      chips.push({
+        key: 'channel_codes',
+        label: 'Channels',
+        displayValue:
+          labels.length <= 2
+            ? labels.join(', ')
+            : `${labels.slice(0, 2).join(', ')} +${labels.length - 2}`,
+      })
+    }
+
+    return chips
+  }, [filters.date_from, filters.date_to, filters.channel_codes, channelOptions])
+
+  function handleRemoveChip(key: string) {
+    if (key === 'date_range') {
+      onFilterChange({ date_from: null, date_to: null })
+    } else if (key === 'channel_codes') {
+      onFilterChange({ channel_codes: [] })
+    }
+  }
+
   const columns = useMemo(() => getColumns(), [])
 
   const table = useMantineReactTable({
@@ -355,21 +392,42 @@ export function RevenueReportPage() {
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
     localization: { rowsPerPage: 'Per Page' },
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <BarChart3 className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No report rows found.</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <BarChart3 className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No report rows found</p>
+          <p className="text-xs text-muted-foreground">Try adjusting your date range or filters.</p>
+        </div>
       </div>
     ),
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        <div className="flex w-full items-center justify-end gap-2">
-          <MRT_ShowHideColumnsButton table={t} />
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <BarChart3 className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold text-foreground">Revenue Report</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {rowCount.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
         </div>
-        <FilterPanel
-          fields={filterFields}
-          onReset={onFilterReset}
-          applyMode
-          onApply={onApplyFilters}
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={onApplyFilters}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={handleRemoveChip}
+          onClearAll={onFilterReset}
         />
       </div>
     ),

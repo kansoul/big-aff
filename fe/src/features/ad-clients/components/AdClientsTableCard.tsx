@@ -8,8 +8,10 @@ import {
 } from 'mantine-react-table'
 import { CreditCard, Pencil, Plus, Trash2 } from 'lucide-react'
 
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { AdClient, AdClientFilterParams } from '@/features/ad-clients/types'
 
@@ -29,9 +31,18 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdClient>[] {
       header: 'Ad Client ID',
       size: 220,
       Cell: ({ row }) => (
-        <span className="font-mono text-xs font-medium text-foreground">
-          {row.original.ad_client_id}
-        </span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="truncate block font-mono text-xs font-medium text-foreground max-w-full">
+                {row.original.ad_client_id}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs break-all text-xs font-mono">
+              {row.original.ad_client_id}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       ),
     },
     {
@@ -55,7 +66,18 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdClient>[] {
       Cell: ({ row }) => {
         const val = row.original.product_name
         if (!val) return <span className="text-muted-foreground/50">—</span>
-        return <span className="text-muted-foreground">{val}</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="truncate block text-muted-foreground max-w-full">{val}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {val}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
       },
     },
     {
@@ -68,48 +90,67 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdClient>[] {
         return <span className="text-muted-foreground">{new Date(val).toLocaleString()}</span>
       },
     },
-    {
-      id: 'actions',
-      header: 'Action',
-      size: 150,
-      enableSorting: false,
-      enableGlobalFilter: false,
-      enableHiding: false,
-      mantineTableHeadCellProps: {
-        sx: { width: 150, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
-      },
-      mantineTableBodyCellProps: { style: { width: 150 } },
-      Cell: ({ row }: { row: { original: AdClient } }) => (
-        <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-          {canUpdate ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-              aria-label={`Edit ${row.original.ad_client_id}`}
-              onClick={() => onEditRow(row.original)}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit
-            </Button>
-          ) : null}
-          {canDelete ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-              aria-label={`Delete ${row.original.ad_client_id}`}
-              onClick={() => onDeleteRow(row.original)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete
-            </Button>
-          ) : null}
-        </div>
-      ),
-    } satisfies MRT_ColumnDef<AdClient>,
+    ...(canUpdate || canDelete
+      ? [
+          {
+            id: 'actions',
+            header: 'Action',
+            size: 150,
+            enableSorting: false,
+            enableGlobalFilter: false,
+            enableHiding: false,
+            mantineTableHeadCellProps: {
+              sx: {
+                width: 150,
+                '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
+              },
+            },
+            mantineTableBodyCellProps: { style: { width: 150 } },
+            Cell: ({ row }: { row: { original: AdClient } }) => (
+              <TooltipProvider>
+                <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  {canUpdate ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => onEditRow(row.original)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Edit
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                  {canDelete ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => onDeleteRow(row.original)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Delete
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
+              </TooltipProvider>
+            ),
+          } satisfies MRT_ColumnDef<AdClient>,
+        ]
+      : []),
   ]
 }
 
@@ -192,6 +233,12 @@ function AdClientsTableCardInner({
     [onFilterChange],
   )
 
+  const activeChips = useMemo<ActiveFilterChip[]>(
+    () =>
+      filters.query ? [{ key: 'query', label: 'Keyword', displayValue: `"${filters.query}"` }] : [],
+    [filters.query],
+  )
+
   const table = useMantineReactTable({
     data,
     columns,
@@ -252,49 +299,70 @@ function AdClientsTableCardInner({
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        <div className="flex w-full items-center justify-end gap-2">
-          {canDelete && selectedIds.size > 0 ? (
-            <>
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <CreditCard className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold text-foreground">Ad Clients</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {rowCount.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {canDelete && selectedIds.size > 0 ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
+                  onClick={onBulkDeleteClick}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete {selectedIds.size} selected
+                </Button>
+                <div className="h-4 w-px bg-border" />
+              </>
+            ) : null}
+            {canCreate ? (
               <Button
                 size="sm"
-                variant="destructive"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-                onClick={onBulkDeleteClick}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete ({selectedIds.size})
-              </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          {canCreate ? (
-            <>
-              <Button
-                size="sm"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
                 onClick={onAddClick}
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Ad Client
               </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          <MRT_ShowHideColumnsButton table={t} />
+            ) : null}
+            {canCreate && <div className="h-4 w-px bg-border" />}
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
         </div>
-        <FilterPanel
-          fields={filterFields}
-          onReset={onFilterReset}
-          applyMode
-          onApply={onApplyFilters}
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={onApplyFilters}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={() => onFilterChange({ query: null })}
+          onClearAll={onFilterReset}
         />
       </div>
     ),
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <CreditCard className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No ad clients found.</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <CreditCard className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No ad clients found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting your filters or add a new ad client.
+          </p>
+        </div>
       </div>
     ),
   })

@@ -9,6 +9,7 @@ import {
 import { Mail, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { Follow, FollowFilterParams } from '@/features/follows/types'
 
@@ -25,7 +26,20 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Follow>[] {
       accessorKey: 'email',
       header: 'Email',
       size: 220,
-      Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.email}</span>,
+      Cell: ({ row }) => (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="truncate block font-medium text-foreground max-w-full">
+                {row.original.email}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs break-all text-xs">
+              {row.original.email}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
     },
     {
       accessorKey: 'site_id',
@@ -103,19 +117,26 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Follow>[] {
             },
             mantineTableBodyCellProps: { style: { width: 90 } },
             Cell: ({ row }: { row: { original: Follow } }) => (
-              <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-                  aria-label={`Delete follow ${row.original.email}`}
-                  onClick={() => onDeleteRow(row.original)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Delete
-                </Button>
-              </div>
+              <TooltipProvider>
+                <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => onDeleteRow(row.original)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      Delete
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </TooltipProvider>
             ),
           } satisfies MRT_ColumnDef<Follow>,
         ]
@@ -221,28 +242,42 @@ function FollowsTableCardInner({
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full items-center justify-end gap-2 rounded-md border bg-muted/20 p-4">
-        {canDelete && selectedIds.size > 0 ? (
-          <>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-              onClick={onBulkDeleteClick}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete ({selectedIds.size})
-            </Button>
-            <div className="mx-1 h-5 w-px bg-border" />
-          </>
-        ) : null}
-        <MRT_ShowHideColumnsButton table={t} />
+      <div className="flex w-full items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
+        <div className="flex items-center gap-1.5">
+          <Mail className="h-4 w-4 text-muted-foreground/60" />
+          <span className="text-sm font-semibold text-foreground">Follows</span>
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+            {rowCount.toLocaleString()}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {canDelete && selectedIds.size > 0 ? (
+            <>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
+                onClick={onBulkDeleteClick}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete {selectedIds.size} selected
+              </Button>
+              <div className="h-4 w-px bg-border" />
+            </>
+          ) : null}
+          <MRT_ShowHideColumnsButton table={t} />
+        </div>
       </div>
     ),
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <Mail className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No follows found.</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Mail className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No follows found</p>
+          <p className="text-xs text-muted-foreground">No email follows have been recorded yet.</p>
+        </div>
       </div>
     ),
   })

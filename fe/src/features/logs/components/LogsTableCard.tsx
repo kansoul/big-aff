@@ -7,8 +7,10 @@ import {
 } from 'mantine-react-table'
 import { RefreshCw, Trash2 } from 'lucide-react'
 
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { LogLevelBadge } from '@/features/logs/components/LogLevelBadge'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { LogEntry, LogFilters, LogPagination } from '@/features/logs/types'
@@ -67,9 +69,21 @@ const columns: MRT_ColumnDef<LogEntry>[] = [
   {
     accessorKey: 'message',
     header: 'Message',
-    Cell: ({ cell }) => (
-      <span className="line-clamp-2 break-all font-mono text-sm">{cell.getValue<string>()}</span>
-    ),
+    Cell: ({ cell }) => {
+      const msg = cell.getValue<string>()
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="line-clamp-2 break-all font-mono text-sm cursor-default">{msg}</span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-sm break-all text-xs font-mono">
+              {msg}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )
+    },
   },
 ]
 
@@ -123,6 +137,37 @@ export const LogsTableCard = memo(function LogsTableCard({
     [filters, fileSelectOptions],
   )
 
+  const activeChips = useMemo<ActiveFilterChip[]>(() => {
+    const chips: ActiveFilterChip[] = []
+
+    if (filters.file) {
+      chips.push({ key: 'file', label: 'Log File', displayValue: filters.file })
+    }
+    if (filters.level) {
+      const opt = LOG_LEVEL_OPTIONS.find((option) => option.value === filters.level)
+      chips.push({
+        key: 'level',
+        label: 'Level',
+        displayValue: opt?.label ?? filters.level,
+      })
+    }
+    if (filters.keyword) {
+      chips.push({ key: 'keyword', label: 'Keyword', displayValue: `"${filters.keyword}"` })
+    }
+
+    return chips
+  }, [filters])
+
+  function handleRemoveChip(key: string) {
+    if (key === 'file') {
+      onFilterChange({ ...filters, file: null })
+    } else if (key === 'level') {
+      onFilterChange({ ...filters, level: null })
+    } else if (key === 'keyword') {
+      onFilterChange({ ...filters, keyword: null })
+    }
+  }
+
   const table = useMantineReactTable({
     columns,
     data,
@@ -160,33 +205,70 @@ export const LogsTableCard = memo(function LogsTableCard({
       style: { cursor: 'pointer' },
     }),
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        <div className="flex w-full items-center justify-end gap-2">
-          <MRT_ShowHideColumnsButton table={t} />
-          <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading}>
-            <RefreshCw className={`mr-1 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button variant="destructive" size="sm" onClick={onClear} disabled={loading}>
-            <Trash2 className="mr-1 h-4 w-4" />
-            Clear
-          </Button>
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <RefreshCw className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold text-foreground">Application Logs</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {pagination.total.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 px-2.5 text-xs"
+              onClick={onRefresh}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-7 gap-1.5 px-2.5 text-xs"
+              onClick={onClear}
+              disabled={loading}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Clear
+            </Button>
+            <div className="h-4 w-px bg-border" />
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
         </div>
-        <FilterPanel
-          fields={filterFields}
-          onReset={onFilterReset}
-          onFieldChange={(field, value) =>
-            onFilterChange({
-              ...filters,
-              [field]: (value as string) || null,
-            })
-          }
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            onFieldChange={(field, value) =>
+              onFilterChange({
+                ...filters,
+                [field]: (value as string) || null,
+              })
+            }
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={handleRemoveChip}
+          onClearAll={onFilterReset}
         />
       </div>
     ),
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <p className="text-sm text-muted-foreground">No log entries found.</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <RefreshCw className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No log entries found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting your filters or refresh the logs.
+          </p>
+        </div>
       </div>
     ),
   })

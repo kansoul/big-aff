@@ -9,8 +9,10 @@ import {
 } from 'mantine-react-table'
 import { Building2, Pencil, Plus, Trash2 } from 'lucide-react'
 
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { BusinessCenter, BusinessCenterFilterParams } from '@/features/business-centers/types'
@@ -43,7 +45,20 @@ function getBusinessCentersColumns(meta: ActionMeta): MRT_ColumnDef<BusinessCent
       accessorKey: 'name',
       header: 'Name',
       size: 180,
-      Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
+      Cell: ({ row }) => (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="truncate block font-medium text-foreground max-w-full">
+                {row.original.name}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+              {row.original.name}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
     },
     {
       accessorKey: 'ads_type',
@@ -82,42 +97,56 @@ function getBusinessCentersColumns(meta: ActionMeta): MRT_ColumnDef<BusinessCent
           {
             id: 'actions',
             header: 'Action',
-            size: 120,
+            size: 148,
             enableSorting: false,
             enableGlobalFilter: false,
             enableHiding: false,
             mantineTableHeadCellProps: {
               sx: {
-                width: 120,
+                width: 148,
                 '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
               },
             },
-            mantineTableBodyCellProps: { style: { width: 120 } },
+            mantineTableBodyCellProps: { style: { width: 148 } },
             Cell: ({ row }: { row: { original: BusinessCenter } }) => (
-              <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-                {meta.canUpdate ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-                    onClick={() => meta.onEdit(row.original)}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    Edit
-                  </Button>
-                ) : null}
-                {meta.canDelete ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-                    onClick={() => meta.onDelete(row.original)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Delete
-                  </Button>
-                ) : null}
-              </div>
+              <TooltipProvider>
+                <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  {meta.canUpdate ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => meta.onEdit(row.original)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Edit
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                  {meta.canDelete ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => meta.onDelete(row.original)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Delete
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
+              </TooltipProvider>
             ),
           } satisfies MRT_ColumnDef<BusinessCenter>,
         ]
@@ -200,6 +229,12 @@ function BusinessCentersTableCardInner({
     [filters],
   )
 
+  const activeChips = useMemo<ActiveFilterChip[]>(
+    () =>
+      filters.query ? [{ key: 'query', label: 'Search', displayValue: `"${filters.query}"` }] : [],
+    [filters.query],
+  )
+
   const table = useMantineReactTable({
     data,
     columns,
@@ -248,49 +283,70 @@ function BusinessCentersTableCardInner({
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        <div className="flex w-full items-center justify-end gap-2">
-          {canDelete && selectedIds.size > 0 ? (
-            <>
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <Building2 className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold text-foreground">Business Centers</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {rowCount.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {canDelete && selectedIds.size > 0 ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
+                  onClick={onBulkDeleteClick}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete {selectedIds.size} selected
+                </Button>
+                <div className="h-4 w-px bg-border" />
+              </>
+            ) : null}
+            {canCreate ? (
               <Button
                 size="sm"
-                variant="destructive"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-                onClick={onBulkDeleteClick}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete ({selectedIds.size})
-              </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          {canCreate ? (
-            <>
-              <Button
-                size="sm"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
                 onClick={onCreateClick}
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Business Center
               </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          <MRT_ShowHideColumnsButton table={t} />
+            ) : null}
+            {canCreate && <div className="h-4 w-px bg-border" />}
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
         </div>
-        <FilterPanel
-          fields={filterFields}
-          onReset={onFilterReset}
-          applyMode
-          onApply={onFilterChange}
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={onFilterChange}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={() => onFilterChange({ query: null })}
+          onClearAll={onFilterReset}
         />
       </div>
     ),
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <Building2 className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No business centers found.</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Building2 className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No business centers found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting your filters or add a new business center.
+          </p>
+        </div>
       </div>
     ),
   })

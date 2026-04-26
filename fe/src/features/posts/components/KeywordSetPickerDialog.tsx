@@ -28,6 +28,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { KeywordSetEditDialog } from './KeywordSetEditDialog'
 import { TagInput } from './TagInput'
 
@@ -244,49 +245,59 @@ export function KeywordSetPickerDialog({
             {
               id: 'actions',
               header: 'Action',
-              size: 150,
+              size: 148,
               enableSorting: false,
               enableHiding: false,
               mantineTableHeadCellProps: {
                 sx: {
-                  width: 150,
+                  width: 148,
                   '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
                 },
               },
-              mantineTableBodyCellProps: { style: { width: 150 } },
+              mantineTableBodyCellProps: { style: { width: 148 } },
               Cell: ({ row }: { row: { original: KeywordSet } }) => (
-                <div className="flex justify-end gap-0.5">
-                  {canUpdate && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-                      aria-label={`Edit ${row.original.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setEditTarget(row.original)
-                      }}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit
-                    </Button>
-                  )}
-                  {canDelete && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-                      aria-label={`Delete ${row.original.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setDeleteTarget(row.original)
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Delete
-                    </Button>
-                  )}
-                </div>
+                <TooltipProvider>
+                  <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                    {canUpdate ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            aria-label={`Edit ${row.original.name}`}
+                            onClick={() => setEditTarget(row.original)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Edit
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                    {canDelete ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            aria-label={`Delete ${row.original.name}`}
+                            onClick={() => setDeleteTarget(row.original)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Delete
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                  </div>
+                </TooltipProvider>
               ),
             } satisfies MRT_ColumnDef<KeywordSet>,
           ]

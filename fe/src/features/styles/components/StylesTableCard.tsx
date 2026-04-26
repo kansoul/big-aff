@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react'
 import {
   MantineReactTable,
+  MRT_GlobalFilterTextInput,
   useMantineReactTable,
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
@@ -10,7 +11,7 @@ import {
 import { Palette, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { Style } from '@/features/styles/types'
 
@@ -57,34 +58,44 @@ function getColumns(meta: {
         </span>
       ),
     },
-    {
-      id: 'actions',
-      header: 'Action',
-      size: 90,
-      enableSorting: false,
-      enableGlobalFilter: false,
-      enableHiding: false,
-      mantineTableHeadCellProps: {
-        sx: { width: 90, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
-      },
-      mantineTableBodyCellProps: { style: { width: 90 } },
-      Cell: ({ row }) =>
-        canDelete ? (
-          <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-              aria-label="Delete"
-              onClick={() => onDeleteRow(row.original)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete
-            </Button>
-          </div>
-        ) : null,
-    } satisfies MRT_ColumnDef<Style>,
+    ...(canDelete
+      ? [
+          {
+            id: 'actions',
+            header: 'Action',
+            size: 90,
+            enableSorting: false,
+            enableGlobalFilter: false,
+            enableHiding: false,
+            mantineTableHeadCellProps: {
+              sx: { width: 90, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+            },
+            mantineTableBodyCellProps: { style: { width: 90 } },
+            Cell: ({ row }: { row: { original: Style } }) => (
+              <TooltipProvider>
+                <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => onDeleteRow(row.original)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      Delete
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </TooltipProvider>
+            ),
+          } satisfies MRT_ColumnDef<Style>,
+        ]
+      : []),
   ]
 }
 
@@ -145,55 +156,69 @@ function StylesTableCardInner({
       placeholder: 'Search by name or code…',
       sx: { minWidth: 'clamp(120px, 40vw, 260px)' },
     },
-    localization: { rowsPerPage: 'Per Page' },
-    renderToolbarInternalActions: ({ table: t }) => (
-      <div className="flex items-center gap-1">
-        {canDelete && selectedIds.size > 0 ? (
-          <>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-              onClick={onBulkDeleteClick}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete ({selectedIds.size})
-            </Button>
-            <div className="mx-1 h-5 w-px bg-border" />
-          </>
+    renderTopToolbar: ({ table: t }) => (
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <Palette className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold text-foreground">Styles</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {styles.length.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {canDelete && selectedIds.size > 0 ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
+                  onClick={onBulkDeleteClick}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete {selectedIds.size} selected
+                </Button>
+                <div className="h-4 w-px bg-border" />
+              </>
+            ) : null}
+            {canCreate ? (
+              <Button
+                size="sm"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
+                onClick={onAddClick}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Create
+              </Button>
+            ) : null}
+            {canCreate && <div className="h-4 w-px bg-border" />}
+            <MRT_ToggleGlobalFilterButton table={t} />
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
+        </div>
+        {t.getState().showGlobalFilter ? (
+          <div className="border-t border-border/60 px-4 py-3">
+            <MRT_GlobalFilterTextInput table={t} />
+          </div>
         ) : null}
-        {canCreate ? (
-          <>
-            <Button
-              size="sm"
-              className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-              onClick={onAddClick}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Create
-            </Button>
-            <div className="mx-1 h-5 w-px bg-border" />
-          </>
-        ) : null}
-        <MRT_ToggleGlobalFilterButton table={t} />
-        <MRT_ShowHideColumnsButton table={t} />
       </div>
     ),
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-14 text-center">
-        <Palette className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No styles found.</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Palette className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No styles found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting your search or create a new style.
+          </p>
+        </div>
       </div>
     ),
   })
 
-  return (
-    <Card className="overflow-hidden border-border shadow-none">
-      <CardContent className="p-0">
-        <MantineReactTable table={table} />
-      </CardContent>
-    </Card>
-  )
+  return <MantineReactTable table={table} />
 }
 
 export const StylesTableCard = memo(StylesTableCardInner)

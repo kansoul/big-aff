@@ -1,4 +1,5 @@
 import { axiosInstance } from '@/shared/api/axios'
+import { isNil } from '@/lib/utils'
 import type {
   Post,
   PostCreateFormValues,
@@ -19,13 +20,13 @@ export const postsApi = {
         per_page: perPage,
         ...(filters.query ? { query: filters.query } : {}),
         ...(filters.status ? { status: filters.status } : {}),
-        ...(filters.category_id != null ? { category_id: filters.category_id } : {}),
+        ...(!isNil(filters.category_id) ? { category_id: filters.category_id } : {}),
         ...(filters.lang ? { lang: filters.lang } : {}),
         ...(filters.type ? { type: filters.type } : {}),
-        ...(filters.created_by != null ? { created_by: filters.created_by } : {}),
+        ...(!isNil(filters.created_by) ? { created_by: filters.created_by } : {}),
         ...(filters.created_at_from ? { created_at_from: filters.created_at_from } : {}),
         ...(filters.created_at_to ? { created_at_to: filters.created_at_to } : {}),
-        ...(filters.is_hidden != null ? { is_hidden: filters.is_hidden } : {}),
+        ...(!isNil(filters.is_hidden) ? { is_hidden: filters.is_hidden } : {}),
         ...(filters.deleted_at ? { deleted_at: filters.deleted_at } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),
         ...(filters.order ? { order: filters.order } : {}),

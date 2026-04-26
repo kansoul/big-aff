@@ -140,6 +140,8 @@
   background-color: var(--card) !important;
   color: var(--foreground) !important;
   border-color: var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
 }
 
 /* Top toolbar (search + action buttons row) */
@@ -160,17 +162,38 @@
   color: var(--muted-foreground) !important;
   border-bottom: 1px solid var(--border) !important;
   border-top: none !important;
-  font-size: 0.75rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.08em !important;
+  border-left: none !important;
+  border-right: none !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.07em !important;
+  text-transform: uppercase !important;
+  padding: 0.5rem 1rem !important;
+  vertical-align: middle !important;
 }
 
-/* Body rows */
+/* Header row — no extra borders */
+.mantine-Table-root thead tr {
+  border-top: none !important;
+  border-bottom: none !important;
+}
+
+/* Body cells */
 .mantine-Table-root tbody tr td {
   background-color: var(--card) !important;
   color: var(--foreground) !important;
   border-bottom: 1px solid var(--border) !important;
+  border-left: none !important;
+  border-right: none !important;
   font-size: 0.875rem !important;
+  padding: 0.625rem 1rem !important;
+  transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out !important;
+  vertical-align: middle !important;
+}
+
+/* Last body row — remove bottom border so it doesn't double with container */
+.mantine-Table-root tbody tr:last-child td {
+  border-bottom: none !important;
 }
 
 /* Row hover */
@@ -217,6 +240,7 @@
 .mantine-Paper-root > div:last-child {
   background-color: var(--card) !important;
   border-top: 1px solid var(--border) !important;
+  padding: 0.5rem 0.75rem !important;
 }
 
 /* Pagination active page */
@@ -224,6 +248,7 @@
   background-color: var(--primary) !important;
   color: var(--primary-foreground) !important;
   border-color: var(--primary) !important;
+  font-weight: 600 !important;
 }
 
 /* Pagination controls */
@@ -231,17 +256,30 @@
   background-color: var(--card) !important;
   color: var(--foreground) !important;
   border-color: var(--border) !important;
+  font-size: 0.8125rem !important;
+  min-width: 2rem !important;
+  height: 2rem !important;
+  transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out !important;
 }
-.mantine-Pagination-control:hover {
+.mantine-Pagination-control:hover:not([data-active]) {
   background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
 }
 
 /* Search / text input */
 .mantine-TextInput-input {
-  height: 2.8rem !important;
+  height: 2rem !important;
+  font-size: 0.8125rem !important;
   background-color: var(--background) !important;
   color: var(--foreground) !important;
   border-color: var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+.mantine-TextInput-input:focus {
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 20%, transparent) !important;
+  outline: none !important;
 }
 .mantine-TextInput-input::placeholder {
   color: var(--muted-foreground) !important;
@@ -250,9 +288,12 @@
 /* Select (rows-per-page dropdown) */
 .mantine-Select-input,
 .mantine-NativeSelect-input {
+  height: 2rem !important;
+  font-size: 0.8125rem !important;
   background-color: var(--background) !important;
   color: var(--foreground) !important;
   border-color: var(--border) !important;
+  border-radius: var(--radius-md) !important;
 }
 
 /* Dropdown list */
@@ -261,6 +302,8 @@
   background-color: var(--popover) !important;
   color: var(--popover-foreground) !important;
   border-color: var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: 0 4px 16px -4px oklch(0 0 0 / 12%), 0 2px 6px -2px oklch(0 0 0 / 8%) !important;
 }
 .mantine-Select-item[data-selected],
 .mantine-Select-item:hover {
@@ -271,10 +314,32 @@
 /* Toolbar action icons (column visibility, density, etc.) */
 .mantine-ActionIcon-root {
   color: var(--muted-foreground) !important;
+  transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out !important;
+  border-radius: var(--radius-sm) !important;
 }
 .mantine-ActionIcon-root:hover {
   background-color: var(--accent) !important;
   color: var(--accent-foreground) !important;
+}
+
+/* Header cell sort icon */
+.mantine-TableHeadCell-Content-Wrapper {
+  gap: 0.25rem !important;
+}
+.mantine-TableHeadCell-Content-Labels {
+  gap: 0.125rem !important;
+}
+
+/* Column menu / resizer */
+.mantine-Table-root thead th[data-column-pinned-right],
+.mantine-Table-root thead th[data-column-pinned-left] {
+  background-color: var(--muted) !important;
+}
+
+/* Loading overlay */
+.mantine-LoadingOverlay-root {
+  background-color: color-mix(in oklch, var(--card) 75%, transparent) !important;
+  backdrop-filter: blur(2px) !important;
 }
 
 /* ================================================================= */

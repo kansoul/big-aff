@@ -9,7 +9,9 @@ import {
 } from 'mantine-react-table'
 import { Trash2, Upload, ZoomIn } from 'lucide-react'
 
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
 import { useIsMobile } from '@/hooks/useMobile'
@@ -27,11 +29,16 @@ function formatBytes(bytes: number): string {
 }
 
 type ColumnMeta = {
+  canDelete: boolean
   onDeleteFile: (file: MediaFile) => void
   onPreviewClick: (file: MediaFile) => void
 }
 
-function getColumns({ onDeleteFile, onPreviewClick }: ColumnMeta): MRT_ColumnDef<MediaFile>[] {
+function getColumns({
+  canDelete,
+  onDeleteFile,
+  onPreviewClick,
+}: ColumnMeta): MRT_ColumnDef<MediaFile>[] {
   return [
     {
       id: 'preview',
@@ -68,9 +75,21 @@ function getColumns({ onDeleteFile, onPreviewClick }: ColumnMeta): MRT_ColumnDef
       header: 'File Name',
       size: 200,
       Cell: ({ row }) => (
-        <button type="button" className="font-medium text-primary text-left truncate max-w-full">
-          {row.original.original_name}
-        </button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="truncate block font-medium text-primary text-left max-w-full"
+              >
+                {row.original.original_name}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+              {row.original.original_name}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       ),
     },
     {
@@ -128,31 +147,43 @@ function getColumns({ onDeleteFile, onPreviewClick }: ColumnMeta): MRT_ColumnDef
         return <span className="text-muted-foreground">{new Date(d).toLocaleString()}</span>
       },
     },
-    {
-      id: 'actions',
-      header: 'Action',
-      size: 90,
-      enableSorting: false,
-      enableHiding: false,
-      mantineTableHeadCellProps: {
-        sx: { width: 90, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
-      },
-      mantineTableBodyCellProps: { style: { width: 90 } },
-      Cell: ({ row }) => (
-        <div className="flex justify-end">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-destructive"
-            aria-label={`Delete ${row.original.original_name}`}
-            onClick={() => onDeleteFile(row.original)}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Delete
-          </Button>
-        </div>
-      ),
-    } satisfies MRT_ColumnDef<MediaFile>,
+    ...(canDelete
+      ? [
+          {
+            id: 'actions',
+            header: 'Action',
+            size: 90,
+            enableSorting: false,
+            enableHiding: false,
+            mantineTableHeadCellProps: {
+              sx: { width: 90, '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' } },
+            },
+            mantineTableBodyCellProps: { style: { width: 90 } },
+            Cell: ({ row }: { row: { original: MediaFile } }) => (
+              <TooltipProvider>
+                <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        aria-label={`Delete ${row.original.original_name}`}
+                        onClick={() => onDeleteFile(row.original)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      Delete
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </TooltipProvider>
+            ),
+          } satisfies MRT_ColumnDef<MediaFile>,
+        ]
+      : []),
   ]
 }
 
@@ -197,8 +228,8 @@ function MediaTableCardInner({
   const [previewFile, setPreviewFile] = useState<MediaFile | null>(null)
 
   const columns = useMemo(
-    () => getColumns({ onDeleteFile, onPreviewClick: setPreviewFile }),
-    [onDeleteFile],
+    () => getColumns({ canDelete, onDeleteFile, onPreviewClick: setPreviewFile }),
+    [canDelete, onDeleteFile],
   )
 
   const sorting: MRT_SortingState = useMemo(
@@ -240,6 +271,41 @@ function MediaTableCardInner({
     ],
     [filters, users],
   )
+
+  const activeChips = useMemo<ActiveFilterChip[]>(() => {
+    const chips: ActiveFilterChip[] = []
+
+    if (filters.alt_text) {
+      chips.push({ key: 'alt_text', label: 'Alt Text', displayValue: `"${filters.alt_text}"` })
+    }
+    if (filters.created_from || filters.created_to) {
+      chips.push({
+        key: 'created_at',
+        label: 'Uploaded',
+        displayValue: `${filters.created_from ?? '…'} -> ${filters.created_to ?? '…'}`,
+      })
+    }
+    if (filters.user_id != null) {
+      const opt = users.find((user) => user.id === filters.user_id)
+      chips.push({
+        key: 'user_id',
+        label: 'User',
+        displayValue: opt?.name ?? String(filters.user_id),
+      })
+    }
+
+    return chips
+  }, [filters, users])
+
+  function handleRemoveChip(key: string) {
+    if (key === 'created_at') {
+      onFilterChange({ created_from: null, created_to: null })
+    } else if (key === 'user_id') {
+      onFilterChange({ user_id: null })
+    } else {
+      onFilterChange({ [key]: null } as Partial<MediaFilterParams>)
+    }
+  }
 
   const table = useMantineReactTable({
     data,
@@ -286,42 +352,70 @@ function MediaTableCardInner({
     mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full flex-col gap-4 rounded-md border bg-muted/20 p-4">
-        <div className="flex w-full items-center justify-end gap-2">
-          {canDelete && selectedIds.size > 0 ? (
-            <>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-                onClick={onBulkDeleteClick}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete ({selectedIds.size})
-              </Button>
-              <div className="mx-1 h-5 w-px bg-border" />
-            </>
-          ) : null}
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-            onClick={onUploadClick}
-          >
-            <Upload className="h-3.5 w-3.5" />
-            Upload
-          </Button>
-          <div className="mx-1 h-5 w-px bg-border" />
-          <MRT_ShowHideColumnsButton table={t} />
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <Upload className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold text-foreground">Media</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {rowCount.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {canDelete && selectedIds.size > 0 ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
+                  onClick={onBulkDeleteClick}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete {selectedIds.size} selected
+                </Button>
+                <div className="h-4 w-px bg-border" />
+              </>
+            ) : null}
+            <Button
+              size="sm"
+              className="h-7 gap-1.5 px-2.5 text-xs font-medium"
+              onClick={onUploadClick}
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Upload
+            </Button>
+            <div className="h-4 w-px bg-border" />
+            <MRT_ShowHideColumnsButton table={t} />
+          </div>
         </div>
-        <FilterPanel
-          fields={filterFields}
-          onReset={onFilterReset}
-          applyMode
-          onApply={onFilterChange}
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={onFilterChange}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={handleRemoveChip}
+          onClearAll={onFilterReset}
         />
       </div>
     ),
-    renderEmptyRowsFallback: () => null,
+    renderEmptyRowsFallback: () => (
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Upload className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">No media files found</p>
+          <p className="text-xs text-muted-foreground">
+            Try adjusting your filters or upload new files.
+          </p>
+        </div>
+      </div>
+    ),
   })
 
   return (
