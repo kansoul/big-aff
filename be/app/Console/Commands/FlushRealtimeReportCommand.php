@@ -20,13 +20,11 @@ class FlushRealtimeReportCommand extends Command
     public function handle(): void
     {
         $keys = $this->scanKeys('tracking_daily:*');
-
         if (empty($keys)) {
             return;
         }
 
         $rows = $this->collectRows($keys);
-
         if (empty($rows)) {
             return;
         }
@@ -35,23 +33,40 @@ class FlushRealtimeReportCommand extends Command
             $this->upsertChunk($chunk);
         }
 
-        $this->line('Flushed '.count($rows).' tracking_daily rows from Redis.');
+        $this->line('Flushed ' . count($rows) . ' tracking_daily rows from Redis.');
     }
 
     /**
      * Use SCAN (non-blocking) instead of KEYS to avoid blocking the Redis event
      *
+     * phpredis scan() uses a reference cursor and returns keys directly.
+     * The configured prefix is NOT auto-applied to SCAN patterns, so we
+     * must add it manually and strip it from the returned keys.
+     *
      * @return string[]
      */
     private function scanKeys(string $pattern): array
     {
+        $prefix = (string) config('database.redis.options.prefix', '');
+        $prefixedPattern = $prefix . $pattern;
+
+        /** @var \Redis $client */
+        $client = Redis::connection()->client();
+
         $keys = [];
-        $cursor = '0';
+        $cursor = null;
 
         do {
-            [$cursor, $found] = Redis::scan($cursor, 'MATCH', $pattern, 'COUNT', 200);
-            $keys = array_merge($keys, $found ?? []);
-        } while ($cursor !== '0');
+            $found = $client->scan($cursor, $prefixedPattern, 200);
+
+            if ($found !== false && ! empty($found)) {
+                foreach ($found as $key) {
+                    $keys[] = $prefix !== '' && str_starts_with($key, $prefix)
+                        ? substr($key, strlen($prefix))
+                        : $key;
+                }
+            }
+        } while ($cursor > 0);
 
         return array_unique($keys);
     }
@@ -72,7 +87,6 @@ class FlushRealtimeReportCommand extends Command
 
         $rows = [];
         $now = now();
-
         foreach ($keys as $key) {
             $parts = explode(':', $key, 3);
 
