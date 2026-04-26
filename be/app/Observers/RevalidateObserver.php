@@ -47,19 +47,21 @@ class RevalidateObserver
     protected function resolveUrls(Model $model): array
     {
         if ($model instanceof Post) {
-            return AdsLink::where('post_id', $model->id)
-                ->with('site')
-                ->get()
-                ->pluck('site.url')
+            return Site::query()
+                ->pluck('url')
                 ->filter()
                 ->unique()
-                ->map(fn (string $siteUrl) => $siteUrl.'/api/ran?re-tag=articles/'.$model->slug)
+                ->map(fn(string $siteUrl) => $siteUrl . '/api/ran?re-tag=' . $model->slug)
                 ->values()
                 ->all();
         }
 
         if ($model instanceof Site) {
-            return [$model->url.'/api/ran?re-tag=site'];
+            $domain = parse_url($model->url, PHP_URL_HOST) ?: $model->url;
+            $domain = preg_replace('/^https?:\/\//', '', $domain);
+            $domain = rtrim($domain, '/');
+
+            return [$model->url . '/api/ran?re-tag=' . $domain];
         }
 
         if ($model instanceof AdsLink) {
@@ -69,7 +71,7 @@ class RevalidateObserver
                 return [];
             }
 
-            return [$siteUrl.'/api/ran?re-tag=post-'.$model->slug];
+            return [$siteUrl . '/api/ran?re-tag=' . $model->slug];
         }
 
         return [];
