@@ -41,4 +41,8 @@ return [
         'tracking_url' => env('TELEGRAM_TRACKING_URL'),
     ],
 
+    'revalidate' => [
+        'internal_secret' => env('REVALIDATE_INTERNAL_SECRET'),
+    ],
+
 ];
