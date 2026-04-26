@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
 import { useIsMobile } from '@/hooks/useMobile'
+import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
 import type { MediaFile, MediaFilterParams } from '@/features/media/types'
 import type { ManagedUser } from '@/shared/types'
 
@@ -250,16 +251,13 @@ function MediaTableCardInner({
         value: filters.alt_text ?? null,
       },
       {
-        field: 'created_from',
-        label: 'From',
-        type: 'datepicker',
-        value: filters.created_from ?? null,
-      },
-      {
-        field: 'created_to',
-        label: 'To',
-        type: 'datepicker',
-        value: filters.created_to ?? null,
+        field: 'created_at',
+        label: 'Uploaded',
+        type: 'daterange',
+        value:
+          filters.created_from || filters.created_to
+            ? { from: filters.created_from, to: filters.created_to }
+            : null,
       },
       {
         field: 'user_id',
@@ -271,6 +269,16 @@ function MediaTableCardInner({
     ],
     [filters, users],
   )
+
+  function handleApply(values: Record<string, unknown>) {
+    const dateRange = values.created_at as DateRangeValue | null
+    onFilterChange({
+      alt_text: (values.alt_text as string | null) ?? null,
+      created_from: dateRange?.from ?? null,
+      created_to: dateRange?.to ?? null,
+      user_id: values.user_id != null ? Number(values.user_id) : null,
+    })
+  }
 
   const activeChips = useMemo<ActiveFilterChip[]>(() => {
     const chips: ActiveFilterChip[] = []
@@ -393,7 +401,7 @@ function MediaTableCardInner({
             fields={filterFields}
             onReset={onFilterReset}
             applyMode
-            onApply={onFilterChange}
+            onApply={handleApply}
           />
         </div>
         <ActiveFilterChips
