@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\RealtimeReportSyncService;
+use App\Services\Integrations\Tracking\RealtimeReportSyncService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
