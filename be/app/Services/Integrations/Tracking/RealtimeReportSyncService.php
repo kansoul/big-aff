@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Integrations\Tracking;
 
 use App\Models\EventClick;
 use App\Models\EventView;

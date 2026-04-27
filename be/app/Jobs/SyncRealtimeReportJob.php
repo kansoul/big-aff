@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\RealtimeReportSyncService;
+use App\Services\Integrations\Tracking\RealtimeReportSyncService;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;

@@ -3,6 +3,7 @@
 namespace App\Actions\Auth;
 
 use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class LogoutAction
 {
@@ -12,7 +13,10 @@ class LogoutAction
         $user = Auth::guard('web')->user();
 
         if ($user !== null && method_exists($user, 'currentAccessToken')) {
-            $user->currentAccessToken()?->delete();
+            $token = $user->currentAccessToken();
+            if ($token instanceof PersonalAccessToken) {
+                $token->delete();
+            }
         }
 
         Auth::guard('web')->logout();
