@@ -3,17 +3,30 @@
 namespace App\Actions\AdsLink;
 
 use App\Models\AdsLink;
+use App\Services\AdsLink\RACValidationService;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class UpdateAdsLinkAction
 {
+    public function __construct(private readonly RACValidationService $racValidationService) {}
+
     /**
      * @param  array<string, mixed>  $data
      */
     public function execute(AdsLink $adsLink, array $data): AdsLink
     {
         OwnershipFilter::forAuthUser()->authorize($adsLink->created_by);
+
+        if (array_key_exists('rac', $data) && $data['rac'] !== null) {
+            $racValidation = $this->racValidationService->validateRAC($data['rac']);
+            if (! $racValidation['is_valid']) {
+                throw ValidationException::withMessages([
+                    'rac' => [$racValidation['warning']],
+                ]);
+            }
+        }
 
         $trackingIds = $adsLink->tracking_ids ?? [];
 

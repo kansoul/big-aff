@@ -5,6 +5,7 @@ namespace App\Actions\AdsLink;
 use App\Models\AdsLink;
 use App\Models\Post;
 use App\Models\Site;
+use App\Services\AdsLink\RACValidationService;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -14,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 
 class CreateAdsLinkAction
 {
+    public function __construct(private readonly RACValidationService $racValidationService) {}
+
     /**
      * @param  array<string, mixed>  $data
      *
@@ -30,6 +33,13 @@ class CreateAdsLinkAction
 
         $post = Post::query()->findOrFail($data['post_id']);
         $ownership->authorize($post->created_by);
+
+        $racValidation = $this->racValidationService->validateRAC($data['rac'] ?? '');
+        if (! $racValidation['is_valid']) {
+            throw ValidationException::withMessages([
+                'rac' => [$racValidation['warning']],
+            ]);
+        }
 
         $styleCode = $user?->style?->style_code ?? $site->settings['default_style'] ?? null;
         $baseSlug = $post->slug;

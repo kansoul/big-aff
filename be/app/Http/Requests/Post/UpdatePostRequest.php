@@ -20,11 +20,8 @@ class UpdatePostRequest extends FormRequest
      */
     public function rules(): array
     {
-        $postId = $this->route('post')?->id;
-
         return [
             'title' => ['sometimes', 'string', 'max:255'],
-            'slug' => ['sometimes', 'string', 'max:255', Rule::unique('posts', 'slug')->ignore($postId)],
             'lang' => ['sometimes', 'nullable', 'string', 'max:10'],
             'note' => ['sometimes', 'nullable', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],

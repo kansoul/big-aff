@@ -45,4 +45,8 @@ return [
         'internal_secret' => env('REVALIDATE_INTERNAL_SECRET'),
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+    ],
+
 ];

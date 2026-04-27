@@ -51,7 +51,7 @@ class RevalidateObserver
                 ->pluck('url')
                 ->filter()
                 ->unique()
-                ->map(fn(string $siteUrl) => $siteUrl . '/api/ran?re-tag=' . $model->slug)
+                ->map(fn (string $siteUrl) => $siteUrl.'/api/ran?re-tag='.$model->slug)
                 ->values()
                 ->all();
         }
@@ -61,7 +61,7 @@ class RevalidateObserver
             $domain = preg_replace('/^https?:\/\//', '', $domain);
             $domain = rtrim($domain, '/');
 
-            return [$model->url . '/api/ran?re-tag=' . $domain];
+            return [$model->url.'/api/ran?re-tag='.$domain];
         }
 
         if ($model instanceof AdsLink) {
@@ -71,7 +71,7 @@ class RevalidateObserver
                 return [];
             }
 
-            return [$siteUrl . '/api/ran?re-tag=' . $model->slug];
+            return [$siteUrl.'/api/ran?re-tag='.$model->slug];
         }
 
         return [];

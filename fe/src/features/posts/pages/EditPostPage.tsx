@@ -87,39 +87,40 @@ export function EditPostPage() {
     [form, loadCategories],
   )
 
-  useEffect(() => {
+  const loadPost = useCallback(async () => {
     if (!id) return
     setLoading(true)
     setLoadError(null)
-    postsApi
-      .getDetail(Number(id))
-      .then((res) => {
-        const p = res.data.data
-        const kSets = p.keyword_sets ?? []
-        setPostKeywordSets(kSets)
-        form.reset({
-          title: p.title,
-          slug: p.slug,
-          lang: p.lang ?? null,
-          note: p.note ?? null,
-          description: p.description ?? null,
-          content: p.content ?? null,
-          feature_media: p.feature_media ?? null,
-          status: p.status ?? 'draft',
-          is_hidden: p.is_hidden ?? false,
-          type: p.type ?? 'normal',
-          category_id: p.category_id ?? null,
-          published_at: p.published_at ? p.published_at.slice(0, 10) : null,
-          keyword_set_ids: kSets.length > 0 ? kSets.map((ks) => ks.id) : null,
-        })
+    try {
+      const res = await postsApi.getDetail(Number(id))
+      const p = res.data.data
+      const kSets = p.keyword_sets ?? []
+      setPostKeywordSets(kSets)
+      form.reset({
+        title: p.title,
+        slug: p.slug,
+        lang: p.lang ?? null,
+        note: p.note ?? null,
+        description: p.description ?? null,
+        content: p.content ?? null,
+        feature_media: p.feature_media ?? null,
+        status: p.status ?? 'draft',
+        is_hidden: p.is_hidden ?? false,
+        type: p.type ?? 'normal',
+        category_id: p.category_id ?? null,
+        published_at: p.published_at ? p.published_at.slice(0, 10) : null,
+        keyword_set_ids: kSets.length > 0 ? kSets.map((ks) => ks.id) : null,
       })
-      .catch((err) => {
-        setLoadError(formatApiError(err))
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    } catch (err) {
+      setLoadError(formatApiError(err))
+    } finally {
+      setLoading(false)
+    }
   }, [id, form])
+
+  useEffect(() => {
+    void loadPost()
+  }, [loadPost])
 
   const onSubmit = async (values: PostFormValues) => {
     if (!id) return
@@ -131,6 +132,7 @@ export function EditPostPage() {
         feature_media_id: values.feature_media?.id ?? null,
       })
       toast.success('Post updated successfully')
+      await loadPost()
     } catch (err) {
       setFormError(formatApiError(err))
     } finally {
@@ -196,9 +198,9 @@ export function EditPostPage() {
             control={form.control}
             watch={form.watch}
             setValue={form.setValue}
+            autoSlug
             categories={categories}
             defaultKeywordSets={postKeywordSets}
-            disableAutoSlug
             canCreateKeywordSet={canCreateKeywordSet}
             canUpdateKeywordSet={canUpdateKeywordSet}
             canDeleteKeywordSet={canDeleteKeywordSet}

@@ -128,6 +128,7 @@ export function CreatePostPage() {
             control={form.control}
             watch={form.watch}
             setValue={form.setValue}
+            autoSlug
             categories={categories}
             canCreateKeywordSet={canCreateKeywordSet}
             canUpdateKeywordSet={canUpdateKeywordSet}
