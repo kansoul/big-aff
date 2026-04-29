@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Post\ListUsersWithPostsAction;
+use App\Enums\UserStatus;
 use App\Http\Requests\Post\AssignUserPostsRequest;
 use App\Http\Requests\Post\ListUsersWithPostsRequest;
 use App\Http\Requests\User\ListUsersRequest;
@@ -13,6 +14,7 @@ use App\Http\Resources\User\UserOptionResource;
 use App\Models\User;
 use App\Services\Team\TeamService;
 use App\Services\User\UserService;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -87,13 +89,15 @@ class UserController extends BaseController
      */
     public function options(): JsonResponse
     {
-        $users = User::query()
-            ->select(['id', 'name'])
-            ->orderBy('name')
-            ->get();
+        $query = User::query()
+            ->select(['id', 'name', 'email'])
+            ->where('status', UserStatus::Active)
+            ->orderBy('id');
+
+        OwnershipFilter::forAuthUser()->applyTo($query, 'id');
 
         return $this->sendResponse([
-            'data' => UserOptionResource::collection($users),
+            'data' => UserOptionResource::collection($query->get()),
         ]);
     }
 
