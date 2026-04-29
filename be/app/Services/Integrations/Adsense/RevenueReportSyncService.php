@@ -4,6 +4,7 @@ namespace App\Services\Integrations\Adsense;
 
 use App\Models\AdClient;
 use App\Models\Channel;
+use App\Models\GoogleOAuthToken;
 use App\Models\RevenueChartReport;
 use App\Models\RevenueReport;
 use App\Models\Style;
@@ -40,13 +41,34 @@ class RevenueReportSyncService
         $this->client->setClientId($oauth2['client_id']);
         $this->client->setClientSecret($oauth2['client_secret']);
 
-        $refreshToken = $oauth2['refresh_token'] ?? null;
+        $this->loadToken();
+        $this->service = new GoogleServiceAdsense($this->client);
+    }
+
+    private function loadToken(): void
+    {
+        $token = GoogleOAuthToken::getActiveToken();
+        if ($token && ! $token->isExpired()) {
+            $this->client->setAccessToken($token->getTokenData());
+
+            return;
+        }
+
+        $refreshToken = config('google.oauth2_adsense.refresh_token');
         if (! $refreshToken) {
             throw new Exception('Missing Google AdSense oauth2_adsense refresh_token in config/google.php');
         }
 
+        $this->refreshAndSaveToken($refreshToken);
+    }
+
+    private function refreshAndSaveToken(string $refreshToken): void
+    {
         $this->client->fetchAccessTokenWithRefreshToken($refreshToken);
-        $this->service = new GoogleServiceAdsense($this->client);
+        $tokenData = $this->client->getAccessToken();
+        if ($tokenData) {
+            GoogleOAuthToken::createOrUpdateFromGoogleResponse($tokenData);
+        }
     }
 
     /**
@@ -178,8 +200,7 @@ class RevenueReportSyncService
     ): array {
         try {
             if ($this->client->isAccessTokenExpired()) {
-                $refreshToken = config('google.oauth2_adsense.refresh_token');
-                $this->client->fetchAccessTokenWithRefreshToken($refreshToken);
+                $this->refreshAndSaveToken(config('google.oauth2_adsense.refresh_token'));
             }
 
             $start = Carbon::parse($startDate);
