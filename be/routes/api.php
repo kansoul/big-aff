@@ -206,8 +206,7 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.$updateBits);
         Route::delete('{role}', [RoleController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::SettingsRolesDelete->value);
-        Route::get('/options', [RoleController::class, 'options'])
-            ->middleware('permission.scope:'.Permission::SettingsUsersCreate->value);
+        Route::get('/options', [RoleController::class, 'options']);
     });
 
     Route::prefix('keyword-sets')->group(function () {
@@ -266,12 +265,10 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::TeamsView->value);
         Route::get('{team}/leaders', [TeamController::class, 'leaders'])
             ->middleware('permission.scope:'.Permission::TeamsView->value);
-        Route::get('{team}/user-options', [TeamController::class, 'userOptions'])
-            ->middleware('permission.scope:'.Permission::TeamsAssign->value);
+        Route::get('{team}/user-options', [TeamController::class, 'userOptions']);
         Route::post('{team}/assign-users', [TeamController::class, 'assignUsers'])
             ->middleware('permission.scope:'.Permission::TeamsAssign->value);
-        Route::get('{team}/parent-child-options', [UserParentChildController::class, 'teamMemberOptions'])
-            ->middleware('permission.scope:'.Permission::TeamsAssign->value);
+        Route::get('{team}/parent-child-options', [UserParentChildController::class, 'teamMemberOptions']);
     });
 
     Route::prefix('ad-clients')->group(function () {
@@ -294,8 +291,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('campaign-reports')->group(function () {
-        Route::get('delivery-entities-reports/status-options', [AdsDeliveryEntitiesController::class, 'statusOptions'])
-            ->middleware('permission.scope:'.Permission::DeliveryEntitiesReportsView->value);
+        Route::get('delivery-entities-reports/status-options', [AdsDeliveryEntitiesController::class, 'statusOptions']);
         Route::get('{campaignId}/delivery-entities-reports', [AdsDeliveryEntitiesController::class, 'index'])
             ->middleware('permission.scope:'.Permission::DeliveryEntitiesReportsView->value);
         Route::patch('{campaignId}/adsets/{adsetInsightId}/toggle-status', [AdsDeliveryEntitiesController::class, 'toggleAdsetStatus'])

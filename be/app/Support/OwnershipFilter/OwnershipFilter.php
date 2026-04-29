@@ -141,7 +141,7 @@ final readonly class OwnershipFilter
         $this->applyThrough(
             $query,
             $column,
-            fn(array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
+            fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
                 ->whereIn('account_user.user_id', $ids)
                 ->select('accounts.account_id'),
         );
@@ -162,7 +162,7 @@ final readonly class OwnershipFilter
         $this->applyThrough(
             $query,
             $column,
-            fn(array $ids) => Channel::join('channel_user', 'channel_user.channel_id', '=', 'channels.id')
+            fn (array $ids) => Channel::join('channel_user', 'channel_user.channel_id', '=', 'channels.id')
                 ->whereIn('channel_user.user_id', $ids)
                 ->select('channels.code'),
         );
