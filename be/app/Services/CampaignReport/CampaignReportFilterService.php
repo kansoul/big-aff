@@ -125,7 +125,7 @@ class CampaignReportFilterService
             ->groupBy('code', 'name')
             ->orderBy('code');
 
-        $this->applyAccountOwnership($query, $ownership);
+        $ownership->applyThroughChannel($query, 'code');
 
         return $query->get()
             ->map(fn (Channel $c) => [
