@@ -92,6 +92,14 @@ function MediaFileCell({ media }: { media: MediaFile }) {
 
 const MEDIA_COLUMNS: MRT_ColumnDef<MediaFile>[] = [
   {
+    accessorKey: 'id',
+    header: 'ID',
+    size: 65,
+    Cell: ({ row }) => (
+      <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+    ),
+  },
+  {
     accessorKey: 'original_name',
     header: 'File',
     size: 200,
@@ -216,7 +224,15 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
     enablePagination: false,
     positionToolbarAlertBanner: 'none',
     initialState: { density: 'md' },
-    mantineTableContainerProps: { sx: { maxHeight: 320, overflowY: 'auto' } },
+    mantineLoadingOverlayProps: {
+      sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
+    },
+    mantineTableContainerProps: {
+      onScroll: (e: React.UIEvent<HTMLDivElement>) => {
+        e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
+      },
+      sx: { maxHeight: 320, overflowY: 'auto' },
+    },
     renderTopToolbar: ({ table: t }) => (
       <div className="flex justify-end border-b border-border px-2 py-1">
         <MRT_ShowHideColumnsButton table={t} />

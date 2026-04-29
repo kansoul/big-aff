@@ -97,8 +97,8 @@ export function FollowsPage() {
   const onSortingChange = useCallback(
     (orderBy: string | null, order: 'asc' | 'desc' | null) => {
       onFilterChange({
-        order_by: (orderBy as FollowFilterParams['order_by']) ?? undefined,
-        order: order ?? undefined,
+        order_by: (orderBy as FollowFilterParams['order_by']) ?? null,
+        order: order ?? null,
       })
     },
     [onFilterChange],

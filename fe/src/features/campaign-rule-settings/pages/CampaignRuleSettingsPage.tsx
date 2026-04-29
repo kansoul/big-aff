@@ -21,7 +21,8 @@ const DEFAULT_FILTERS: CampaignRuleSettingsFilterParams = {
 
 function parseFilters(params: URLSearchParams): CampaignRuleSettingsFilterParams {
   return {
-    order_by: (params.get('order_by') as CampaignRuleSettingsFilterParams['order_by']) ?? 'created_at',
+    order_by:
+      (params.get('order_by') as CampaignRuleSettingsFilterParams['order_by']) ?? 'created_at',
     order: (params.get('order') as CampaignRuleSettingsFilterParams['order']) ?? 'desc',
   }
 }
@@ -58,9 +59,6 @@ export function CampaignRuleSettingsPage() {
       defaultPageSize: 10,
     })
 
-  const [refreshSignal, setRefreshSignal] = useState(0)
-  const loadData = useCallback(() => setRefreshSignal((s) => s + 1), [])
-
   useEffect(() => {
     let ignore = false
     const fetchData = async () => {
@@ -85,7 +83,7 @@ export function CampaignRuleSettingsPage() {
     return () => {
       ignore = true
     }
-  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
+  }, [pagination.pageIndex, pagination.pageSize, filters])
 
   // Wraps both sorting/filter changes and pagination changes coming from the list component
   const onFilterChange = useCallback(

@@ -8,6 +8,7 @@ import { ThemeContext, type Theme } from '@/app/providers/theme-context'
 // Index: [0]=lightest (foreground text) … [9]=darkest (deepest bg)
 const mantineTheme: MantineThemeOverride = {
   fontFamily: 'Inter Variable, sans-serif',
+  primaryColor: 'red',
   colors: {
     dark: [
       '#f5f5f5', // [0] --foreground dark   (oklch 0.985)

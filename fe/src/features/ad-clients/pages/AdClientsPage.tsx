@@ -101,8 +101,8 @@ export function AdClientsPage() {
   const onSortingChange = useCallback(
     (orderBy: string | null, order: 'asc' | 'desc' | null) => {
       onFilterChange({
-        order_by: (orderBy as AdClientFilterParams['order_by']) ?? undefined,
-        order: order ?? undefined,
+        order_by: (orderBy as AdClientFilterParams['order_by']) ?? null,
+        order: order ?? null,
       })
     },
     [onFilterChange],

@@ -43,6 +43,14 @@ type Props = {
 
 const columns: MRT_ColumnDef<LogEntry>[] = [
   {
+    accessorKey: 'id',
+    header: 'ID',
+    size: 65,
+    Cell: ({ row }) => (
+      <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+    ),
+  },
+  {
     accessorKey: 'timestamp',
     header: 'Timestamp',
     size: 180,
@@ -176,11 +184,14 @@ export const LogsTableCard = memo(function LogsTableCard({
     enableSorting: false,
     enableColumnActions: false,
     enableColumnPinning: !isMobile,
+    mantineLoadingOverlayProps: {
+      sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
+    },
     mantineTableContainerProps: {
-      style: {
-        overflowX: 'auto',
-        WebkitOverflowScrolling: 'touch',
+      onScroll: (e: React.UIEvent<HTMLDivElement>) => {
+        e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
       },
+      sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
     },
     enableGlobalFilter: false,
     enableFilters: false,

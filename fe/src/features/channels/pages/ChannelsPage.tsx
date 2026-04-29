@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import type { MRT_SortingState } from 'mantine-react-table'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 
@@ -17,6 +18,7 @@ import {
   type Channel,
   type ChannelBulkCreateFormValues,
   type ChannelFilterParams,
+  type ChannelOrderBy,
 } from '@/features/channels/types'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
@@ -25,11 +27,15 @@ import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
 
 const DEFAULT_FILTERS: ChannelFilterParams = {
   query: null,
+  order_by: null,
+  order: null,
 }
 
 function parseFilters(params: URLSearchParams): ChannelFilterParams {
   return {
     query: params.get('query'),
+    order_by: params.get('order_by') as ChannelOrderBy | null,
+    order: params.get('order') as 'asc' | 'desc' | null,
   }
 }
 
@@ -39,6 +45,8 @@ function buildParams(
 ): URLSearchParams {
   const params = new URLSearchParams()
   if (filters.query) params.set('query', filters.query)
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
   setPaginationInParams(params, pagination)
   return params
 }
@@ -85,6 +93,8 @@ export function ChannelsPage() {
           query: filters.query ?? undefined,
           page: pagination.pageIndex + 1,
           per_page: pagination.pageSize,
+          order_by: filters.order_by ?? undefined,
+          order: filters.order ?? undefined,
         })
         if (!ignore) {
           setData(result.data ?? [])
@@ -141,6 +151,17 @@ export function ChannelsPage() {
   const onDeleteRow = useCallback((row: Channel) => {
     setDeleteRow(row)
   }, [])
+
+  const onSortingChange = useCallback(
+    (sorting: MRT_SortingState) => {
+      const first = sorting[0] ?? null
+      onFilterChange({
+        order_by: first ? (first.id as ChannelOrderBy) : null,
+        order: first ? (first.desc ? 'desc' : 'asc') : null,
+      })
+    },
+    [onFilterChange],
+  )
 
   const onDeleteOpenChange = useCallback((open: boolean) => {
     if (!open) setDeleteRow(null)
@@ -206,6 +227,7 @@ export function ChannelsPage() {
         filters={apiFilters}
         onFilterChange={onFilterChange}
         onFilterReset={onFilterReset}
+        onSortingChange={onSortingChange}
         onPaginationChange={(page, perPage) =>
           setPagination({ pageIndex: page - 1, pageSize: perPage })
         }

@@ -42,6 +42,14 @@ function getColumns({
 }: ColumnMeta): MRT_ColumnDef<MediaFile>[] {
   return [
     {
+      accessorKey: 'id',
+      header: 'ID',
+      size: 65,
+      Cell: ({ row }) => (
+        <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+      ),
+    },
+    {
       id: 'preview',
       header: 'Preview',
       size: 72,
@@ -357,7 +365,15 @@ function MediaTableCardInner({
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
-    mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
+    mantineLoadingOverlayProps: {
+      sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
+    },
+    mantineTableContainerProps: {
+      onScroll: (e: React.UIEvent<HTMLDivElement>) => {
+        e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
+      },
+      sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
+    },
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full flex-col border-b border-border bg-card">

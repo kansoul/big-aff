@@ -5,6 +5,7 @@ import {
   useMantineReactTable,
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
+  type MRT_SortingState,
 } from 'mantine-react-table'
 import { Palette, Plus, Trash2 } from 'lucide-react'
 
@@ -22,6 +23,7 @@ type StylesTableCardProps = {
   filters: StyleFilterParams
   onFilterChange: (patch: Partial<StyleFilterParams>) => void
   onFilterReset: () => void
+  onSortingChange?: (sorting: MRT_SortingState) => void
   onPaginationChange: (page: number, perPage: number) => void
   canCreate: boolean
   canDelete: boolean
@@ -39,6 +41,14 @@ function getColumns(meta: {
   const { canDelete, onDeleteRow } = meta
 
   return [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      size: 65,
+      Cell: ({ row }) => (
+        <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+      ),
+    },
     {
       accessorKey: 'name',
       header: 'Name',
@@ -111,6 +121,7 @@ function StylesTableCardInner({
   filters,
   onFilterChange,
   onFilterReset,
+  onSortingChange,
   onPaginationChange,
   canCreate,
   canDelete,
@@ -126,6 +137,11 @@ function StylesTableCardInner({
   const rowSelection = useMemo<MRT_RowSelectionState>(
     () => Object.fromEntries(data.map((row) => [String(row.id), selectedIds.has(row.id)])),
     [data, selectedIds],
+  )
+
+  const sorting: MRT_SortingState = useMemo(
+    () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
+    [filters.order_by, filters.order],
   )
 
   const filterFields = useMemo<FilterFieldDef[]>(
@@ -161,6 +177,13 @@ function StylesTableCardInner({
     columns,
     getRowId: (row) => String(row.id),
     manualPagination: true,
+    manualSorting: true,
+    onSortingChange: onSortingChange
+      ? (updater) => {
+          const next = typeof updater === 'function' ? updater(sorting) : updater
+          onSortingChange(next)
+        }
+      : undefined,
     rowCount,
     enableColumnFilters: false,
     enableGlobalFilter: false,
@@ -176,6 +199,7 @@ function StylesTableCardInner({
         pageIndex: (filters.page ?? 1) - 1,
         pageSize: filters.per_page ?? 15,
       },
+      sorting,
       rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
     },
@@ -202,7 +226,15 @@ function StylesTableCardInner({
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
-    mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
+    mantineLoadingOverlayProps: {
+      sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
+    },
+    mantineTableContainerProps: {
+      onScroll: (e: React.UIEvent<HTMLDivElement>) => {
+        e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
+      },
+      sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
+    },
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full flex-col border-b border-border bg-card">

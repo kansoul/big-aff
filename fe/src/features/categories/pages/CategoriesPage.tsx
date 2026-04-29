@@ -105,8 +105,8 @@ export function CategoriesPage() {
   const onSortingChange = useCallback(
     (orderBy: string | null, order: 'asc' | 'desc' | null) => {
       onFilterChange({
-        order_by: (orderBy as CategoryFilterParams['order_by']) ?? undefined,
-        order: order ?? undefined,
+        order_by: (orderBy as CategoryFilterParams['order_by']) ?? null,
+        order: order ?? null,
       })
     },
     [onFilterChange],

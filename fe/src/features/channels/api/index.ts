@@ -23,6 +23,8 @@ export const channelsApi = {
     is_active?: boolean
     per_page?: number
     page?: number
+    order_by?: string
+    order?: 'asc' | 'desc'
   }): Promise<ChannelListResponse> {
     const res = await axiosInstance.get<ChannelListResponse>('/channels', { params })
     return res.data

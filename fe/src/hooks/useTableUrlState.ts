@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { parsePaginationFromParams, type TablePaginationState } from '@/lib/utils'
 
@@ -22,7 +22,13 @@ export function useTableUrlState<F>({
     parsePaginationFromParams(searchParams, defaultPageSize),
   )
 
+  const isMounted = useRef(false)
+
   useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true
+      return
+    }
     setSearchParams(buildParams(filters, pagination), { replace: true })
     // buildParams is a module-level function — stable across renders
     // eslint-disable-next-line react-hooks/exhaustive-deps

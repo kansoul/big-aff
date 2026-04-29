@@ -197,8 +197,8 @@ export function AccountsPage() {
     (orderBy: string | null, order: 'asc' | 'desc' | null) => {
       setFilters((prev) => ({
         ...prev,
-        order_by: (orderBy as AccountFilterParams['order_by']) ?? undefined,
-        order: order ?? undefined,
+        order_by: (orderBy as AccountFilterParams['order_by']) ?? null,
+        order: order ?? null,
       }))
       setPagination((prev) => ({ ...prev, pageIndex: 0 }))
     },

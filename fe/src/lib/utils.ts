@@ -19,9 +19,11 @@ export function parsePaginationFromParams(
   params: URLSearchParams,
   defaultPageSize = 30,
 ): TablePaginationState {
+  const page = Number(params.get('page'))
+  const perPage = Number(params.get('per_page'))
   return {
-    pageIndex: params.get('page') ? Number(params.get('page')) - 1 : 0,
-    pageSize: params.get('per_page') ? Number(params.get('per_page')) : defaultPageSize,
+    pageIndex: Number.isFinite(page) && page > 0 ? page - 1 : 0,
+    pageSize: Number.isFinite(perPage) && perPage > 0 ? perPage : defaultPageSize,
   }
 }
 
