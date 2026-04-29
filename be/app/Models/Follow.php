@@ -13,9 +13,7 @@ class Follow extends Model
 
     protected $fillable = [
         'email',
-        'site_id',
         'post_id',
-        'ads_link_id',
         'style_code',
         'channel_code',
     ];

@@ -4,9 +4,7 @@ export type FollowOrder = 'asc' | 'desc'
 export interface Follow {
   id: number
   email: string
-  site_id: number | null
   post_id: number | null
-  ads_link_id: number | null
   style_code: string | null
   channel_code: string | null
   created_at: string | null

@@ -42,17 +42,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Follow>[] {
       ),
     },
     {
-      accessorKey: 'site_id',
-      header: 'Site ID',
-      size: 100,
-      enableSorting: true,
-      Cell: ({ row }) => {
-        const val = row.original.site_id
-        if (val == null) return <span className="text-muted-foreground/50">—</span>
-        return <span className="text-muted-foreground">{val}</span>
-      },
-    },
-    {
       accessorKey: 'post_id',
       header: 'Post ID',
       size: 100,
