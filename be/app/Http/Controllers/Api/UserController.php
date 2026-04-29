@@ -40,14 +40,7 @@ class UserController extends BaseController
      */
     public function index(ListUsersRequest $request): JsonResponse
     {
-        $auth = $request->user();
-        if (! $auth instanceof User) {
-            return $this->sendError('Unauthenticated.', [], Response::HTTP_UNAUTHORIZED);
-        }
-
-        $this->authorize('viewAny', User::class);
-
-        $paginator = $this->userService->list($auth, $request->validated());
+        $paginator = $this->userService->list($request->validated());
 
         return $this->sendResponse(
             [
@@ -133,7 +126,7 @@ class UserController extends BaseController
     {
         $paginator = $this->listUsersWithPostsAction->execute($request->validated());
 
-        $data = collect($paginator->items())->map(fn (User $user) => [
+        $data = collect($paginator->items())->map(fn(User $user) => [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,

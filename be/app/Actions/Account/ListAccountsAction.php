@@ -30,7 +30,7 @@ class ListAccountsAction
         $ownership = OwnershipFilter::forAuthUser();
 
         $query = Account::query()->with(['businessCenter', 'team']);
-        $ownership->applyTo($query);
+        $ownership->applyThroughAccount($query);
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];
