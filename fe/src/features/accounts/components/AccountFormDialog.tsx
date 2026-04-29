@@ -452,7 +452,9 @@ export function EditAccountDialog({
     () => ({
       account_id: account?.account_id ?? '',
       account_name: account?.account_name ?? null,
-      ads_type: account?.ads_type ?? ('facebook' as const),
+      ads_type: (account?.ads_type === 'unknown'
+        ? 'facebook'
+        : (account?.ads_type ?? 'facebook')) as 'facebook' | 'google',
       business_center_id: account?.business_center_id ?? null,
       team_id: account?.team_id ?? undefined,
       user_id: null as number | null,

@@ -391,9 +391,7 @@ function AccountsTableCardInner({
       onFilterChange({
         query: typeof values.query === 'string' ? values.query : undefined,
         ads_type:
-          values.ads_type === 'facebook' ||
-          values.ads_type === 'google' ||
-          values.ads_type === 'unknown'
+          values.ads_type === 'facebook' || values.ads_type === 'google'
             ? values.ads_type
             : undefined,
         status: ACCOUNT_STATUS_OPTIONS.some((option) => option.value === values.status)

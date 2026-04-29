@@ -231,7 +231,7 @@ export function AccountsPage() {
         const { data: response } = await accountsApi.update(row.id, {
           account_id: row.account_id,
           account_name: row.account_name,
-          ads_type: row.ads_type,
+          ads_type: row.ads_type === 'unknown' ? 'facebook' : row.ads_type,
           business_center_id: row.business_center_id,
           team_id: row.team_id,
           status: row.status,
