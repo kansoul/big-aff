@@ -59,13 +59,13 @@ class MigratePostBackupCommand extends Command
         $stats = $this->importPostsAndKeywords($postRecords, $fileMap);
 
         $this->info('Import completed.');
-        $this->line('Files imported: ' . $stats['files_imported'] . ' (db rows: ' . $fileImport['inserted_rows'] . ')');
-        $this->line('Files copied: ' . $fileImport['copied_files']);
-        $this->warn('Files missing from backup/post-files: ' . $fileImport['missing_source_files']);
-        $this->line('Posts imported: ' . $stats['posts_imported']);
-        $this->line('Keyword sets created: ' . $stats['keyword_sets_created']);
-        $this->line('Post-keyword links created: ' . $stats['pivot_created']);
-        $this->warn('Feature media missing mapping: ' . $stats['missing_feature_media']);
+        $this->line('Files imported: '.$stats['files_imported'].' (db rows: '.$fileImport['inserted_rows'].')');
+        $this->line('Files copied: '.$fileImport['copied_files']);
+        $this->warn('Files missing from backup/post-files: '.$fileImport['missing_source_files']);
+        $this->line('Posts imported: '.$stats['posts_imported']);
+        $this->line('Keyword sets created: '.$stats['keyword_sets_created']);
+        $this->line('Post-keyword links created: '.$stats['pivot_created']);
+        $this->warn('Feature media missing mapping: '.$stats['missing_feature_media']);
 
         return self::SUCCESS;
     }
@@ -110,7 +110,7 @@ class MigratePostBackupCommand extends Command
             $normalizedPath = $this->normalizePath($backupRelativePath);
             $fileName = basename($normalizedPath);
             $sourcePath = $this->resolveSourcePath((string) $filesSourceDir, $backupRelativePath);
-            $destinationPath = $destinationDir . DIRECTORY_SEPARATOR . $fileName;
+            $destinationPath = $destinationDir.DIRECTORY_SEPARATOR.$fileName;
 
             if ($sourcePath !== null) {
                 if (! is_file($destinationPath)) {
@@ -154,7 +154,7 @@ class MigratePostBackupCommand extends Command
             ->whereIn('path', array_values(array_unique($paths)))
             ->get()
             ->pluck('id', 'path')
-            ->map(fn(mixed $id): int => (int) $id)
+            ->map(fn (mixed $id): int => (int) $id)
             ->all();
 
         return [
@@ -195,7 +195,7 @@ class MigratePostBackupCommand extends Command
 
             $post = Post::query()->create([
                 'title' => (string) ($record['title'] ?? ''),
-                'slug' => (string) ($record['slug'] ?? Str::slug((string) ($record['title'] ?? 'post-' . uniqid()))),
+                'slug' => (string) ($record['slug'] ?? Str::slug((string) ($record['title'] ?? 'post-'.uniqid()))),
                 'lang' => $record['lang'] ?? null,
                 'note' => $record['note'] ?? null,
                 'description' => $record['description'] ?? null,
@@ -251,7 +251,7 @@ class MigratePostBackupCommand extends Command
     {
         $fileName = basename($path);
 
-        return $fileName !== '' ? 'media/posts/' . $fileName : '';
+        return $fileName !== '' ? 'media/posts/'.$fileName : '';
     }
 
     private function normalizeBackupRelativePath(string $path): string
@@ -261,12 +261,12 @@ class MigratePostBackupCommand extends Command
 
     private function resolveSourcePath(string $filesSourceDir, string $backupRelativePath): ?string
     {
-        $primaryPath = rtrim($filesSourceDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $backupRelativePath;
+        $primaryPath = rtrim($filesSourceDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$backupRelativePath;
         if (is_file($primaryPath)) {
             return $primaryPath;
         }
 
-        $fallbackPath = rtrim($filesSourceDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . basename($backupRelativePath);
+        $fallbackPath = rtrim($filesSourceDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.basename($backupRelativePath);
         if (is_file($fallbackPath)) {
             return $fallbackPath;
         }
@@ -335,7 +335,7 @@ class MigratePostBackupCommand extends Command
         return DB::table($table)
             ->select('id')
             ->pluck('id')
-            ->mapWithKeys(fn(mixed $id): array => [(int) $id => true])
+            ->mapWithKeys(fn (mixed $id): array => [(int) $id => true])
             ->all();
     }
 
@@ -368,8 +368,8 @@ class MigratePostBackupCommand extends Command
         }
 
         return collect($firstSet)
-            ->filter(fn(mixed $item): bool => is_string($item) && trim($item) !== '')
-            ->map(fn(string $keyword): string => trim($keyword))
+            ->filter(fn (mixed $item): bool => is_string($item) && trim($item) !== '')
+            ->map(fn (string $keyword): string => trim($keyword))
             ->unique()
             ->values()
             ->all();
