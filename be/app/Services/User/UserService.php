@@ -23,9 +23,9 @@ class UserService
     /**
      * @param  array<string, mixed>  $filters
      */
-    public function list(User $user, array $filters): LengthAwarePaginator
+    public function list(array $filters): LengthAwarePaginator
     {
-        return $this->listUsersAction->execute($user, $filters);
+        return $this->listUsersAction->execute($filters);
     }
 
     /**

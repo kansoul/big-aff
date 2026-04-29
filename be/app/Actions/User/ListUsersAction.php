@@ -3,6 +3,7 @@
 namespace App\Actions\User;
 
 use App\Models\User;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -27,14 +28,11 @@ class ListUsersAction
     /**
      * @param  array<string, mixed>  $filters
      */
-    public function execute(User $auth, array $filters): LengthAwarePaginator
+    public function execute(array $filters): LengthAwarePaginator
     {
-        $query = User::query()
-            ->with(['role', 'style', 'assignedParentLink.parentUser', 'accounts.businessCenter', 'accounts.team']);
-
-        if (! $auth->managesAllUsers()) {
-            $query->whereIn('id', $auth->manageableUserIds());
-        }
+        $ownership = OwnershipFilter::forAuthUser();
+        $query = User::query()->with(['role', 'style', 'assignedParentLink.parentUser', 'accounts.businessCenter', 'accounts.team']);
+        $ownership->applyTo($query, 'id');
 
         SortInput::fromValidatedArray(
             $filters,
