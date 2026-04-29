@@ -28,10 +28,14 @@ import { useTheme } from '@/hooks/useTheme'
 
 import logoHeaderDark from '@/assets/logo-s-white.png'
 import logoHeaderLight from '@/assets/logo-s-red.png'
+import logoNexaDark from '@/assets/dark-logo-nexa.png'
+import logoNexaLight from '@/assets/logo-nexa.png'
+
 import { cn } from '@/lib/utils'
 import { ChevronDown, LogOut, Menu } from 'lucide-react'
 import * as React from 'react'
 import { Link, NavLink, useLocation, useMatch, useMatches, useNavigate } from 'react-router-dom'
+import { siteDomain } from '@/config'
 
 const navTabActive = 'text-red-600 border-b-2 border-red-600 dark:text-red-400 dark:border-red-400'
 const navTabInactive =
@@ -287,8 +291,16 @@ export const Header = React.memo(function Header() {
 
           <Link to={PATHS.dashboard}>
             <img
-              src={theme === 'dark' ? logoHeaderDark : logoHeaderLight}
-              alt="Ticollab"
+              src={
+                siteDomain === 'nexa'
+                  ? theme === 'dark'
+                    ? logoNexaDark
+                    : logoNexaLight
+                  : theme === 'dark'
+                    ? logoHeaderDark
+                    : logoHeaderLight
+              }
+              alt={siteDomain === 'ticollab' ? 'Ticollab' : 'Nexa'}
               className="h-5 w-auto object-contain object-left md:h-6"
             />
           </Link>
@@ -365,8 +377,16 @@ export const Header = React.memo(function Header() {
             <SheetHeader className="border-b border-border/60 px-4 py-4 text-left">
               <Link to={PATHS.dashboard}>
                 <img
-                  src={theme === 'dark' ? logoHeaderDark : logoHeaderLight}
-                  alt="Ticollab"
+                  src={
+                    siteDomain === 'nexa'
+                      ? theme === 'dark'
+                        ? logoNexaDark
+                        : logoNexaLight
+                      : theme === 'dark'
+                        ? logoHeaderDark
+                        : logoHeaderLight
+                  }
+                  alt={siteDomain === 'ticollab' ? 'Ticollab' : 'Nexa'}
                   className="h-5 w-auto object-contain object-left md:h-6"
                 />
               </Link>

@@ -24,13 +24,68 @@ import {
   type AdsLinkFilterParams,
   type AdsLinkUpdateFormValues,
   type ChannelOption,
-  type Pagination,
   type PostOption,
   type SiteOption,
   type UserOption,
 } from '@/features/ads-links/types'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
+
+const DEFAULT_FILTERS: AdsLinkFilterParams = {
+  keyword: null,
+  site_id: null,
+  post_id: null,
+  channel_code: null,
+  created_by: null,
+  pixel_id: null,
+  googleid: null,
+  date_range: null,
+  is_hidden: undefined,
+  order_by: null,
+  order: null,
+}
+
+function parseFilters(params: URLSearchParams): AdsLinkFilterParams {
+  const dateFrom = params.get('date_from')
+  const dateTo = params.get('date_to')
+  return {
+    keyword: params.get('keyword'),
+    site_id: params.get('site_id') ? Number(params.get('site_id')) : null,
+    post_id: params.get('post_id') ? Number(params.get('post_id')) : null,
+    channel_code: params.get('channel_code'),
+    created_by: params.get('created_by') ? Number(params.get('created_by')) : null,
+    pixel_id: params.get('pixel_id'),
+    googleid: params.get('googleid'),
+    date_range: dateFrom || dateTo ? { from: dateFrom, to: dateTo } : null,
+    is_hidden:
+      params.get('is_hidden') !== null ? (Number(params.get('is_hidden')) as 0 | 1) : undefined,
+    order_by: params.get('order_by'),
+    order: params.get('order') as 'asc' | 'desc' | null,
+  }
+}
+
+function buildParams(
+  filters: AdsLinkFilterParams,
+  pagination: TablePaginationState,
+): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.keyword) params.set('keyword', filters.keyword)
+  if (filters.site_id != null) params.set('site_id', String(filters.site_id))
+  if (filters.post_id != null) params.set('post_id', String(filters.post_id))
+  if (filters.channel_code) params.set('channel_code', filters.channel_code)
+  if (filters.created_by != null) params.set('created_by', String(filters.created_by))
+  if (filters.pixel_id) params.set('pixel_id', filters.pixel_id)
+  if (filters.googleid) params.set('googleid', filters.googleid)
+  if (filters.date_range?.from) params.set('date_from', filters.date_range.from)
+  if (filters.date_range?.to) params.set('date_to', filters.date_range.to)
+  if (filters.is_hidden != null) params.set('is_hidden', String(filters.is_hidden))
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  setPaginationInParams(params, pagination, 15)
+  return params
+}
 
 const createDefaultValues: AdsLinkCreateFormValues = {
   site_id: 0,
@@ -51,14 +106,21 @@ export function AdsLinksPage() {
   const canUpdate = useMemo(() => hasPermission(perms, PermissionSlugs.AdsLinksUpdate), [perms])
 
   const [adsLinks, setAdsLinks] = useState<AdsLink[]>([])
-  const [pagination, setPagination] = useState<Pagination | null>(null)
+  const [totalRows, setTotalRows] = useState(0)
   const [sites, setSites] = useState<SiteOption[]>([])
   const [posts, setPosts] = useState<PostOption[]>([])
   const [channels, setChannels] = useState<ChannelOption[]>([])
   const [users, setUsers] = useState<UserOption[]>([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
-  const [filters, setFilters] = useState<AdsLinkFilterParams>({ page: 1, per_page: 15 })
+
+  const { filters, setFilters, pagination, setPagination } =
+    useTableUrlState<AdsLinkFilterParams>({
+      parseFilters,
+      buildParams,
+      defaultFilters: DEFAULT_FILTERS,
+      defaultPageSize: 15,
+    })
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editRow, setEditRow] = useState<AdsLink | null>(null)
@@ -88,27 +150,39 @@ export function AdsLinksPage() {
     setUsers(userList)
   }, [])
 
-  const loadData = useCallback(async (activeFilters: AdsLinkFilterParams = {}) => {
-    try {
-      setListError(null)
-      setLoading(true)
-      const result = await adsLinksApi.list(activeFilters)
-      setAdsLinks(result.data ?? [])
-      setPagination(result.pagination ?? null)
-    } catch (err) {
-      setListError(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const loadData = useCallback(() => setRefreshSignal((s) => s + 1), [])
 
   useEffect(() => {
     void loadOptions()
   }, [loadOptions])
 
   useEffect(() => {
-    void loadData(filters)
-  }, [loadData, filters])
+    let ignore = false
+    const fetchData = async () => {
+      try {
+        setListError(null)
+        setLoading(true)
+        const result = await adsLinksApi.list({
+          ...filters,
+          page: pagination.pageIndex + 1,
+          per_page: pagination.pageSize,
+        })
+        if (!ignore) {
+          setAdsLinks(result.data ?? [])
+          setTotalRows(result.pagination?.total ?? 0)
+        }
+      } catch (err) {
+        if (!ignore) setListError(formatApiError(err))
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    void fetchData()
+    return () => {
+      ignore = true
+    }
+  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
   useEffect(() => {
     if (editRow) {
@@ -157,7 +231,7 @@ export function AdsLinksPage() {
       if (!options?.createAnother) {
         setCreateOpen(false)
       }
-      await loadData(filters)
+      loadData()
     } catch (err) {
       const msg = formatApiError(err)
       setFormError(msg)
@@ -181,7 +255,7 @@ export function AdsLinksPage() {
         googleid: values.googleid ?? null,
       })
       setEditRow(null)
-      await loadData(filters)
+      loadData()
     } catch (err) {
       const msg = formatApiError(err)
       setFormError(msg)
@@ -195,38 +269,41 @@ export function AdsLinksPage() {
     async (row: AdsLink) => {
       try {
         await adsLinksApi.toggleHide(row.id)
-        await loadData(filters)
+        loadData()
       } catch (err) {
         setListError(formatApiError(err))
       }
     },
-    [loadData, filters],
+    [loadData],
   )
 
-  const onFilterChange = useCallback((patch: Partial<AdsLinkFilterParams>) => {
-    const { date_range, is_hidden, ...rest } = patch
-    const range = date_range as { from: string | null; to: string | null } | undefined
-
-    setFilters((prev) => ({
-      ...prev,
-      ...rest,
-      is_hidden: is_hidden == 1 ? 1 : is_hidden == 0 ? 0 : undefined,
-      date_range: range,
-      page: 1,
-    }))
-  }, [])
+  const onFilterChange = useCallback(
+    (patch: Partial<AdsLinkFilterParams>) => {
+      const { date_range, is_hidden, ...rest } = patch
+      const range = date_range as { from: string | null; to: string | null } | undefined
+      setFilters((prev) => ({
+        ...prev,
+        ...rest,
+        is_hidden: is_hidden == 1 ? 1 : is_hidden == 0 ? 0 : undefined,
+        date_range: range,
+      }))
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    },
+    [setFilters, setPagination],
+  )
 
   const onFilterReset = useCallback(() => {
-    setFilters({ page: 1, per_page: 15 })
-  }, [])
+    setFilters(DEFAULT_FILTERS)
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  }, [setFilters, setPagination])
 
-  const onPaginationChange = useCallback((page: number, perPage: number) => {
-    setFilters((prev) => ({ ...prev, page, per_page: perPage }))
-  }, [])
-
-  const onSortingChange = useCallback((orderBy: string | null, order: 'asc' | 'desc' | null) => {
-    setFilters((prev) => ({ ...prev, order_by: orderBy, order, page: 1 }))
-  }, [])
+  const onSortingChange = useCallback(
+    (orderBy: string | null, order: 'asc' | 'desc' | null) => {
+      setFilters((prev) => ({ ...prev, order_by: orderBy, order }))
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    },
+    [setFilters, setPagination],
+  )
 
   const onAddClick = useCallback(() => {
     setFormError(null)
@@ -251,11 +328,11 @@ export function AdsLinksPage() {
         listError={listError}
         loading={loading}
         adsLinks={adsLinks}
-        totalRows={pagination?.total ?? 0}
+        totalRows={totalRows}
         currentUserId={user?.id}
         canCreate={canCreate}
         canUpdate={canUpdate}
-        filters={filters}
+        filters={{ ...filters, page: pagination.pageIndex + 1, per_page: pagination.pageSize }}
         sites={sites}
         posts={posts}
         channels={channels}
@@ -265,7 +342,9 @@ export function AdsLinksPage() {
         onAddClick={onAddClick}
         onEditRow={onEditRow}
         onToggleHide={(row) => void onToggleHide(row)}
-        onPaginationChange={onPaginationChange}
+        onPaginationChange={(page, perPage) =>
+          setPagination({ pageIndex: page - 1, pageSize: perPage })
+        }
         onSortingChange={onSortingChange}
       />
       <CreateAdsLinkDialog

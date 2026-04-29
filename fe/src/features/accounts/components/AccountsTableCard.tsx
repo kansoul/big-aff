@@ -25,7 +25,6 @@ type ToggleField = 'is_special' | 'sync_to_mcc'
 const ADS_TYPE_OPTIONS = [
   { value: 'facebook', label: 'Facebook' },
   { value: 'google', label: 'Google' },
-  { value: 'unknown', label: 'Unknown' },
 ] as const
 
 type ActionMeta = {

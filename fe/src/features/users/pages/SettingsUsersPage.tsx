@@ -27,11 +27,27 @@ import {
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import type { ManagedUser } from '@/shared/types'
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
 
-type PaginationState = { pageIndex: number; pageSize: number }
 type RoleOption = { id: number; name: string }
 
 const DEFAULT_FILTERS: UserFilterParams = { order: null, order_by: null }
+
+function parseFilters(params: URLSearchParams): UserFilterParams {
+  return {
+    order_by: params.get('order_by') as UserFilterParams['order_by'],
+    order: params.get('order') as UserFilterParams['order'],
+  }
+}
+
+function buildParams(filters: UserFilterParams, pagination: TablePaginationState): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  setPaginationInParams(params, pagination)
+  return params
+}
 
 function normalizeRoleOptions(data: unknown): RoleOption[] {
   if (Array.isArray(data)) {
@@ -69,8 +85,12 @@ export function SettingsUsersPage() {
   const [styleOptions, setStyleOptions] = useState<StyleOption[]>([])
   const [loading, setLoading] = useState(true)
 
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
-  const [filters, setFilters] = useState<UserFilterParams>(DEFAULT_FILTERS)
+  const { filters, setFilters, pagination, setPagination } =
+    useTableUrlState<UserFilterParams>({
+      parseFilters,
+      buildParams,
+      defaultFilters: DEFAULT_FILTERS,
+    })
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editUser, setEditUser] = useState<ManagedUser | null>(null)
@@ -146,15 +166,18 @@ export function SettingsUsersPage() {
     }
   }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal, canViewStyles])
 
-  const onSortingChange = useCallback((sorting: MRT_SortingState) => {
-    const first = sorting[0] ?? null
-    setFilters((prev) => ({
-      ...prev,
-      order_by: first ? (first.id as UserOrderBy) : null,
-      order: first ? (first.desc ? 'desc' : 'asc') : null,
-    }))
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [])
+  const onSortingChange = useCallback(
+    (sorting: MRT_SortingState) => {
+      const first = sorting[0] ?? null
+      setFilters((prev) => ({
+        ...prev,
+        order_by: first ? (first.id as UserOrderBy) : null,
+        order: first ? (first.desc ? 'desc' : 'asc') : null,
+      }))
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    },
+    [setFilters, setPagination],
+  )
 
   const onCreateOpenChange = useCallback(
     (open: boolean) => {

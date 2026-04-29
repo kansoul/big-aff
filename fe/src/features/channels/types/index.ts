@@ -37,6 +37,12 @@ export interface ChannelOption {
   name: string
 }
 
+export interface ChannelFilterParams {
+  query?: string | null
+  page?: number
+  per_page?: number
+}
+
 export const channelBulkCreateSchema = z.object({
   lines: z.string().min(1, 'Please enter at least one line'),
 })

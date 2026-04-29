@@ -9,6 +9,33 @@ export function isNil(v: unknown): v is null | undefined {
   return v === null || v === undefined
 }
 
+// ---------------------------------------------------------------------------
+// Table URL state utilities
+// ---------------------------------------------------------------------------
+
+export type TablePaginationState = { pageIndex: number; pageSize: number }
+
+export function parsePaginationFromParams(
+  params: URLSearchParams,
+  defaultPageSize = 30,
+): TablePaginationState {
+  return {
+    pageIndex: params.get('page') ? Number(params.get('page')) - 1 : 0,
+    pageSize: params.get('per_page') ? Number(params.get('per_page')) : defaultPageSize,
+  }
+}
+
+export function setPaginationInParams(
+  params: URLSearchParams,
+  pagination: TablePaginationState,
+  defaultPageSize = 30,
+): void {
+  if (pagination.pageIndex > 0) params.set('page', String(pagination.pageIndex + 1))
+  else params.delete('page')
+  if (pagination.pageSize !== defaultPageSize) params.set('per_page', String(pagination.pageSize))
+  else params.delete('per_page')
+}
+
 export function sleep(ms: number = 1000) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }

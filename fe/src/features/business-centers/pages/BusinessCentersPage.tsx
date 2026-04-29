@@ -16,13 +16,33 @@ import type {
 import { formatApiError } from '@/features/settings/components'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
-
-type PaginationState = { pageIndex: number; pageSize: number }
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
 
 const DEFAULT_FILTERS: BusinessCenterFilterParams = {
   query: null,
   order: null,
   order_by: null,
+}
+
+function parseFilters(params: URLSearchParams): BusinessCenterFilterParams {
+  return {
+    query: params.get('query'),
+    order_by: params.get('order_by') as BusinessCenterFilterParams['order_by'],
+    order: params.get('order') as BusinessCenterFilterParams['order'],
+  }
+}
+
+function buildParams(
+  filters: BusinessCenterFilterParams,
+  pagination: TablePaginationState,
+): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.query) params.set('query', filters.query)
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  setPaginationInParams(params, pagination)
+  return params
 }
 
 export function BusinessCentersPage() {
@@ -51,8 +71,13 @@ export function BusinessCentersPage() {
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
-  const [filters, setFilters] = useState<BusinessCenterFilterParams>(DEFAULT_FILTERS)
+  const { filters, setFilters, pagination, setPagination, onFilterChange, onFilterReset } =
+    useTableUrlState<BusinessCenterFilterParams>({
+      parseFilters,
+      buildParams,
+      defaultFilters: DEFAULT_FILTERS,
+    })
+
   const [refreshSignal, setRefreshSignal] = useState(0)
 
   const loadData = useCallback(() => {
@@ -92,25 +117,18 @@ export function BusinessCentersPage() {
     }
   }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
-  const onFilterChange = useCallback((patch: Partial<BusinessCenterFilterParams>) => {
-    setFilters((prev) => ({ ...prev, ...patch }))
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [])
-
-  const onFilterReset = useCallback(() => {
-    setFilters(DEFAULT_FILTERS)
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [])
-
-  const onSortingChange = useCallback((sorting: MRT_SortingState) => {
-    const first = sorting[0] ?? null
-    setFilters((prev) => ({
-      ...prev,
-      order_by: first ? (first.id as BusinessCenterOrderBy) : null,
-      order: first ? (first.desc ? 'desc' : 'asc') : null,
-    }))
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [])
+  const onSortingChange = useCallback(
+    (sorting: MRT_SortingState) => {
+      const first = sorting[0] ?? null
+      setFilters((prev) => ({
+        ...prev,
+        order_by: first ? (first.id as BusinessCenterOrderBy) : null,
+        order: first ? (first.desc ? 'desc' : 'asc') : null,
+      }))
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    },
+    [setFilters, setPagination],
+  )
 
   const [deletingItem, setDeletingItem] = useState<BusinessCenter | null>(null)
   const [deleting, setDeleting] = useState(false)

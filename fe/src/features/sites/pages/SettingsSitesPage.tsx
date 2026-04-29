@@ -16,14 +16,33 @@ import { formatApiError } from '@/features/settings/components'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import type { AssignChildOption } from '@/features/users/components/AssignUsersChildrenPicker'
-
-type PaginationState = { pageIndex: number; pageSize: number }
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
 
 const DEFAULT_FILTERS: SiteFilterParams = {
   keyword: null,
   status: null,
   order: null,
   order_by: null,
+}
+
+function parseFilters(params: URLSearchParams): SiteFilterParams {
+  return {
+    keyword: params.get('keyword'),
+    status: params.get('status') as SiteFilterParams['status'],
+    order_by: params.get('order_by') as SiteFilterParams['order_by'],
+    order: params.get('order') as SiteFilterParams['order'],
+  }
+}
+
+function buildParams(filters: SiteFilterParams, pagination: TablePaginationState): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.keyword) params.set('keyword', filters.keyword)
+  if (filters.status) params.set('status', filters.status)
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  setPaginationInParams(params, pagination)
+  return params
 }
 
 export function SettingsSitesPage() {
@@ -67,8 +86,12 @@ export function SettingsSitesPage() {
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
-  const [filters, setFilters] = useState<SiteFilterParams>(DEFAULT_FILTERS)
+  const { filters, setFilters, pagination, setPagination, onFilterChange, onFilterReset } =
+    useTableUrlState<SiteFilterParams>({
+      parseFilters,
+      buildParams,
+      defaultFilters: DEFAULT_FILTERS,
+    })
 
   const [refreshSignal, setRefreshSignal] = useState(0)
   const loadData = useCallback(() => {
@@ -104,25 +127,18 @@ export function SettingsSitesPage() {
     }
   }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
-  const onFilterChange = useCallback((patch: Partial<SiteFilterParams>) => {
-    setFilters((prev) => ({ ...prev, ...patch }))
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [])
-
-  const onFilterReset = useCallback(() => {
-    setFilters(DEFAULT_FILTERS)
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [])
-
-  const onSortingChange = useCallback((sorting: MRT_SortingState) => {
-    const first = sorting[0] ?? null
-    setFilters((prev) => ({
-      ...prev,
-      order_by: first ? (first.id as SiteOrderBy) : null,
-      order: first ? (first.desc ? 'desc' : 'asc') : null,
-    }))
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [])
+  const onSortingChange = useCallback(
+    (sorting: MRT_SortingState) => {
+      const first = sorting[0] ?? null
+      setFilters((prev) => ({
+        ...prev,
+        order_by: first ? (first.id as SiteOrderBy) : null,
+        order: first ? (first.desc ? 'desc' : 'asc') : null,
+      }))
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    },
+    [setFilters, setPagination],
+  )
 
   // Assign users state
   const [assigningSite, setAssigningSite] = useState<Site | null>(null)

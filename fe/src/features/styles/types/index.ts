@@ -37,6 +37,12 @@ export interface StyleOption {
   name: string
 }
 
+export interface StyleFilterParams {
+  query?: string | null
+  page?: number
+  per_page?: number
+}
+
 export const styleBulkCreateSchema = z.object({
   lines: z.string().min(1, 'Please enter at least one line'),
 })

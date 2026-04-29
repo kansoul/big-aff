@@ -15,9 +15,33 @@ import {
   styleBulkCreateSchema,
   type Style,
   type StyleBulkCreateFormValues,
+  type StyleFilterParams,
 } from '@/features/styles/types'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
+
+const DEFAULT_FILTERS: StyleFilterParams = {
+  query: null,
+}
+
+function parseFilters(params: URLSearchParams): StyleFilterParams {
+  return {
+    query: params.get('query'),
+  }
+}
+
+function buildParams(
+  filters: StyleFilterParams,
+  pagination: TablePaginationState,
+): URLSearchParams {
+  const params = new URLSearchParams()
+  const query: string | null | undefined = filters.query
+  if (query) params.set('query', query)
+  setPaginationInParams(params, pagination)
+  return params
+}
 
 export function StylesPage() {
   const user = useAuthStore((s) => s.user)
@@ -26,8 +50,16 @@ export function StylesPage() {
   const canCreate = useMemo(() => hasPermission(perms, PermissionSlugs.StylesCreate), [perms])
   const canDelete = useMemo(() => hasPermission(perms, PermissionSlugs.StylesDelete), [perms])
 
-  const [styles, setStyles] = useState<Style[]>([])
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<Style[]>([])
+  const [rowCount, setRowCount] = useState(0)
+  const [loading, setLoading] = useState(false)
+
+  const { filters, pagination, setPagination, onFilterChange, onFilterReset } =
+    useTableUrlState<StyleFilterParams>({
+      parseFilters,
+      buildParams,
+      defaultFilters: DEFAULT_FILTERS,
+    })
 
   const [createOpen, setCreateOpen] = useState(false)
   const [deleteRow, setDeleteRow] = useState<Style | null>(null)
@@ -38,26 +70,40 @@ export function StylesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
 
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const loadData = useCallback(() => setRefreshSignal((s) => s + 1), [])
+
+  useEffect(() => {
+    let ignore = false
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const query: string | null | undefined = filters.query
+        const result = await stylesApi.list({
+          query: query ?? undefined,
+          page: pagination.pageIndex + 1,
+          per_page: pagination.pageSize,
+        })
+        if (!ignore) {
+          setData(result.data ?? [])
+          setRowCount(result.pagination?.total ?? 0)
+        }
+      } catch (err) {
+        if (!ignore) toast.error(formatApiError(err))
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    void fetchData()
+    return () => {
+      ignore = true
+    }
+  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
+
   const createForm = useForm<StyleBulkCreateFormValues>({
     resolver: zodResolver(styleBulkCreateSchema),
     defaultValues: { lines: '' },
   })
-
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
-      const result = await stylesApi.list()
-      setStyles(result.data ?? [])
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void loadData()
-  }, [loadData])
 
   const onCreateOpenChange = useCallback(
     (open: boolean) => {
@@ -82,7 +128,7 @@ export function StylesPage() {
       if (successCount > 0) {
         toast.success(`${successCount} style(s) created successfully.`)
         createForm.reset({ lines: '' })
-        await loadData()
+        loadData()
         if (errors.length === 0) {
           setCreateOpen(false)
         }
@@ -105,7 +151,7 @@ export function StylesPage() {
       if (successCount > 0) {
         toast.success(`${successCount} style(s) created successfully.`)
         createForm.reset({ lines: '' })
-        await loadData()
+        loadData()
       }
     } catch (err) {
       setFormError(formatApiError(err))
@@ -124,7 +170,7 @@ export function StylesPage() {
 
   const onDeleteSuccess = useCallback(() => {
     setDeleteRow(null)
-    void loadData()
+    loadData()
   }, [loadData])
 
   const onBulkDeleteClick = useCallback(() => {
@@ -158,7 +204,7 @@ export function StylesPage() {
 
       setSelectedIds(failedIds)
       setBulkDeleteOpen(false)
-      await loadData()
+      loadData()
     } finally {
       setBulkDeleting(false)
     }
@@ -170,11 +216,20 @@ export function StylesPage() {
     setCreateOpen(true)
   }, [])
 
+  const apiFilters = { ...filters, page: pagination.pageIndex + 1, per_page: pagination.pageSize }
+
   return (
     <div className="flex flex-col gap-8">
       <StylesTableCard
+        data={data}
+        rowCount={rowCount}
         loading={loading}
-        styles={styles}
+        filters={apiFilters}
+        onFilterChange={onFilterChange}
+        onFilterReset={onFilterReset}
+        onPaginationChange={(page, perPage) =>
+          setPagination({ pageIndex: page - 1, pageSize: perPage })
+        }
         canCreate={canCreate}
         canDelete={canDelete}
         onAddClick={onAddClick}
