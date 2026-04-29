@@ -330,6 +330,17 @@
   gap: 0.125rem !important;
 }
 
+/* Sort icon — brand red (global .mantine-ActionIcon-root uses !important muted,
+   so we need a more-specific rule to apply the red brand color here).
+   MRT controls opacity: 0.5 = unsorted (dim), 1 = sorted active (vivid). */
+.mantine-TableHeadCell-Content-Labels .mantine-ActionIcon-root {
+  color: var(--destructive) !important;
+}
+.mantine-TableHeadCell-Content-Labels .mantine-ActionIcon-root:hover {
+  color: var(--destructive) !important;
+  background-color: color-mix(in oklch, var(--destructive) 10%, transparent) !important;
+}
+
 /* Column menu / resizer */
 .mantine-Table-root thead th[data-column-pinned-right],
 .mantine-Table-root thead th[data-column-pinned-left] {

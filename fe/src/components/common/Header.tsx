@@ -300,7 +300,7 @@ export const Header = React.memo(function Header() {
                     ? logoHeaderDark
                     : logoHeaderLight
               }
-              alt={siteDomain === 'ticollab' ? 'Ticollab' : 'Nexa'}
+              alt={siteDomain === 'nexa' ? 'Nexa' : 'Ticollab'}
               className="h-5 w-auto object-contain object-left md:h-6"
             />
           </Link>
@@ -386,7 +386,7 @@ export const Header = React.memo(function Header() {
                         ? logoHeaderDark
                         : logoHeaderLight
                   }
-                  alt={siteDomain === 'ticollab' ? 'Ticollab' : 'Nexa'}
+                  alt={siteDomain === 'nexa' ? 'Nexa' : 'Ticollab'}
                   className="h-5 w-auto object-contain object-left md:h-6"
                 />
               </Link>
