@@ -37,6 +37,16 @@ export interface ChannelOption {
   name: string
 }
 
+export type ChannelOrderBy = 'id' | 'name' | 'code' | 'is_active' | 'created_at'
+
+export interface ChannelFilterParams {
+  query?: string | null
+  page?: number
+  per_page?: number
+  order_by?: ChannelOrderBy | null
+  order?: 'asc' | 'desc' | null
+}
+
 export const channelBulkCreateSchema = z.object({
   lines: z.string().min(1, 'Please enter at least one line'),
 })

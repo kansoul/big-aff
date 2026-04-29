@@ -5,3 +5,5 @@ export const strictMode = import.meta.env.VITE_STRICT_MODE === 'true'
 export const appTitle = import.meta.env.VITE_APP_TITLE?.trim() || 'Big Ticollab'
 
 export const siteName = import.meta.env.VITE_SITE_NAME?.trim() || 'Ticollab'
+
+export const siteDomain: AppDomain = import.meta.env.VITE_SITE_DOMAIN?.trim() || 'ticollab'

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import type { MRT_SortingState } from 'mantine-react-table'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 
@@ -16,9 +17,39 @@ import {
   channelBulkCreateSchema,
   type Channel,
   type ChannelBulkCreateFormValues,
+  type ChannelFilterParams,
+  type ChannelOrderBy,
 } from '@/features/channels/types'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
+
+const DEFAULT_FILTERS: ChannelFilterParams = {
+  query: null,
+  order_by: null,
+  order: null,
+}
+
+function parseFilters(params: URLSearchParams): ChannelFilterParams {
+  return {
+    query: params.get('query'),
+    order_by: params.get('order_by') as ChannelOrderBy | null,
+    order: params.get('order') as 'asc' | 'desc' | null,
+  }
+}
+
+function buildParams(
+  filters: ChannelFilterParams,
+  pagination: TablePaginationState,
+): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.query) params.set('query', filters.query)
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  setPaginationInParams(params, pagination)
+  return params
+}
 
 export function ChannelsPage() {
   const user = useAuthStore((s) => s.user)
@@ -28,8 +59,16 @@ export function ChannelsPage() {
   const canDelete = useMemo(() => hasPermission(perms, PermissionSlugs.ChannelsDelete), [perms])
   const canAssign = useMemo(() => hasPermission(perms, PermissionSlugs.ChannelsAssign), [perms])
 
-  const [channels, setChannels] = useState<Channel[]>([])
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<Channel[]>([])
+  const [rowCount, setRowCount] = useState(0)
+  const [loading, setLoading] = useState(false)
+
+  const { filters, pagination, setPagination, onFilterChange, onFilterReset } =
+    useTableUrlState<ChannelFilterParams>({
+      parseFilters,
+      buildParams,
+      defaultFilters: DEFAULT_FILTERS,
+    })
 
   const [createOpen, setCreateOpen] = useState(false)
   const [deleteRow, setDeleteRow] = useState<Channel | null>(null)
@@ -42,26 +81,41 @@ export function ChannelsPage() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const [assignOpen, setAssignOpen] = useState(false)
 
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const loadData = useCallback(() => setRefreshSignal((s) => s + 1), [])
+
+  useEffect(() => {
+    let ignore = false
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const result = await channelsApi.list({
+          query: filters.query ?? undefined,
+          page: pagination.pageIndex + 1,
+          per_page: pagination.pageSize,
+          order_by: filters.order_by ?? undefined,
+          order: filters.order ?? undefined,
+        })
+        if (!ignore) {
+          setData(result.data ?? [])
+          setRowCount(result.pagination?.total ?? 0)
+        }
+      } catch (err) {
+        if (!ignore) toast.error(formatApiError(err))
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    void fetchData()
+    return () => {
+      ignore = true
+    }
+  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
+
   const createForm = useForm<ChannelBulkCreateFormValues>({
     resolver: zodResolver(channelBulkCreateSchema),
     defaultValues: { lines: '' },
   })
-
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
-      const result = await channelsApi.list()
-      setChannels(result.data ?? [])
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void loadData()
-  }, [loadData])
 
   const onCreateOpenChange = useCallback(
     (open: boolean) => {
@@ -85,7 +139,7 @@ export function ChannelsPage() {
       setImportSuccessCount(result.data?.length ?? 0)
       if (result.data?.length > 0) {
         createForm.reset({ lines: '' })
-        await loadData()
+        loadData()
       }
     } catch (err) {
       setFormError(formatApiError(err))
@@ -98,13 +152,24 @@ export function ChannelsPage() {
     setDeleteRow(row)
   }, [])
 
+  const onSortingChange = useCallback(
+    (sorting: MRT_SortingState) => {
+      const first = sorting[0] ?? null
+      onFilterChange({
+        order_by: first ? (first.id as ChannelOrderBy) : null,
+        order: first ? (first.desc ? 'desc' : 'asc') : null,
+      })
+    },
+    [onFilterChange],
+  )
+
   const onDeleteOpenChange = useCallback((open: boolean) => {
     if (!open) setDeleteRow(null)
   }, [])
 
   const onDeleteSuccess = useCallback(() => {
     setDeleteRow(null)
-    void loadData()
+    loadData()
   }, [loadData])
 
   const onBulkDeleteClick = useCallback(() => {
@@ -138,7 +203,7 @@ export function ChannelsPage() {
 
       setSelectedIds(failedIds)
       setBulkDeleteOpen(false)
-      await loadData()
+      loadData()
     } finally {
       setBulkDeleting(false)
     }
@@ -151,11 +216,21 @@ export function ChannelsPage() {
     setCreateOpen(true)
   }, [])
 
+  const apiFilters = { ...filters, page: pagination.pageIndex + 1, per_page: pagination.pageSize }
+
   return (
     <div className="flex flex-col gap-8">
       <ChannelsTableCard
+        data={data}
+        rowCount={rowCount}
         loading={loading}
-        channels={channels}
+        filters={apiFilters}
+        onFilterChange={onFilterChange}
+        onFilterReset={onFilterReset}
+        onSortingChange={onSortingChange}
+        onPaginationChange={(page, perPage) =>
+          setPagination({ pageIndex: page - 1, pageSize: perPage })
+        }
         canCreate={canCreate}
         canDelete={canDelete}
         canAssign={canAssign}

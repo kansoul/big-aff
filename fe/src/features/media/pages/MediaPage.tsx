@@ -23,8 +23,8 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-
-type PaginationState = { pageIndex: number; pageSize: number }
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
 
 const DEFAULT_FILTERS: MediaFilterParams = {
   created_from: null,
@@ -33,6 +33,29 @@ const DEFAULT_FILTERS: MediaFilterParams = {
   order_by: null,
   user_id: null,
   alt_text: null,
+}
+
+function parseFilters(params: URLSearchParams): MediaFilterParams {
+  return {
+    created_from: params.get('created_from'),
+    created_to: params.get('created_to'),
+    order_by: params.get('order_by') as MediaFilterParams['order_by'],
+    order: params.get('order') as MediaFilterParams['order'],
+    user_id: params.get('user_id') ? Number(params.get('user_id')) : null,
+    alt_text: params.get('alt_text'),
+  }
+}
+
+function buildParams(filters: MediaFilterParams, pagination: TablePaginationState): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.created_from) params.set('created_from', filters.created_from)
+  if (filters.created_to) params.set('created_to', filters.created_to)
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  if (filters.user_id != null) params.set('user_id', String(filters.user_id))
+  if (filters.alt_text) params.set('alt_text', filters.alt_text)
+  setPaginationInParams(params, pagination)
+  return params
 }
 
 export function MediaPage() {
@@ -44,8 +67,12 @@ export function MediaPage() {
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
-  const [filters, setFilters] = useState<MediaFilterParams>(DEFAULT_FILTERS)
+  const { filters, setFilters, pagination, setPagination, onFilterChange, onFilterReset } =
+    useTableUrlState<MediaFilterParams>({
+      parseFilters,
+      buildParams,
+      defaultFilters: DEFAULT_FILTERS,
+    })
 
   const [uploadOpen, setUploadOpen] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -102,27 +129,18 @@ export function MediaPage() {
     }
   }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
-  const onFilterChange = useCallback((patch: Partial<MediaFilterParams>) => {
-    setFilters((prev) => ({ ...prev, ...patch }))
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-    setLoading(true)
-  }, [])
-
-  const onFilterReset = useCallback(() => {
-    setFilters(DEFAULT_FILTERS)
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-    setLoading(true)
-  }, [])
-
-  const onSortingChange = useCallback((sorting: { id: string; desc: boolean }[]) => {
-    const first = sorting[0] ?? null
-    setFilters((prev) => ({
-      ...prev,
-      order_by: first ? (first.id as MediaOrderBy) : null,
-      order: first ? (first.desc ? 'desc' : 'asc') : null,
-    }))
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [])
+  const onSortingChange = useCallback(
+    (sorting: { id: string; desc: boolean }[]) => {
+      const first = sorting[0] ?? null
+      setFilters((prev) => ({
+        ...prev,
+        order_by: first ? (first.id as MediaOrderBy) : null,
+        order: first ? (first.desc ? 'desc' : 'asc') : null,
+      }))
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    },
+    [setFilters, setPagination],
+  )
 
   const onUploadClick = useCallback(() => {
     setUploadError(null)

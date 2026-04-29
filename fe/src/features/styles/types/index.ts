@@ -37,6 +37,16 @@ export interface StyleOption {
   name: string
 }
 
+export type StyleOrderBy = 'id' | 'name' | 'code' | 'created_at'
+
+export interface StyleFilterParams {
+  query?: string | null
+  page?: number
+  per_page?: number
+  order_by?: StyleOrderBy | null
+  order?: 'asc' | 'desc' | null
+}
+
 export const styleBulkCreateSchema = z.object({
   lines: z.string().min(1, 'Please enter at least one line'),
 })

@@ -13,6 +13,37 @@ import { formatApiError } from '@/features/settings/components'
 import type { Category, CategoryFilterParams } from '@/features/categories/types'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
+
+const DEFAULT_FILTERS: CategoryFilterParams = {
+  query: null,
+  parent_id: null,
+  order_by: null,
+  order: null,
+}
+
+function parseFilters(params: URLSearchParams): CategoryFilterParams {
+  return {
+    query: params.get('query'),
+    parent_id: params.get('parent_id') ? Number(params.get('parent_id')) : null,
+    order_by: params.get('order_by') as CategoryFilterParams['order_by'],
+    order: params.get('order') as CategoryFilterParams['order'],
+  }
+}
+
+function buildParams(
+  filters: CategoryFilterParams,
+  pagination: TablePaginationState,
+): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.query) params.set('query', filters.query)
+  if (filters.parent_id != null) params.set('parent_id', String(filters.parent_id))
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  setPaginationInParams(params, pagination)
+  return params
+}
 
 export function CategoriesPage() {
   const user = useAuthStore((s) => s.user)
@@ -25,7 +56,13 @@ export function CategoriesPage() {
   const [data, setData] = useState<Category[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState<CategoryFilterParams>({ page: 1, per_page: 30 })
+
+  const { filters, pagination, setPagination, onFilterChange, onFilterReset } =
+    useTableUrlState<CategoryFilterParams>({
+      parseFilters,
+      buildParams,
+      defaultFilters: DEFAULT_FILTERS,
+    })
 
   // dialog state
   const [viewTarget, setViewTarget] = useState<Category | null>(null)
@@ -36,43 +73,44 @@ export function CategoriesPage() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
 
-  const loadData = useCallback(async (activeFilters: CategoryFilterParams) => {
-    try {
-      setLoading(true)
-      const res = await categoriesApi.list(activeFilters)
-      setData(res.data.data)
-      setRowCount(res.data.pagination.total)
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const loadData = useCallback(() => setRefreshSignal((s) => s + 1), [])
 
   useEffect(() => {
-    void loadData(filters)
-  }, [loadData, filters])
+    let ignore = false
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const res = await categoriesApi.list({
+          ...filters,
+          page: pagination.pageIndex + 1,
+          per_page: pagination.pageSize,
+        })
+        if (!ignore) {
+          setData(res.data.data)
+          setRowCount(res.data.pagination.total)
+        }
+      } catch (err) {
+        if (!ignore) toast.error(formatApiError(err))
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    void fetchData()
+    return () => {
+      ignore = true
+    }
+  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
-  const onFilterChange = useCallback((patch: Partial<CategoryFilterParams>) => {
-    setFilters((prev) => ({ ...prev, ...patch, page: 1 }))
-  }, [])
-
-  const onFilterReset = useCallback(() => {
-    setFilters({ page: 1, per_page: 30 })
-  }, [])
-
-  const onPaginationChange = useCallback((page: number, perPage: number) => {
-    setFilters((prev) => ({ ...prev, page, per_page: perPage }))
-  }, [])
-
-  const onSortingChange = useCallback((orderBy: string | null, order: 'asc' | 'desc' | null) => {
-    setFilters((prev) => ({
-      ...prev,
-      order_by: (orderBy as CategoryFilterParams['order_by']) ?? undefined,
-      order: order ?? undefined,
-      page: 1,
-    }))
-  }, [])
+  const onSortingChange = useCallback(
+    (orderBy: string | null, order: 'asc' | 'desc' | null) => {
+      onFilterChange({
+        order_by: (orderBy as CategoryFilterParams['order_by']) ?? null,
+        order: order ?? null,
+      })
+    },
+    [onFilterChange],
+  )
 
   const onAddClick = useCallback(() => {
     setEditTarget(null)
@@ -142,15 +180,17 @@ export function CategoriesPage() {
 
       setSelectedIds(failedIds)
       setBulkDeleteOpen(false)
-      void loadData(filters)
+      loadData()
     } finally {
       setBulkDeleting(false)
     }
-  }, [selectedIds, loadData, filters])
+  }, [selectedIds, loadData])
 
   const onSuccess = useCallback(() => {
-    void loadData(filters)
-  }, [loadData, filters])
+    loadData()
+  }, [loadData])
+
+  const apiFilters = { ...filters, page: pagination.pageIndex + 1, per_page: pagination.pageSize }
 
   return (
     <div className="flex flex-col gap-8">
@@ -158,10 +198,12 @@ export function CategoriesPage() {
         data={data}
         rowCount={rowCount}
         loading={loading}
-        filters={filters}
+        filters={apiFilters}
         onFilterChange={onFilterChange}
         onFilterReset={onFilterReset}
-        onPaginationChange={onPaginationChange}
+        onPaginationChange={(page, perPage) =>
+          setPagination({ pageIndex: page - 1, pageSize: perPage })
+        }
         onSortingChange={onSortingChange}
         canCreate={canCreate}
         canUpdate={canUpdate}

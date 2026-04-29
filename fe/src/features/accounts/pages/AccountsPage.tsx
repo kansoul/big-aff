@@ -17,10 +17,48 @@ import { useAuthStore } from '@/hooks/useAuthStore'
 import { formatApiError } from '@/features/settings/components'
 import type { SearchableSelectOption } from '@/components/common/SearchableSelect'
 import type { Team } from '@/features/teams/types'
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
 
 const DEFAULT_FILTERS: AccountFilterParams = {
-  page: 1,
-  per_page: 30,
+  query: null,
+  ads_type: null,
+  business_center_id: null,
+  team_id: null,
+  status: null,
+  order_by: null,
+  order: null,
+}
+
+function parseFilters(params: URLSearchParams): AccountFilterParams {
+  return {
+    query: params.get('query'),
+    ads_type: params.get('ads_type') as AccountFilterParams['ads_type'],
+    business_center_id: params.get('business_center_id')
+      ? Number(params.get('business_center_id'))
+      : null,
+    team_id: params.get('team_id') ? Number(params.get('team_id')) : null,
+    status: params.get('status'),
+    order_by: params.get('order_by') as AccountFilterParams['order_by'],
+    order: params.get('order') as AccountFilterParams['order'],
+  }
+}
+
+function buildParams(
+  filters: AccountFilterParams,
+  pagination: TablePaginationState,
+): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.query) params.set('query', filters.query)
+  if (filters.ads_type) params.set('ads_type', filters.ads_type)
+  if (filters.business_center_id != null)
+    params.set('business_center_id', String(filters.business_center_id))
+  if (filters.team_id != null) params.set('team_id', String(filters.team_id))
+  if (filters.status) params.set('status', filters.status)
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  setPaginationInParams(params, pagination)
+  return params
 }
 
 function normalizeNumber(value: unknown): number | null | undefined {
@@ -50,7 +88,13 @@ export function AccountsPage() {
   const [teamOptions, setTeamOptions] = useState<SearchableSelectOption[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState<AccountFilterParams>(DEFAULT_FILTERS)
+
+  const { filters, pagination, setPagination, onFilterReset, setFilters } =
+    useTableUrlState<AccountFilterParams>({
+      parseFilters,
+      buildParams,
+      defaultFilters: DEFAULT_FILTERS,
+    })
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Account | null>(null)
@@ -65,22 +109,34 @@ export function AccountsPage() {
     [],
   )
 
-  const loadData = useCallback(async (activeFilters: AccountFilterParams) => {
-    try {
-      setLoading(true)
-      const { data } = await accountsApi.list(activeFilters)
-      setData(data.data)
-      setRowCount(data.pagination.total)
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const loadData = useCallback(() => setRefreshSignal((s) => s + 1), [])
 
   useEffect(() => {
-    void loadData(filters)
-  }, [loadData, filters])
+    let ignore = false
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const { data: res } = await accountsApi.list({
+          ...filters,
+          page: pagination.pageIndex + 1,
+          per_page: pagination.pageSize,
+        })
+        if (!ignore) {
+          setData(res.data)
+          setRowCount(res.pagination.total)
+        }
+      } catch (err) {
+        if (!ignore) toast.error(formatApiError(err))
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    void fetchData()
+    return () => {
+      ignore = true
+    }
+  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
   const loadBusinessCenterOptions = useCallback(async () => {
     try {
@@ -119,37 +175,35 @@ export function AccountsPage() {
     void loadTeamOptions()
   }, [loadTeamOptions])
 
-  const onFilterChange = useCallback((patch: Partial<AccountFilterParams>) => {
-    const hasBusinessCenterId = Object.prototype.hasOwnProperty.call(patch, 'business_center_id')
-    const hasTeamId = Object.prototype.hasOwnProperty.call(patch, 'team_id')
+  const onFilterChange = useCallback(
+    (patch: Partial<AccountFilterParams>) => {
+      const hasBusinessCenterId = Object.prototype.hasOwnProperty.call(patch, 'business_center_id')
+      const hasTeamId = Object.prototype.hasOwnProperty.call(patch, 'team_id')
 
-    setFilters((prev) => ({
-      ...prev,
-      ...patch,
-      business_center_id: hasBusinessCenterId
-        ? normalizeNumber(patch.business_center_id)
-        : prev.business_center_id,
-      team_id: hasTeamId ? normalizeNumber(patch.team_id) : prev.team_id,
-      page: 1,
-    }))
-  }, [])
+      setFilters((prev) => ({
+        ...prev,
+        ...patch,
+        business_center_id: hasBusinessCenterId
+          ? normalizeNumber(patch.business_center_id)
+          : prev.business_center_id,
+        team_id: hasTeamId ? normalizeNumber(patch.team_id) : prev.team_id,
+      }))
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    },
+    [setFilters, setPagination],
+  )
 
-  const onFilterReset = useCallback(() => {
-    setFilters(DEFAULT_FILTERS)
-  }, [])
-
-  const onPaginationChange = useCallback((page: number, perPage: number) => {
-    setFilters((prev) => ({ ...prev, page, per_page: perPage }))
-  }, [])
-
-  const onSortingChange = useCallback((orderBy: string | null, order: 'asc' | 'desc' | null) => {
-    setFilters((prev) => ({
-      ...prev,
-      order_by: (orderBy as AccountFilterParams['order_by']) ?? undefined,
-      order: order ?? undefined,
-      page: 1,
-    }))
-  }, [])
+  const onSortingChange = useCallback(
+    (orderBy: string | null, order: 'asc' | 'desc' | null) => {
+      setFilters((prev) => ({
+        ...prev,
+        order_by: (orderBy as AccountFilterParams['order_by']) ?? null,
+        order: order ?? null,
+      }))
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    },
+    [setFilters, setPagination],
+  )
 
   const onAddClick = useCallback(() => {
     setCreateOpen(true)
@@ -255,15 +309,17 @@ export function AccountsPage() {
 
       setSelectedIds(failedIds)
       setBulkDeleteOpen(false)
-      void loadData(filters)
+      loadData()
     } finally {
       setBulkDeleting(false)
     }
-  }, [selectedIds, loadData, filters])
+  }, [selectedIds, loadData])
 
   const onSuccess = useCallback(() => {
-    void loadData(filters)
-  }, [loadData, filters])
+    loadData()
+  }, [loadData])
+
+  const apiFilters = { ...filters, page: pagination.pageIndex + 1, per_page: pagination.pageSize }
 
   return (
     <div className="flex flex-col gap-8">
@@ -273,10 +329,12 @@ export function AccountsPage() {
         teamOptions={teamOptions}
         rowCount={rowCount}
         loading={loading}
-        filters={filters}
+        filters={apiFilters}
         onFilterChange={onFilterChange}
         onFilterReset={onFilterReset}
-        onPaginationChange={onPaginationChange}
+        onPaginationChange={(page, perPage) =>
+          setPagination({ pageIndex: page - 1, pageSize: perPage })
+        }
         onSortingChange={onSortingChange}
         canCreate={canCreate}
         canUpdate={canUpdate}

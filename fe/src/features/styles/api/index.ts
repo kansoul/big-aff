@@ -11,6 +11,8 @@ export const stylesApi = {
     query?: string
     per_page?: number
     page?: number
+    order_by?: string
+    order?: string
   }): Promise<StyleListResponse> {
     const res = await axiosInstance.get<StyleListResponse>('/styles', { params })
     return res.data

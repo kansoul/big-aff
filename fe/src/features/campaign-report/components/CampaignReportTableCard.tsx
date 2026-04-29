@@ -257,6 +257,17 @@ function getColumns(
   const count = (key: MetricKey, header: string, size: number) =>
     makeCountCol(key, header, size, summary)
 
+  // ── ID column ──
+  const idCol: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'id',
+    header: 'ID',
+    size: 90,
+    Cell: ({ row }) =>
+      isGroupRow(row.original) ? null : (
+        <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+      ),
+  }
+
   // ── Group label (only in grouped mode) ──
   const groupLabelCol: MRT_ColumnDef<TableRow> | null = grouped
     ? {
@@ -404,7 +415,7 @@ function getColumns(
   const colTrackingAnalytic: MRT_ColumnDef<TableRow> = {
     id: 'tracking_analytic',
     header: 'Tracking Analytic',
-    size: 180,
+    size: 200,
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
@@ -449,7 +460,7 @@ function getColumns(
   const colAdsType: MRT_ColumnDef<TableRow> = {
     accessorKey: 'ads_type',
     header: 'Ads Type',
-    size: 130,
+    size: 145,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return <span className="text-muted-foreground/50">—</span>
       const val = row.original.ads_type
@@ -512,7 +523,7 @@ function getColumns(
   const colRoi: MRT_ColumnDef<TableRow> = {
     accessorKey: 'roi',
     header: 'ROI',
-    size: 90,
+    size: 100,
     Cell: ({ row }) => {
       const v = isGroupRow(row.original) ? row.original.group_summary.roi : row.original.roi
       return (
@@ -585,7 +596,7 @@ function getColumns(
   const colRtViewSearchCount: MRT_ColumnDef<TableRow> = {
     id: 'rt_view_search_count',
     header: '🟢 Realtime Search Views',
-    size: 160,
+    size: 240,
     accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.view_search_count ?? 0)),
     enableSorting: false,
     Cell: ({ row }) => {
@@ -626,6 +637,7 @@ function getColumns(
 
   // Column order matches AllReportResource.php
   return [
+    idCol,
     // ── Group label (grouped mode only) ──
     ...(groupLabelCol ? [groupLabelCol] : []),
 
@@ -650,15 +662,15 @@ function getColumns(
     // ── Conversions ──
     colRtClickAdCount, // 🟢 Real-time Conv.
     count('r_conversion', 'Rev. Conv.', 150), // 🟡 Conv.
-    count('a_conversion', '🔵 ADS Conv.', 150), // 🔵 ADS Conv.
+    count('a_conversion', '🔵 ADS Conv.', 160), // 🔵 ADS Conv.
 
     // ── Search impressions & RPM ──
-    count('r_impressions', '🟡 Impressions', 160),
-    ratio('r_impressions_rpm', '🟡 Impr. RPM', 150),
+    count('r_impressions', '🟡 Impressions', 190),
+    ratio('r_impressions_rpm', '🟡 Impr. RPM', 170),
     ratio('r_rpc', '🟡 RPC', 120),
 
     // ── CPA ──
-    ratio('r_cpa', '🟡 Revenue CPA', 180),
+    ratio('r_cpa', '🟡 Revenue CPA', 190),
     ratio('a_cpa', '🔵 ADS CPA', 150),
 
     // ── Search views ──
@@ -668,25 +680,25 @@ function getColumns(
 
     // ── Keyword / funnel ──
     colRtClickKeywordCount, // 🟢 Realtime Keyword Clicks
-    count('a_clicks', '🔵 Supply clicks', 170), // 🔵 Supply clicks
-    count('r_funnel_clicks', '🟡 Funnel Clicks', 170), // 🟡 Funnel Clicks
+    count('a_clicks', '🔵 Supply clicks', 190), // 🔵 Supply clicks
+    count('r_funnel_clicks', '🟡 Funnel Clicks', 180), // 🟡 Funnel Clicks
     count('r_funnel_requests', '🟡 Funnel Requests', 210), // 🟡 Funnel Requests
     count('r_funnel_impressions', '🟡 Funnel Impr.', 180), // 🟡 Funnel Impressions
-    ratio('r_funnel_rpm', '🟡 Funnel RPM', 160), // 🟡 Funnel RPM
+    ratio('r_funnel_rpm', '🟡 Funnel RPM', 170), // 🟡 Funnel RPM
 
     // ── Ad requests ──
-    count('r_ad_requests', '🟡 Ad Requests', 170),
-    ratio('r_ad_requests_rpm', '🟡 Req. RPM', 160),
+    count('r_ad_requests', '🟡 Ad Requests', 180),
+    ratio('r_ad_requests_rpm', '🟡 Req. RPM', 170),
 
     // ── ADS platform metrics ──
     { ...ratio('a_ctr_link', '🔵 ADS CTR', 160), Footer: undefined },
-    { ...count('a_article_views', '🔵 Landingpage view', 200), Footer: undefined },
+    { ...count('a_article_views', '🔵 Landingpage view', 220), Footer: undefined },
     { ...ratio('a_cpc_link', '🔵 ADS CPC Link', 190), Footer: undefined },
     { ...count('a_reach', '🔵 ADS Reach', 160), Footer: undefined },
-    { ...count('a_impressions', '🔵 ADS Impressions', 200), Footer: undefined },
+    { ...count('a_impressions', '🔵 ADS Impressions', 220), Footer: undefined },
     { ...ratio('a_cpm', '🔵 CPM', 160), Footer: undefined },
-    { ...ratio('a_frequency', '🔵 Frequency', 160), Footer: undefined },
-    { ...ratio('a_ctr', '🔵 FB CTR (All)', 160), Footer: undefined },
+    { ...ratio('a_frequency', '🔵 Frequency', 170), Footer: undefined },
+    { ...ratio('a_ctr', '🔵 FB CTR (All)', 170), Footer: undefined },
 
     // ── Budget ──
     { ...usd('daily_budget', '🔵 Daily Budget', 180), Footer: undefined },
@@ -871,13 +883,12 @@ function CampaignReportTableCardInner({
     mantineTableHeadCellProps: {
       sx: {
         '& .mantine-TableHeadCell-Content-Wrapper': {
-          overflow: 'visible',
-          textOverflow: 'clip',
-          whiteSpace: 'normal',
-          wordBreak: 'break-word',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
         },
         '& .mantine-TableHeadCell-Content-Labels': {
-          flexWrap: 'wrap',
+          flexWrap: 'nowrap',
         },
       },
     },
@@ -938,8 +949,14 @@ function CampaignReportTableCardInner({
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
+    mantineLoadingOverlayProps: {
+      sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
+    },
     mantineTableContainerProps: {
       className: 'campaign-report-table-container',
+      onScroll: (e: React.UIEvent<HTMLDivElement>) => {
+        e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
+      },
       sx: {
         overflowX: 'auto',
         WebkitOverflowScrolling: 'touch',

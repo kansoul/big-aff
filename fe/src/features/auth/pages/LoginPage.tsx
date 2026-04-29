@@ -16,6 +16,8 @@ import {
 
 import logoRed from '@/assets/logo-s-red.png'
 import logoWhite from '@/assets/logo-s-white.png'
+import logoNexaLight from '@/assets/logo-nexa.png'
+import logoNexaDark from '@/assets/dark-logo-nexa.png'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { loginApi } from '@/features/auth/api'
 import { Button } from '@/components/ui/button'
@@ -31,7 +33,7 @@ import {
 } from '@/components/ui/form'
 import { PATHS } from '@/constants/paths'
 import { useAuthStore } from '@/hooks/useAuthStore'
-import { siteName } from '@/config'
+import { siteDomain, siteName } from '@/config'
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
@@ -93,7 +95,11 @@ export function LoginPage() {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
 
         <div className="relative z-20 flex items-center gap-3 font-bold tracking-tight">
-          <img src={logoWhite} alt={siteName} className="h-10 w-auto drop-shadow-xl" />
+          <img
+            src={siteDomain === 'nexa' ? logoNexaDark : logoWhite}
+            alt={siteName}
+            className="h-10 w-auto drop-shadow-xl"
+          />
         </div>
 
         <div className="relative z-20 w-full max-w-md mb-36 animate-in slide-in-from-bottom-8 fade-in duration-1000 delay-150">
@@ -143,9 +149,14 @@ export function LoginPage() {
 
         <div className="mx-auto w-full max-w-[400px]">
           <div className="flex justify-center lg:hidden mb-12">
-            <img src={logoRed} alt={siteName} className="h-14 w-auto dark:hidden" loading="eager" />
             <img
-              src={logoWhite}
+              src={siteDomain === 'nexa' ? logoNexaLight : logoRed}
+              alt={siteName}
+              className="h-14 w-auto dark:hidden"
+              loading="eager"
+            />
+            <img
+              src={siteDomain === 'nexa' ? logoNexaDark : logoWhite}
               alt={siteName}
               className="hidden h-14 w-auto dark:block"
               loading="eager"

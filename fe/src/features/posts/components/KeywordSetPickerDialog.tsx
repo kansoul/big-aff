@@ -213,6 +213,14 @@ export function KeywordSetPickerDialog({
         },
       },
       {
+        accessorKey: 'id',
+        header: 'ID',
+        size: 65,
+        Cell: ({ row }) => (
+          <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+        ),
+      },
+      {
         accessorKey: 'name',
         header: 'Name',
         Cell: ({ row }) => (
@@ -341,7 +349,15 @@ export function KeywordSetPickerDialog({
       onClick: () => toggleItem(row.original),
       style: { cursor: 'pointer' },
     }),
-    mantineTableContainerProps: { sx: { maxHeight: '280px', overflowX: 'auto' } },
+    mantineLoadingOverlayProps: {
+      sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
+    },
+    mantineTableContainerProps: {
+      onScroll: (e: React.UIEvent<HTMLDivElement>) => {
+        e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
+      },
+      sx: { maxHeight: '280px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
+    },
     mantineBottomToolbarProps: { sx: { '& .mantine-Select-root': { display: 'none' } } },
     renderEmptyRowsFallback: () => (
       <div className="flex flex-col items-center gap-2 py-10 text-center">

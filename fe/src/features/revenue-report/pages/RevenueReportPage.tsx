@@ -21,6 +21,14 @@ import { revenueReportApi } from '../api/revenueReportApi'
 function getColumns(): MRT_ColumnDef<RevenueReportRow>[] {
   return [
     {
+      accessorKey: 'id',
+      header: 'ID',
+      size: 65,
+      Cell: ({ row }) => (
+        <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+      ),
+    },
+    {
       accessorKey: 'date',
       header: 'Date',
       size: 150,
@@ -389,7 +397,15 @@ export function RevenueReportPage() {
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
-    mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
+    mantineLoadingOverlayProps: {
+      sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
+    },
+    mantineTableContainerProps: {
+      onScroll: (e: React.UIEvent<HTMLDivElement>) => {
+        e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
+      },
+      sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
+    },
     localization: { rowsPerPage: 'Per Page' },
     renderEmptyRowsFallback: () => (
       <div className="flex flex-col items-center gap-3 py-16 text-center">

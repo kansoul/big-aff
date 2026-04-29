@@ -28,6 +28,14 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Category>[] {
 
   return [
     {
+      accessorKey: 'id',
+      header: 'ID',
+      size: 65,
+      Cell: ({ row }) => (
+        <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+      ),
+    },
+    {
       accessorKey: 'name',
       header: 'Name',
       size: 200,
@@ -273,7 +281,15 @@ function CategoriesTableCardInner({
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
-    mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
+    mantineLoadingOverlayProps: {
+      sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
+    },
+    mantineTableContainerProps: {
+      onScroll: (e: React.UIEvent<HTMLDivElement>) => {
+        e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
+      },
+      sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
+    },
     mantineTableBodyRowProps: ({ row }) => ({
       onClick: (event) => {
         const target = event.target as HTMLElement

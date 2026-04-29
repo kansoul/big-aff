@@ -31,11 +31,11 @@ import { LANGUAGE_OPTIONS } from '@/constants/languages'
 import { userOptionsApi } from '@/features/posts/api'
 import { categoriesApi } from '@/features/categories/api'
 import type { Post, PostFilterParams } from '@/features/posts/types'
+import type { TablePaginationState } from '@/lib/utils'
 
 const STATUS_OPTIONS = [
   { label: 'Draft', value: 'draft' },
   { label: 'Published', value: 'published' },
-  { label: 'Archived', value: 'archived' },
   { label: 'Trash', value: 'trash' },
 ]
 const TYPE_OPTIONS = [
@@ -47,8 +47,6 @@ const HIDDEN_OPTIONS = [
   { label: 'Visible', value: '0' },
   { label: 'Hidden', value: '1' },
 ]
-
-type PaginationState = { pageIndex: number; pageSize: number }
 
 type ActionMeta = {
   canUpdate: boolean
@@ -347,8 +345,8 @@ type PostsTableCardProps = {
   data: Post[]
   rowCount: number
   loading: boolean
-  pagination: PaginationState
-  onPaginationChange: Dispatch<SetStateAction<PaginationState>>
+  pagination: TablePaginationState
+  onPaginationChange: Dispatch<SetStateAction<TablePaginationState>>
   filters: PostFilterParams
   onFilterChange: (patch: Partial<PostFilterParams>) => void
   onFilterReset: () => void
@@ -619,7 +617,15 @@ function PostsTableCardInner({
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
-    mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
+    mantineLoadingOverlayProps: {
+      sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
+    },
+    mantineTableContainerProps: {
+      onScroll: (e: React.UIEvent<HTMLDivElement>) => {
+        e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
+      },
+      sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
+    },
     mantineTableBodyRowProps: ({ row }) => ({
       onClick: (event) => {
         const target = event.target as HTMLElement

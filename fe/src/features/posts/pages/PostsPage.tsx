@@ -12,15 +12,15 @@ import type { Post, PostFilterParams, PostOrderBy } from '@/features/posts/types
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { PATHS, postEditPath, postViewPath } from '@/constants/paths'
 import { useAuthStore } from '@/hooks/useAuthStore'
-
-type PaginationState = { pageIndex: number; pageSize: number }
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams } from '@/lib/utils'
 
 const DEFAULT_FILTERS: PostFilterParams = {
   query: null,
   status: null,
   category_id: null,
   lang: null,
-  type: null,
+  type: 'normal',
   order_by: null,
   order: null,
   created_at_from: null,
@@ -28,6 +28,43 @@ const DEFAULT_FILTERS: PostFilterParams = {
   created_by: null,
   deleted_at: null,
   is_hidden: null,
+}
+
+function parseFiltersFromParams(params: URLSearchParams): PostFilterParams {
+  return {
+    query: params.get('query'),
+    status: params.get('status') as PostFilterParams['status'],
+    category_id: params.get('category_id') ? Number(params.get('category_id')) : null,
+    lang: params.get('lang'),
+    type: params.get('type') ?? 'normal',
+    order_by: params.get('order_by') as PostOrderBy | null,
+    order: params.get('order') as 'asc' | 'desc' | null,
+    created_at_from: params.get('created_at_from'),
+    created_at_to: params.get('created_at_to'),
+    created_by: params.get('created_by') ? Number(params.get('created_by')) : null,
+    deleted_at: null,
+    is_hidden: params.get('is_hidden') !== null ? Number(params.get('is_hidden')) : null,
+  }
+}
+
+function buildSearchParams(
+  filters: PostFilterParams,
+  pagination: { pageIndex: number; pageSize: number },
+): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.query) params.set('query', filters.query)
+  if (filters.status) params.set('status', filters.status)
+  if (filters.type) params.set('type', filters.type)
+  if (filters.lang) params.set('lang', filters.lang)
+  if (filters.category_id != null) params.set('category_id', String(filters.category_id))
+  if (filters.created_by != null) params.set('created_by', String(filters.created_by))
+  if (filters.created_at_from) params.set('created_at_from', filters.created_at_from)
+  if (filters.created_at_to) params.set('created_at_to', filters.created_at_to)
+  if (filters.is_hidden != null) params.set('is_hidden', String(filters.is_hidden))
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  setPaginationInParams(params, pagination)
+  return params
 }
 
 export function PostsPage() {
@@ -45,8 +82,13 @@ export function PostsPage() {
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
 
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 30 })
-  const [filters, setFilters] = useState<PostFilterParams>(DEFAULT_FILTERS)
+  const { filters, setFilters, pagination, setPagination, onFilterChange, onFilterReset } =
+    useTableUrlState<PostFilterParams>({
+      parseFilters: parseFiltersFromParams,
+      buildParams: buildSearchParams,
+      defaultFilters: DEFAULT_FILTERS,
+    })
+
   const [assignPostsOpen, setAssignPostsOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Post | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
@@ -85,25 +127,18 @@ export function PostsPage() {
     }
   }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
-  const onFilterChange = useCallback((patch: Partial<PostFilterParams>) => {
-    setFilters((prev) => ({ ...prev, ...patch }))
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [])
-
-  const onFilterReset = useCallback(() => {
-    setFilters(DEFAULT_FILTERS)
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [])
-
-  const onSortingChange = useCallback((sorting: MRT_SortingState) => {
-    const first = sorting[0] ?? null
-    setFilters((prev) => ({
-      ...prev,
-      order_by: first ? (first.id as PostOrderBy) : null,
-      order: first ? (first.desc ? 'desc' : 'asc') : null,
-    }))
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [])
+  const onSortingChange = useCallback(
+    (sorting: MRT_SortingState) => {
+      const first = sorting[0] ?? null
+      setFilters((prev) => ({
+        ...prev,
+        order_by: first ? (first.id as PostOrderBy) : null,
+        order: first ? (first.desc ? 'desc' : 'asc') : null,
+      }))
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+    },
+    [setFilters, setPagination],
+  )
 
   const onAddClick = useCallback(() => {
     void navigate(PATHS.postsCreate)

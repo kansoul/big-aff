@@ -1,23 +1,30 @@
-import { memo, useMemo } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import {
   MantineReactTable,
-  MRT_GlobalFilterTextInput,
+  MRT_ShowHideColumnsButton,
   useMantineReactTable,
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
-  MRT_ShowHideColumnsButton,
-  MRT_ToggleGlobalFilterButton,
+  type MRT_SortingState,
 } from 'mantine-react-table'
 import { Hash, Plus, Trash2, Users } from 'lucide-react'
 
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
+import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useIsMobile } from '@/hooks/useMobile'
-import type { Channel } from '@/features/channels/types'
+import type { Channel, ChannelFilterParams } from '@/features/channels/types'
 
 type ChannelsTableCardProps = {
+  data: Channel[]
+  rowCount: number
   loading: boolean
-  channels: Channel[]
+  filters: ChannelFilterParams
+  onFilterChange: (patch: Partial<ChannelFilterParams>) => void
+  onFilterReset: () => void
+  onSortingChange?: (sorting: MRT_SortingState) => void
+  onPaginationChange: (page: number, perPage: number) => void
   canCreate: boolean
   canDelete: boolean
   canAssign: boolean
@@ -36,6 +43,14 @@ function getColumns(meta: {
   const { canDelete, onDeleteRow } = meta
 
   return [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      size: 65,
+      Cell: ({ row }) => (
+        <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+      ),
+    },
     {
       accessorKey: 'name',
       header: 'Name',
@@ -102,8 +117,14 @@ function getColumns(meta: {
 }
 
 function ChannelsTableCardInner({
+  data,
+  rowCount,
   loading,
-  channels,
+  filters,
+  onFilterChange,
+  onFilterReset,
+  onSortingChange,
+  onPaginationChange,
   canCreate,
   canDelete,
   canAssign,
@@ -116,27 +137,73 @@ function ChannelsTableCardInner({
 }: ChannelsTableCardProps) {
   const isMobile = useIsMobile()
   const columns = useMemo(() => getColumns({ canDelete, onDeleteRow }), [canDelete, onDeleteRow])
+
   const rowSelection = useMemo<MRT_RowSelectionState>(
-    () => Object.fromEntries(channels.map((row) => [String(row.id), selectedIds.has(row.id)])),
-    [channels, selectedIds],
+    () => Object.fromEntries(data.map((row) => [String(row.id), selectedIds.has(row.id)])),
+    [data, selectedIds],
+  )
+
+  const sorting: MRT_SortingState = useMemo(
+    () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
+    [filters.order_by, filters.order],
+  )
+
+  const filterFields = useMemo<FilterFieldDef[]>(
+    () => [
+      {
+        field: 'query',
+        label: 'Keyword',
+        type: 'input',
+        value: filters.query ?? null,
+        placeholder: 'Search by name or code…',
+      },
+    ],
+    [filters],
+  )
+
+  const activeChips = useMemo<ActiveFilterChip[]>(
+    () =>
+      filters.query ? [{ key: 'query', label: 'Keyword', displayValue: `"${filters.query}"` }] : [],
+    [filters.query],
+  )
+
+  const onApplyFilters = useCallback(
+    (values: Record<string, unknown>) => {
+      onFilterChange({
+        query: typeof values.query === 'string' ? values.query : undefined,
+      })
+    },
+    [onFilterChange],
   )
 
   const table = useMantineReactTable({
-    data: channels,
+    data,
     columns,
     getRowId: (row) => String(row.id),
+    manualPagination: true,
+    manualSorting: true,
+    onSortingChange: onSortingChange
+      ? (updater) => {
+          const next = typeof updater === 'function' ? updater(sorting) : updater
+          onSortingChange(next)
+        }
+      : undefined,
+    rowCount,
     enableColumnFilters: false,
-    enableGlobalFilter: true,
+    enableGlobalFilter: false,
     enableRowSelection: canDelete,
     enableColumnPinning: !isMobile,
-    positionGlobalFilter: 'left',
     positionToolbarAlertBanner: 'none',
     initialState: {
-      showGlobalFilter: true,
       density: 'md',
     },
     state: {
       showLoadingOverlay: loading,
+      pagination: {
+        pageIndex: (filters.page ?? 1) - 1,
+        pageSize: filters.per_page ?? 15,
+      },
+      sorting,
       rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
     },
@@ -145,21 +212,34 @@ function ChannelsTableCardInner({
         typeof updater === 'function' ? updater(rowSelection) : updater
       onSelectionChange((prev) => {
         const next = new Set(prev)
-        for (const row of channels) next.delete(row.id)
+        for (const row of data) next.delete(row.id)
         for (const [idStr, checked] of Object.entries(newPageSelection)) {
           if (checked) next.add(Number(idStr))
         }
         return next
       })
     },
+    onPaginationChange: (updater) => {
+      const current = {
+        pageIndex: (filters.page ?? 1) - 1,
+        pageSize: filters.per_page ?? 15,
+      }
+      const next = typeof updater === 'function' ? updater(current) : updater
+      onPaginationChange(next.pageIndex + 1, next.pageSize)
+    },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
-    mantineTableContainerProps: { sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } },
-    mantineSearchTextInputProps: {
-      placeholder: 'Search by name or code…',
-      sx: { minWidth: 'clamp(120px, 40vw, 260px)' },
+    mantineLoadingOverlayProps: {
+      sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
     },
+    mantineTableContainerProps: {
+      onScroll: (e: React.UIEvent<HTMLDivElement>) => {
+        e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
+      },
+      sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
+    },
+    localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full flex-col border-b border-border bg-card">
         <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
@@ -167,7 +247,7 @@ function ChannelsTableCardInner({
             <Hash className="h-4 w-4 text-muted-foreground/60" />
             <span className="text-sm font-semibold text-foreground">Channels</span>
             <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-              {channels.length.toLocaleString()}
+              {rowCount.toLocaleString()}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -207,15 +287,22 @@ function ChannelsTableCardInner({
               </Button>
             ) : null}
             {(canAssign || canCreate) && <div className="h-4 w-px bg-border" />}
-            <MRT_ToggleGlobalFilterButton table={t} />
             <MRT_ShowHideColumnsButton table={t} />
           </div>
         </div>
-        {t.getState().showGlobalFilter ? (
-          <div className="border-t border-border/60 px-4 py-3">
-            <MRT_GlobalFilterTextInput table={t} />
-          </div>
-        ) : null}
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            onReset={onFilterReset}
+            applyMode
+            onApply={onApplyFilters}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={() => onFilterChange({ query: null })}
+          onClearAll={onFilterReset}
+        />
       </div>
     ),
     renderEmptyRowsFallback: () => (

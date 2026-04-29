@@ -22,10 +22,30 @@ import { usersApi } from '@/features/users/api/users'
 import { formatApiError } from '@/features/settings/components'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
 
 const DEFAULT_FILTERS: TeamFilterParams = {
-  page: 1,
-  per_page: 30,
+  query: null,
+  order_by: null,
+  order: null,
+}
+
+function parseFilters(params: URLSearchParams): TeamFilterParams {
+  return {
+    query: params.get('query'),
+    order_by: params.get('order_by') as TeamFilterParams['order_by'],
+    order: params.get('order') as TeamFilterParams['order'],
+  }
+}
+
+function buildParams(filters: TeamFilterParams, pagination: TablePaginationState): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.query) params.set('query', filters.query)
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  setPaginationInParams(params, pagination)
+  return params
 }
 
 export function TeamsPage() {
@@ -41,7 +61,13 @@ export function TeamsPage() {
   const [data, setData] = useState<Team[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState<TeamFilterParams>(DEFAULT_FILTERS)
+
+  const { filters, pagination, setPagination, onFilterChange, onFilterReset } =
+    useTableUrlState<TeamFilterParams>({
+      parseFilters,
+      buildParams,
+      defaultFilters: DEFAULT_FILTERS,
+    })
 
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Team | null>(null)
@@ -80,65 +106,65 @@ export function TeamsPage() {
   >({})
 
   // ── Table data loading ───────────────────────────────────────────────────
-  const loadData = useCallback(async (activeFilters: TeamFilterParams) => {
-    try {
-      setLoading(true)
-      const { data: res } = await teamsApi.list(activeFilters)
-      setData(res.data)
-      setRowCount(res.pagination.total)
-      // Seed saved role state for any new teams loaded
-      setSavedUserIdsByTeam((prev) => {
-        const patch: Record<number, number[]> = {}
-        for (const team of res.data) {
-          if (!(team.id in prev)) {
-            patch[team.id] = (team.users ?? []).map((u) => u.id)
-          }
-        }
-        return Object.keys(patch).length ? { ...prev, ...patch } : prev
-      })
-      setSavedUserRolesByTeam((prev) => {
-        const patch: Record<number, Record<number, TeamRole>> = {}
-        for (const team of res.data) {
-          if (!(team.id in prev)) {
-            patch[team.id] = (team.users ?? []).reduce<Record<number, TeamRole>>((acc, u) => {
-              acc[u.id] = u.team_role ?? 'member'
-              return acc
-            }, {})
-          }
-        }
-        return Object.keys(patch).length ? { ...prev, ...patch } : prev
-      })
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const loadData = useCallback(() => setRefreshSignal((s) => s + 1), [])
 
   useEffect(() => {
-    void loadData(filters)
-  }, [loadData, filters])
+    let ignore = false
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const { data: res } = await teamsApi.list({
+          ...filters,
+          page: pagination.pageIndex + 1,
+          per_page: pagination.pageSize,
+        })
+        if (!ignore) {
+          setData(res.data)
+          setRowCount(res.pagination.total)
+          setSavedUserIdsByTeam((prev) => {
+            const patch: Record<number, number[]> = {}
+            for (const team of res.data) {
+              if (!(team.id in prev)) {
+                patch[team.id] = (team.users ?? []).map((u) => u.id)
+              }
+            }
+            return Object.keys(patch).length ? { ...prev, ...patch } : prev
+          })
+          setSavedUserRolesByTeam((prev) => {
+            const patch: Record<number, Record<number, TeamRole>> = {}
+            for (const team of res.data) {
+              if (!(team.id in prev)) {
+                patch[team.id] = (team.users ?? []).reduce<Record<number, TeamRole>>((acc, u) => {
+                  acc[u.id] = u.team_role ?? 'member'
+                  return acc
+                }, {})
+              }
+            }
+            return Object.keys(patch).length ? { ...prev, ...patch } : prev
+          })
+        }
+      } catch (err) {
+        if (!ignore) toast.error(formatApiError(err))
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    void fetchData()
+    return () => {
+      ignore = true
+    }
+  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
-  const onFilterChange = useCallback((patch: Partial<TeamFilterParams>) => {
-    setFilters((prev) => ({ ...prev, ...patch, page: 1 }))
-  }, [])
-
-  const onFilterReset = useCallback(() => {
-    setFilters(DEFAULT_FILTERS)
-  }, [])
-
-  const onPaginationChange = useCallback((page: number, perPage: number) => {
-    setFilters((prev) => ({ ...prev, page, per_page: perPage }))
-  }, [])
-
-  const onSortingChange = useCallback((orderBy: string | null, order: 'asc' | 'desc' | null) => {
-    setFilters((prev) => ({
-      ...prev,
-      order_by: (orderBy as TeamFilterParams['order_by']) ?? undefined,
-      order: order ?? undefined,
-      page: 1,
-    }))
-  }, [])
+  const onSortingChange = useCallback(
+    (orderBy: string | null, order: 'asc' | 'desc' | null) => {
+      onFilterChange({
+        order_by: (orderBy as TeamFilterParams['order_by']) ?? null,
+        order: order ?? null,
+      })
+    },
+    [onFilterChange],
+  )
 
   const onAddClick = useCallback(() => {
     setEditTarget(null)
@@ -192,15 +218,15 @@ export function TeamsPage() {
       if (firstError) toast.error(formatApiError(firstError))
       setSelectedIds(failedIds)
       setBulkDeleteOpen(false)
-      void loadData(filters)
+      loadData()
     } finally {
       setBulkDeleting(false)
     }
-  }, [selectedIds, loadData, filters])
+  }, [selectedIds, loadData])
 
   const onSuccess = useCallback(() => {
-    void loadData(filters)
-  }, [loadData, filters])
+    loadData()
+  }, [loadData])
 
   // ── Member assignment helpers ─────────────────────────────────────────────
   const fetchOptionsForTeam = useCallback(async (team: Team) => {
@@ -527,10 +553,12 @@ export function TeamsPage() {
         data={data}
         rowCount={rowCount}
         loading={loading}
-        filters={filters}
+        filters={{ ...filters, page: pagination.pageIndex + 1, per_page: pagination.pageSize }}
         onFilterChange={onFilterChange}
         onFilterReset={onFilterReset}
-        onPaginationChange={onPaginationChange}
+        onPaginationChange={(page, perPage) =>
+          setPagination({ pageIndex: page - 1, pageSize: perPage })
+        }
         onSortingChange={onSortingChange}
         canCreate={canCreate}
         canUpdate={canUpdate}
