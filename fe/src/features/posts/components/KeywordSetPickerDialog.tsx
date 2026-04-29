@@ -216,8 +216,13 @@ export function KeywordSetPickerDialog({
         accessorKey: 'name',
         header: 'Name',
         Cell: ({ row }) => (
-          <div className="space-y-1 py-0.5">
-            <span className="font-medium text-foreground">{row.original.name}</span>
+          <div className="space-y-1 py-0.5 overflow-hidden! whitespace-normal!">
+            <div
+              className="font-medium text-foreground line-clamp-2! wrap-break-word!"
+              title={row.original.name}
+            >
+              {row.original.name}
+            </div>
             {row.original.keywords && row.original.keywords.length > 0 ? (
               <div className="flex flex-wrap gap-1">
                 {row.original.keywords.slice(0, 6).map((kw) => (
@@ -349,7 +354,7 @@ export function KeywordSetPickerDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="max-w-[90vw]!">
           <DialogHeader>
             <DialogTitle>Keyword Sets</DialogTitle>
           </DialogHeader>
