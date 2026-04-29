@@ -68,12 +68,12 @@ function getSitesColumns(meta: ActionMeta): MRT_ColumnDef<Site>[] {
                 href={row.original.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary underline underline-offset-2 hover:opacity-80 truncate block max-w-full"
+                className="text-primary underline underline-offset-2 hover:opacity-80 truncate block max-w-fit"
               >
                 {row.original.url}
               </a>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs break-all text-xs">
+            <TooltipContent side="top" className="max-w-fit break-all text-xs">
               {row.original.url}
             </TooltipContent>
           </Tooltip>

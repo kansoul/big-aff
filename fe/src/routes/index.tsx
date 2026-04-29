@@ -206,34 +206,7 @@ export const router = createBrowserRouter([
             },
             handle: { title: 'Sites', navSection: NAV_SECTIONS.settings },
           },
-          {
-            path: routeSegment(PATHS.settingsSitesCreate),
-            lazy: async () => {
-              const { CreateSitePage } = await import('@/features/sites/pages/CreateSitePage')
-              return {
-                Component: withPermission(CreateSitePage, PermissionSlugs.SettingsSitesCreate),
-              }
-            },
-            handle: { title: 'Create Site', navSection: NAV_SECTIONS.settings },
-          },
-          {
-            path: routeSegment(PATHS.settingsSitesView),
-            lazy: async () => {
-              const { ViewSitePage } = await import('@/features/sites/pages/ViewSitePage')
-              return { Component: withPermission(ViewSitePage, PermissionSlugs.SettingsSitesView) }
-            },
-            handle: { title: 'View Site', navSection: NAV_SECTIONS.settings },
-          },
-          {
-            path: routeSegment(PATHS.settingsSitesEdit),
-            lazy: async () => {
-              const { EditSitePage } = await import('@/features/sites/pages/EditSitePage')
-              return {
-                Component: withPermission(EditSitePage, PermissionSlugs.SettingsSitesUpdate),
-              }
-            },
-            handle: { title: 'Edit Site', navSection: NAV_SECTIONS.settings },
-          },
+
           {
             path: routeSegment(PATHS.businessCenters),
             lazy: async () => {

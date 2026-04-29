@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import type { MRT_SortingState } from 'mantine-react-table'
 import { toast } from 'sonner'
 
 import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { sitesApi } from '@/features/sites/api'
-import { AssignSiteUsersDialog, SitesTableCard } from '@/features/sites/components'
+import {
+  AssignSiteUsersDialog,
+  SiteFormDialog,
+  SitesTableCard,
+  ViewSiteDialog,
+} from '@/features/sites/components'
 import { DeleteSiteDialog } from '@/features/sites/components/DeleteSiteDialog'
 import type { Site, SiteFilterParams, SiteOrderBy } from '@/features/sites/types'
 import { formatApiError } from '@/features/settings/components'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
-import { PATHS, siteEditPath, siteViewPath } from '@/constants/paths'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import type { AssignChildOption } from '@/features/users/components/AssignUsersChildrenPicker'
 
@@ -24,7 +27,6 @@ const DEFAULT_FILTERS: SiteFilterParams = {
 }
 
 export function SettingsSitesPage() {
-  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
   const canCreate = useMemo(
@@ -44,9 +46,22 @@ export function SettingsSitesPage() {
     [perms],
   )
 
-  const onCreateClick = useCallback(() => void navigate(PATHS.settingsSitesCreate), [navigate])
-  const onViewClick = useCallback((site: Site) => void navigate(siteViewPath(site.id)), [navigate])
-  const onEditClick = useCallback((site: Site) => void navigate(siteEditPath(site.id)), [navigate])
+  // Dialog states
+  const [formDialogOpen, setFormDialogOpen] = useState(false)
+  const [editingSiteId, setEditingSiteId] = useState<number | null>(null)
+  const [viewingSiteId, setViewingSiteId] = useState<number | null>(null)
+
+  const onCreateClick = useCallback(() => {
+    setEditingSiteId(null)
+    setFormDialogOpen(true)
+  }, [])
+  const onViewClick = useCallback((site: Site) => {
+    setViewingSiteId(site.id)
+  }, [])
+  const onEditClick = useCallback((site: Site) => {
+    setEditingSiteId(site.id)
+    setFormDialogOpen(true)
+  }, [])
 
   const [data, setData] = useState<Site[]>([])
   const [rowCount, setRowCount] = useState(0)
@@ -267,6 +282,34 @@ export function SettingsSitesPage() {
         itemLabel="site"
         deleting={bulkDeleting}
         onConfirm={onConfirmBulkDelete}
+      />
+
+      <SiteFormDialog
+        open={formDialogOpen}
+        onOpenChange={setFormDialogOpen}
+        siteId={editingSiteId}
+        onSuccess={loadData}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+      />
+
+      <ViewSiteDialog
+        open={!!viewingSiteId}
+        onOpenChange={(open) => {
+          if (!open) setViewingSiteId(null)
+        }}
+        siteId={viewingSiteId}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+        onEditClick={(id) => {
+          setEditingSiteId(id)
+          setFormDialogOpen(true)
+        }}
+        onDeleteClick={(id) => {
+          // If we want to delete from the view dialog, we can just set the deleting site
+          const site = data.find((s) => s.id === id)
+          if (site) setDeletingSite(site)
+        }}
       />
     </div>
   )

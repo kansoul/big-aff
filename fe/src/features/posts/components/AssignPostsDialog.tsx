@@ -54,8 +54,13 @@ export function AssignPostsDialog({ open, onOpenChange }: AssignPostsDialogProps
 
   const fetchAllPosts = useCallback(async (): Promise<AssignPostOption[]> => {
     const emptyFilters: PostFilterParams = {
-      query: null, status: null, category_id: null, lang: null,
-      type: null, order_by: null, order: null,
+      query: null,
+      status: null,
+      category_id: null,
+      lang: null,
+      type: null,
+      order_by: null,
+      order: null,
     }
     const first = await postsApi.list(1, PAGE_SIZE, emptyFilters)
     const lastPage = Math.max(first.data.pagination?.last_page ?? 1, 1)
@@ -102,7 +107,9 @@ export function AssignPostsDialog({ open, onOpenChange }: AssignPostsDialogProps
     }
 
     void fetchData()
-    return () => { ignore = true }
+    return () => {
+      ignore = true
+    }
   }, [open, applyUserRows, fetchAllPosts])
 
   useEffect(() => {
