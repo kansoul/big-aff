@@ -18,7 +18,14 @@ interface ListResponse {
 
 export const adsLinksApi = {
   async list(params?: AdsLinkFilterParams): Promise<ListResponse> {
-    const res = await axiosInstance.get<ListResponse>('/ads-links', { params })
+    const { date_range, ...rest } = params ?? {}
+    const res = await axiosInstance.get<ListResponse>('/ads-links', {
+      params: {
+        ...rest,
+        ...(date_range?.from ? { 'date_range.from': date_range.from } : {}),
+        ...(date_range?.to ? { 'date_range.to': date_range.to } : {}),
+      },
+    })
     return res.data
   },
 

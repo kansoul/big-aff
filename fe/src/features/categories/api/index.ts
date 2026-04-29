@@ -15,7 +15,6 @@ export const categoriesApi = {
         page: filters.page ?? 1,
         per_page: filters.per_page ?? 15,
         ...(filters.query ? { query: filters.query } : {}),
-        ...(!isNil(filters.parent_id) ? { parent_id: filters.parent_id } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),
         ...(filters.order ? { order: filters.order } : {}),
       },

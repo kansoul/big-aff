@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { toast } from 'sonner'
 import { teamReportApi } from '@/features/team-report/api'
@@ -21,6 +22,36 @@ const DEFAULT_FILTERS: TeamReportFilterParams = {
   team_ids: [],
   user_ids: [],
 }
+
+// ─── URL helpers ──────────────────────────────────────────────────────────────
+
+function parseFiltersFromUrl(params: URLSearchParams): TeamReportFilterParams {
+  const teamIds = params
+    .getAll('team_ids[]')
+    .map(Number)
+    .filter((n) => !Number.isNaN(n))
+  const userIds = params
+    .getAll('user_ids[]')
+    .map(Number)
+    .filter((n) => !Number.isNaN(n))
+  return {
+    date_from: params.get('date_from') ?? DEFAULT_FILTERS.date_from,
+    date_to: params.get('date_to') ?? DEFAULT_FILTERS.date_to,
+    team_ids: teamIds,
+    user_ids: userIds,
+  }
+}
+
+function buildUrlParams(filters: TeamReportFilterParams): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.date_from) params.set('date_from', filters.date_from)
+  if (filters.date_to) params.set('date_to', filters.date_to)
+  ;(filters.team_ids ?? []).forEach((id) => params.append('team_ids[]', String(id)))
+  ;(filters.user_ids ?? []).forEach((id) => params.append('user_ids[]', String(id)))
+  return params
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function parseDateRange(value: unknown): DateRangeValue | null {
   if (value && typeof value === 'object' && 'from' in value && 'to' in value) {
@@ -45,9 +76,28 @@ function toSelectOptions(items: { id: number; name: string }[]): SelectOption[] 
   return items.map((item) => ({ value: String(item.id), label: item.name }))
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export function TeamReportPage() {
-  const [filters, setFilters] = useState<TeamReportFilterParams>(DEFAULT_FILTERS)
-  const [selectedTeamIdForOptions, setSelectedTeamIdForOptions] = useState<number | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const [filters, setFilters] = useState<TeamReportFilterParams>(() =>
+    parseFiltersFromUrl(searchParams),
+  )
+
+  const isMounted = useRef(false)
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true
+      return
+    }
+    setSearchParams(buildUrlParams(filters), { replace: true })
+  }, [filters, setSearchParams])
+
+  const [selectedTeamIdForOptions, setSelectedTeamIdForOptions] = useState<number | null>(() => {
+    const [teamId] = parseFiltersFromUrl(searchParams).team_ids ?? []
+    return teamId ?? null
+  })
 
   const [teamOptions, setTeamOptions] = useState<SelectOption[]>([])
   const [userOptions, setUserOptions] = useState<SelectOption[]>([])

@@ -11,7 +11,15 @@ export interface KeywordSet {
 
 export type PostStatus = 'draft' | 'published' | 'trash'
 export type PostType = 'normal' | 'ai' | 'wordpress'
-export type PostOrderBy = 'id' | 'title' | 'status' | 'published_at' | 'created_at' | 'updated_at'
+export type PostOrderBy =
+  | 'id'
+  | 'title'
+  | 'slug'
+  | 'status'
+  | 'type'
+  | 'lang'
+  | 'published_at'
+  | 'created_at'
 export type PostOrder = 'asc' | 'desc'
 
 export interface Post {

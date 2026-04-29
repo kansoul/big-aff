@@ -1,4 +1,5 @@
 export interface RevenueReportFilterParams {
+  style_codes?: string[]
   channel_codes?: string[]
   date_from?: string | null
   date_to?: string | null

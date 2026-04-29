@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { toast } from 'sonner'
 
@@ -38,6 +39,65 @@ const DEFAULT_FILTERS: CampaignReportFilterParams = {
   group_by: 'channel_code',
   page: 1,
   per_page: 30,
+}
+
+// ─── URL helpers ──────────────────────────────────────────────────────────────
+
+function parseFiltersFromUrl(params: URLSearchParams): CampaignReportFilterParams {
+  const allowed: CampaignReportGroupBy[] = ['channel_code', 'account_id', 'user_id', 'campaign_id']
+  // null = key absent from URL → use default; '' = user explicitly picked 'No grouping'
+  const rawGroupBy = params.get('group_by')
+  const groupBy: CampaignReportGroupBy =
+    rawGroupBy === null
+      ? 'channel_code'
+      : rawGroupBy === ''
+        ? ''
+        : (allowed as string[]).includes(rawGroupBy)
+          ? (rawGroupBy as CampaignReportGroupBy)
+          : 'channel_code'
+  return {
+    date_from: params.get('date_from') ?? DEFAULT_FILTERS.date_from,
+    date_to: params.get('date_to') ?? DEFAULT_FILTERS.date_to,
+    user_ids: params
+      .getAll('user_ids[]')
+      .map(Number)
+      .filter((n) => !Number.isNaN(n)),
+    account_ids: params
+      .getAll('account_ids[]')
+      .map(Number)
+      .filter((n) => !Number.isNaN(n)),
+    ads_type: params.get('ads_type') ?? null,
+    campaign_ids: params.getAll('campaign_ids[]'),
+    channel_codes: params.getAll('channel_codes[]'),
+    link_data_ids: params
+      .getAll('link_data_ids[]')
+      .map(Number)
+      .filter((n) => !Number.isNaN(n)),
+    group_by: groupBy,
+    order_by: (params.get('order_by') as CampaignReportOrderBy) ?? undefined,
+    order: (params.get('order') as CampaignReportOrder) ?? undefined,
+    page: params.get('page') ? Number(params.get('page')) : 1,
+    per_page: params.get('per_page') ? Number(params.get('per_page')) : 30,
+  }
+}
+
+function buildUrlParams(filters: CampaignReportFilterParams): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.date_from) params.set('date_from', filters.date_from)
+  if (filters.date_to) params.set('date_to', filters.date_to)
+  ;(filters.user_ids ?? []).forEach((id) => params.append('user_ids[]', String(id)))
+  ;(filters.account_ids ?? []).forEach((id) => params.append('account_ids[]', String(id)))
+  if (filters.ads_type) params.set('ads_type', filters.ads_type)
+  ;(filters.campaign_ids ?? []).forEach((id) => params.append('campaign_ids[]', id))
+  ;(filters.channel_codes ?? []).forEach((c) => params.append('channel_codes[]', c))
+  ;(filters.link_data_ids ?? []).forEach((id) => params.append('link_data_ids[]', String(id)))
+  // Always write group_by so empty string ('') is preserved in URL as ?group_by=
+  params.set('group_by', filters.group_by ?? 'channel_code')
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  if (filters.page && filters.page !== 1) params.set('page', String(filters.page))
+  if (filters.per_page && filters.per_page !== 30) params.set('per_page', String(filters.per_page))
+  return params
 }
 
 const EMPTY_OPTIONS: FilterOptions = {
@@ -87,7 +147,20 @@ function parseGroupBy(value: unknown): CampaignReportGroupBy {
 }
 
 export function CampaignReportPage() {
-  const [filters, setFilters] = useState<CampaignReportFilterParams>(DEFAULT_FILTERS)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const [filters, setFilters] = useState<CampaignReportFilterParams>(() =>
+    parseFiltersFromUrl(searchParams),
+  )
+
+  const isMounted = useRef(false)
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true
+      return
+    }
+    setSearchParams(buildUrlParams(filters), { replace: true })
+  }, [filters, setSearchParams])
 
   const userPermissions = useAuthStore((s) => s.user?.permissions ?? [])
 

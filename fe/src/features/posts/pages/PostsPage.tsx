@@ -36,7 +36,8 @@ function parseFiltersFromParams(params: URLSearchParams): PostFilterParams {
     status: params.get('status') as PostFilterParams['status'],
     category_id: params.get('category_id') ? Number(params.get('category_id')) : null,
     lang: params.get('lang'),
-    type: params.get('type') ?? 'normal',
+    // null = user explicitly chose 'All'; absent = first load → use default 'normal'
+    type: params.has('type') ? params.get('type') || null : 'normal',
     order_by: params.get('order_by') as PostOrderBy | null,
     order: params.get('order') as 'asc' | 'desc' | null,
     created_at_from: params.get('created_at_from'),
@@ -54,7 +55,8 @@ function buildSearchParams(
   const params = new URLSearchParams()
   if (filters.query) params.set('query', filters.query)
   if (filters.status) params.set('status', filters.status)
-  if (filters.type) params.set('type', filters.type)
+  // Always write type so null ('All') is preserved as ?type= on F5
+  params.set('type', filters.type ?? '')
   if (filters.lang) params.set('lang', filters.lang)
   if (filters.category_id != null) params.set('category_id', String(filters.category_id))
   if (filters.created_by != null) params.set('created_by', String(filters.created_by))

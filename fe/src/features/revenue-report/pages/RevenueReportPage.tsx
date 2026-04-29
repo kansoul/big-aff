@@ -13,8 +13,13 @@ import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPane
 import { Badge } from '@/components/ui/badge'
 import { channelsApi } from '@/features/channels/api'
 import type { ChannelOption } from '@/features/channels/types'
+import { stylesApi } from '@/features/styles/api'
+import type { StyleOption } from '@/features/styles/types'
 import type { RevenueReportRow, RevenueReportFilterParams, RevenueReportOrderBy } from '../types'
 import { revenueReportApi } from '../api/revenueReportApi'
+import { useTableUrlState } from '@/hooks/useTableUrlState'
+import { setPaginationInParams } from '@/lib/utils'
+import type { TablePaginationState } from '@/lib/utils'
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 
@@ -228,17 +233,50 @@ function getColumns(): MRT_ColumnDef<RevenueReportRow>[] {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const DEFAULT_FILTERS: RevenueReportFilterParams = {
-  page: 1,
-  per_page: 30,
+const DEFAULT_FILTERS: RevenueReportFilterParams = {}
+
+function parseFilters(params: URLSearchParams): RevenueReportFilterParams {
+  const channelCodes = params.getAll('channel_codes[]')
+  const styleCodes = params.getAll('style_codes[]')
+  return {
+    date_from: params.get('date_from') ?? undefined,
+    date_to: params.get('date_to') ?? undefined,
+    channel_codes: channelCodes.length ? channelCodes : undefined,
+    style_codes: styleCodes.length ? styleCodes : undefined,
+    order_by: (params.get('order_by') as RevenueReportOrderBy) ?? undefined,
+    order: (params.get('order') as 'asc' | 'desc') ?? undefined,
+  }
+}
+
+function buildParams(
+  filters: RevenueReportFilterParams,
+  pagination: TablePaginationState,
+): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.date_from) params.set('date_from', filters.date_from)
+  if (filters.date_to) params.set('date_to', filters.date_to)
+  ;(filters.channel_codes ?? []).forEach((c) => params.append('channel_codes[]', c))
+  ;(filters.style_codes ?? []).forEach((s) => params.append('style_codes[]', s))
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  setPaginationInParams(params, pagination, 30)
+  return params
 }
 
 export function RevenueReportPage() {
   const [data, setData] = useState<RevenueReportRow[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState<RevenueReportFilterParams>(DEFAULT_FILTERS)
   const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([])
+  const [styleOptions, setStyleOptions] = useState<StyleOption[]>([])
+
+  const { filters, pagination, setPagination, onFilterChange, onFilterReset } =
+    useTableUrlState<RevenueReportFilterParams>({
+      parseFilters,
+      buildParams,
+      defaultFilters: DEFAULT_FILTERS,
+      defaultPageSize: 30,
+    })
 
   useEffect(() => {
     channelsApi
@@ -247,32 +285,38 @@ export function RevenueReportPage() {
       .catch(() => toast.error('Failed to load channel options'))
   }, [])
 
-  const loadData = useCallback(async (activeFilters: RevenueReportFilterParams) => {
-    try {
-      setLoading(true)
-      const { data: response } = await revenueReportApi.listRevenue(activeFilters)
-      setData(response.data)
-      setRowCount(response.pagination.total)
-    } catch {
-      toast.error('Failed to load revenue report')
-      setData([])
-      setRowCount(0)
-    } finally {
-      setLoading(false)
-    }
+  useEffect(() => {
+    stylesApi
+      .options()
+      .then((res) => setStyleOptions(res.data))
+      .catch(() => toast.error('Failed to load style options'))
   }, [])
+
+  const loadData = useCallback(
+    async (activeFilters: RevenueReportFilterParams, page: number, perPage: number) => {
+      try {
+        setLoading(true)
+        const { data: response } = await revenueReportApi.listRevenue({
+          ...activeFilters,
+          page,
+          per_page: perPage,
+        })
+        setData(response.data)
+        setRowCount(response.pagination.total)
+      } catch {
+        toast.error('Failed to load revenue report')
+        setData([])
+        setRowCount(0)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [],
+  )
 
   useEffect(() => {
-    void loadData(filters)
-  }, [loadData, filters])
-
-  const onFilterChange = useCallback((patch: Partial<RevenueReportFilterParams>) => {
-    setFilters((prev) => ({ ...prev, ...patch, page: 1 }))
-  }, [])
-
-  const onFilterReset = useCallback(() => {
-    setFilters(DEFAULT_FILTERS)
-  }, [])
+    void loadData(filters, pagination.pageIndex + 1, pagination.pageSize)
+  }, [loadData, filters, pagination.pageIndex, pagination.pageSize])
 
   const onApplyFilters = useCallback(
     (values: Record<string, unknown>) => {
@@ -283,6 +327,7 @@ export function RevenueReportPage() {
         channel_codes: Array.isArray(values.channel_codes)
           ? (values.channel_codes as string[])
           : [],
+        style_codes: Array.isArray(values.style_codes) ? (values.style_codes as string[]) : [],
       })
     },
     [onFilterChange],
@@ -306,8 +351,22 @@ export function RevenueReportPage() {
         value: filters.channel_codes ?? [],
         options: channelOptions.map((c) => ({ label: c.name, value: c.code })),
       },
+      {
+        field: 'style_codes',
+        label: 'Styles',
+        type: 'multiselect',
+        value: filters.style_codes ?? [],
+        options: styleOptions.map((s) => ({ label: `${s.name} (${s.code})`, value: s.code })),
+      },
     ],
-    [filters.date_from, filters.date_to, filters.channel_codes, channelOptions],
+    [
+      filters.date_from,
+      filters.date_to,
+      filters.channel_codes,
+      filters.style_codes,
+      channelOptions,
+      styleOptions,
+    ],
   )
 
   const activeChips = useMemo<ActiveFilterChip[]>(() => {
@@ -334,15 +393,38 @@ export function RevenueReportPage() {
             : `${labels.slice(0, 2).join(', ')} +${labels.length - 2}`,
       })
     }
+    if ((filters.style_codes?.length ?? 0) > 0) {
+      const labels = (filters.style_codes ?? []).map((code) => {
+        const option = styleOptions.find((s) => s.code === code)
+        return option ? `${option.name} (${option.code})` : code
+      })
+      chips.push({
+        key: 'style_codes',
+        label: 'Styles',
+        displayValue:
+          labels.length <= 2
+            ? labels.join(', ')
+            : `${labels.slice(0, 2).join(', ')} +${labels.length - 2}`,
+      })
+    }
 
     return chips
-  }, [filters.date_from, filters.date_to, filters.channel_codes, channelOptions])
+  }, [
+    filters.date_from,
+    filters.date_to,
+    filters.channel_codes,
+    filters.style_codes,
+    channelOptions,
+    styleOptions,
+  ])
 
   function handleRemoveChip(key: string) {
     if (key === 'date_range') {
       onFilterChange({ date_from: null, date_to: null })
     } else if (key === 'channel_codes') {
       onFilterChange({ channel_codes: [] })
+    } else if (key === 'style_codes') {
+      onFilterChange({ style_codes: [] })
     }
   }
 
@@ -372,27 +454,24 @@ export function RevenueReportPage() {
     state: {
       showLoadingOverlay: loading,
       pagination: {
-        pageIndex: (filters.page ?? 1) - 1,
-        pageSize: filters.per_page ?? 30,
+        pageIndex: pagination.pageIndex,
+        pageSize: pagination.pageSize,
       },
       sorting: filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : [],
     },
     onPaginationChange: (updater) => {
-      const current = { pageIndex: (filters.page ?? 1) - 1, pageSize: filters.per_page ?? 30 }
-      const next = typeof updater === 'function' ? updater(current) : updater
-      setFilters((prev) => ({ ...prev, page: next.pageIndex + 1, per_page: next.pageSize }))
+      const next = typeof updater === 'function' ? updater(pagination) : updater
+      setPagination(next)
     },
     onSortingChange: (updater) => {
       const current = filters.order_by
         ? [{ id: filters.order_by, desc: filters.order === 'desc' }]
         : []
       const next = typeof updater === 'function' ? updater(current) : updater
-      setFilters((prev) => ({
-        ...prev,
+      onFilterChange({
         order_by: next[0] ? (next[0].id as RevenueReportOrderBy) : undefined,
         order: next[0] ? (next[0].desc ? 'desc' : 'asc') : undefined,
-        page: 1,
-      }))
+      })
     },
     enablePagination: true,
     paginationDisplayMode: 'pages',
