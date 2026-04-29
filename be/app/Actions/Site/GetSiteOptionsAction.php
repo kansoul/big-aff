@@ -4,6 +4,7 @@ namespace App\Actions\Site;
 
 use App\Models\Site;
 use App\Support\OwnershipFilter\OwnershipFilter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class GetSiteOptionsAction
@@ -16,7 +17,15 @@ class GetSiteOptionsAction
         $ownership = OwnershipFilter::forAuthUser();
 
         $query = Site::query()->select(['id', 'name'])->orderBy('name');
-        $ownership->applyTo($query);
+
+        if (! $ownership->isAdmin()) {
+            $query->where(function (Builder $q) use ($ownership) {
+                $q->whereIn('created_by', $ownership->allowedUserIds())
+                    ->orWhereHas('users', function (Builder $uq) use ($ownership) {
+                        $uq->whereIn('users.id', $ownership->allowedUserIds());
+                    });
+            });
+        }
 
         return $query->get();
     }

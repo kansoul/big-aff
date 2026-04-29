@@ -8,6 +8,7 @@ use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListSitesAction
 {
@@ -33,7 +34,15 @@ class ListSitesAction
         $ownership = OwnershipFilter::forAuthUser();
 
         $query = Site::query()->with(['logo', 'favicon']);
-        $ownership->applyTo($query);
+
+        if (! $ownership->isAdmin()) {
+            $query->where(function (Builder $q) use ($ownership) {
+                $q->whereIn('created_by', $ownership->allowedUserIds())
+                    ->orWhereHas('users', function (Builder $uq) use ($ownership) {
+                        $uq->whereIn('users.id', $ownership->allowedUserIds());
+                    });
+            });
+        }
 
         if (! empty($filters['keyword'])) {
             $keyword = $filters['keyword'];
