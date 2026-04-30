@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   MRT_ShowHideColumnsButton,
@@ -7,6 +8,7 @@ import {
 } from 'mantine-react-table'
 import { BarChart3 } from 'lucide-react'
 
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { Badge } from '@/components/ui/badge'
 import type { TeamReportByUserRow } from '@/features/team-report/types'
 
@@ -96,6 +98,9 @@ type Props = {
 
 function TeamByUserTableCardInner({ data, loading }: Props) {
   const columns = useMemo(() => getColumns(), [])
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+  )
 
   const table = useMantineReactTable({
     data,
@@ -116,7 +121,8 @@ function TeamByUserTableCardInner({ data, loading }: Props) {
       },
       sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
     },
-    state: { showLoadingOverlay: loading },
+    state: { showLoadingOverlay: loading, columnVisibility },
+    onColumnVisibilityChange: setColumnVisibility,
     renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full flex-col border-b border-border bg-card">
         <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
@@ -150,9 +156,7 @@ function TeamByUserTableCardInner({ data, loading }: Props) {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        Revenue by User
-      </h3>
+      <h3 className="text-sm font-semibold text-muted-foreground">Revenue by User</h3>
       <MantineReactTable table={table} />
     </div>
   )

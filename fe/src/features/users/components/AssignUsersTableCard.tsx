@@ -71,7 +71,7 @@ function AssignUsersTableCardInner({
                 <div className="grid gap-5 sm:grid-cols-[1fr_2fr] sm:gap-8">
                   {/* Parent user info */}
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <p className="text-[11px] font-semibold  text-muted-foreground">
                       Parent User
                     </p>
                     <p className="mt-1.5 truncate text-sm font-semibold text-foreground">
@@ -83,7 +83,7 @@ function AssignUsersTableCardInner({
                   {/* Child picker */}
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <p className="text-[11px] font-semibold  text-muted-foreground">
                         Child Users
                       </p>
                       {draft.length > 0 ? (

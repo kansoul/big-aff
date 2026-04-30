@@ -1,4 +1,5 @@
 import { memo, useMemo, useState, useEffect, type Dispatch, type SetStateAction } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   useMantineReactTable,
@@ -26,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { useIsMobile } from '@/hooks/useMobile'
 import { LANGUAGE_OPTIONS } from '@/constants/languages'
 import { userOptionsApi } from '@/features/posts/api'
@@ -395,6 +397,9 @@ function PostsTableCardInner({
   onBulkDeleteClick,
 }: PostsTableCardProps) {
   const isMobile = useIsMobile()
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+  )
   const [userOptions, setUserOptions] = useState<{ label: string; value: string }[]>([])
   const [categoryOptions, setCategoryOptions] = useState<{ label: string; value: string }[]>([])
 
@@ -601,7 +606,9 @@ function PostsTableCardInner({
       showLoadingOverlay: loading,
       rowSelection,
       // columnPinning: { right: isMobile ? [] : ['actions'] },
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

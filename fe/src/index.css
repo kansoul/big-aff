@@ -167,7 +167,6 @@
   font-size: 0.6875rem !important;
   font-weight: 600 !important;
   letter-spacing: 0.07em !important;
-  text-transform: uppercase !important;
   padding: 0.5rem 1rem !important;
   vertical-align: middle !important;
 }
@@ -228,19 +227,34 @@
   background-color: var(--accent) !important;
 }
 
-/* Campaign report table: remove row separators to avoid bright divider artifacts in dark mode */
+/* Campaign report table: remove row separators and set tight padding */
+.campaign-report-table-container .mantine-Table-root thead tr th,
 .campaign-report-table-container .mantine-Table-root tbody tr td,
-.campaign-report-table-container .mantine-Table-root tbody tr.campaign-group-row td,
-.campaign-report-table-container .mantine-Table-root tbody td.campaign-group-cell {
+.campaign-report-table-container .mantine-Table-root tfoot tr td {
+  padding-left: 2px !important;
+  padding-right: 2px !important;
   border-top: none !important;
   border-bottom: none !important;
+  font-size: 7px !important;
+}
+
+/* Campaign report table: shrink sort icons */
+.campaign-report-table-container .mantine-TableHeadCell-Content-Labels .mantine-ActionIcon-root {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+}
+.campaign-report-table-container .mantine-TableHeadCell-Content-Labels .mantine-ActionIcon-root svg {
+  width: 10px !important;
+  height: 10px !important;
 }
 
 /* Bottom toolbar (pagination row) */
 .mantine-Paper-root > div:last-child {
   background-color: var(--card) !important;
   border-top: 1px solid var(--border) !important;
-  padding: 0.5rem 0.75rem !important;
+  padding: 0.4rem 0.75rem !important;
 }
 
 /* Pagination active page */
@@ -249,6 +263,7 @@
   color: var(--primary-foreground) !important;
   border-color: var(--primary) !important;
   font-weight: 600 !important;
+  box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05) !important;
 }
 
 /* Pagination controls */
@@ -256,24 +271,33 @@
   background-color: var(--card) !important;
   color: var(--foreground) !important;
   border-color: var(--border) !important;
-  font-size: 0.8125rem !important;
-  min-width: 2rem !important;
-  height: 2rem !important;
-  transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out !important;
+  font-size: 0.75rem !important;
+  min-width: 1.75rem !important;
+  height: 1.75rem !important;
+  border-radius: var(--radius-sm) !important;
+  transition: all 0.1s ease-in-out !important;
 }
 .mantine-Pagination-control:hover:not([data-active]) {
   background-color: var(--accent) !important;
   color: var(--accent-foreground) !important;
 }
 
+/* Pagination dots/gap */
+.mantine-Pagination-dots {
+  min-width: 1.75rem !important;
+  height: 1.75rem !important;
+  color: var(--muted-foreground) !important;
+  font-size: 0.75rem !important;
+}
+
 /* Search / text input */
 .mantine-TextInput-input {
-  height: 2rem !important;
-  font-size: 0.8125rem !important;
+  height: 1.75rem !important;
+  font-size: 0.75rem !important;
   background-color: var(--background) !important;
   color: var(--foreground) !important;
   border-color: var(--border) !important;
-  border-radius: var(--radius-md) !important;
+  border-radius: var(--radius-sm) !important;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
 }
 .mantine-TextInput-input:focus {
@@ -288,12 +312,22 @@
 /* Select (rows-per-page dropdown) */
 .mantine-Select-input,
 .mantine-NativeSelect-input {
-  height: 2rem !important;
-  font-size: 0.8125rem !important;
+  height: 1.75rem !important;
+  min-height: 1.75rem !important;
+  font-size: 0.75rem !important;
   background-color: var(--background) !important;
   color: var(--foreground) !important;
   border-color: var(--border) !important;
-  border-radius: var(--radius-md) !important;
+  border-radius: var(--radius-sm) !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Page info and other common text in toolbar (specific to tables) */
+.mantine-Paper-root .mantine-Text-root {
+  font-size: 0.75rem !important;
+  color: var(--muted-foreground) !important;
+  font-family: var(--font-sans) !important;
 }
 
 /* Dropdown list */

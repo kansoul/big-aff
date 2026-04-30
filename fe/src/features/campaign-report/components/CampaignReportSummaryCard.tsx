@@ -72,9 +72,7 @@ function CampaignReportSummaryCardInner({
             key={metric.key}
             className="flex flex-col gap-1 rounded-md border bg-background/40 px-3 py-2"
           >
-            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              {metric.label}
-            </span>
+            <span className="text-[11px] font-medium text-muted-foreground">{metric.label}</span>
             <span className={cn('text-sm font-semibold tabular-nums', colorClass)}>
               {loading && !summary ? '…' : formatValue(value, metric.format)}
             </span>
@@ -86,7 +84,7 @@ function CampaignReportSummaryCardInner({
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border bg-muted/10 p-4 shadow-sm">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{title}</h3>
+      <h3 className="text-sm font-bold text-muted-foreground">{title}</h3>
       {grid}
     </div>
   )

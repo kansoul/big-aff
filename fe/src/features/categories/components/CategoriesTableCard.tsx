@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   useMantineReactTable,
@@ -8,6 +9,7 @@ import {
 } from 'mantine-react-table'
 import { FolderOpen, Pencil, Plus, Trash2 } from 'lucide-react'
 
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
@@ -192,6 +194,10 @@ function CategoriesTableCardInner({
   onBulkDeleteClick,
 }: CategoriesTableCardProps) {
   const isMobile = useIsMobile()
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+    { created_at: false },
+  )
   const columns = useMemo(
     () => getColumns({ canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow }),
     [canUpdate, canDelete, onViewRow, onEditRow, onDeleteRow],
@@ -238,7 +244,6 @@ function CategoriesTableCardInner({
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
-      columnVisibility: { created_at: false },
     },
     state: {
       showLoadingOverlay: loading,
@@ -249,7 +254,9 @@ function CategoriesTableCardInner({
       sorting,
       rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

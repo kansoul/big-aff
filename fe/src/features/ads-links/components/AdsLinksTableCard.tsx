@@ -1,4 +1,5 @@
 import { memo, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   useMantineReactTable,
@@ -29,6 +30,7 @@ import type {
   UserOption,
 } from '@/features/ads-links/types'
 
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { buildCopyLink } from '@/lib/ads-link'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
@@ -355,6 +357,9 @@ function AdsLinksTableCardInner({
   onSortingChange,
 }: AdsLinksTableCardProps) {
   const [copyDialog, setCopyDialog] = useState<CopyDialogState>(COPY_DIALOG_CLOSED)
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+  )
 
   const columns = useMemo(
     () =>
@@ -531,7 +536,9 @@ function AdsLinksTableCardInner({
         pageSize: filters.per_page ?? 15,
       },
       sorting: filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : [],
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: (updater) => {
       const current = { pageIndex: (filters.page ?? 1) - 1, pageSize: filters.per_page ?? 15 }
       const next = typeof updater === 'function' ? updater(current) : updater

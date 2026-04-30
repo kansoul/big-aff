@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   useMantineReactTable,
@@ -9,6 +10,7 @@ import {
 } from 'mantine-react-table'
 import { Globe, Pencil, Plus, Trash2, UserPlus } from 'lucide-react'
 
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
@@ -241,6 +243,10 @@ function SitesTableCardInner({
   onBulkDeleteClick,
 }: SitesTableCardProps) {
   const isMobile = useIsMobile()
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+    { updated_at: false },
+  )
   const columns = useMemo(
     () =>
       getSitesColumns({
@@ -327,7 +333,6 @@ function SitesTableCardInner({
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
-      columnVisibility: { updated_at: false },
     },
     state: {
       pagination,
@@ -335,7 +340,9 @@ function SitesTableCardInner({
       showLoadingOverlay: loading,
       rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

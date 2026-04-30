@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   MRT_ShowHideColumnsButton,
@@ -6,6 +7,8 @@ import {
   type MRT_ColumnDef,
 } from 'mantine-react-table'
 import { RefreshCw, Trash2 } from 'lucide-react'
+
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 
 import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
@@ -110,6 +113,9 @@ export const LogsTableCard = memo(function LogsTableCard({
   onRowClick,
 }: Props) {
   const isMobile = useIsMobile()
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+  )
 
   const fileSelectOptions = useMemo(
     () => fileOptions.map((f) => ({ label: f, value: f })),
@@ -204,7 +210,9 @@ export const LogsTableCard = memo(function LogsTableCard({
         pageIndex: pagination.current_page - 1,
         pageSize: pagination.per_page,
       },
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: (updater) => {
       const prev = { pageIndex: pagination.current_page - 1, pageSize: pagination.per_page }
       const next = typeof updater === 'function' ? updater(prev) : updater
