@@ -22,6 +22,7 @@ class AdsLink extends Model
         'style_code',
         'keyword_set_id',
         'tracking_ids',
+        'is_old',
         'created_by',
         'updated_by',
     ];
@@ -34,6 +35,7 @@ class AdsLink extends Model
         return [
             'tracking_ids' => 'array',
             'is_hidden' => 'boolean',
+            'is_old' => 'boolean',
         ];
     }
 }

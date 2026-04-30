@@ -108,10 +108,20 @@ class GetPostBySlugAction
             } else {
                 return null;
             }
-        }
-        if ($trafficType === TrafficType::FACEBOOK) {
+        } elseif ($trafficType === TrafficType::FACEBOOK) {
             $facebookAdsService = app(FacebookAdsService::class);
             $campaignData = $facebookAdsService->verifyCampaign($campaignId, true, $adsLink);
+        } elseif ($trafficType === null && $adsLink->is_old) {
+            $facebookAdsService = app(FacebookAdsService::class);
+            $campaignData = $facebookAdsService->verifyCampaign($campaignId, true, $adsLink);
+
+            if (! $campaignData) {
+                $googleIds = $trackingIds['googleid'] ?? [];
+                if (! empty($googleIds)) {
+                    $googleAdsService = app(GoogleAdsService::class);
+                    $campaignData = $googleAdsService->verifyCampaign($campaignId, $googleIds);
+                }
+            }
         }
 
         if (! $campaignData) {
