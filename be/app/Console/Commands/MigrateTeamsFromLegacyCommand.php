@@ -6,16 +6,16 @@ use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\UserParentChild;
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Hash;
 
-#[Signature('app:migrate-teams-from-legacy {--truncate : Remove all teams and users created by this command}')]
-#[Description('Migrate legacy users into teams. Use --truncate to undo.')]
 class MigrateTeamsFromLegacyCommand extends Command
 {
+    protected $signature = 'app:migrate-teams-from-legacy {--truncate : Remove all teams and users created by this command}';
+
+    protected $description = 'Migrate legacy users into teams. Use --truncate to undo.';
+
     private const LEADER_PASSWORD = 'nexamedia@888';
 
     private const MEMBER_ROLE_ID = 2;
