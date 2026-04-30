@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   MRT_ShowHideColumnsButton,
@@ -7,6 +8,8 @@ import {
 } from 'mantine-react-table'
 import { BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
+
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 
 import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
@@ -429,6 +432,17 @@ export function RevenueReportPage() {
   }
 
   const columns = useMemo(() => getColumns(), [])
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+    {
+      ad_requests_rpm: false,
+      impressions_rpm: false,
+      funnel_requests: false,
+      funnel_impressions: false,
+      funnel_clicks: false,
+      funnel_rpm: false,
+    },
+  )
 
   const table = useMantineReactTable({
     data,
@@ -439,14 +453,6 @@ export function RevenueReportPage() {
     enableColumnPinning: true,
     initialState: {
       density: 'md',
-      columnVisibility: {
-        ad_requests_rpm: false,
-        impressions_rpm: false,
-        funnel_requests: false,
-        funnel_impressions: false,
-        funnel_clicks: false,
-        funnel_rpm: false,
-      },
     },
     manualPagination: true,
     rowCount,
@@ -458,7 +464,9 @@ export function RevenueReportPage() {
         pageSize: pagination.pageSize,
       },
       sorting: filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : [],
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater(pagination) : updater
       setPagination(next)

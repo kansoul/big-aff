@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import type { Control, FieldPath, FieldValues } from 'react-hook-form'
 import {
   MantineReactTable,
@@ -36,6 +37,7 @@ import {
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { SearchableSelect } from '@/components/common/SearchableSelect'
 import { Search } from 'lucide-react'
 
@@ -187,6 +189,9 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
   )
 
   const columns = useMemo(() => MEDIA_COLUMNS, [])
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+  )
 
   const table = useMantineReactTable({
     data,
@@ -212,7 +217,9 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
       rowSelection,
       pagination: { pageIndex, pageSize },
       showLoadingOverlay: loading,
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     manualPagination: true,
     rowCount,
     enableColumnFilters: false,

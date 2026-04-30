@@ -96,9 +96,7 @@ function AssignUserAccountsTableCardInner({
               >
                 <div className="grid gap-5 sm:grid-cols-[1fr_2fr] sm:gap-8">
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Email
-                    </p>
+                    <p className="text-[11px] font-semibold  text-muted-foreground">Email</p>
                     <p className="mt-1.5 truncate text-sm font-semibold text-foreground">
                       {row.name}
                     </p>
@@ -107,9 +105,7 @@ function AssignUserAccountsTableCardInner({
 
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        Accounts
-                      </p>
+                      <p className="text-[11px] font-semibold  text-muted-foreground">Accounts</p>
                       {draft.length > 0 ? (
                         <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
                           {draft.length}

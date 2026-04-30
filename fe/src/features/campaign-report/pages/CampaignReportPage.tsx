@@ -28,8 +28,8 @@ import { useAuthStore } from '@/hooks/useAuthStore'
 type FilterOptions = CampaignReportFiltersResponse['data']
 
 const DEFAULT_FILTERS: CampaignReportFilterParams = {
-  date_from: dayjs().startOf('month').format('YYYY-MM-DD'),
-  date_to: dayjs().endOf('month').format('YYYY-MM-DD'),
+  date_from: dayjs().format('YYYY-MM-DD'),
+  date_to: dayjs().format('YYYY-MM-DD'),
   user_ids: [],
   account_ids: [],
   ads_type: null,

@@ -1,4 +1,5 @@
 import { memo, useMemo, type Dispatch, type SetStateAction } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   useMantineReactTable,
@@ -10,6 +11,7 @@ import {
 } from 'mantine-react-table'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useIsMobile } from '@/hooks/useMobile'
@@ -215,6 +217,10 @@ function SettingsUsersTableCardInner({
 }: SettingsUsersTableCardProps) {
   const isMobile = useIsMobile()
   const hasDeletableRows = canDelete && users.some((row) => row.id !== currentUserId)
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+    {},
+  )
   const columns = useMemo(
     () => getUsersColumns({ currentUserId, canUpdate, hasDeletableRows, onEditRow, onDeleteRow }),
     [currentUserId, canUpdate, hasDeletableRows, onEditRow, onDeleteRow],
@@ -253,7 +259,6 @@ function SettingsUsersTableCardInner({
     initialState: {
       showGlobalFilter: true,
       density: 'md',
-      columnVisibility: {},
     },
     state: {
       pagination,
@@ -261,7 +266,9 @@ function SettingsUsersTableCardInner({
       showLoadingOverlay: loading,
       rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   useMantineReactTable,
@@ -9,6 +10,7 @@ import {
 } from 'mantine-react-table'
 import { Building2, Pencil, Plus, Trash2 } from 'lucide-react'
 
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
@@ -204,6 +206,10 @@ function BusinessCentersTableCardInner({
   onBulkDeleteClick,
 }: BusinessCentersTableCardProps) {
   const isMobile = useIsMobile()
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+    { updated_at: false },
+  )
   const columns = useMemo(
     () =>
       getBusinessCentersColumns({
@@ -264,7 +270,6 @@ function BusinessCentersTableCardInner({
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
-      columnVisibility: { updated_at: false },
     },
     state: {
       pagination,
@@ -272,7 +277,9 @@ function BusinessCentersTableCardInner({
       showLoadingOverlay: loading,
       rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

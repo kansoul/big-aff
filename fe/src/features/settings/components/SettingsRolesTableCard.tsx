@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   MRT_GlobalFilterTextInput,
@@ -10,6 +11,7 @@ import {
 } from 'mantine-react-table'
 import { Pencil, Plus, Shield, Trash2 } from 'lucide-react'
 
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useIsMobile } from '@/hooks/useMobile'
@@ -165,6 +167,9 @@ function SettingsRolesTableCardInner({
   onBulkDeleteClick,
 }: SettingsRolesTableCardProps) {
   const isMobile = useIsMobile()
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+  )
   const hasDeletableRows = canDelete && roles.some((row) => !isSystemRole(row))
   const columns = useMemo(
     () => getRolesColumns({ canUpdate, canAssign, hasDeletableRows, onEditRow, onDeleteRow }),
@@ -195,7 +200,9 @@ function SettingsRolesTableCardInner({
       showLoadingOverlay: loading,
       rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       const newSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

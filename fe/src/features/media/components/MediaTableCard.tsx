@@ -1,4 +1,5 @@
 import { memo, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   useMantineReactTable,
@@ -9,6 +10,7 @@ import {
 } from 'mantine-react-table'
 import { Trash2, Upload, ZoomIn } from 'lucide-react'
 
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -235,6 +237,10 @@ function MediaTableCardInner({
 }: MediaTableCardProps) {
   const isMobile = useIsMobile()
   const [previewFile, setPreviewFile] = useState<MediaFile | null>(null)
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+    { user_id: false },
+  )
 
   const columns = useMemo(
     () => getColumns({ canDelete, onDeleteFile, onPreviewClick: setPreviewFile }),
@@ -341,7 +347,6 @@ function MediaTableCardInner({
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
-      columnVisibility: { user_id: false },
     },
     state: {
       pagination,
@@ -349,7 +354,9 @@ function MediaTableCardInner({
       showLoadingOverlay: loading,
       rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

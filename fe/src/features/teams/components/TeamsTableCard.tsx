@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   MRT_ShowHideColumnsButton,
@@ -8,6 +9,7 @@ import {
 } from 'mantine-react-table'
 import { Loader2, Network, Pencil, Plus, Trash2, UserPlus, UsersRound } from 'lucide-react'
 
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
@@ -302,6 +304,10 @@ function TeamsTableCardInner({
   onBulkDeleteClick,
 }: TeamsTableCardProps) {
   const isMobile = useIsMobile()
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+    { created_at: false },
+  )
   const columns = useMemo(
     () =>
       getColumns({
@@ -373,7 +379,6 @@ function TeamsTableCardInner({
     enableRowSelection: canDelete,
     initialState: {
       density: 'md',
-      columnVisibility: { created_at: false },
     },
     state: {
       showLoadingOverlay: loading,
@@ -384,7 +389,9 @@ function TeamsTableCardInner({
       sorting,
       rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

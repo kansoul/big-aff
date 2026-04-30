@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
   MRT_ShowHideColumnsButton,
@@ -8,6 +9,7 @@ import {
 } from 'mantine-react-table'
 import { CreditCard, Pencil, Plus, Trash2 } from 'lucide-react'
 
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { Button } from '@/components/ui/button'
@@ -202,6 +204,9 @@ function AdClientsTableCardInner({
   onBulkDeleteClick,
 }: AdClientsTableCardProps) {
   const isMobile = useIsMobile()
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+  )
   const columns = useMemo(
     () => getColumns({ canUpdate, canDelete, onEditRow, onDeleteRow }),
     [canUpdate, canDelete, onEditRow, onDeleteRow],
@@ -271,7 +276,9 @@ function AdClientsTableCardInner({
       sorting,
       rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
+      columnVisibility,
     },
+    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       const newPageSelection: MRT_RowSelectionState =
         typeof updater === 'function' ? updater(rowSelection) : updater

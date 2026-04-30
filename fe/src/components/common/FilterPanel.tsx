@@ -329,7 +329,7 @@ function FilterPanelInner(props: FilterPanelProps) {
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
             >
               <Filter className="h-3.5 w-3.5" />
               {title}
