@@ -146,7 +146,7 @@ class MigrateTeamsFromLegacyCommand extends Command
                 $this->ensureParentChild($leader, $member);
             }
 
-            $this->info("Team [{$teamName}]: leader={$leader->email}, members=" . count($members));
+            $this->info("Team [{$teamName}]: leader={$leader->email}, members=".count($members));
         }
 
         $this->migrateTeamHuynh($admin);
@@ -176,12 +176,6 @@ class MigrateTeamsFromLegacyCommand extends Command
         if (! $this->confirm('This will delete the created teams, leader accounts, team_user rows, and user_parent_child rows. Continue?')) {
             return self::FAILURE;
         }
-
-        // Collect all member emails across all teams + team_huynh
-        $allMemberEmails = array_merge(
-            ...array_column(array_values(self::TEAMS), 'members'),
-            ['sun.nexa@nexamedia.io'],
-        );
 
         // Remove team_user + user_parent_child for created leader accounts
         $createdLeaders = User::query()->whereIn('email', self::CREATED_LEADER_EMAILS)->get();
@@ -263,7 +257,7 @@ class MigrateTeamsFromLegacyCommand extends Command
 
         $missing = array_diff($emails, $users->pluck('email')->all());
         if (! empty($missing)) {
-            $this->warn('Missing users (skipped): ' . implode(', ', $missing));
+            $this->warn('Missing users (skipped): '.implode(', ', $missing));
         }
 
         return $users->all();
