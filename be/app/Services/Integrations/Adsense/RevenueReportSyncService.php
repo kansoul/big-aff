@@ -232,8 +232,8 @@ class RevenueReportSyncService
                     ],
                     'reportingTimeZone' => 'GOOGLE_TIME_ZONE',
                     'dimensions' => [
-                        'CUSTOM_SEARCH_STYLE_NAME',
-                        'CUSTOM_SEARCH_STYLE_ID',
+                        'CUSTOM_CHANNEL_NAME',
+                        'CUSTOM_CHANNEL_ID',
                         'DATE',
                     ],
                 ]
@@ -262,15 +262,14 @@ class RevenueReportSyncService
         }
 
         $date = $map['DATE'] ?? null;
-        $styleId = $map['CUSTOM_SEARCH_STYLE_ID'] ?? null;
         $chanId = $map['CUSTOM_CHANNEL_ID'] ?? null;
         $channelId = str_replace($account->product_code.':', '', $chanId);
 
-        if (! $date || ! $styleId || ! $channelId) {
+        if (! $date || ! $channelId) {
             return null;
         }
 
-        $style = Style::where('code', $styleId)->first();
+        $style = Style::first();
         if (! $style) {
             return null;
         }
@@ -285,7 +284,7 @@ class RevenueReportSyncService
             'ad_client_id' => $account?->ad_client_id,
             'style_code' => $style->code,
             'channel_code' => $channel->code,
-            'style_name' => $map['CUSTOM_SEARCH_STYLE_NAME'] ?? $style->name,
+            'style_name' => $style->name,
             'channel_name' => $channel->name,
             'date' => $date,
 
