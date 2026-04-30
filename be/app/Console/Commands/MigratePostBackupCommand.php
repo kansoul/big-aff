@@ -102,6 +102,10 @@ class MigratePostBackupCommand extends Command
         FileFacade::ensureDirectoryExists($destinationDir);
 
         foreach ($fileRecords as $record) {
+            if ((int) ($record['file_size'] ?? 0) === 0) {
+                continue;
+            }
+
             $backupRelativePath = $this->normalizeBackupRelativePath((string) ($record['path'] ?? ''));
             if ($backupRelativePath === '') {
                 continue;
@@ -180,6 +184,7 @@ class MigratePostBackupCommand extends Command
     {
         $keywordSetByHash = [];
         $postsImported = 0;
+        $postsSkipped = 0;
         $keywordSetsCreated = 0;
         $pivotCreated = 0;
         $missingFeatureMedia = 0;
@@ -187,56 +192,83 @@ class MigratePostBackupCommand extends Command
         $validUserIds = $this->buildValidIdLookup('users');
 
         foreach ($postRecords as $record) {
-            $featureMediaPath = $this->normalizePath((string) ($record['feature_media'] ?? ''));
-            $featureMediaId = $featureMediaPath !== '' ? ($fileMap[$featureMediaPath] ?? null) : null;
-            if ($featureMediaPath !== '' && $featureMediaId === null) {
-                $missingFeatureMedia++;
-            }
+            $slug = (string) ($record['slug'] ?? Str::slug((string) ($record['title'] ?? 'post-'.uniqid())));
 
-            $post = Post::query()->create([
-                'title' => (string) ($record['title'] ?? ''),
-                'slug' => (string) ($record['slug'] ?? Str::slug((string) ($record['title'] ?? 'post-'.uniqid()))),
-                'lang' => $record['lang'] ?? null,
-                'note' => $record['note'] ?? null,
-                'description' => $record['description'] ?? null,
-                'content' => $this->normalizeContent($record['content'] ?? null),
-                'feature_media_id' => $featureMediaId,
-                'status' => $this->normalizeStatus((string) ($record['status'] ?? 'draft')),
-                'is_hidden' => (bool) ($record['is_hidden'] ?? false),
-                'type' => $this->normalizeType((string) ($record['type'] ?? '')),
-                'category_id' => $this->normalizeForeignId(Arr::get($record, 'category_id'), $validCategoryIds),
-                'created_by' => $this->normalizeForeignId(Arr::get($record, 'created_by'), $validUserIds),
-                'updated_by' => $this->normalizeForeignId(Arr::get($record, 'updated_by'), $validUserIds),
-                'published_at' => $this->normalizePublishedAt($record['published_at'] ?? null),
-            ]);
-            $postsImported++;
+            /** @var Post|null $existingPost */
+            $existingPost = Post::query()->where('slug', $slug)->first();
 
-            $keywords = $this->extractKeywords($record['tags_sets'] ?? []);
-            if ($keywords === []) {
-                continue;
-            }
+            if ($existingPost !== null) {
+                $post = $existingPost;
+                $postsSkipped++;
+            } else {
+                $featureMediaPath = $this->normalizePath((string) ($record['feature_media'] ?? ''));
+                $featureMediaId = $featureMediaPath !== '' ? ($fileMap[$featureMediaPath] ?? null) : null;
+                if ($featureMediaPath !== '' && $featureMediaId === null) {
+                    $missingFeatureMedia++;
+                }
 
-            $hash = md5(json_encode($keywords));
-            $keywordSetId = $keywordSetByHash[$hash] ?? null;
-
-            if ($keywordSetId === null) {
-                $keywordSet = KeywordSet::query()->create([
-                    'name' => mb_substr((string) ($record['title'] ?? $post->slug), 0, 255),
-                    'keywords' => $keywords,
+                $post = Post::query()->create([
+                    'title' => (string) ($record['title'] ?? ''),
+                    'slug' => $slug,
+                    'lang' => $record['lang'] ?? null,
+                    'note' => $record['note'] ?? null,
+                    'description' => $record['description'] ?? null,
+                    'content' => $this->normalizeContent($record['content'] ?? null),
+                    'feature_media_id' => $featureMediaId,
+                    'status' => $this->normalizeStatus((string) ($record['status'] ?? 'draft')),
+                    'is_hidden' => (bool) ($record['is_hidden'] ?? false),
+                    'type' => $this->normalizeType((string) ($record['type'] ?? '')),
+                    'category_id' => $this->normalizeForeignId(Arr::get($record, 'category_id'), $validCategoryIds),
                     'created_by' => $this->normalizeForeignId(Arr::get($record, 'created_by'), $validUserIds),
                     'updated_by' => $this->normalizeForeignId(Arr::get($record, 'updated_by'), $validUserIds),
+                    'published_at' => $this->normalizePublishedAt($record['published_at'] ?? null),
                 ]);
-                $keywordSetId = (int) $keywordSet->id;
-                $keywordSetByHash[$hash] = $keywordSetId;
-                $keywordSetsCreated++;
+                $postsImported++;
             }
 
-            PostKeywordSet::query()->create([
-                'post_id' => (int) $post->id,
-                'keyword_set_id' => $keywordSetId,
-            ]);
-            $pivotCreated++;
+            $allKeywordSets = $this->extractKeywordSets($record['tags_sets'] ?? []);
+            $existingKeywordSetIds = PostKeywordSet::query()
+                ->where('post_id', (int) $post->id)
+                ->pluck('keyword_set_id')
+                ->map(fn (mixed $id): int => (int) $id)
+                ->all();
+
+            foreach ($allKeywordSets as $keywords) {
+                $hash = md5(json_encode($keywords));
+                $keywordSetId = $keywordSetByHash[$hash] ?? null;
+
+                if ($keywordSetId === null) {
+                    $existing = KeywordSet::query()->where('keywords', json_encode($keywords))->first();
+                    if ($existing !== null) {
+                        $keywordSetId = (int) $existing->id;
+                    } else {
+                        $keywordSet = KeywordSet::query()->create([
+                            'name' => mb_substr((string) ($record['title'] ?? $post->slug), 0, 255),
+                            'keywords' => $keywords,
+                            'created_by' => $this->normalizeForeignId(Arr::get($record, 'created_by'), $validUserIds),
+                            'updated_by' => $this->normalizeForeignId(Arr::get($record, 'updated_by'), $validUserIds),
+                        ]);
+                        $keywordSetId = (int) $keywordSet->id;
+                        $keywordSetsCreated++;
+                    }
+
+                    $keywordSetByHash[$hash] = $keywordSetId;
+                }
+
+                if (in_array($keywordSetId, $existingKeywordSetIds, true)) {
+                    continue;
+                }
+
+                PostKeywordSet::query()->create([
+                    'post_id' => (int) $post->id,
+                    'keyword_set_id' => $keywordSetId,
+                ]);
+                $pivotCreated++;
+                $existingKeywordSetIds[] = $keywordSetId;
+            }
         }
+
+        $this->line("Posts skipped (already exist): {$postsSkipped}");
 
         return [
             'files_imported' => count($fileMap),
@@ -354,23 +386,25 @@ class MigratePostBackupCommand extends Command
     }
 
     /**
-     * @return array<int, string>
+     * @return array<int, array<int, string>>
      */
-    private function extractKeywords(mixed $tagSets): array
+    private function extractKeywordSets(mixed $tagSets): array
     {
         if (! is_array($tagSets) || $tagSets === []) {
             return [];
         }
 
-        $firstSet = $tagSets[0] ?? null;
-        if (! is_array($firstSet) || $firstSet === []) {
-            return [];
-        }
-
-        return collect($firstSet)
-            ->filter(fn (mixed $item): bool => is_string($item) && trim($item) !== '')
-            ->map(fn (string $keyword): string => trim($keyword))
-            ->unique()
+        return collect($tagSets)
+            ->filter(fn (mixed $set): bool => is_array($set) && $set !== [])
+            ->map(
+                fn (array $set): array => collect($set)
+                    ->filter(fn (mixed $item): bool => is_string($item) && trim($item) !== '')
+                    ->map(fn (string $keyword): string => trim($keyword))
+                    ->unique()
+                    ->values()
+                    ->all()
+            )
+            ->filter(fn (array $keywords): bool => $keywords !== [])
             ->values()
             ->all();
     }
