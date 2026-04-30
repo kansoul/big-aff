@@ -489,6 +489,130 @@ function getColumns(
     },
   }
 
+  // ── Revenue Est column (realtime-based) ──
+  const colRevenueEst: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'revenue_est',
+    header: '🟢 Revenue Est',
+    size: 160,
+    Cell: ({ row }) => (
+      <span className="tabular-nums text-xs text-muted-foreground">
+        {formatUsd(metric(row.original, 'revenue_est'))}
+      </span>
+    ),
+    Footer: () =>
+      summary ? (
+        <span className="tabular-nums text-xs font-semibold">
+          {formatUsd(toNumber(summary.revenue_est))}
+        </span>
+      ) : null,
+  }
+
+  // ── ROI Realtime column ──
+  const colRoiRealtime: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'roi_realtime',
+    header: '🟢 ROI Realtime (%)',
+    size: 170,
+    Cell: ({ row }) => {
+      const v = isGroupRow(row.original)
+        ? row.original.group_summary.roi_realtime
+        : row.original.roi_realtime
+      return (
+        <span
+          className={cn(
+            'tabular-nums text-xs font-medium',
+            v >= 0 ? 'text-emerald-500' : 'text-rose-500',
+          )}
+        >
+          {formatRoi(v)}
+        </span>
+      )
+    },
+    Footer: () =>
+      summary ? (
+        <span
+          className={cn(
+            'tabular-nums text-xs font-semibold',
+            summary.roi_realtime >= 0 ? 'text-emerald-500' : 'text-rose-500',
+          )}
+        >
+          {formatRoi(toNumber(summary.roi_realtime))}
+        </span>
+      ) : null,
+  }
+
+  // ── Real-time computed columns (calculated by BE, display-only) ──
+  const colRtCpa: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'rt_cpa',
+    header: '🟢 Real-time CPA',
+    size: 170,
+    enableSorting: false,
+    Cell: ({ row }) => {
+      const v = isGroupRow(row.original) ? row.original.group_summary.rt_cpa : row.original.rt_cpa
+      if (v === null || v === 0) return <span className="text-muted-foreground/50">—</span>
+      return <span className="tabular-nums text-xs text-muted-foreground">{formatUsd(v)}</span>
+    },
+    Footer: () =>
+      summary ? (
+        <span className="tabular-nums text-xs font-semibold">{formatUsd(summary.rt_cpa)}</span>
+      ) : null,
+  }
+
+  const colRtCvr: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'rt_cvr',
+    header: '🟢 Real-time CVR',
+    size: 160,
+    enableSorting: false,
+    Cell: ({ row }) => {
+      const v = isGroupRow(row.original) ? row.original.group_summary.rt_cvr : row.original.rt_cvr
+      if (v === null || v === 0) return <span className="text-muted-foreground/50">—</span>
+      return <span className="tabular-nums text-xs text-muted-foreground">{formatDecimal(v)}%</span>
+    },
+    Footer: () =>
+      summary ? (
+        <span className="tabular-nums text-xs font-semibold">{formatDecimal(summary.rt_cvr)}%</span>
+      ) : null,
+  }
+
+  const colRtCtrKeyword: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'rt_ctr_keyword',
+    header: '🟢 Real-time CTR keyword',
+    size: 210,
+    enableSorting: false,
+    Cell: ({ row }) => {
+      const v = isGroupRow(row.original)
+        ? row.original.group_summary.rt_ctr_keyword
+        : row.original.rt_ctr_keyword
+      if (v === null || v === 0) return <span className="text-muted-foreground/50">—</span>
+      return <span className="tabular-nums text-xs text-muted-foreground">{formatDecimal(v)}%</span>
+    },
+    Footer: () =>
+      summary ? (
+        <span className="tabular-nums text-xs font-semibold">
+          {formatDecimal(summary.rt_ctr_keyword)}%
+        </span>
+      ) : null,
+  }
+
+  const colRtCtrSearch: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'rt_ctr_search',
+    header: '🟢 Real-time CTR Search',
+    size: 210,
+    enableSorting: false,
+    Cell: ({ row }) => {
+      const v = isGroupRow(row.original)
+        ? row.original.group_summary.rt_ctr_search
+        : row.original.rt_ctr_search
+      if (v === null || v === 0) return <span className="text-muted-foreground/50">—</span>
+      return <span className="tabular-nums text-xs text-muted-foreground">{formatDecimal(v)}%</span>
+    },
+    Footer: () =>
+      summary ? (
+        <span className="tabular-nums text-xs font-semibold">
+          {formatDecimal(summary.rt_ctr_search)}%
+        </span>
+      ) : null,
+  }
+
   // ── Profit / ROI columns ──
   const colProfit: MRT_ColumnDef<TableRow> = {
     accessorKey: 'profit',
@@ -550,90 +674,11 @@ function getColumns(
       ) : null,
   }
 
-  // ── Realtime (rt_*) columns ──
-  const colRtClickAdCount: MRT_ColumnDef<TableRow> = {
-    id: 'rt_click_ad_count',
-    header: '🟢 Realtime Clicks',
-    size: 180,
-    accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.click_ad_count ?? 0)),
-    enableSorting: false,
-    Cell: ({ row }) => {
-      if (isGroupRow(row.original)) return null
-      const rt = row.original.realtime_report
-      return rt ? (
-        <span className="tabular-nums text-xs">{rt.click_ad_count}</span>
-      ) : (
-        <span className="text-muted-foreground/50">—</span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-xs font-semibold">{summary.rt_click_ad_count}</span>
-      ) : null,
-  }
-
-  const colRtClickKeywordCount: MRT_ColumnDef<TableRow> = {
-    id: 'rt_click_keyword_count',
-    header: '🟢 Realtime Keyword Clicks',
-    size: 170,
-    accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.click_keyword_count ?? 0)),
-    enableSorting: false,
-    Cell: ({ row }) => {
-      if (isGroupRow(row.original)) return null
-      const rt = row.original.realtime_report
-      return rt ? (
-        <span className="tabular-nums text-xs">{rt.click_keyword_count}</span>
-      ) : (
-        <span className="text-muted-foreground/50">—</span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-xs font-semibold">{summary.rt_click_keyword_count}</span>
-      ) : null,
-  }
-
-  const colRtViewSearchCount: MRT_ColumnDef<TableRow> = {
-    id: 'rt_view_search_count',
-    header: '🟢 Realtime Search Views',
-    size: 240,
-    accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.view_search_count ?? 0)),
-    enableSorting: false,
-    Cell: ({ row }) => {
-      if (isGroupRow(row.original)) return null
-      const rt = row.original.realtime_report
-      return rt ? (
-        <span className="tabular-nums text-xs">{rt.view_search_count}</span>
-      ) : (
-        <span className="text-muted-foreground/50">—</span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-xs font-semibold">{summary.rt_view_search_count}</span>
-      ) : null,
-  }
-
-  const colRtViewArticleCount: MRT_ColumnDef<TableRow> = {
-    id: 'rt_view_article_count',
-    header: '🟢 Realtime Article Views',
-    size: 160,
-    accessorFn: (row) => (isGroupRow(row) ? 0 : (row.realtime_report?.view_article_count ?? 0)),
-    enableSorting: false,
-    Cell: ({ row }) => {
-      if (isGroupRow(row.original)) return null
-      const rt = row.original.realtime_report
-      return rt ? (
-        <span className="tabular-nums text-xs">{rt.view_article_count}</span>
-      ) : (
-        <span className="text-muted-foreground/50">—</span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-xs font-semibold">{summary.rt_view_article_count}</span>
-      ) : null,
-  }
+  // ── Realtime (rt_*) columns — top-level fields from BE, display-only ──
+  const colRtClickAdCount = count('rt_click_ad_count', '🟢 Real-time Conv.', 180)
+  const colRtClickKeywordCount = count('rt_click_keyword_count', '🟢 Real-time Click keyword', 200)
+  const colRtViewSearchCount = count('rt_view_search_count', '🟢 Real-time SearchView', 200)
+  const colRtViewArticleCount = count('rt_view_article_count', '🟢 Realtime Article Views', 180)
 
   // Column order matches AllReportResource.php
   return [
@@ -641,74 +686,95 @@ function getColumns(
     // ── Group label (grouped mode only) ──
     ...(groupLabelCol ? [groupLabelCol] : []),
 
-    // ── Identity / dimension ──
+    // ── Identity / dimension (mirrors AllReportResource column order) ──
     colDateStart,
     colAccountName,
+    colTrackingAnalytic, // tracking before campaign (AllReport line 190)
     colCampaignName,
-    colCampaignStatus,
+    colAdsAdsetReport, // after campaign (AllReport line 258)
+    colCampaignStatus, // after ads_adset (AllReport line 272)
     colCampaignOnOff,
-    colTrackingAnalytic,
-    colAdsAdsetReport,
     colLink,
     colAdsType,
     colChannelName,
 
     // ── Revenue & spend ──
     usd('r_revenue', '🟡 Revenue', 160),
+    colRevenueEst, // 🟢 Revenue Est
     usd('a_spend', '🔵 Spending', 160),
     colProfit,
     colRoi,
+    colRoiRealtime, // 🟢 ROI Realtime
 
     // ── Conversions ──
     colRtClickAdCount, // 🟢 Real-time Conv.
     count('r_conversion', 'Rev. Conv.', 150), // 🟡 Conv.
     count('a_conversion', '🔵 ADS Conv.', 160), // 🔵 ADS Conv.
 
-    // ── Search impressions & RPM ──
-    count('r_impressions', '🟡 Impressions', 190),
-    ratio('r_impressions_rpm', '🟡 Impr. RPM', 170),
+    // ── Search impressions & RPM (AllReport line 613–683) ──
+    count('r_impressions', '🟡 Search Impressions', 200),
+    ratio('r_ad_requests_rpm', '🟡 Search RPM', 170), // AllReport line 629
     ratio('r_rpc', '🟡 RPC', 120),
 
     // ── CPA ──
-    ratio('r_cpa', '🟡 Revenue CPA', 190),
+    colRtCpa, // 🟢 Real-time CPA
+    ratio('r_cpa', '🟡 CPA', 190), // 🟡 CPA
     ratio('a_cpa', '🔵 ADS CPA', 150),
 
-    // ── Search views ──
-    colRtViewSearchCount, // 🟢 Realtime Search Views
-    count('r_search_views', '🟡 SearchViews', 180), // 🟡 SearchViews
-    count('a_search_views', '🔵 ADS SearchView', 200), // 🔵 ADS SearchView
+    // ── CVR (AllReport line 742–796) ──
+    colRtCvr, // 🟢 Real-time CVR
+    {
+      accessorKey: 'cvr',
+      header: '🟡 CVR',
+      size: 130,
+      enableSorting: false,
+      Cell: ({ row }) => {
+        const v = isGroupRow(row.original) ? row.original.group_summary.cvr : row.original.cvr
+        if (v === null || v === 0) return <span className="text-muted-foreground/50">—</span>
+        return (
+          <span className="tabular-nums text-xs text-muted-foreground">{formatDecimal(v)}%</span>
+        )
+      },
+      Footer: () =>
+        summary ? (
+          <span className="tabular-nums text-xs font-semibold">{formatDecimal(summary.cvr)}%</span>
+        ) : null,
+    } as MRT_ColumnDef<TableRow>,
 
-    // ── Keyword / funnel ──
-    colRtClickKeywordCount, // 🟢 Realtime Keyword Clicks
-    count('a_clicks', '🔵 Supply clicks', 190), // 🔵 Supply clicks
-    count('r_funnel_clicks', '🟡 Funnel Clicks', 180), // 🟡 Funnel Clicks
-    count('r_funnel_requests', '🟡 Funnel Requests', 210), // 🟡 Funnel Requests
-    count('r_funnel_impressions', '🟡 Funnel Impr.', 180), // 🟡 Funnel Impressions
-    ratio('r_funnel_rpm', '🟡 Funnel RPM', 170), // 🟡 Funnel RPM
+    // ── Search views (AllReport line 799–847) ──
+    colRtViewSearchCount, // 🟢 Real-time SearchView
+    count('r_search_views', '🟡 SearchViews', 180),
+    count('a_search_views', '🔵 ADS SearchView', 200),
 
-    // ── Ad requests ──
-    count('r_ad_requests', '🟡 Ad Requests', 180),
-    ratio('r_ad_requests_rpm', '🟡 Req. RPM', 170),
+    // ── Keyword / funnel (AllReport line 850–992) ──
+    colRtClickKeywordCount, // 🟢 Real-time Click keyword
+    count('a_clicks', '🔵 Supply clicks', 190),
+    count('r_funnel_clicks', '🟡 Click keyword', 180),
+    count('r_funnel_requests', '🟡 Keyword Request', 210),
+    colRtCtrKeyword, // 🟢 Real-time CTR keyword (AllReport line 920)
+    count('r_funnel_impressions', '🟡 Keyword Impressions', 200),
+    ratio('r_funnel_rpm', '🟡 Keyword RPM', 170),
 
-    // ── ADS platform metrics ──
+    // ── CTR Search (AllReport line 1034) ──
+    colRtCtrSearch, // 🟢 Real-time CTR Search
+
+    // ── ADS platform metrics (AllReport line 1107–1167) ──
     { ...ratio('a_ctr_link', '🔵 ADS CTR', 160), Footer: undefined },
-    { ...count('a_article_views', '🔵 Landingpage view', 220), Footer: undefined },
-    { ...ratio('a_cpc_link', '🔵 ADS CPC Link', 190), Footer: undefined },
+    { ...count('a_article_views', '🔵 ADS Landingpage view', 220), Footer: undefined },
+    { ...ratio('a_cpc_link', '🔵 ADS CPC', 190), Footer: undefined },
     { ...count('a_reach', '🔵 ADS Reach', 160), Footer: undefined },
     { ...count('a_impressions', '🔵 ADS Impressions', 220), Footer: undefined },
-    { ...ratio('a_cpm', '🔵 CPM', 160), Footer: undefined },
-    { ...ratio('a_frequency', '🔵 Frequency', 170), Footer: undefined },
+    { ...ratio('a_cpm', '🔵 FB CPM', 160), Footer: undefined },
+    { ...ratio('a_frequency', '🔵 FB Frequency', 170), Footer: undefined },
     { ...ratio('a_ctr', '🔵 FB CTR (All)', 170), Footer: undefined },
+    { ...usd('daily_budget', '🔵 ADS Budget (Daily)', 200), Footer: undefined },
+    { ...usd('lifetime_budget', '🔵 ADS Budget (Lifetime)', 210), Footer: undefined },
 
-    // ── Budget ──
-    { ...usd('daily_budget', '🔵 Daily Budget', 180), Footer: undefined },
-    { ...usd('lifetime_budget', '🔵 Lifetime Budget', 200), Footer: undefined },
-
-    // ── Remaining ADS cols ──
+    // ── No AllReport equivalent — kept for completeness ──
+    ratio('r_impressions_rpm', '🟡 Impr. RPM', 170),
+    count('r_ad_requests', '🟡 Ad Requests', 180),
     { ...count('a_ad_clicks', '🔵 Ad Clicks', 160), Footer: undefined },
     { ...ratio('a_cpc', '🔵 ADS CPC', 160), Footer: undefined },
-
-    // ── Remaining realtime ──
     colRtViewArticleCount,
   ]
 }

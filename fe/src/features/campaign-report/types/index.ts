@@ -107,6 +107,15 @@ export interface CampaignReportRow {
   profit: number
   roi: number
   roi_realtime: number
+  rt_click_ad_count: number
+  rt_click_keyword_count: number
+  rt_view_search_count: number
+  rt_view_article_count: number
+  cvr: number | null
+  rt_cpa: number | null
+  rt_cvr: number | null
+  rt_ctr_keyword: number | null
+  rt_ctr_search: number | null
 
   realtime_report: CampaignReportRealtime | null
 }
@@ -152,6 +161,11 @@ export interface CampaignReportSummary {
   rt_click_keyword_count: number
   rt_view_search_count: number
   rt_view_article_count: number
+  cvr: number
+  rt_cpa: number
+  rt_cvr: number
+  rt_ctr_keyword: number
+  rt_ctr_search: number
 }
 
 export interface CampaignReportGroupRow {

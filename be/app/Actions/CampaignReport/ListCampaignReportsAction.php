@@ -23,9 +23,12 @@ class ListCampaignReportsAction
         'account_name',
         'campaign_id',
         'campaign_name',
+        'campaign_status',
         'ads_type',
         'channel_code',
         'channel_name',
+        'style_code',
+        'style_name',
         'daily_budget',
         'lifetime_budget',
         // revenue
@@ -58,6 +61,15 @@ class ListCampaignReportsAction
         'a_cpc_link',
         'a_frequency',
         'a_clicks',
+        // derived (computed in SELECT)
+        'rpc',
+        'revenue_est',
+        'profit',
+        'roi',
+        'rt_cpa',
+        'rt_cvr',
+        'rt_ctr_keyword',
+        'rt_ctr_search',
     ];
 
     /**
@@ -70,10 +82,18 @@ class ListCampaignReportsAction
                 $join->on('rv.channel_code', '=', 'campaign_reports.channel_code')
                     ->on('rv.date', '=', 'campaign_reports.date_start');
             })
+            ->leftJoin('realtime_reports as rt', 'rt.id', '=', 'campaign_reports.realtime_report_id')
             ->select(
                 'campaign_reports.*',
                 DB::raw('COALESCE(rv.estimated_earnings, 0) as r_estimated_earnings'),
                 DB::raw('COALESCE(rv.cost_per_click, 0) as rpc'),
+                DB::raw('COALESCE(rt.click_keyword_count, 0) * COALESCE(rv.cost_per_click, 0) as revenue_est'),
+                DB::raw('(COALESCE(rt.click_keyword_count, 0) * COALESCE(rv.cost_per_click, 0)) - COALESCE(campaign_reports.a_spend, 0) as profit'),
+                DB::raw('IF(COALESCE(campaign_reports.a_spend, 0) > 0, ((COALESCE(rt.click_keyword_count, 0) * COALESCE(rv.cost_per_click, 0)) - COALESCE(campaign_reports.a_spend, 0)) / COALESCE(campaign_reports.a_spend, 0) * 100, 0) as roi'),
+                DB::raw('IF(COALESCE(rt.click_ad_count, 0) > 0, COALESCE(campaign_reports.a_spend, 0) / rt.click_ad_count, NULL) as rt_cpa'),
+                DB::raw('IF(COALESCE(campaign_reports.r_funnel_requests, 0) > 0, COALESCE(rt.click_ad_count, 0) / campaign_reports.r_funnel_requests * 100, NULL) as rt_cvr'),
+                DB::raw('IF(COALESCE(campaign_reports.r_funnel_requests, 0) > 0, COALESCE(rt.click_keyword_count, 0) / campaign_reports.r_funnel_requests * 100, NULL) as rt_ctr_keyword'),
+                DB::raw('IF(COALESCE(rt.view_search_count, 0) > 0, COALESCE(rt.click_ad_count, 0) / rt.view_search_count * 100, NULL) as rt_ctr_search'),
             )
             ->with([
                 'realtimeReport.linkData.adsLink.site',
