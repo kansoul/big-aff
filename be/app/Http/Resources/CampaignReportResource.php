@@ -26,7 +26,7 @@ class CampaignReportResource extends JsonResource
         }
 
         if ($adsType === 'google') {
-            return 'https://ads.google.com/aw/campaigns?campaignId='.$campaignId;
+            return 'https://ads.google.com/aw/campaigns?campaignId=' . $campaignId;
         }
 
         $accountId = (string) ($this->account_id ?? '');
@@ -44,13 +44,13 @@ class CampaignReportResource extends JsonResource
 
         $base = 'https://adsmanager.facebook.com/adsmanager/manage/adsets';
 
-        return $base.
-            '?act='.$accountId.
-            '&date='.$startDate.'_'.$endDate.'%2Ctoday'.
-            '&comparison_date='.
-            '&insights_date='.$startDate.'_'.$endDate.'%2Ctoday'.
-            '&insights_comparison_date='.
-            '&selected_campaign_ids='.$campaignId.
+        return $base .
+            '?act=' . $accountId .
+            '&date=' . $startDate . '_' . $endDate . '%2Ctoday' .
+            '&comparison_date=' .
+            '&insights_date=' . $startDate . '_' . $endDate . '%2Ctoday' .
+            '&insights_comparison_date=' .
+            '&selected_campaign_ids=' . $campaignId .
             '&nav_source=no_referrer';
     }
 
@@ -65,6 +65,11 @@ class CampaignReportResource extends JsonResource
         $revenueEst = $realtimeConversion * $rpc;
         $profit = $revenueEst - $spend;
         $roi = $spend > 0 ? ($profit / $spend) * 100 : 0.0;
+
+        $rtClickAdCount = (float) ($this->realtimeReport?->click_ad_count ?? 0);
+        $rtClickKeywordCount = (float) ($this->realtimeReport?->click_keyword_count ?? 0);
+        $rtViewSearchCount = (float) ($this->realtimeReport?->view_search_count ?? 0);
+        $funnelRequests = (float) ($this->r_funnel_requests ?? 0);
 
         return [
             'id' => $this->id,
@@ -126,6 +131,15 @@ class CampaignReportResource extends JsonResource
             'profit' => round($profit, 2),
             'roi' => round($roi, 2),
             'roi_realtime' => round($roi, 2),
+            'rt_click_ad_count' => (int) $rtClickAdCount,
+            'rt_click_keyword_count' => (int) $rtClickKeywordCount,
+            'rt_view_search_count' => (int) $rtViewSearchCount,
+            'rt_view_article_count' => (int) ($this->realtimeReport?->view_article_count ?? 0),
+            'cvr' => $funnelRequests > 0 ? round(((float) ($this->a_clicks ?? 0) / $funnelRequests) * 100, 4) : null,
+            'rt_cpa' => $rtClickAdCount > 0 ? round($spend / $rtClickAdCount, 4) : null,
+            'rt_cvr' => $funnelRequests > 0 ? round(($rtClickAdCount / $funnelRequests) * 100, 4) : null,
+            'rt_ctr_keyword' => $funnelRequests > 0 ? round(($rtClickKeywordCount / $funnelRequests) * 100, 4) : null,
+            'rt_ctr_search' => $rtViewSearchCount > 0 ? round(($rtClickAdCount / $rtViewSearchCount) * 100, 4) : null,
 
             // Realtime tracking counters (nullable)
             'realtime_report' => $this->whenLoaded('realtimeReport', function () {
