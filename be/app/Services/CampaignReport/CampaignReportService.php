@@ -113,7 +113,7 @@ class CampaignReportService
         // revenue_est = SUM(click_keyword_count * r_rpc) per campaign row.
         // No dedup needed: click_keyword_count is already per-campaign.
         // r_rpc is pre-computed at sync time (with fallback when cost_per_click is null).
-        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_gs.click_keyword_count, 0) * IF(NULLIF(campaign_reports.r_rpc, 0) IS NOT NULL, campaign_reports.r_rpc, IF(NULLIF(campaign_reports.r_conversion, 0) IS NOT NULL, campaign_reports.r_revenue / campaign_reports.r_conversion, 0))), 0) AS revenue_est';
+        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_gs.click_ad_count, 0) * IF(NULLIF(campaign_reports.r_rpc, 0) IS NOT NULL, campaign_reports.r_rpc, IF(NULLIF(campaign_reports.r_conversion, 0) IS NOT NULL, campaign_reports.r_revenue / campaign_reports.r_conversion, 0))), 0) AS revenue_est';
 
         // Realtime aggregates
         $selectParts[] = 'COALESCE(SUM(rt_gs.click_ad_count), 0) AS rt_click_ad_count';
@@ -226,7 +226,9 @@ class CampaignReportService
         if ($groupBy === 'user_id') {
             $query->leftJoin(
                 DB::raw('(SELECT account_id, MIN(user_id) AS primary_user_id FROM account_user GROUP BY account_id) AS pu_grp'),
-                'pu_grp.account_id', '=', 'campaign_reports.account_id',
+                'pu_grp.account_id',
+                '=',
+                'campaign_reports.account_id',
             );
 
             return 'pu_grp.primary_user_id';
@@ -266,7 +268,7 @@ class CampaignReportService
             $selectParts[] = "COALESCE(SUM(campaign_reports.{$col}), 0) AS {$col}";
         }
 
-        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_grp.click_keyword_count, 0) * IF(NULLIF(campaign_reports.r_rpc, 0) IS NOT NULL, campaign_reports.r_rpc, IF(NULLIF(campaign_reports.r_conversion, 0) IS NOT NULL, campaign_reports.r_revenue / campaign_reports.r_conversion, 0))), 0) AS revenue_est';
+        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_grp.click_ad_count, 0) * IF(NULLIF(campaign_reports.r_rpc, 0) IS NOT NULL, campaign_reports.r_rpc, IF(NULLIF(campaign_reports.r_conversion, 0) IS NOT NULL, campaign_reports.r_revenue / campaign_reports.r_conversion, 0))), 0) AS revenue_est';
         $selectParts[] = 'COALESCE(SUM(rt_grp.click_ad_count), 0) AS rt_click_ad_count';
         $selectParts[] = 'COALESCE(SUM(rt_grp.click_keyword_count), 0) AS rt_click_keyword_count';
         $selectParts[] = 'COALESCE(SUM(rt_grp.view_search_count), 0) AS rt_view_search_count';
@@ -326,14 +328,14 @@ class CampaignReportService
             ->selectRaw(implode(', ', $revenueSelectParts))
             ->groupBy('channel_code', 'date')
             ->get()
-            ->keyBy(fn ($r) => $r->channel_code.'|'.substr((string) ($r->rev_date ?? ''), 0, 10));
+            ->keyBy(fn($r) => $r->channel_code . '|' . substr((string) ($r->rev_date ?? ''), 0, 10));
 
         $result = [];
         foreach ($pairs as $pair) {
             $dateStart = $pair->date_start instanceof Carbon
                 ? $pair->date_start->toDateString()
                 : substr((string) ($pair->date_start ?? ''), 0, 10);
-            $pairKey = ($pair->channel_code ?? '').'|'.$dateStart;
+            $pairKey = ($pair->channel_code ?? '') . '|' . $dateStart;
             $groupKey = (string) ($pair->group_key ?? '__null__');
 
             if (! isset($result[$groupKey])) {
@@ -413,7 +415,7 @@ class CampaignReportService
             return [[], []];
         }
 
-        $accountIds = array_unique(array_map(fn (CampaignReport $r) => $r->account_id, $items));
+        $accountIds = array_unique(array_map(fn(CampaignReport $r) => $r->account_id, $items));
         $accountUserMap = $this->resolveAccountPrimaryUser($accountIds);
 
         $userIds = array_unique(array_values($accountUserMap));
@@ -603,10 +605,11 @@ class CampaignReportService
         $rAdRequests = (float) ($summary['r_ad_requests'] ?? 0);
         $rImpressions = (float) ($summary['r_impressions'] ?? 0);
         $rFunnelImpressions = (float) ($summary['r_funnel_impressions'] ?? 0);
+        $spend = (float) ($summary['a_spend'] ?? 0);
 
         return [
             'r_rpc' => $rConversion > 0 ? round($revenue / $rConversion, 4) : 0.0,
-            'r_cpa' => $rConversion > 0 ? round($revenue / $rConversion, 4) : 0.0,
+            'r_cpa' => $rConversion > 0 ? round($spend / $rConversion, 4) : 0.0,
             'r_ad_requests_rpm' => $rAdRequests > 0 ? round(($revenue / $rAdRequests) * 1000, 4) : 0.0,
             'r_impressions_rpm' => $rImpressions > 0 ? round(($revenue / $rImpressions) * 1000, 4) : 0.0,
             'r_funnel_rpm' => $rFunnelImpressions > 0 ? round(($revenue / $rFunnelImpressions) * 1000, 4) : 0.0,

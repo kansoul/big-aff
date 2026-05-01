@@ -1098,6 +1098,15 @@ function CampaignReportTableCardInner({
   const [prevPerPage, setPrevPerPage] = useState<number | null>(null)
   const effectiveSummaryOnly = grouped && summaryOnly
   const { pathname } = useLocation()
+
+  const groupIndexMap = useMemo(() => {
+    const map = new Map<string, number>()
+    let idx = 0
+    for (const row of data) {
+      if (isGroupRow(row)) map.set(String(row.group_key ?? 'null'), idx++)
+    }
+    return map
+  }, [data])
   const { columnVisibility: userColumnVisibility, setColumnVisibility: setUserColumnVisibility } =
     useColumnVisibilityStorage(pathname)
 
@@ -1357,6 +1366,19 @@ function CampaignReportTableCardInner({
       const isGroup = grouped && (row.getCanExpand() || isGroupRow(row.original))
       const isSubRow = row.depth > 0
       const link = getRowAdsManagerLink(row.original)
+
+      const groupKey =
+        isGroup && isGroupRow(row.original)
+          ? String(row.original.group_key ?? 'null')
+          : isSubRow
+            ? String(
+                (row.getParentRow()?.original as CampaignReportGroupRow | undefined)?.group_key ??
+                  'null',
+              )
+            : null
+      const groupIdx = groupKey != null ? (groupIndexMap.get(groupKey) ?? 0) : 0
+      const isOddGroup = groupIdx % 2 === 1
+
       return {
         className: isGroup ? 'campaign-group-row' : undefined,
         onClick: (e) => {
@@ -1372,14 +1394,28 @@ function CampaignReportTableCardInner({
         sx: (theme) => {
           const isDark = theme.colorScheme === 'dark'
           if (isGroup) {
+            const accentColor = isOddGroup ? theme.colors.teal : theme.colors.indigo
             return {
               fontWeight: 600,
-              boxShadow: `inset 3px 0 0 0 ${isDark ? theme.colors.indigo[7] : theme.colors.indigo[4]}`,
+              boxShadow: `inset 3px 0 0 0 ${isDark ? accentColor[7] : accentColor[4]}`,
+              backgroundColor: isDark
+                ? isOddGroup
+                  ? theme.colors.dark[6]
+                  : theme.colors.dark[5]
+                : isOddGroup
+                  ? theme.colors.teal[0]
+                  : theme.colors.indigo[0],
             }
           }
           if (isSubRow) {
             return {
-              backgroundColor: isDark ? theme.colors.dark[8] : theme.colors.gray[0],
+              backgroundColor: isDark
+                ? isOddGroup
+                  ? theme.colors.dark[9]
+                  : theme.colors.dark[8]
+                : isOddGroup
+                  ? theme.colors.teal[0]
+                  : theme.colors.gray[0],
               cursor: link ? 'pointer' : undefined,
             }
           }
