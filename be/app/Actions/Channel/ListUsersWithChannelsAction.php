@@ -7,6 +7,7 @@ use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class ListUsersWithChannelsAction
 {
@@ -22,11 +23,18 @@ class ListUsersWithChannelsAction
         $query = User::query()
             ->with(['channels:id,code,name,is_active,created_by']);
 
-        $ownership->applyTo($query, 'id');
+        $query->when(! $ownership->isAdmin(), function ($q) use ($ownership): void {
+            $allowedIds = $ownership->allowedUserIds();
+            $authId = (int) Auth::id();
+            $q->where(function ($q) use ($allowedIds, $authId): void {
+                $q->whereIn('id', $allowedIds)
+                    ->orWhere('created_by', $authId);
+            });
+        });
 
         $query->when(
             ! empty($filters['query']),
-            fn($q) => $q->where(function ($inner) use ($filters): void {
+            fn ($q) => $q->where(function ($inner) use ($filters): void {
                 $search = $filters['query'];
                 $inner->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
