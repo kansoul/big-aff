@@ -24,7 +24,7 @@ class UpdateUserAction
         /** @var User $auth */
         $auth = Auth::user();
 
-        if (! $auth->canManageUser($user)) {
+        if (! $auth->canManageUser($user) && (int) $user->created_by !== (int) $auth->id) {
             throw new AuthorizationException;
         }
 
