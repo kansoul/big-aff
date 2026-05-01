@@ -24,7 +24,7 @@ class AdsLinkPolicy
             return false;
         }
 
-        return $adsLink->created_by === $user->id;
+        return $user->is_admin || $adsLink->created_by === $user->id;
     }
 
     public function toggleHide(User $user, AdsLink $adsLink): bool

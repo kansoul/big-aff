@@ -42,6 +42,7 @@ class AdsLinkResource extends JsonResource
                 'id' => $this->keywordSet->id,
                 'name' => $this->keywordSet->name,
             ] : null),
+            'is_old' => $this->is_old,
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
             'created_at' => $this->created_at,

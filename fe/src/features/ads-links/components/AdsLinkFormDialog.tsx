@@ -242,6 +242,7 @@ export function CreateAdsLinkDialog({
 type EditAdsLinkDialogProps = {
   adsLink: AdsLink | null
   posts: PostOption[]
+  channels: ChannelOption[]
   onOpenChange: (open: boolean) => void
   formError: string | null
   form: UseFormReturn<AdsLinkUpdateFormValues>
@@ -252,6 +253,7 @@ type EditAdsLinkDialogProps = {
 export function EditAdsLinkDialog({
   adsLink,
   posts,
+  channels,
   onOpenChange,
   formError,
   form,
@@ -293,6 +295,25 @@ export function EditAdsLinkDialog({
                 </FormItem>
               )}
             />
+
+            {adsLink?.is_old ? (
+              <FormField
+                control={form.control}
+                name="channel_code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Channel</FormLabel>
+                    <SearchableSelect
+                      value={field.value ?? undefined}
+                      onValueChange={field.onChange}
+                      options={channels.map((c) => ({ label: c.name, value: c.code }))}
+                      placeholder="Select channel"
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
 
             {keywordSets.length > 0 ? (
               <FormField

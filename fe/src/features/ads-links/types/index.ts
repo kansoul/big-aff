@@ -21,6 +21,7 @@ export interface AdsLink {
   rac: string
   note: string | null
   is_hidden: boolean
+  is_old: boolean
   channel_code: string | null
   style_code: string | null
   fbid: string[] | null
@@ -64,6 +65,7 @@ export interface AdsLinkCreatePayload {
 
 export interface AdsLinkUpdatePayload {
   rac?: string
+  channel_code?: string | null
   keyword_set_id?: number | null
   fbid?: string | null
   googleid?: string | null
@@ -125,6 +127,7 @@ export const adsLinkCreateSchema = z
 export const adsLinkUpdateSchema = z
   .object({
     rac: z.string().min(1, 'RAC is required'),
+    channel_code: z.string().nullable().optional(),
     keyword_set_id: z.number().nullable().optional(),
     fbid: z.string().nullable().optional(),
     googleid: z.string().nullable().optional(),
