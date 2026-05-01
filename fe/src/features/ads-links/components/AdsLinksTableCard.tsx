@@ -33,6 +33,8 @@ import type {
 import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { buildCopyLink } from '@/lib/ads-link'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { postViewPath } from '@/constants/paths'
+import { Link } from 'react-router-dom'
 
 async function copyToClipboard(text: string): Promise<void> {
   await navigator.clipboard.writeText(text)
@@ -148,16 +150,21 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
       header: 'Post',
       size: 180,
       Cell: ({ row }) => {
-        const title = row.original.post?.title
-        if (!title) return <span className="text-muted-foreground">—</span>
+        const post = row.original.post
+        if (!post?.title) return <span className="text-muted-foreground">—</span>
         return (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="truncate block text-muted-foreground max-w-full">{title}</span>
+                <Link
+                  to={postViewPath(post.id)}
+                  className="truncate block text-xs text-primary hover:underline max-w-full"
+                >
+                  {post.title}
+                </Link>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
-                {title}
+                {post.title}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -167,10 +174,17 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
     {
       accessorKey: 'channel_code',
       header: 'Channel',
-      size: 100,
-      Cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.channel_code ?? '—'}</span>
-      ),
+      size: 140,
+      Cell: ({ row }) => {
+        const { channel_code: code, channel_name: name } = row.original
+        if (!code) return <span className="text-muted-foreground">—</span>
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs text-foreground truncate">{name ?? code}</span>
+            <span className="font-mono text-[11px] text-muted-foreground">{code}</span>
+          </div>
+        )
+      },
     },
     {
       accessorKey: 'style_code',

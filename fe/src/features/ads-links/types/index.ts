@@ -23,7 +23,9 @@ export interface AdsLink {
   is_hidden: boolean
   is_old: boolean
   channel_code: string | null
+  channel_name: string | null
   style_code: string | null
+  style_name: string | null
   fbid: string[] | null
   googleid: string[] | null
   site: AdsLinkSite | null

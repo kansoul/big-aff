@@ -29,7 +29,7 @@ class ListAdsLinksAction
         $ownership = OwnershipFilter::forAuthUser();
 
         $query = AdsLink::query()
-            ->with(['site', 'post', 'keywordSet']);
+            ->with(['site', 'post', 'keywordSet', 'channel', 'style']);
 
         $ownership->applyTo($query);
 
