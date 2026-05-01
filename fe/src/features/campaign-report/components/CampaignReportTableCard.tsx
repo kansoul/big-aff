@@ -15,6 +15,7 @@ import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import type {
@@ -61,6 +62,23 @@ function HeaderLabel({
       {emoji && <span className="text-[5px] leading-none">{emoji}</span>}
       <span className="leading-tight">{children}</span>
     </div>
+  )
+}
+
+function FooterCell({ value, className }: { value: string; className?: string }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={cn('tabular-nums text-[10px] font-semibold block truncate', className)}>
+            {value}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          <span>{value}</span>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 
@@ -187,12 +205,11 @@ function makeUsdCol(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatUsd(toNumber(summary[key]))}
-        </span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      const v = formatUsd(toNumber(summary[key]))
+      return <FooterCell value={v} />
+    },
   }
 }
 
@@ -218,12 +235,11 @@ function makeRatioCol(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatDecimal(toNumber(summary[key]), digits)}
-        </span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      const v = formatDecimal(toNumber(summary[key]), digits)
+      return <FooterCell value={v} />
+    },
   }
 }
 
@@ -248,10 +264,11 @@ function makeCountCol(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">{summary[key]}</span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      const v = String(summary[key])
+      return <FooterCell value={v} />
+    },
   }
 }
 
@@ -641,12 +658,11 @@ function getColumns(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatUsd(toNumber(summary.revenue_est))}
-        </span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      const v = formatUsd(toNumber(summary.revenue_est))
+      return <FooterCell value={v} />
+    },
   }
 
   // ── ROI Realtime column ──
@@ -673,17 +689,16 @@ function getColumns(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span
-          className={cn(
-            'tabular-nums text-[10px] font-semibold',
-            summary.roi_realtime >= 0 ? 'text-emerald-500' : 'text-rose-500',
-          )}
-        >
-          {formatRoi(toNumber(summary.roi_realtime))}
-        </span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      const v = formatRoi(toNumber(summary.roi_realtime))
+      return (
+        <FooterCell
+          value={v}
+          className={summary.roi_realtime >= 0 ? 'text-emerald-500' : 'text-rose-500'}
+        />
+      )
+    },
   }
 
   // ── Real-time computed columns (calculated by BE, display-only) ──
@@ -707,10 +722,11 @@ function getColumns(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">{formatUsd(summary.rt_cpa)}</span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      const v = formatUsd(summary.rt_cpa)
+      return <FooterCell value={v} />
+    },
   }
 
   const colRtCvr: MRT_ColumnDef<TableRow> = {
@@ -733,12 +749,11 @@ function getColumns(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatDecimal(summary.rt_cvr)}%
-        </span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      const v = `${formatDecimal(summary.rt_cvr)}%`
+      return <FooterCell value={v} />
+    },
   }
 
   const colRtCtrKeyword: MRT_ColumnDef<TableRow> = {
@@ -763,12 +778,11 @@ function getColumns(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatDecimal(summary.rt_ctr_keyword)}%
-        </span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      const v = `${formatDecimal(summary.rt_ctr_keyword)}%`
+      return <FooterCell value={v} />
+    },
   }
 
   const colRtCtrSearch: MRT_ColumnDef<TableRow> = {
@@ -793,12 +807,11 @@ function getColumns(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatDecimal(summary.rt_ctr_search)}%
-        </span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      const v = `${formatDecimal(summary.rt_ctr_search)}%`
+      return <FooterCell value={v} />
+    },
   }
 
   // ── Profit / ROI columns ──
@@ -822,17 +835,16 @@ function getColumns(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span
-          className={cn(
-            'tabular-nums text-[10px] font-semibold',
-            summary.profit >= 0 ? 'text-emerald-500' : 'text-rose-500',
-          )}
-        >
-          {formatUsd(toNumber(summary.profit))}
-        </span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      const v = formatUsd(toNumber(summary.profit))
+      return (
+        <FooterCell
+          value={v}
+          className={summary.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}
+        />
+      )
+    },
   }
 
   const colRoi: MRT_ColumnDef<TableRow> = {
@@ -856,17 +868,13 @@ function getColumns(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span
-          className={cn(
-            'tabular-nums text-[10px] font-semibold',
-            summary.roi >= 0 ? 'text-emerald-500' : 'text-rose-500',
-          )}
-        >
-          {formatRoi(toNumber(summary.roi))}
-        </span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      const v = formatRoi(toNumber(summary.roi))
+      return (
+        <FooterCell value={v} className={summary.roi >= 0 ? 'text-emerald-500' : 'text-rose-500'} />
+      )
+    },
   }
 
   // ── Realtime (rt_*) columns — top-level fields from BE, display-only ──
@@ -937,12 +945,15 @@ function getColumns(
           </span>
         )
       },
-      Footer: () =>
-        summary ? (
-          <span className="tabular-nums text-[10px] font-semibold">
-            {formatDecimal(summary.cvr)}%
+      Footer: () => {
+        if (!summary) return null
+        const v = `${formatDecimal(summary.cvr)}%`
+        return (
+          <span className="tabular-nums text-[10px] font-semibold block truncate" title={v}>
+            {v}
           </span>
-        ) : null,
+        )
+      },
     } as MRT_ColumnDef<TableRow>,
 
     // ── Search views ──
@@ -1188,6 +1199,7 @@ function CampaignReportTableCardInner({
           fontSize: '10px',
           paddingLeft: '2px !important',
           paddingRight: '2px !important',
+          overflow: 'hidden',
           backgroundColor: isDark ? theme.colors.dark[5] : theme.colors.blue[0],
           color: isDark ? theme.colors.blue[2] : theme.colors.blue[8],
         }
