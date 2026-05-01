@@ -22,7 +22,7 @@ class ListChannelsAction
 
         $query = Channel::query();
 
-        $ownership->applyTo($query);
+        $ownership->applyThroughChannel($query, 'code');
 
         if (! $user->is_full_access) {
             $query->where('is_active', true);
