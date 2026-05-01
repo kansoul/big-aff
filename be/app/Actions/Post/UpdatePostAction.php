@@ -18,7 +18,7 @@ class UpdatePostAction
      */
     public function execute(Post $post, array $data): Post
     {
-        OwnershipFilter::forAuthUser()->authorize($post->created_by);
+        OwnershipFilter::forAuthUser()->authorizePost($post);
 
         return DB::transaction(function () use ($post, $data): Post {
             $keywordSetIds = array_key_exists('keyword_set_ids', $data) ? $data['keyword_set_ids'] : false;
