@@ -136,6 +136,16 @@ class CampaignReportSyncService
             $revenueData = $failedAdClientIds ? [] : self::getRevenueData($date, $linkData->style_code, $linkData->channel_code);
             $rConversion = (int) ($revenueData['clicks'] ?? 0);
             $rCpa = $rConversion > 0 ? $spend / $rConversion : 0;
+            $estimatedEarnings = (float) ($revenueData['estimated_earnings'] ?? 0);
+            $costPerClick = isset($revenueData['cost_per_click']) && $revenueData['cost_per_click'] !== null
+                ? (float) $revenueData['cost_per_click']
+                : null;
+            if ($costPerClick === null) {
+                $realtimeClicks = $rConversion > 0
+                    ? $rConversion
+                    : self::sumRealtimeClickAdCount($date, $linkData->channel_code);
+                $costPerClick = $realtimeClicks > 0 ? $estimatedEarnings / $realtimeClicks : 0;
+            }
             $data = [
                 'realtime_report_id' => $realtimeReport?->id,
                 // Style/Channel info
@@ -144,8 +154,8 @@ class CampaignReportSyncService
                 // Revenue fields (r_*) from RevenueReport
                 'r_search_views' => (int) ($revenueData['page_views'] ?? 0),
                 'r_conversion' => $rConversion,
-                'r_revenue' => (float) ($revenueData['estimated_earnings'] ?? 0),
-                'r_rpc' => (float) ($revenueData['cost_per_click'] ?? 0),
+                'r_revenue' => $estimatedEarnings,
+                'r_rpc' => $costPerClick,
                 'r_ad_requests' => (int) ($revenueData['ad_requests'] ?? 0),
                 'r_ad_requests_rpm' => (float) ($revenueData['ad_requests_rpm'] ?? 0),
                 'r_impressions' => (int) ($revenueData['impressions'] ?? 0),
@@ -189,6 +199,20 @@ class CampaignReportSyncService
             'a_frequency' => (float) ($insightReport->frequency ?? 0),
             'a_clicks' => (int) ($insightReport->clicks ?? 0),
         ];
+    }
+
+    /**
+     * Sum click_ad_count from RealtimeReports whose LinkData share the same channel_code on a given date.
+     */
+    private static function sumRealtimeClickAdCount(string $date, string $channelCode): int
+    {
+        return (int) RealtimeReport::whereDate('event_time', $date)
+            ->whereIn('link_data_id', function ($q) use ($channelCode) {
+                $q->select('id')
+                    ->from('link_datas')
+                    ->where('channel_code', $channelCode);
+            })
+            ->sum('click_ad_count');
     }
 
     /**

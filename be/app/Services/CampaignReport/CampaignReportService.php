@@ -6,7 +6,9 @@ use App\Actions\CampaignReport\ListCampaignReportsAction;
 use App\Models\CampaignReport;
 use App\Models\RevenueReport;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 class CampaignReportService
@@ -68,7 +70,7 @@ class CampaignReportService
 
         $groupBy = ! empty($filters['group_by']) ? $filters['group_by'] : null;
         $groups = $groupBy !== null
-            ? $this->buildGroups($paginator->items(), $groupBy)
+            ? $this->buildGroups($paginator->items(), $groupBy, $this->computeGroupSummaries($filters, $groupBy))
             : [];
 
         return [
@@ -108,9 +110,10 @@ class CampaignReportService
             $selectParts[] = "COALESCE(SUM(campaign_reports.{$col}), 0) AS {$col}";
         }
 
-        // revenue_est = SUM(click_keyword_count * cost_per_click) per campaign row.
+        // revenue_est = SUM(click_keyword_count * r_rpc) per campaign row.
         // No dedup needed: click_keyword_count is already per-campaign.
-        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_gs.click_keyword_count, 0) * COALESCE(rv_gs.cost_per_click, 0)), 0) AS revenue_est';
+        // r_rpc is pre-computed at sync time (with fallback when cost_per_click is null).
+        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_gs.click_keyword_count, 0) * COALESCE(campaign_reports.r_rpc, 0)), 0) AS revenue_est';
 
         // Realtime aggregates
         $selectParts[] = 'COALESCE(SUM(rt_gs.click_ad_count), 0) AS rt_click_ad_count';
@@ -195,9 +198,167 @@ class CampaignReportService
     // ─── Group building ───────────────────────────────────────────────────────
 
     /**
-     * Group the current page items by the given column and compute per-group summary.
+     * Compute full (unpaginated) aggregate summaries for each group value.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, array<string, mixed>> keyed by (string) group_key
+     */
+    private function computeGroupSummaries(array $filters, string $groupBy): array
+    {
+        $sumRows = $this->buildGroupSumRows($filters, $groupBy);
+        $revenueRows = $this->buildGroupRevenueRows($filters, $groupBy);
+
+        $summaries = [];
+        foreach ($sumRows as $key => $row) {
+            $revenueStats = $revenueRows[$key] ?? $this->emptyRevenueStats();
+            $summaries[$key] = $this->normalizeSummaryRow($row, $revenueStats);
+        }
+
+        return $summaries;
+    }
+
+    /**
+     * Resolve the SQL expression for the group key column and apply any required joins.
+     * Returns null for unsupported group-by values.
+     */
+    private function applyGroupKeyJoin(Builder $query, string $groupBy): ?string
+    {
+        if ($groupBy === 'user_id') {
+            $query->leftJoin(
+                DB::raw('(SELECT account_id, MIN(user_id) AS primary_user_id FROM account_user GROUP BY account_id) AS pu_grp'),
+                'pu_grp.account_id', '=', 'campaign_reports.account_id',
+            );
+
+            return 'pu_grp.primary_user_id';
+        }
+
+        return match ($groupBy) {
+            'channel_code' => 'campaign_reports.channel_code',
+            'style_code' => 'campaign_reports.style_code',
+            'account_id' => 'campaign_reports.account_id',
+            'campaign_id' => 'campaign_reports.campaign_id',
+            default => null,
+        };
+    }
+
+    /**
+     * Run a GROUP BY aggregate query for SUM_COLUMNS + revenue_est + realtime counts.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, object> keyed by (string) group_key
+     */
+    private function buildGroupSumRows(array $filters, string $groupBy): array
+    {
+        $query = $this->listCampaignReportsAction->buildBaseQuery($filters);
+        $query->leftJoin('realtime_reports AS rt_grp', 'rt_grp.id', '=', 'campaign_reports.realtime_report_id');
+
+        $groupKeyExpr = $this->applyGroupKeyJoin($query, $groupBy);
+        if ($groupKeyExpr === null) {
+            return [];
+        }
+
+        $selectParts = [
+            "{$groupKeyExpr} AS group_key",
+            'COUNT(*) AS record_count',
+        ];
+
+        foreach (self::SUM_COLUMNS as $col) {
+            $selectParts[] = "COALESCE(SUM(campaign_reports.{$col}), 0) AS {$col}";
+        }
+
+        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_grp.click_keyword_count, 0) * COALESCE(campaign_reports.r_rpc, 0)), 0) AS revenue_est';
+        $selectParts[] = 'COALESCE(SUM(rt_grp.click_ad_count), 0) AS rt_click_ad_count';
+        $selectParts[] = 'COALESCE(SUM(rt_grp.click_keyword_count), 0) AS rt_click_keyword_count';
+        $selectParts[] = 'COALESCE(SUM(rt_grp.view_search_count), 0) AS rt_view_search_count';
+        $selectParts[] = 'COALESCE(SUM(rt_grp.view_article_count), 0) AS rt_view_article_count';
+
+        $rows = $query
+            ->selectRaw(implode(', ', $selectParts))
+            ->groupBy($groupKeyExpr)
+            ->get();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $key = (string) ($row->group_key ?? '__null__');
+            $result[$key] = $row;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Aggregate revenue_reports stats per group, counting each (channel_code, date_start)
+     * pair exactly once to avoid double-counting when multiple campaigns share a channel/date.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, array<string, float>> keyed by (string) group_key
+     */
+    private function buildGroupRevenueRows(array $filters, string $groupBy): array
+    {
+        $query = $this->listCampaignReportsAction->buildBaseQuery($filters);
+
+        $groupKeyExpr = $this->applyGroupKeyJoin($query, $groupBy);
+        if ($groupKeyExpr === null) {
+            return [];
+        }
+
+        $pairs = $query
+            ->selectRaw("{$groupKeyExpr} AS group_key, campaign_reports.channel_code, DATE(campaign_reports.date_start) AS date_start")
+            ->whereNotNull('campaign_reports.channel_code')
+            ->distinct()
+            ->get();
+
+        if ($pairs->isEmpty()) {
+            return [];
+        }
+
+        $channelCodes = $pairs->pluck('channel_code')->unique()->filter()->values();
+        $dates = $pairs->pluck('date_start')->unique()->filter()->values();
+
+        $revenueSelectParts = ['channel_code', 'date AS rev_date', 'COALESCE(SUM(estimated_earnings), 0) AS revenue'];
+        foreach (self::REVENUE_REPORT_COLUMNS as $alias => $col) {
+            $revenueSelectParts[] = "COALESCE(SUM({$col}), 0) AS {$alias}";
+        }
+
+        $revenueByPair = RevenueReport::query()
+            ->whereIn('channel_code', $channelCodes)
+            ->whereIn('date', $dates)
+            ->selectRaw(implode(', ', $revenueSelectParts))
+            ->groupBy('channel_code', 'date')
+            ->get()
+            ->keyBy(fn ($r) => $r->channel_code.'|'.substr((string) ($r->rev_date ?? ''), 0, 10));
+
+        $result = [];
+        foreach ($pairs as $pair) {
+            $dateStart = $pair->date_start instanceof Carbon
+                ? $pair->date_start->toDateString()
+                : substr((string) ($pair->date_start ?? ''), 0, 10);
+            $pairKey = ($pair->channel_code ?? '').'|'.$dateStart;
+            $groupKey = (string) ($pair->group_key ?? '__null__');
+
+            if (! isset($result[$groupKey])) {
+                $result[$groupKey] = $this->emptyRevenueStats();
+            }
+
+            $revenue = $revenueByPair->get($pairKey);
+            if ($revenue === null) {
+                continue;
+            }
+
+            $result[$groupKey]['revenue'] += (float) $revenue->revenue;
+            foreach (array_keys(self::REVENUE_REPORT_COLUMNS) as $alias) {
+                $result[$groupKey][$alias] += (float) ($revenue->{$alias} ?? 0);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Group the current page items by the given column, attaching pre-computed full summaries.
      *
      * @param  array<int, CampaignReport>  $items
+     * @param  array<string, array<string, mixed>>  $groupSummaries  keyed by (string) group_key
      * @return array<int, array{
      *     group_key: string|int|null,
      *     group_label: string|null,
@@ -206,7 +367,7 @@ class CampaignReportService
      *     items: array<int, CampaignReport>,
      * }>
      */
-    private function buildGroups(array $items, string $groupBy): array
+    private function buildGroups(array $items, string $groupBy, array $groupSummaries): array
     {
         if ($items === []) {
             return [];
@@ -215,100 +376,26 @@ class CampaignReportService
         [$accountUserMap, $userNameMap] = $this->resolveUserMapsIfNeeded($items, $groupBy);
 
         $buckets = [];
-        $bucketRevenuePairs = []; // tracks (channel_code, date_start) per bucket to avoid double-counting revenue
 
         foreach ($items as $row) {
             [$key, $label] = $this->resolveGroupKeyLabel($row, $groupBy, $accountUserMap, $userNameMap);
             $bucketId = $key === null ? '__null__' : (string) $key;
 
             if (! isset($buckets[$bucketId])) {
+                $summary = $groupSummaries[$bucketId] ?? $this->finalizeSummary($this->emptySummary(), 0);
                 $buckets[$bucketId] = [
                     'group_key' => $key,
                     'group_label' => $label,
-                    'record_count' => 0,
-                    'group_summary' => $this->emptySummary(),
+                    'record_count' => $summary['record_count'] ?? 0,
+                    'group_summary' => $summary,
                     'items' => [],
                 ];
-                $bucketRevenuePairs[$bucketId] = [];
             }
 
             $buckets[$bucketId]['items'][] = $row;
-            $buckets[$bucketId]['record_count']++;
-
-            $this->accumulateSumColumns($buckets[$bucketId]['group_summary'], $row);
-            $this->accumulateRevenueEst($buckets[$bucketId]['group_summary'], $row);
-            $this->accumulateChannelRevenue($buckets[$bucketId]['group_summary'], $bucketRevenuePairs[$bucketId], $row);
-            $this->accumulateRealtimeColumns($buckets[$bucketId]['group_summary'], $row);
         }
-
-        foreach ($buckets as &$bucket) {
-            $bucket['group_summary'] = $this->finalizeSummary($bucket['group_summary'], $bucket['record_count']);
-        }
-        unset($bucket);
 
         return array_values($buckets);
-    }
-
-    /**
-     * Accumulate SUM_COLUMNS from a single row into a summary array.
-     *
-     * @param  array<string, mixed>  $summary
-     */
-    private function accumulateSumColumns(array &$summary, CampaignReport $row): void
-    {
-        foreach (self::SUM_COLUMNS as $col) {
-            $summary[$col] = (float) $summary[$col] + (float) ($row->{$col} ?? 0);
-        }
-    }
-
-    /**
-     * Accumulate revenue_est (realtime click_keyword_count * cost_per_click) from a single row.
-     * No dedup needed — click_keyword_count is per-campaign.
-     *
-     * @param  array<string, mixed>  $summary
-     */
-    private function accumulateRevenueEst(array &$summary, CampaignReport $row): void
-    {
-        $clickKeywordCount = (float) ($row->realtimeReport?->click_keyword_count ?? 0);
-        $rpc = (float) ($row->rpc ?? 0);
-        $summary['revenue_est'] += $clickKeywordCount * $rpc;
-    }
-
-    /**
-     * Accumulate channel revenue and r_* stats once per unique (channel_code, date_start) pair
-     * to avoid double-counting when multiple campaigns share the same channel/date.
-     *
-     * @param  array<string, mixed>  $summary
-     * @param  array<string, bool>  $seenPairs
-     */
-    private function accumulateChannelRevenue(array &$summary, array &$seenPairs, CampaignReport $row): void
-    {
-        $pairKey = ($row->channel_code ?? '').'_'.($row->date_start?->toDateString() ?? '');
-
-        if (isset($seenPairs[$pairKey])) {
-            return;
-        }
-
-        $seenPairs[$pairKey] = true;
-        $summary['revenue'] += (float) ($row->r_estimated_earnings ?? 0);
-
-        foreach (array_keys(self::REVENUE_REPORT_COLUMNS) as $alias) {
-            $summary[$alias] += (float) ($row->{$alias} ?? 0);
-        }
-    }
-
-    /**
-     * Accumulate realtime report counts from a single row into a summary array.
-     *
-     * @param  array<string, mixed>  $summary
-     */
-    private function accumulateRealtimeColumns(array &$summary, CampaignReport $row): void
-    {
-        $rt = $row->realtimeReport;
-        $summary['rt_click_ad_count'] += (float) ($rt?->click_ad_count ?? 0);
-        $summary['rt_click_keyword_count'] += (float) ($rt?->click_keyword_count ?? 0);
-        $summary['rt_view_search_count'] += (float) ($rt?->view_search_count ?? 0);
-        $summary['rt_view_article_count'] += (float) ($rt?->view_article_count ?? 0);
     }
 
     // ─── User / account resolution ────────────────────────────────────────────

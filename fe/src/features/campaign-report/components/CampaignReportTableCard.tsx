@@ -173,6 +173,7 @@ function makeUsdCol(
   summary: CampaignReportSummary | null,
   icon?: 'yellow' | 'blue' | 'green',
 ): MRT_ColumnDef<TableRow> {
+  const isRevenueField = (key as string).startsWith('r_')
   return {
     accessorKey: key as string,
     header,
@@ -180,6 +181,8 @@ function makeUsdCol(
     size,
     enableSorting: SORTABLE_COLUMNS.has(key as string),
     Cell: ({ row }) => {
+      if (isRevenueField && !isGroupRow(row.original))
+        return <span className="text-muted-foreground/30 text-[10px]">—</span>
       const v = formatUsd(metric(row.original, key))
       return (
         <span className="tabular-nums text-[10px] text-muted-foreground truncate" title={v}>
@@ -201,9 +204,10 @@ function makeRatioCol(
   header: string,
   size: number,
   summary: CampaignReportSummary | null,
-  digits = 4,
+  digits = 2,
   icon?: 'yellow' | 'blue' | 'green',
 ): MRT_ColumnDef<TableRow> {
+  const isRevenueField = (key as string).startsWith('r_')
   return {
     accessorKey: key as string,
     header,
@@ -211,6 +215,8 @@ function makeRatioCol(
     size,
     enableSorting: SORTABLE_COLUMNS.has(key as string),
     Cell: ({ row }) => {
+      if (isRevenueField && !isGroupRow(row.original))
+        return <span className="text-muted-foreground/30 text-[10px]">—</span>
       const v = formatDecimal(metric(row.original, key), digits)
       return (
         <span className="tabular-nums text-[10px] text-muted-foreground truncate" title={v}>
@@ -234,6 +240,7 @@ function makeCountCol(
   summary: CampaignReportSummary | null,
   icon?: 'yellow' | 'blue' | 'green',
 ): MRT_ColumnDef<TableRow> {
+  const isRevenueField = (key as string).startsWith('r_')
   return {
     accessorKey: key as string,
     header,
@@ -241,6 +248,8 @@ function makeCountCol(
     size,
     enableSorting: SORTABLE_COLUMNS.has(key as string),
     Cell: ({ row }) => {
+      if (isRevenueField && !isGroupRow(row.original))
+        return <span className="text-muted-foreground/30 text-[10px]">—</span>
       const v = String(metric(row.original, key))
       return (
         <span className="tabular-nums text-[10px] truncate" title={v}>
@@ -279,25 +288,24 @@ function GroupLabelCell({
       ? `${channelName} (${row.group_key ?? '—'})`
       : (row.group_label ?? String(row.group_key ?? '—'))
   return (
-    <div className="flex flex-col pl-1">
-      <span
-        className="block max-w-[160px] truncate text-[10px] font-semibold text-foreground"
-        title={groupLabel}
-      >
-        {groupLabel}
-      </span>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[10px] text-muted-foreground">{row.record_count} record(s)</span>
+    <div className="flex items-center pl-1">
+      <div className="flex flex-col">
+        <span
+          className="block max-w-[160px] truncate text-[10px] font-semibold text-foreground"
+          title={groupLabel}
+        >
+          {groupLabel} ({row.record_count})
+        </span>
         {isChannelGroup && (
           <div className="flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
             <button
-              className="inline-flex cursor-pointer items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:hover:bg-amber-900/60"
+              className="inline-flex cursor-pointer items-center text-[10px] font-medium text-amber-700 transition-colors"
               onClick={() => onOpenRevenueRange({ channelCode, dateFrom, dateTo })}
             >
               Revenue Range
             </button>
             <button
-              className="inline-flex cursor-pointer items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
+              className="inline-flex cursor-pointer items-center text-[10px] font-medium text-emerald-700 transition-colors"
               onClick={() => onOpenRevenueChart({ channelCode, dateFrom, dateTo })}
             >
               View Chart
@@ -907,13 +915,13 @@ function getColumns(
 
     // ── Search impressions & RPM ──
     count('r_impressions', 'Impr', 65, 'yellow'),
-    ratio('r_ad_requests_rpm', 'S. RPM', 88, 4, 'yellow'),
-    ratio('r_rpc', 'RPC', 70, 4, 'yellow'),
+    ratio('r_ad_requests_rpm', 'S. RPM', 88, 2, 'yellow'),
+    ratio('r_rpc', 'RPC', 70, 2, 'yellow'),
 
     // ── CPA ──
     colRtCpa,
-    ratio('r_cpa', 'CPA', 68, 4, 'yellow'),
-    ratio('a_cpa', 'ADS CPA', 85, 4, 'blue'),
+    ratio('r_cpa', 'CPA', 68, 2, 'yellow'),
+    ratio('a_cpa', 'ADS CPA', 85, 2, 'blue'),
 
     // ── CVR ──
     colRtCvr,
@@ -957,19 +965,19 @@ function getColumns(
     count('r_funnel_requests', 'Keyword request', 120, 'yellow'),
     colRtCtrKeyword,
     count('r_funnel_impressions', 'Keyword impr', 105, 'yellow'),
-    ratio('r_funnel_rpm', 'Keyword RPM', 110, 4, 'yellow'),
+    ratio('r_funnel_rpm', 'Keyword RPM', 110, 2, 'yellow'),
 
     // ── CTR Search ──
     colRtCtrSearch,
 
     // ── ADS platform metrics ──
-    { ...ratio('a_ctr_link', 'ADS CTR', 92, 4, 'blue'), Footer: undefined },
+    { ...ratio('a_ctr_link', 'ADS CTR', 92, 2, 'blue'), Footer: undefined },
     {
       ...count('a_article_views', 'ADS LP View', 100, 'blue'),
       Footer: undefined,
     },
     {
-      ...ratio('a_cpc_link', 'ADS CPC', 85, 4, 'blue'),
+      ...ratio('a_cpc_link', 'ADS CPC', 85, 2, 'blue'),
       Footer: undefined,
     },
     { ...count('a_reach', 'Reach', 75, 'blue'), Footer: undefined },
@@ -977,9 +985,9 @@ function getColumns(
       ...count('a_impressions', 'ADS Impr', 85, 'blue'),
       Footer: undefined,
     },
-    { ...ratio('a_cpm', 'CPM', 70, 4, 'blue'), Footer: undefined },
-    { ...ratio('a_frequency', 'FB Freq', 82, 4, 'blue'), Footer: undefined },
-    { ...ratio('a_ctr', 'FB CTR', 92, 4, 'blue'), Footer: undefined },
+    { ...ratio('a_cpm', 'CPM', 70, 2, 'blue'), Footer: undefined },
+    { ...ratio('a_frequency', 'FB Freq', 82, 2, 'blue'), Footer: undefined },
+    { ...ratio('a_ctr', 'FB CTR', 92, 2, 'blue'), Footer: undefined },
     {
       ...usd('daily_budget', 'ADS Budget (Daily)', 100, 'blue'),
       Footer: undefined,
@@ -990,13 +998,13 @@ function getColumns(
     },
 
     // ── No AllReport equivalent — kept for completeness ──
-    ratio('r_impressions_rpm', 'Impr RPM', 92, 4, 'yellow'),
+    ratio('r_impressions_rpm', 'Impr RPM', 92, 2, 'yellow'),
     count('r_ad_requests', 'Ad Reqs', 82, 'yellow'),
     {
       ...count('a_ad_clicks', 'Ad Clicks', 88, 'blue'),
       Footer: undefined,
     },
-    { ...ratio('a_cpc', 'ADS CPC', 88, 4, 'blue'), Footer: undefined },
+    { ...ratio('a_cpc', 'ADS CPC', 88, 2, 'blue'), Footer: undefined },
     colRtViewArticleCount,
   ]
 }
