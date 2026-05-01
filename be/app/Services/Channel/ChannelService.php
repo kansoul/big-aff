@@ -45,10 +45,11 @@ class ChannelService
 
     /**
      * @param  array<string>  $channelCodes
+     * @return array{skipped_codes: list<string>}
      */
-    public function assignToUser(User $user, array $channelCodes): void
+    public function assignToUser(User $user, array $channelCodes): array
     {
-        $this->assignChannelAction->execute($user, $channelCodes);
+        return $this->assignChannelAction->execute($user, $channelCodes);
     }
 
     /**

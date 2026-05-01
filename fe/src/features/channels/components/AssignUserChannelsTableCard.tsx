@@ -1,18 +1,14 @@
 import { memo } from 'react'
 import { Loader2, Save, Users } from 'lucide-react'
 
-import { AssignUserChannelsPicker, type AssignChannelOption } from './AssignUserChannelsPicker'
+import { AssignUserChannelsPicker } from './AssignUserChannelsPicker'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import type {
-  ChannelOptionForAssign,
-  UserChannelAssignmentRow,
-} from '../types/userChannelAssignments'
+import type { UserChannelAssignmentRow } from '../types/userChannelAssignments'
 
 type AssignUserChannelsTableCardProps = {
   loading: boolean
   users: UserChannelAssignmentRow[]
-  channelOptionsByUser: Record<number, ChannelOptionForAssign[]>
   drafts: Record<number, string[]>
   savedByUserId: Record<number, string[]>
   onDraftChange: (userId: number, channelCodes: string[]) => void
@@ -20,16 +16,6 @@ type AssignUserChannelsTableCardProps = {
   savingRowId: number | null
   canAssign: boolean
   emptyMessage?: string
-}
-
-function channelOptionsForRow(
-  row: UserChannelAssignmentRow,
-  options: ChannelOptionForAssign[],
-): AssignChannelOption[] {
-  const merged = new Map<string, AssignChannelOption>()
-  options.forEach((o) => merged.set(o.code, { code: o.code, name: o.name }))
-  row.channels.forEach((c) => merged.set(c.code, { code: c.code, name: c.name }))
-  return Array.from(merged.values())
 }
 
 function hasSelectionDiff(left: string[], right: string[]): boolean {
@@ -40,7 +26,6 @@ function hasSelectionDiff(left: string[], right: string[]): boolean {
 function AssignUserChannelsTableCardInner({
   loading,
   users,
-  channelOptionsByUser,
   drafts,
   savedByUserId,
   onDraftChange,
@@ -67,7 +52,6 @@ function AssignUserChannelsTableCardInner({
           const draft = drafts[row.id] ?? saved
           const dirty = hasSelectionDiff(draft, saved)
           const isSaving = savingRowId === row.id
-          const pickerOptions = channelOptionsForRow(row, channelOptionsByUser[row.id] ?? [])
 
           return (
             <div
@@ -77,11 +61,9 @@ function AssignUserChannelsTableCardInner({
                 dirty ? 'border-primary/40' : 'border-border',
               )}
             >
-              <div className="grid gap-5 sm:grid-cols-[1fr_2fr] sm:gap-8">
+              <div className="grid gap-5 sm:grid-cols-[2fr_3fr] sm:gap-8">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold  text-muted-foreground">
-                    User
-                  </p>
+                  <p className="text-[11px] font-semibold text-muted-foreground">User</p>
                   <p className="mt-1.5 truncate text-sm font-semibold text-foreground">
                     {row.name}
                   </p>
@@ -90,9 +72,7 @@ function AssignUserChannelsTableCardInner({
 
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <p className="text-[11px] font-semibold  text-muted-foreground">
-                      Channels
-                    </p>
+                    <p className="text-[11px] font-semibold text-muted-foreground">Edit</p>
                     {draft.length > 0 ? (
                       <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
                         {draft.length}
@@ -109,7 +89,6 @@ function AssignUserChannelsTableCardInner({
                       disabled={!canAssign}
                       value={draft}
                       onChange={(next) => onDraftChange(row.id, next)}
-                      options={pickerOptions}
                     />
                     {canAssign ? (
                       <div className="flex justify-end">

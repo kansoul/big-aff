@@ -56,7 +56,11 @@ export const channelsApi = {
     return res.data
   },
 
-  async assignToUser(userId: number, channelCodes: string[]): Promise<void> {
-    await axiosInstance.post(`/users/${userId}/assign-channels`, { channel_codes: channelCodes })
+  async assignToUser(userId: number, channelCodes: string[]): Promise<{ skipped_codes: string[] }> {
+    const res = await axiosInstance.post<{ skipped_codes: string[] }>(
+      `/users/${userId}/assign-channels`,
+      { channel_codes: channelCodes },
+    )
+    return res.data
   },
 }

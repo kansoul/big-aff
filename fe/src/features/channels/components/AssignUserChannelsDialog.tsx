@@ -48,7 +48,6 @@ export function AssignUserChannelsDialog({ open, onOpenChange }: Props) {
   const canAssign = hasPermission(perms, PermissionSlugs.ChannelsAssign)
 
   const [users, setUsers] = useState<UserChannelAssignmentRow[]>([])
-  const [allChannelOptions, setAllChannelOptions] = useState<ChannelOptionForAssign[]>([])
   const [savedByUserId, setSavedByUserId] = useState<Record<number, string[]>>({})
   const [drafts, setDrafts] = useState<Record<number, string[]>>({})
   const [loading, setLoading] = useState(false)
@@ -102,11 +101,10 @@ export function AssignUserChannelsDialog({ open, onOpenChange }: Props) {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const [userRows, channelList] = await Promise.all([fetchAllUsers(), fetchAllChannels()])
+        const [userRows] = await Promise.all([fetchAllUsers()])
         if (ignore) return
 
         applyUserRows(userRows)
-        setAllChannelOptions(channelList)
       } catch (err) {
         if (!ignore) toast.error(formatApiError(err))
       } finally {
@@ -135,10 +133,20 @@ export function AssignUserChannelsDialog({ open, onOpenChange }: Props) {
       try {
         setFlashError(null)
         setSavingRowId(userId)
-        await channelsApi.assignToUser(userId, channelCodes)
+        const result = await channelsApi.assignToUser(userId, channelCodes)
+
         const rows = await fetchAllUsers()
         applyUserRows(rows)
-        toast.success('Assigned channels successfully')
+
+        const skipped: string[] = result.skipped_codes ?? []
+        if (skipped.length > 0) {
+          toast.warning(
+            `Skipped ${skipped.length} channel(s) already assigned to another user: ${skipped.join(', ')}`,
+            { duration: 8000 },
+          )
+        } else {
+          toast.success('Assigned channels successfully')
+        }
       } catch (err) {
         setFlashError(formatApiError(err))
       } finally {
@@ -165,19 +173,11 @@ export function AssignUserChannelsDialog({ open, onOpenChange }: Props) {
     )
   }, [searchQuery, users])
 
-  const channelOptionsByUser = useMemo(() => {
-    const result: Record<number, ChannelOptionForAssign[]> = {}
-    for (const row of users) {
-      result[row.id] = allChannelOptions
-    }
-    return result
-  }, [users, allChannelOptions])
-
   const emptyMessage = searchQuery ? 'No users found' : 'No users to assign'
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] w-full max-w-fit! flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex max-h-[90vh] max-w-[95vw]! md:max-w-[70vw]! flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>Assign Channels to Users</DialogTitle>
         </DialogHeader>
@@ -209,7 +209,6 @@ export function AssignUserChannelsDialog({ open, onOpenChange }: Props) {
           <AssignUserChannelsTableCard
             loading={loading}
             users={filteredUsers}
-            channelOptionsByUser={channelOptionsByUser}
             drafts={drafts}
             savedByUserId={savedByUserId}
             onDraftChange={onDraftChange}
