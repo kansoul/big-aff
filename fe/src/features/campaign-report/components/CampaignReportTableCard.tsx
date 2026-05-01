@@ -1037,6 +1037,8 @@ function CampaignReportTableCardInner({
   const [revenueRangeTarget, setRevenueRangeTarget] = useState<RevenueDialogTarget | null>(null)
   const [revenueChartOpen, setRevenueChartOpen] = useState(false)
   const [revenueChartTarget, setRevenueChartTarget] = useState<RevenueDialogTarget | null>(null)
+  const [summaryOnly, setSummaryOnly] = useState(false)
+  const effectiveSummaryOnly = grouped && summaryOnly
   const { pathname } = useLocation()
   const { columnVisibility: userColumnVisibility, setColumnVisibility: setUserColumnVisibility } =
     useColumnVisibilityStorage(pathname)
@@ -1222,7 +1224,7 @@ function CampaignReportTableCardInner({
         pageSize: filters.per_page ?? 30,
       },
       sorting,
-      expanded: grouped ? true : {},
+      expanded: grouped ? (effectiveSummaryOnly ? {} : true) : {},
       columnPinning: {
         left: pinnedLeftColumns,
       },
@@ -1365,6 +1367,19 @@ function CampaignReportTableCardInner({
               </button>
             }
           />
+          {grouped && (
+            <button
+              className={cn(
+                'inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium shadow-sm transition-colors',
+                effectiveSummaryOnly
+                  ? 'border-orange-300 bg-orange-100 text-orange-700 hover:bg-orange-200 dark:border-orange-700 dark:bg-orange-900/60 dark:text-orange-300 dark:hover:bg-orange-800/60'
+                  : 'border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground',
+              )}
+              onClick={() => setSummaryOnly((v) => !v)}
+            >
+              Totals Only
+            </button>
+          )}
           <MRT_ShowHideColumnsButton table={t} />
         </div>
       </div>

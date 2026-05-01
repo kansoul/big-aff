@@ -9,13 +9,13 @@ use App\Models\Channel;
 use App\Models\InsightChartReport;
 use App\Models\InsightReport;
 use App\Models\LinkData;
-use App\Models\RealtimeReport;
 use App\Models\RevenueChartReport;
 use App\Models\RevenueReport;
 use App\Models\Style;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Populates all analytical/report tables using the real identifiers seeded by AdsSeeder:
@@ -38,6 +38,8 @@ class ReportsSeeder extends Seeder
     private const CHART_DAYS = 7;
 
     private const CAMPAIGN_REPORT_DAYS = 14;
+
+    private const CHUNK_SIZE = 500;
 
     public function run(): void
     {
@@ -73,20 +75,32 @@ class ReportsSeeder extends Seeder
             return;
         }
 
+        $now = Carbon::now();
+        $rows = [];
+
         foreach ($styles as $style) {
             $channel = $channels->random();
             $adClientId = $adClients->isNotEmpty() ? $adClients->random()->ad_client_id : 'ca-pub-'.fake()->numerify('##############');
 
             for ($day = self::DAILY_DAYS; $day >= 0; $day--) {
-                RevenueReport::factory()->create([
+                $rows[] = RevenueReport::factory()->make([
                     'ad_client_id' => $adClientId,
                     'style_code' => $style->code,
                     'style_name' => $style->name,
                     'channel_code' => $channel->code,
                     'channel_name' => $channel->name,
-                    'date' => Carbon::now()->subDays($day)->toDateString(),
-                ]);
+                    'date' => $now->copy()->subDays($day)->toDateString(),
+                ])->toArray();
+
+                if (count($rows) >= self::CHUNK_SIZE) {
+                    DB::table('revenue_reports')->insert($rows);
+                    $rows = [];
+                }
             }
+        }
+
+        if ($rows) {
+            DB::table('revenue_reports')->insert($rows);
         }
     }
 
@@ -101,25 +115,42 @@ class ReportsSeeder extends Seeder
             return;
         }
 
+        $now = Carbon::now();
+        $rows = [];
+        $seen = [];
+
         foreach ($styles as $style) {
             $channel = $channels->random();
             $adClientId = $adClients->isNotEmpty() ? $adClients->random()->ad_client_id : 'ca-pub-'.fake()->numerify('##############');
 
             for ($hoursAgo = 24 * self::CHART_DAYS; $hoursAgo >= 0; $hoursAgo--) {
-                $datetime = Carbon::now()->subHours($hoursAgo)->startOfHour();
+                $datetime = $now->copy()->subHours($hoursAgo)->startOfHour()->toDateTimeString();
+                $key = $style->code.'|'.$datetime;
 
-                RevenueChartReport::query()->firstOrCreate(
-                    ['style_code' => $style->code, 'datetime' => $datetime],
-                    RevenueChartReport::factory()->make([
-                        'ad_client_id' => $adClientId,
-                        'style_code' => $style->code,
-                        'style_name' => $style->name,
-                        'channel_code' => $channel->code,
-                        'channel_name' => $channel->name,
-                        'datetime' => $datetime,
-                    ])->toArray(),
-                );
+                if (isset($seen[$key])) {
+                    continue;
+                }
+
+                $seen[$key] = true;
+
+                $rows[] = RevenueChartReport::factory()->make([
+                    'ad_client_id' => $adClientId,
+                    'style_code' => $style->code,
+                    'style_name' => $style->name,
+                    'channel_code' => $channel->code,
+                    'channel_name' => $channel->name,
+                    'datetime' => $datetime,
+                ])->toArray();
+
+                if (count($rows) >= self::CHUNK_SIZE) {
+                    DB::table('revenue_chart_reports')->insert($rows);
+                    $rows = [];
+                }
             }
+        }
+
+        if ($rows) {
+            DB::table('revenue_chart_reports')->insert($rows);
         }
     }
 
@@ -132,17 +163,27 @@ class ReportsSeeder extends Seeder
             return;
         }
 
+        $now = Carbon::now();
+        $rows = [];
+
         foreach ($campaigns as $campaign) {
             for ($day = self::DAILY_DAYS; $day >= 0; $day--) {
-                InsightReport::factory()->create([
-                    // account_id is the string business id (accounts.account_id),
-                    // mirroring the conversions table contract.
+                $rows[] = InsightReport::factory()->make([
                     'account_id' => $campaign->account_id,
                     'campaign_id' => $campaign->campaign_id,
-                    'date_start' => Carbon::now()->subDays($day)->toDateString(),
+                    'date_start' => $now->copy()->subDays($day)->toDateString(),
                     'spend_type' => 'USD',
-                ]);
+                ])->toArray();
+
+                if (count($rows) >= self::CHUNK_SIZE) {
+                    DB::table('insight_reports')->insert($rows);
+                    $rows = [];
+                }
             }
+        }
+
+        if ($rows) {
+            DB::table('insight_reports')->insert($rows);
         }
     }
 
@@ -155,14 +196,26 @@ class ReportsSeeder extends Seeder
             return;
         }
 
+        $now = Carbon::now();
+        $rows = [];
+
         foreach ($campaigns as $campaign) {
             for ($day = self::CHART_DAYS; $day >= 0; $day--) {
-                InsightChartReport::factory()->create([
+                $rows[] = InsightChartReport::factory()->make([
                     'account_id' => $campaign->account_id,
                     'campaign_id' => $campaign->campaign_id,
-                    'datetime_start' => Carbon::now()->subDays($day)->startOfDay(),
-                ]);
+                    'datetime_start' => $now->copy()->subDays($day)->startOfDay()->toDateTimeString(),
+                ])->toArray();
+
+                if (count($rows) >= self::CHUNK_SIZE) {
+                    DB::table('insight_chart_reports')->insert($rows);
+                    $rows = [];
+                }
             }
+        }
+
+        if ($rows) {
+            DB::table('insight_chart_reports')->insert($rows);
         }
     }
 
@@ -182,32 +235,25 @@ class ReportsSeeder extends Seeder
             return;
         }
 
+        $now = Carbon::now();
+
+        // Pre-create all RealtimeReports in bulk, keyed by "link_data_id|date"
+        $realtimeMap = $this->seedRealtimeReports($campaigns, $linkDataByCampaignId, $now);
+
+        $rows = [];
+
         foreach ($campaigns as $campaign) {
             $linkData = $linkDataByCampaignId->get($campaign->campaign_id);
             $style = $styles->firstWhere('code', $linkData?->style_code) ?? ($styles->isNotEmpty() ? $styles->random() : null);
             $channel = $channels->firstWhere('code', $linkData?->channel_code) ?? ($channels->isNotEmpty() ? $channels->random() : null);
 
             for ($day = self::CAMPAIGN_REPORT_DAYS; $day >= 0; $day--) {
-                $date = Carbon::now()->subDays($day)->toDateString();
+                $date = $now->copy()->subDays($day)->toDateString();
+                $realtimeId = $linkData ? ($realtimeMap[$linkData->id.'|'.$date] ?? null) : null;
 
-                $realtime = null;
-                if ($linkData !== null) {
-                    $realtime = RealtimeReport::query()->firstOrCreate(
-                        ['event_time' => $date, 'link_data_id' => $linkData->id],
-                        [
-                            'view_article_count' => random_int(50, 800),
-                            'view_search_count' => random_int(30, 700),
-                            'click_keyword_count' => random_int(5, 200),
-                            'click_ad_count' => random_int(2, 150),
-                        ],
-                    );
-                }
-
-                CampaignReport::factory()->create([
-                    'realtime_report_id' => $realtime?->id,
+                $rows[] = CampaignReport::factory()->make([
+                    'realtime_report_id' => $realtimeId,
                     'date_start' => $date,
-                    // account_id uses the string business id (accounts.account_id),
-                    // matching the conversions table and the user's data contract.
                     'account_id' => $campaign->account_id,
                     'account_name' => $campaign->account?->account_name,
                     'campaign_id' => $campaign->campaign_id,
@@ -220,8 +266,84 @@ class ReportsSeeder extends Seeder
                     'style_name' => $style?->name,
                     'channel_code' => $channel?->code,
                     'channel_name' => $channel?->name,
-                ]);
+                ])->toArray();
+
+                if (count($rows) >= self::CHUNK_SIZE) {
+                    DB::table('campaign_reports')->insert($rows);
+                    $rows = [];
+                }
             }
         }
+
+        if ($rows) {
+            DB::table('campaign_reports')->insert($rows);
+        }
+    }
+
+    /**
+     * Bulk-inserts RealtimeReports for all campaigns that have LinkData,
+     * then returns a map of "link_data_id|date" → realtime_report id.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Campaign>  $campaigns
+     * @param  Collection<string, LinkData>  $linkDataByCampaignId
+     * @return array<string, int>
+     */
+    private function seedRealtimeReports(
+        \Illuminate\Database\Eloquent\Collection $campaigns,
+        Collection $linkDataByCampaignId,
+        Carbon $now,
+    ): array {
+        $toInsert = [];
+        $keys = [];
+
+        foreach ($campaigns as $campaign) {
+            $linkData = $linkDataByCampaignId->get($campaign->campaign_id);
+            if ($linkData === null) {
+                continue;
+            }
+
+            for ($day = self::CAMPAIGN_REPORT_DAYS; $day >= 0; $day--) {
+                $date = $now->copy()->subDays($day)->toDateString();
+                $key = $linkData->id.'|'.$date;
+
+                if (isset($keys[$key])) {
+                    continue;
+                }
+
+                $keys[$key] = true;
+                $toInsert[] = [
+                    'link_data_id' => $linkData->id,
+                    'event_time' => $date,
+                    'view_article_count' => random_int(50, 800),
+                    'view_search_count' => random_int(30, 700),
+                    'click_keyword_count' => random_int(5, 200),
+                    'click_ad_count' => random_int(2, 150),
+                ];
+            }
+        }
+
+        if (empty($toInsert)) {
+            return [];
+        }
+
+        foreach (array_chunk($toInsert, self::CHUNK_SIZE) as $chunk) {
+            DB::table('realtime_reports')->insertOrIgnore($chunk);
+        }
+
+        // Fetch inserted IDs back into the map
+        $linkDataIds = array_unique(array_column($toInsert, 'link_data_id'));
+        $dates = array_unique(array_column($toInsert, 'event_time'));
+
+        $records = DB::table('realtime_reports')
+            ->whereIn('link_data_id', $linkDataIds)
+            ->whereIn('event_time', $dates)
+            ->get(['id', 'link_data_id', 'event_time']);
+
+        $map = [];
+        foreach ($records as $record) {
+            $map[$record->link_data_id.'|'.$record->event_time] = $record->id;
+        }
+
+        return $map;
     }
 }

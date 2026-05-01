@@ -569,7 +569,11 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
         id: 'campaign-reports',
         label: 'Campaign Reports',
         permissions: [
-          { key: 'CampaignReportsView', slug: PermissionSlugs.CampaignReportsView, label: 'View' },
+          {
+            key: 'CampaignReportsView',
+            slug: PermissionSlugs.CampaignReportsView,
+            label: 'Campaign Reports View',
+          },
           {
             key: 'DeliveryEntitiesReportsView',
             slug: PermissionSlugs.DeliveryEntitiesReportsView,
@@ -583,17 +587,17 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           {
             key: 'RevenueReportRangeView',
             slug: PermissionSlugs.RevenueReportRangeView,
-            label: 'View',
+            label: 'Revenue Range View',
           },
           {
             key: 'AnalyticsTrackingView',
             slug: PermissionSlugs.AnalyticsTrackingView,
-            label: 'View',
+            label: 'Analytics Tracking View',
           },
           {
             key: 'RevenueChartReportsView',
             slug: PermissionSlugs.RevenueChartReportsView,
-            label: 'View',
+            label: 'Revenue Chart View',
           },
         ],
       },
