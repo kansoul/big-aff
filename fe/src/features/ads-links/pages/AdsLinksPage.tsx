@@ -134,7 +134,7 @@ export function AdsLinksPage() {
 
   const editForm = useForm<AdsLinkUpdateFormValues>({
     resolver: zodResolver(adsLinkUpdateSchema),
-    defaultValues: { rac: '', keyword_set_id: null, fbid: '', googleid: '' },
+    defaultValues: { rac: '', channel_code: null, keyword_set_id: null, fbid: '', googleid: '' },
   })
 
   const loadOptions = useCallback(async () => {
@@ -188,6 +188,7 @@ export function AdsLinksPage() {
     if (editRow) {
       editForm.reset({
         rac: editRow.rac,
+        channel_code: editRow.channel_code ?? null,
         keyword_set_id: editRow.keyword_set?.id ?? null,
         fbid: editRow.fbid?.join(',') ?? '',
         googleid: editRow.googleid?.join(',') ?? '',
@@ -250,6 +251,7 @@ export function AdsLinksPage() {
       setSubmitting(true)
       await adsLinksApi.update(editRow.id, {
         rac: values.rac,
+        channel_code: editRow.is_old ? (values.channel_code ?? null) : undefined,
         keyword_set_id: values.keyword_set_id ?? null,
         fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
@@ -329,7 +331,6 @@ export function AdsLinksPage() {
         loading={loading}
         adsLinks={adsLinks}
         totalRows={totalRows}
-        currentUserId={user?.id}
         canCreate={canCreate}
         canUpdate={canUpdate}
         filters={{ ...filters, page: pagination.pageIndex + 1, per_page: pagination.pageSize }}
@@ -361,6 +362,7 @@ export function AdsLinksPage() {
       <EditAdsLinkDialog
         adsLink={editRow}
         posts={posts}
+        channels={channels}
         onOpenChange={onEditOpenChange}
         formError={formError}
         form={editForm}

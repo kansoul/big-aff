@@ -96,7 +96,6 @@ function CopyLinkDialog({ state, onClose }: CopyLinkDialogProps) {
 }
 
 type ActionMeta = {
-  currentUserId: number | undefined
   canUpdate: boolean
   onEditRow: (row: AdsLink) => void
   onToggleHide: (row: AdsLink) => void
@@ -104,7 +103,7 @@ type ActionMeta = {
 }
 
 function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
-  const { currentUserId, canUpdate, onEditRow, onToggleHide, onOpenCopyDialog } = meta
+  const { canUpdate, onEditRow, onToggleHide, onOpenCopyDialog } = meta
 
   return [
     {
@@ -257,8 +256,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
             },
             Cell: ({ row }: { row: { original: AdsLink } }) => {
               const link = row.original
-              const isOwner = link.created_by === currentUserId
-              if (!isOwner) return null
 
               return (
                 <TooltipProvider>
@@ -318,7 +315,6 @@ type AdsLinksTableCardProps = {
   loading: boolean
   adsLinks: AdsLink[]
   totalRows: number
-  currentUserId: number | undefined
   canCreate: boolean
   canUpdate: boolean
   filters: AdsLinkFilterParams
@@ -340,7 +336,6 @@ function AdsLinksTableCardInner({
   loading,
   adsLinks,
   totalRows,
-  currentUserId,
   canCreate,
   canUpdate,
   filters,
@@ -364,13 +359,12 @@ function AdsLinksTableCardInner({
   const columns = useMemo(
     () =>
       getColumns({
-        currentUserId,
         canUpdate,
         onEditRow,
         onToggleHide,
         onOpenCopyDialog: (state) => setCopyDialog({ ...state, open: true }),
       }),
-    [currentUserId, canUpdate, onEditRow, onToggleHide],
+    [canUpdate, onEditRow, onToggleHide],
   )
 
   // Build filter field definitions for FilterPanel

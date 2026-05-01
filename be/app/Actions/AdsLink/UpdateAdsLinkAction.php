@@ -17,7 +17,10 @@ class UpdateAdsLinkAction
      */
     public function execute(AdsLink $adsLink, array $data): AdsLink
     {
-        OwnershipFilter::forAuthUser()->authorize($adsLink->created_by);
+        $ownership = OwnershipFilter::forAuthUser();
+        if (! $ownership->isAdmin()) {
+            $ownership->authorize($adsLink->created_by);
+        }
 
         if (array_key_exists('rac', $data) && $data['rac'] !== null) {
             $racValidation = $this->racValidationService->validateRAC($data['rac']);
@@ -57,6 +60,10 @@ class UpdateAdsLinkAction
 
         if (array_key_exists('keyword_set_id', $data)) {
             $payload['keyword_set_id'] = $data['keyword_set_id'];
+        }
+
+        if ($adsLink->is_old && array_key_exists('channel_code', $data)) {
+            $payload['channel_code'] = $data['channel_code'];
         }
 
         $adsLink->update($payload);
