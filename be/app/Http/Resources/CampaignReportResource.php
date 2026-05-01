@@ -26,7 +26,7 @@ class CampaignReportResource extends JsonResource
         }
 
         if ($adsType === 'google') {
-            return 'https://ads.google.com/aw/campaigns?campaignId='.$campaignId;
+            return 'https://ads.google.com/aw/campaigns?campaignId=' . $campaignId;
         }
 
         $accountId = (string) ($this->account_id ?? '');
@@ -44,13 +44,13 @@ class CampaignReportResource extends JsonResource
 
         $base = 'https://adsmanager.facebook.com/adsmanager/manage/adsets';
 
-        return $base.
-            '?act='.$accountId.
-            '&date='.$startDate.'_'.$endDate.'%2Ctoday'.
-            '&comparison_date='.
-            '&insights_date='.$startDate.'_'.$endDate.'%2Ctoday'.
-            '&insights_comparison_date='.
-            '&selected_campaign_ids='.$campaignId.
+        return $base .
+            '?act=' . $accountId .
+            '&date=' . $startDate . '_' . $endDate . '%2Ctoday' .
+            '&comparison_date=' .
+            '&insights_date=' . $startDate . '_' . $endDate . '%2Ctoday' .
+            '&insights_comparison_date=' .
+            '&selected_campaign_ids=' . $campaignId .
             '&nav_source=no_referrer';
     }
 
@@ -59,12 +59,10 @@ class CampaignReportResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $realtimeConversion = (float) ($this->realtimeReport?->click_keyword_count ?? 0);
-        $rpc = (float) ($this->rpc ?? 0);
         $spend = (float) ($this->a_spend ?? 0);
-        $revenueEst = $realtimeConversion * $rpc;
-        $profit = $revenueEst - $spend;
-        $roi = $spend > 0 ? ($profit / $spend) * 100 : 0.0;
+        $revenueEst = (float) ($this->revenue_est ?? 0);
+        $profit = (float) ($this->profit ?? $revenueEst - $spend);
+        $roi = (float) ($this->roi ?? ($spend > 0 ? ($profit / $spend) * 100 : 0.0));
 
         $rtClickAdCount = (float) ($this->realtimeReport?->click_ad_count ?? 0);
         $rtClickKeywordCount = (float) ($this->realtimeReport?->click_keyword_count ?? 0);
