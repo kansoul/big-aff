@@ -13,7 +13,7 @@ class DeleteBusinessCenterAction
      */
     public function execute(BusinessCenter $businessCenter): void
     {
-        OwnershipFilter::forAuthUser()->authorize($businessCenter->created_by);
+        OwnershipFilter::forAuthUser()->authorizeBusinessCenter($businessCenter);
 
         $businessCenter->delete();
     }

@@ -2,14 +2,13 @@
 
 namespace App\Http\Requests\Channel;
 
-use App\Models\Channel;
 use Illuminate\Foundation\Http\FormRequest;
 
 class BulkStoreChannelRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', Channel::class) ?? false;
+        return true;
     }
 
     /**

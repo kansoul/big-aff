@@ -2,16 +2,13 @@
 
 namespace App\Http\Requests\KeywordSet;
 
-use App\Models\KeywordSet;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateKeywordSetRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $keywordSet = $this->route('keyword_set');
-
-        return $keywordSet instanceof KeywordSet && $this->user()?->can('update', $keywordSet) === true;
+        return true;
     }
 
     /**

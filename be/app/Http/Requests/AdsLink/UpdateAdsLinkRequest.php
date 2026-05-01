@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\AdsLink;
 
-use App\Models\AdsLink;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -10,9 +9,7 @@ class UpdateAdsLinkRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $adsLink = $this->route('ads_link');
-
-        return $adsLink instanceof AdsLink && $this->user()?->can('update', $adsLink);
+        return true;
     }
 
     /**

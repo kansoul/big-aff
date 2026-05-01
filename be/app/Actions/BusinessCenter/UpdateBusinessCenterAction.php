@@ -16,7 +16,8 @@ class UpdateBusinessCenterAction
      */
     public function execute(BusinessCenter $businessCenter, array $data): BusinessCenter
     {
-        OwnershipFilter::forAuthUser()->authorize($businessCenter->created_by);
+        $ownership = OwnershipFilter::forAuthUser();
+        $ownership->authorizeBusinessCenter($businessCenter);
 
         $data['updated_by'] = Auth::id();
         $businessCenter->update($data);

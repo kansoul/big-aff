@@ -26,7 +26,7 @@ class ListBusinessCentersAction
         $ownership = OwnershipFilter::forAuthUser();
 
         $query = BusinessCenter::query()->with(['team']);
-        $ownership->applyTo($query);
+        $ownership->applyThroughTeam($query);
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];

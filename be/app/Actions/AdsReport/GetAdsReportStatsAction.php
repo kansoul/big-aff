@@ -31,7 +31,7 @@ class GetAdsReportStatsAction
 
         // Campaign stats
         $campaignQuery = Campaign::query();
-        $ownership->applyTo($campaignQuery);
+        $ownership->applyThroughAccount($campaignQuery, 'account_id');
 
         if ($accountIds !== null) {
             $campaignQuery->whereIn('account_id', $accountIds);

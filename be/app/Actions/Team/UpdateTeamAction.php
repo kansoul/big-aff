@@ -16,7 +16,8 @@ class UpdateTeamAction
      */
     public function execute(Team $team, array $data): Team
     {
-        OwnershipFilter::forAuthUser()->authorize($team->created_by);
+        $ownership = OwnershipFilter::forAuthUser();
+        $ownership->authorizeTeamManagement($team);
 
         $data['updated_by'] = Auth::id();
         $team->update($data);

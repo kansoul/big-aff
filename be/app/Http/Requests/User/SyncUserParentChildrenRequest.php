@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\User;
 
-use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -10,9 +9,7 @@ class SyncUserParentChildrenRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->route('user');
-
-        return $user instanceof User && ($this->user()?->can('update', $user) ?? false);
+        return true;
     }
 
     /**

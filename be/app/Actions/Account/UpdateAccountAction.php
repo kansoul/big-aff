@@ -17,7 +17,8 @@ class UpdateAccountAction
      */
     public function execute(Account $account, array $data): Account
     {
-        OwnershipFilter::forAuthUser()->authorize($account->created_by);
+        $ownership = OwnershipFilter::forAuthUser();
+        $ownership->authorizeAccount($account);
 
         $userId = array_key_exists('user_id', $data) ? ($data['user_id'] !== null ? (int) $data['user_id'] : null) : false;
         unset($data['user_id']);

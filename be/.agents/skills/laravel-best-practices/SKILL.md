@@ -39,6 +39,34 @@ Do not add new top-level folders under `app/` without matching an existing conve
 - **User checks:** `hasPermissionFlag(Permission)` via **`UserMethod`** trait; loads `role` and calls `Permission::maskHasPermission()`.
 - **Adding a new gated page/API:** (1) **append** new enum case to `App\Enums\Permission` (never insert in the middle — bit positions must be stable); (2) apply middleware with `->value` / `authorize()` with `hasPermissionFlag`; (3) update **`fe/src/constants/permissions.ts`** (`PermissionSlugs` + catalog) in lockstep (see **`.agents/skills/fe-project-conventions/SKILL.md`** → Permissions).
 
+### Ownership Filtering (`App\Support\OwnershipFilter\OwnershipFilter`)
+
+Every Action that reads or mutates data **must** apply ownership filtering. The filter resolves `allowedUserIds` for the current auth user based on their role:
+
+| Role | Scope |
+|------|-------|
+| **Admin** | Full access — no filter applied |
+| **Manager** | Self + BFS descendants + all leaders & members of managed teams |
+| **Leader** | Self + BFS descendants via `user_parent_child` only |
+| **Member** | Self + BFS descendants (usually just self) |
+
+**Critical rule — choose the right method based on how the resource is owned:**
+
+| Ownership mechanism | List method | Mutate method |
+|--------------------|-------------|---------------|
+| `created_by` set by user (posts, sites, ads_links…) | `applyTo($query)` | `authorize($record->created_by)` |
+| `channel_user` pivot (channels, revenue reports…) | `applyThroughChannel($query)` | — |
+| `account_user` pivot (accounts, campaign reports…) | `applyThroughAccount($query)` | `authorizeAccount($account)` |
+| `team_user` membership (business_centers…) | `applyThroughTeam($query)` | `authorizeBusinessCenter($bc)` |
+| Team CRUD (assign, update, delete) | — | `authorizeTeamManagement($team)` |
+| Custom relation | `applyThrough($query, $col, $closure)` | manual |
+
+> **Never use `applyTo(created_by)` for admin-created resources** (channels `created_by=1`, accounts `created_by=1`, teams `created_by=1`, campaigns `created_by=NULL`). This always returns empty for non-admin users. Use the appropriate `applyThrough*` method instead.
+
+**`authorizeTeamManagement`** allows admin, manager, OR leader of that team. Leaders are automatically limited to their `allowedUserIds` scope when user IDs are intersected downstream.
+
+Full API and examples: see `CLAUDE.md` → "Ownership Filtering in Actions".
+
 ### Model Trait Composition (project-specific)
 
 - In this project, keep Eloquent model classes thin and compose model behavior using traits under `app/Models/Traits/*`.
@@ -75,6 +103,7 @@ Do not add new top-level folders under `app/` without matching an existing conve
 - Apply `throttle` on auth and API routes
 - Validate MIME type, extension, and size for file uploads
 - Never commit `.env`, use `config()` for secrets, `encrypted` cast for sensitive DB fields
+- **Ownership filtering:** every action must call `OwnershipFilter::forAuthUser()` and the correct `applyTo/applyThrough*/authorize*` method — see "Ownership Filtering" section above
 
 ### 4. Caching → `rules/caching.md`
 
