@@ -2,7 +2,10 @@
 
 namespace App\Actions\Team;
 
+use App\Enums\TeamRole;
 use App\Models\Team;
+use App\Models\TeamUser;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Support\Facades\Auth;
 
 class CreateTeamAction
@@ -14,6 +17,17 @@ class CreateTeamAction
     {
         $data['created_by'] = Auth::id();
 
-        return Team::create($data)->load('users');
+        $team = Team::create($data);
+
+        if (! OwnershipFilter::forAuthUser()->isAdmin()) {
+            TeamUser::create([
+                'team_id' => $team->id,
+                'user_id' => Auth::id(),
+                'team_role' => TeamRole::MANAGER->value,
+                'joined_at' => now(),
+            ]);
+        }
+
+        return $team->load('users');
     }
 }

@@ -22,7 +22,7 @@ class GetSiteUserOptionsAction
             ->whereDoesntHave('role', fn ($q) => $q->where('permissions', Permission::FULL_ACCESS_SENTINEL))
             ->orderBy('name');
 
-        $ownership->applyTo($query);
+        $ownership->applyTo($query, 'id');
 
         $options = $query->get();
 
