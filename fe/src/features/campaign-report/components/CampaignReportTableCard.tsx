@@ -1428,17 +1428,46 @@ function CampaignReportTableCardInner({
     },
     mantineTableBodyCellProps: ({ row, column }) => {
       const isGroup = grouped && (row.getCanExpand() || isGroupRow(row.original))
+      const isSubRow = row.depth > 0
       const isCampaignCol = column.id === 'campaign_name'
+      const isPinnedFirstCol = column.id === 'group_label'
+
+      const groupKey = isSubRow
+        ? String(
+            (row.getParentRow()?.original as CampaignReportGroupRow | undefined)?.group_key ??
+              'null',
+          )
+        : null
+      const groupIdx = groupKey != null ? (groupIndexMap.get(groupKey) ?? 0) : 0
+      const isOddGroup = groupIdx % 2 === 1
+
       return {
         className: isGroup ? 'campaign-group-cell' : undefined,
-        sx: {
-          fontSize: '10px',
-          paddingLeft: '2px !important',
-          paddingRight: '2px !important',
-          fontWeight: isGroup ? 600 : undefined,
-          overflow: isCampaignCol ? 'visible' : 'hidden',
-          textOverflow: isCampaignCol ? 'unset' : 'ellipsis',
-          whiteSpace: isCampaignCol ? 'normal' : 'nowrap',
+        sx: (theme) => {
+          const isDark = theme.colorScheme === 'dark'
+          const accentColor = isOddGroup ? theme.colors.teal : theme.colors.indigo
+          return {
+            fontSize: '10px',
+            paddingLeft: '2px !important',
+            paddingRight: '2px !important',
+            fontWeight: isGroup ? 600 : undefined,
+            overflow: isCampaignCol ? 'visible' : 'hidden',
+            textOverflow: isCampaignCol ? 'unset' : 'ellipsis',
+            whiteSpace: isCampaignCol ? 'normal' : 'nowrap',
+            ...(isSubRow &&
+              isPinnedFirstCol && {
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: 3,
+                  backgroundColor: isDark ? accentColor[7] : accentColor[4],
+                  zIndex: 1,
+                },
+              }),
+          }
         },
       }
     },
