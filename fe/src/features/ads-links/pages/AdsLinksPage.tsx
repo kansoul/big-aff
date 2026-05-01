@@ -114,13 +114,12 @@ export function AdsLinksPage() {
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
 
-  const { filters, setFilters, pagination, setPagination } =
-    useTableUrlState<AdsLinkFilterParams>({
-      parseFilters,
-      buildParams,
-      defaultFilters: DEFAULT_FILTERS,
-      defaultPageSize: 15,
-    })
+  const { filters, setFilters, pagination, setPagination } = useTableUrlState<AdsLinkFilterParams>({
+    parseFilters,
+    buildParams,
+    defaultFilters: DEFAULT_FILTERS,
+    defaultPageSize: 15,
+  })
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editRow, setEditRow] = useState<AdsLink | null>(null)

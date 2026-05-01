@@ -10,6 +10,7 @@ use App\Http\Resources\ChannelResource;
 use App\Models\Channel;
 use App\Models\User;
 use App\Services\Channel\ChannelService;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -98,12 +99,17 @@ class ChannelController extends BaseController
      */
     public function options(): JsonResponse
     {
-        $channels = Channel::query()
+        $ownership = OwnershipFilter::forAuthUser();
+
+        $query = Channel::query()
             ->select(['id', 'code', 'name'])
             ->where('is_active', true)
             ->whereNull('deleted_at')
-            ->orderBy('name')
-            ->get();
+            ->orderBy('id');
+
+        $ownership->applyThroughChannel($query, 'code');
+
+        $channels = $query->get();
 
         return $this->sendResponse([
             'data' => $channels->map(fn (Channel $channel) => [
