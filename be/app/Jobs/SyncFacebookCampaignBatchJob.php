@@ -121,6 +121,7 @@ class SyncFacebookCampaignBatchJob implements ShouldQueue
                             'ctr' => $insight['ctr'],
                             'frequency' => $insight['frequency'],
                             'spend_type' => $insight['spend_type'],
+                            'created_at' => now(),
                             'updated_at' => now(),
                         ];
                     }, $insights);

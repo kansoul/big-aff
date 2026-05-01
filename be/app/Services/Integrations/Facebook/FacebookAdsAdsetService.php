@@ -2,6 +2,7 @@
 
 namespace App\Services\Integrations\Facebook;
 
+use Carbon\Carbon;
 use Exception;
 use FacebookAds\Api;
 use FacebookAds\Object\AdAccount;
@@ -153,8 +154,8 @@ class FacebookAdsAdsetService
                         'inline_link_click_ctr' => $insights['inline_link_click_ctr'] ?? null,
                         'cost_per_inline_link_click' => $insights['cost_per_inline_link_click'] ?? null,
                         'frequency' => $insights['frequency'] ?? null,
-                        'updated_time' => $adset->updated_time ?? null,
-                        'created_time' => $adset->created_time ?? null,
+                        'updated_time' => $adset->updated_time ? Carbon::parse($adset->updated_time) : null,
+                        'created_time' => $adset->created_time ? Carbon::parse($adset->created_time) : null,
                         'effective_status' => $adset->effective_status ?? null,
                     ];
 
@@ -194,8 +195,8 @@ class FacebookAdsAdsetService
                                 'inline_link_click_ctr' => $adInsights['inline_link_click_ctr'] ?? null,
                                 'cost_per_inline_link_click' => $adInsights['cost_per_inline_link_click'] ?? null,
                                 'frequency' => $adInsights['frequency'] ?? null,
-                                'updated_time' => $ad['updated_time'] ?? null,
-                                'created_time' => $ad['created_time'] ?? null,
+                                'updated_time' => isset($ad['updated_time']) ? Carbon::parse($ad['updated_time']) : null,
+                                'created_time' => isset($ad['created_time']) ? Carbon::parse($ad['created_time']) : null,
                                 'effective_status' => $ad['effective_status'] ?? null,
                             ];
                         }
