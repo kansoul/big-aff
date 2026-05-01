@@ -23,11 +23,15 @@ class Campaign extends Model
         'stop_time',
         'created_by',
         'updated_by',
+        'created_time',
+        'updated_time',
     ];
 
     protected $casts = [
         'start_time' => 'datetime',
         'stop_time' => 'datetime',
+        'created_time' => 'datetime',
+        'updated_time' => 'datetime',
         'daily_budget' => 'decimal:2',
         'lifetime_budget' => 'decimal:2',
     ];
