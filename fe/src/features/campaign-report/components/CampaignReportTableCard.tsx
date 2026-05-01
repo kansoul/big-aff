@@ -273,13 +273,18 @@ function GroupLabelCell({
   onOpenRevenueChart: (target: RevenueDialogTarget) => void
 }) {
   const channelCode = typeof row.group_key === 'string' ? row.group_key : undefined
+  const channelName = isChannelGroup ? (row.items[0]?.channel_name ?? null) : null
+  const groupLabel =
+    isChannelGroup && channelName
+      ? `${channelName} (${row.group_key ?? '—'})`
+      : (row.group_label ?? String(row.group_key ?? '—'))
   return (
     <div className="flex flex-col pl-1">
       <span
         className="block max-w-[160px] truncate text-[8px] font-semibold text-foreground"
-        title={String(row.group_label ?? row.group_key ?? '—')}
+        title={groupLabel}
       >
-        {row.group_label ?? String(row.group_key ?? '—')}
+        {groupLabel}
       </span>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[8px] text-muted-foreground">{row.record_count} record(s)</span>
