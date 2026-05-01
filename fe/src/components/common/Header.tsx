@@ -24,6 +24,7 @@ import { PATHS, type NavSectionId } from '@/constants/paths'
 import { hasPermission } from '@/constants/permissions'
 import { dashboardApi } from '@/features/dashboard/api'
 import { useAuthStore } from '@/hooks/useAuthStore'
+import { useIsMobile } from '@/hooks/useMobile'
 import { useTheme } from '@/hooks/useTheme'
 
 import logoHeaderDark from '@/assets/logo-s-white.png'
@@ -246,6 +247,7 @@ export const Header = React.memo(function Header() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const { theme } = useTheme()
+  const isMobile = useIsMobile()
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false)
 
   const navItemsForUser = React.useMemo(
@@ -274,13 +276,13 @@ export const Header = React.memo(function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="flex h-14 items-center justify-between px-4 md:px-8">
-        <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-8">
+      <div className={cn('flex h-14 items-center justify-between px-4', !isMobile && 'md:px-8')}>
+        <div className={cn('flex min-w-0 flex-1 items-center gap-3', !isMobile && 'md:gap-8')}>
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="shrink-0 md:hidden"
+            className={cn('shrink-0', !isMobile && 'md:hidden')}
             aria-label="Open menu"
             aria-expanded={mobileNavOpen}
             aria-controls="mobile-navigation-sheet"
@@ -305,67 +307,69 @@ export const Header = React.memo(function Header() {
             />
           </Link>
 
-          <NavigationMenu className="hidden md:flex" viewport={false}>
-            <NavigationMenuList className="gap-6">
-              {navItemsForUser.map((item) => {
-                const groupActive =
-                  navGroupIsActive(item, activeNavSection) ||
-                  navGroupHasActiveChild(item, location.pathname)
+          {!isMobile && (
+            <NavigationMenu className="hidden md:flex" viewport={false}>
+              <NavigationMenuList className="gap-6">
+                {navItemsForUser.map((item) => {
+                  const groupActive =
+                    navGroupIsActive(item, activeNavSection) ||
+                    navGroupHasActiveChild(item, location.pathname)
 
-                if (!item.items?.length) {
-                  if (!item.href) {
-                    return null
+                  if (!item.items?.length) {
+                    if (!item.href) {
+                      return null
+                    }
+                    const ItemIcon = item.icon
+                    const isActive = location.pathname === item.href
+                    return (
+                      <NavigationMenuItem key={item.name}>
+                        <NavigationMenuLink asChild>
+                          <NavLink
+                            to={item.href}
+                            className={cn(
+                              navTabBase,
+                              isActive ? navTabActive : navTabInactive,
+                              'bg-transparent! focus:bg-transparent! data-[state=open]:bg-transparent! data-active:bg-transparent!',
+                            )}
+                          >
+                            {ItemIcon && <ItemIcon className="size-3.5 shrink-0" aria-hidden />}
+                            {item.name}
+                          </NavLink>
+                        </NavigationMenuLink>
+                      </NavigationMenuItem>
+                    )
                   }
-                  const ItemIcon = item.icon
-                  const isActive = location.pathname === item.href
+
+                  const ParentIcon = item.icon
                   return (
                     <NavigationMenuItem key={item.name}>
-                      <NavigationMenuLink asChild>
-                        <NavLink
-                          to={item.href}
-                          className={cn(
-                            navTabBase,
-                            isActive ? navTabActive : navTabInactive,
-                            'bg-transparent! focus:bg-transparent! data-[state=open]:bg-transparent! data-active:bg-transparent!',
-                          )}
-                        >
-                          {ItemIcon && <ItemIcon className="size-3.5 shrink-0" aria-hidden />}
-                          {item.name}
-                        </NavLink>
-                      </NavigationMenuLink>
+                      <NavigationMenuTrigger
+                        className={cn(
+                          navTabBase,
+                          groupActive ? navTabActive : navTabInactive,
+                          'h-auto bg-transparent! focus:bg-transparent! data-[state=open]:bg-transparent! data-active:bg-transparent!',
+                        )}
+                      >
+                        {ParentIcon && (
+                          <ParentIcon className="size-3.5 shrink-0 mr-1.5" aria-hidden />
+                        )}
+                        {item.name}
+                      </NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="flex min-w-48 w-auto flex-col gap-0 p-1">
+                          {item.items.map((sub) => (
+                            <li key={sub.href}>
+                              <DesktopNavSubLink sub={sub} />
+                            </li>
+                          ))}
+                        </ul>
+                      </NavigationMenuContent>
                     </NavigationMenuItem>
                   )
-                }
-
-                const ParentIcon = item.icon
-                return (
-                  <NavigationMenuItem key={item.name}>
-                    <NavigationMenuTrigger
-                      className={cn(
-                        navTabBase,
-                        groupActive ? navTabActive : navTabInactive,
-                        'h-auto bg-transparent! focus:bg-transparent! data-[state=open]:bg-transparent! data-active:bg-transparent!',
-                      )}
-                    >
-                      {ParentIcon && (
-                        <ParentIcon className="size-3.5 shrink-0 mr-1.5" aria-hidden />
-                      )}
-                      {item.name}
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className="flex min-w-48 w-auto flex-col gap-0 p-1">
-                        {item.items.map((sub) => (
-                          <li key={sub.href}>
-                            <DesktopNavSubLink sub={sub} />
-                          </li>
-                        ))}
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                )
-              })}
-            </NavigationMenuList>
-          </NavigationMenu>
+                })}
+              </NavigationMenuList>
+            </NavigationMenu>
+          )}
         </div>
 
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -402,7 +406,7 @@ export const Header = React.memo(function Header() {
           </SheetContent>
         </Sheet>
 
-        <div className="flex shrink-0 items-center gap-2 md:gap-4">
+        <div className={cn('flex shrink-0 items-center gap-2', !isMobile && 'md:gap-4')}>
           <ThemeToggle />
 
           <DropdownMenu>
