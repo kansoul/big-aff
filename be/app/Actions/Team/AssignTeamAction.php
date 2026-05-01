@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\UserParentChild;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AssignTeamAction
@@ -24,10 +25,17 @@ class AssignTeamAction
         $ownership = OwnershipFilter::forAuthUser();
         $ownership->authorizeTeamManagement($team);
 
-        // Admins may assign any user; others are limited to their allowed subtree.
+        // Admins may assign any user; others are limited to their allowed subtree
+        // plus any users they directly created (created_by = auth user).
         $userIds = $ownership->isAdmin()
             ? $data['user_ids']
-            : array_values(array_intersect($data['user_ids'], $ownership->allowedUserIds()));
+            : array_values(array_intersect(
+                $data['user_ids'],
+                array_unique(array_merge(
+                    $ownership->allowedUserIds(),
+                    User::query()->where('created_by', Auth::id())->pluck('id')->map(fn ($id) => (int) $id)->all(),
+                )),
+            ));
         $teamRole = $data['team_role'] ?? TeamRole::MEMBER->value;
 
         return DB::transaction(function () use ($team, $userIds, $teamRole): array {
