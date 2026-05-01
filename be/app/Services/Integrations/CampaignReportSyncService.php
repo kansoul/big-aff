@@ -3,6 +3,7 @@
 namespace App\Services\Integrations;
 
 use App\Models\CampaignReport;
+use App\Models\Channel;
 use App\Models\InsightReport;
 use App\Models\LinkData;
 use App\Models\RealtimeReport;
@@ -133,6 +134,7 @@ class CampaignReportSyncService
             $realtimeReport = RealtimeReport::where('link_data_id', $linkData->id)
                 ->whereDate('event_time', $date)
                 ->first();
+            $channelName = Channel::where('code', $linkData->channel_code)->value('name');
             $revenueData = $failedAdClientIds ? [] : self::getRevenueData($date, $linkData->style_code, $linkData->channel_code);
             $rConversion = (int) ($revenueData['clicks'] ?? 0);
             $rCpa = $rConversion > 0 ? $spend / $rConversion : 0;
@@ -151,6 +153,7 @@ class CampaignReportSyncService
                 // Style/Channel info
                 'style_code' => $linkData->style_code,
                 'channel_code' => $linkData->channel_code,
+                'channel_name' => $channelName,
                 // Revenue fields (r_*) from RevenueReport
                 'r_search_views' => (int) ($revenueData['page_views'] ?? 0),
                 'r_conversion' => $rConversion,
