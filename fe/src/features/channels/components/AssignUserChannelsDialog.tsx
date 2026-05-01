@@ -215,6 +215,7 @@ export function AssignUserChannelsDialog({ open, onOpenChange }: Props) {
             onSaveRow={onSaveRow}
             savingRowId={savingRowId}
             canAssign={canAssign}
+            currentUserId={user?.id}
             emptyMessage={emptyMessage}
           />
         </div>

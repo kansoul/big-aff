@@ -15,6 +15,7 @@ type AssignUserChannelsTableCardProps = {
   onSaveRow: (userId: number) => void
   savingRowId: number | null
   canAssign: boolean
+  currentUserId?: number
   emptyMessage?: string
 }
 
@@ -32,6 +33,7 @@ function AssignUserChannelsTableCardInner({
   onSaveRow,
   savingRowId,
   canAssign,
+  currentUserId,
   emptyMessage = 'No users to assign',
 }: AssignUserChannelsTableCardProps) {
   return (
@@ -52,6 +54,7 @@ function AssignUserChannelsTableCardInner({
           const draft = drafts[row.id] ?? saved
           const dirty = hasSelectionDiff(draft, saved)
           const isSaving = savingRowId === row.id
+          const isSelf = row.id === currentUserId
 
           return (
             <div
@@ -86,11 +89,11 @@ function AssignUserChannelsTableCardInner({
                   </div>
                   <div className="mt-1.5 space-y-2.5">
                     <AssignUserChannelsPicker
-                      disabled={!canAssign}
+                      disabled={!canAssign || isSelf}
                       value={draft}
                       onChange={(next) => onDraftChange(row.id, next)}
                     />
-                    {canAssign ? (
+                    {canAssign && !isSelf ? (
                       <div className="flex justify-end">
                         <Button
                           type="button"
