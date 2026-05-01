@@ -2,14 +2,13 @@
 
 namespace App\Http\Requests\Style;
 
-use App\Models\Style;
 use Illuminate\Foundation\Http\FormRequest;
 
 class BulkStoreStyleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', Style::class) ?? false;
+        return true;
     }
 
     /**

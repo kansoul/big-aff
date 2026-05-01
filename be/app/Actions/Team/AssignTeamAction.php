@@ -22,7 +22,7 @@ class AssignTeamAction
     public function execute(Team $team, array $data): array
     {
         $ownership = OwnershipFilter::forAuthUser();
-        $ownership->authorize($team->created_by);
+        $ownership->authorizeTeamManagement($team);
 
         // Admins may assign any user; others are limited to their allowed subtree.
         $userIds = $ownership->isAdmin()

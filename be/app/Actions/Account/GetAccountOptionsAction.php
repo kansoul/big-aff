@@ -19,7 +19,7 @@ class GetAccountOptionsAction
         $query = Account::query()
             ->select(['id', 'account_id', 'account_name', 'team_id'])
             ->orderBy('account_name');
-        $ownership->applyTo($query);
+        $ownership->applyThroughAccount($query);
 
         if ($userId !== null) {
             $teamIds = DB::table('team_user')

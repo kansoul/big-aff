@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\AdsLink;
 
-use App\Models\AdsLink;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -10,7 +9,7 @@ class StoreAdsLinkRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', AdsLink::class) ?? false;
+        return true;
     }
 
     /**

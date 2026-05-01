@@ -13,7 +13,7 @@ class DeleteAccountAction
      */
     public function execute(Account $account): void
     {
-        OwnershipFilter::forAuthUser()->authorize($account->created_by);
+        OwnershipFilter::forAuthUser()->authorizeAccount($account);
 
         $account->delete();
     }

@@ -16,7 +16,10 @@ class GetTeamOptionsAction
         $ownership = OwnershipFilter::forAuthUser();
 
         $query = Team::query()->select(['id', 'name'])->orderBy('name');
-        $ownership->applyTo($query);
+
+        if (! $ownership->isAdmin()) {
+            $query->whereHas('teamUsers', fn ($q) => $ownership->applyTo($q, 'user_id'));
+        }
 
         return $query->get();
     }

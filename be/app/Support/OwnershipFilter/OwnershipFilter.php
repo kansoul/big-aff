@@ -4,7 +4,9 @@ namespace App\Support\OwnershipFilter;
 
 use App\Enums\TeamRole;
 use App\Models\Account;
+use App\Models\BusinessCenter;
 use App\Models\Channel;
+use App\Models\Team;
 use App\Models\TeamUser;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -20,7 +22,13 @@ use Illuminate\Support\Facades\Auth;
  * - Self + all transitive descendants via `user_parent_child` (BFS):
  *   if A → B → C then A can access C's resources.
  * - Manager in a team → also accesses all leaders and members in that team.
+ * - Leader in a team → accesses only their child users (already covered by BFS above).
  * - Admin users → no restriction applied (full access).
+ *
+ * Team management authorization:
+ * - `authorizeTeamManagement()` — allowed for admin, manager, or leader of that team.
+ * - `authorizeAccount()` — allowed if any user in allowedUserIds has the account assigned.
+ * - `authorizeBusinessCenter()` — allowed if any user in allowedUserIds is in the BC's team.
  */
 final readonly class OwnershipFilter
 {
@@ -164,8 +172,94 @@ final readonly class OwnershipFilter
             $column,
             fn (array $ids) => Channel::join('channel_user', 'channel_user.channel_id', '=', 'channels.id')
                 ->whereIn('channel_user.user_id', $ids)
+                ->whereNull('channel_user.deleted_at')
                 ->select('channels.code'),
         );
+    }
+
+    /**
+     * Apply ownership through the `team_user` pivot table.
+     * Ownership is determined by which teams the allowed users belong to,
+     * not by `<table>.created_by`. Use for resources that belong to a team
+     * (e.g. accounts, business_centers) rather than to a specific user.
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @param  string  $column  Foreign key column on the current model (default: 'team_id')
+     */
+    public function applyThroughTeam(Builder $query, string $column = 'team_id'): void
+    {
+        $this->applyThrough(
+            $query,
+            $column,
+            fn (array $ids) => TeamUser::whereIn('user_id', $ids)->select('team_id'),
+        );
+    }
+
+    /**
+     * Guard team management operations (assign members, update, delete).
+     * Allowed for admin, manager, or leader of the given team.
+     * Leaders are limited to their own child users by the allowedUserIds scope —
+     * this method only verifies the role, not the target users.
+     *
+     * @throws AuthorizationException
+     */
+    public function authorizeTeamManagement(Team $team): void
+    {
+        if ($this->isAdmin) {
+            return;
+        }
+
+        $canManage = TeamUser::query()
+            ->where('team_id', $team->id)
+            ->where('user_id', Auth::id())
+            ->whereIn('team_role', [TeamRole::MANAGER->value, TeamRole::LEADER->value])
+            ->exists();
+
+        if (! $canManage) {
+            throw new AuthorizationException;
+        }
+    }
+
+    /**
+     * Guard update / delete on an Account.
+     * Allowed if any user in allowedUserIds has the account assigned via `account_user`.
+     *
+     * @throws AuthorizationException
+     */
+    public function authorizeAccount(Account $account): void
+    {
+        if ($this->isAdmin) {
+            return;
+        }
+
+        $accessible = Account::where('id', $account->id);
+        $this->applyThroughAccount($accessible);
+
+        if (! $accessible->exists()) {
+            throw new AuthorizationException;
+        }
+    }
+
+    /**
+     * Guard update / delete on a BusinessCenter.
+     * Allowed if any user in allowedUserIds belongs to the BC's team.
+     *
+     * @throws AuthorizationException
+     */
+    public function authorizeBusinessCenter(BusinessCenter $businessCenter): void
+    {
+        if ($this->isAdmin) {
+            return;
+        }
+
+        $accessible = BusinessCenter::where('id', $businessCenter->id);
+        $this->applyThroughTeam($accessible);
+
+        if (! $accessible->exists()) {
+            throw new AuthorizationException;
+        }
     }
 
     public function isAdmin(): bool

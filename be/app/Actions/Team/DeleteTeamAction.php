@@ -17,7 +17,8 @@ class DeleteTeamAction
      */
     public function execute(Team $team): void
     {
-        OwnershipFilter::forAuthUser()->authorize($team->created_by);
+        $ownership = OwnershipFilter::forAuthUser();
+        $ownership->authorizeTeamManagement($team);
 
         DB::transaction(function () use ($team): void {
             $memberIds = TeamUser::query()

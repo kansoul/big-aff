@@ -16,7 +16,7 @@ class GetBusinessCenterOptionsAction
         $ownership = OwnershipFilter::forAuthUser();
 
         $query = BusinessCenter::query()->select(['id', 'name'])->orderBy('name');
-        $ownership->applyTo($query);
+        $ownership->applyThroughTeam($query);
 
         return $query->get();
     }
