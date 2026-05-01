@@ -1432,12 +1432,15 @@ function CampaignReportTableCardInner({
       const isCampaignCol = column.id === 'campaign_name'
       const isPinnedFirstCol = column.id === 'group_label'
 
-      const groupKey = isSubRow
-        ? String(
-            (row.getParentRow()?.original as CampaignReportGroupRow | undefined)?.group_key ??
-              'null',
-          )
-        : null
+      const groupKey =
+        isGroup && isGroupRow(row.original)
+          ? String(row.original.group_key ?? 'null')
+          : isSubRow
+            ? String(
+                (row.getParentRow()?.original as CampaignReportGroupRow | undefined)?.group_key ??
+                  'null',
+              )
+            : null
       const groupIdx = groupKey != null ? (groupIndexMap.get(groupKey) ?? 0) : 0
       const isOddGroup = groupIdx % 2 === 1
 
@@ -1454,7 +1457,7 @@ function CampaignReportTableCardInner({
             overflow: isCampaignCol ? 'visible' : 'hidden',
             textOverflow: isCampaignCol ? 'unset' : 'ellipsis',
             whiteSpace: isCampaignCol ? 'normal' : 'nowrap',
-            ...(isSubRow &&
+            ...((isGroup || isSubRow) &&
               isPinnedFirstCol && {
                 '&::before': {
                   content: '""',
