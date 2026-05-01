@@ -154,8 +154,7 @@ class RevenueReportSyncService
                     $rowData = $this->processReportRow($cells, $headers, $account);
 
                     if ($rowData) {
-                        $this->saveChartSnapshot($rowData);
-                        $syncedDates[$rowData['date']] = true;
+                        $this->saveReport($rowData);
                         $synced++;
                     } else {
                         $skipped++;
@@ -166,19 +165,9 @@ class RevenueReportSyncService
                 }
             }
 
-            // Aggregate chart snapshots into daily revenue_reports for each synced date
-            foreach (array_keys($syncedDates) as $date) {
-                try {
-                    $this->aggregateToRevenueReport($accountId, $date);
-                } catch (Throwable $e) {
-                    $errors[] = 'Aggregate '.$date.': '.$e->getMessage();
-                    $logger->error('[RevenueReportSync] Aggregate error', ['date' => $date, 'error' => $e->getMessage()]);
-                }
-            }
-
             return [
                 'success' => true,
-                'message' => "Synced {$synced} chart snapshots".($errors ? (' with '.count($errors).' errors') : ''),
+                'message' => "Synced {$synced} chart snapshots" . ($errors ? (' with ' . count($errors) . ' errors') : ''),
                 'synced_count' => $synced,
                 'skipped' => $skipped,
                 'aggregated_dates' => count($syncedDates),
@@ -189,7 +178,7 @@ class RevenueReportSyncService
         } catch (Throwable $e) {
             $logger->error('[RevenueReportSync] Fatal error', ['error' => $e->getMessage()]);
 
-            return ['success' => false, 'message' => 'Sync failed: '.$e->getMessage()];
+            return ['success' => false, 'message' => 'Sync failed: ' . $e->getMessage()];
         }
     }
 
@@ -205,7 +194,7 @@ class RevenueReportSyncService
 
             $start = Carbon::parse($startDate);
             $end = Carbon::parse($endDate);
-            $accountResource = 'accounts/'.ltrim($accountId, 'accounts/');
+            $accountResource = 'accounts/' . ltrim($accountId, 'accounts/');
 
             $reports = $this->service->accounts_reports->generate(
                 $accountResource,
@@ -263,7 +252,7 @@ class RevenueReportSyncService
 
         $date = $map['DATE'] ?? null;
         $chanId = $map['CUSTOM_CHANNEL_ID'] ?? null;
-        $channelId = str_replace($account->product_code.':', '', $chanId);
+        $channelId = str_replace($account->product_code . ':', '', $chanId);
 
         if (! $date || ! $channelId) {
             return null;
@@ -304,16 +293,59 @@ class RevenueReportSyncService
     }
 
     /**
-     * Persist a timestamped snapshot into revenue_chart_reports.
-     * Every call creates a new record (datetime = now).
+     * Upsert into revenue_reports first, then persist a timestamped snapshot into revenue_chart_reports.
      *
      * @param  array<string, mixed>  $rowData  must contain 'date' key
      */
-    private function saveChartSnapshot(array $rowData): void
+    private function saveReport(array $rowData): void
     {
+        $now = Carbon::now();
+
+        RevenueReport::upsert(
+            [[
+                'ad_client_id' => $rowData['ad_client_id'],
+                'style_code' => $rowData['style_code'],
+                'channel_code' => $rowData['channel_code'],
+                'date' => $rowData['date'],
+                'style_name' => $rowData['style_name'],
+                'channel_name' => $rowData['channel_name'],
+                'page_views' => $rowData['page_views'],
+                'clicks' => $rowData['clicks'],
+                'ad_requests' => $rowData['ad_requests'],
+                'impressions' => $rowData['impressions'],
+                'ad_requests_rpm' => $rowData['ad_requests_rpm'],
+                'impressions_rpm' => $rowData['impressions_rpm'],
+                'estimated_earnings' => $rowData['estimated_earnings'],
+                'cost_per_click' => $rowData['cost_per_click'],
+                'funnel_requests' => $rowData['funnel_requests'],
+                'funnel_impressions' => $rowData['funnel_impressions'],
+                'funnel_clicks' => $rowData['funnel_clicks'],
+                'funnel_rpm' => $rowData['funnel_rpm'],
+                'updated_at' => $now,
+            ]],
+            uniqueBy: ['ad_client_id', 'style_code', 'channel_code', 'date'],
+            update: [
+                'style_name',
+                'channel_name',
+                'page_views',
+                'clicks',
+                'ad_requests',
+                'impressions',
+                'ad_requests_rpm',
+                'impressions_rpm',
+                'estimated_earnings',
+                'cost_per_click',
+                'funnel_requests',
+                'funnel_impressions',
+                'funnel_clicks',
+                'funnel_rpm',
+                'updated_at',
+            ],
+        );
+
         RevenueChartReport::create([
             ...array_diff_key($rowData, ['date' => null]),
-            'datetime' => Carbon::now(),
+            'datetime' => $now,
         ]);
     }
 
@@ -351,7 +383,7 @@ class RevenueReportSyncService
 
         $now = Carbon::now();
 
-        $upsertRows = $rows->map(fn (RevenueChartReport $r) => [
+        $upsertRows = $rows->map(fn(RevenueChartReport $r) => [
             'ad_client_id' => $r->ad_client_id,
             'style_code' => $r->style_code,
             'channel_code' => $r->channel_code,
