@@ -37,6 +37,10 @@ class SyncCampaignReportsCommand extends Command
     {
         $logger = Log::channel('sync_reports');
 
+        // Flush realtime Redis tracking data into tracking_daily first so that
+        // the campaign report aggregation reflects the latest realtime counts.
+        $this->call('tracking:flush-daily');
+
         $startDate = $this->argument('start_date') ? Carbon::parse($this->argument('start_date'))->toDateString() : Carbon::now()->subDay()->toDateString();
         $endDate = $this->argument('end_date') ? Carbon::parse($this->argument('end_date'))->toDateString() : Carbon::now()->toDateString();
 

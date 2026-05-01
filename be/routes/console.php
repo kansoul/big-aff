@@ -11,8 +11,11 @@ Artisan::command('inspire', function () {
 // Flush Redis-buffered tracking counts into tracking_daily every minute.
 // withoutOverlapping() prevents stacking if a flush takes longer than 60 s.
 // onOneServer() ensures only one instance runs across horizontally scaled workers.
+// Skip on minutes divisible by 5 — those flushes are handled inside reports:sync-all
+// so that realtime data is written to DB before campaign report aggregation.
 Schedule::command('tracking:flush-daily')
     ->everyMinute()
+    ->when(fn () => now()->minute % 5 !== 0)
     ->withoutOverlapping()
     ->onOneServer()
     ->runInBackground();
