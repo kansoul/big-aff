@@ -6,6 +6,8 @@ use App\Enums\TeamRole;
 use App\Models\Account;
 use App\Models\BusinessCenter;
 use App\Models\Channel;
+use App\Models\Post;
+use App\Models\Site;
 use App\Models\Team;
 use App\Models\TeamUser;
 use App\Models\User;
@@ -288,5 +290,47 @@ final readonly class OwnershipFilter
         }
 
         return $this->allowedUserIds;
+    }
+
+    /**
+     * Guard create / update / delete on a Site.
+     * Allowed if the site was created by an allowed user, or if any allowed user
+     * has been explicitly assigned to the site via the `users` pivot.
+     *
+     * @throws AuthorizationException
+     */
+    public function authorizeSite(Site $site): void
+    {
+        if ($this->isAdmin) {
+            return;
+        }
+
+        $accessible = in_array($site->created_by, $this->allowedUserIds, true)
+            || $site->users()->whereIn('users.id', $this->allowedUserIds)->exists();
+
+        if (! $accessible) {
+            throw new AuthorizationException;
+        }
+    }
+
+    /**
+     * Guard create / update / delete on a Post.
+     * Allowed if the post was created by an allowed user, or if the current auth
+     * user has been explicitly assigned to the post via `assignedUsers`.
+     *
+     * @throws AuthorizationException
+     */
+    public function authorizePost(Post $post): void
+    {
+        if ($this->isAdmin) {
+            return;
+        }
+
+        $accessible = in_array($post->created_by, $this->allowedUserIds, true)
+            || $post->assignedUsers()->where('users.id', Auth::id())->exists();
+
+        if (! $accessible) {
+            throw new AuthorizationException;
+        }
     }
 }
