@@ -41,7 +41,13 @@ class FacebookCampaignSyncService
                     ->where('ads_type', AdsType::FACEBOOK->value)
                     ->get());
 
-        $tokenConfigTemps = config('services.facebook_sync_tokens');
+        $tokenConfigTemps = config('facebook.facebook_sync_tokens');
+
+        if (empty($tokenConfigTemps)) {
+            Log::error('[FacebookCampaignSync] Missing facebook_sync_tokens configuration');
+
+            return;
+        }
 
         $appIds = explode(',', $tokenConfigTemps['app_id']);
         $appSecrets = explode(',', $tokenConfigTemps['app_secret']);
