@@ -325,6 +325,7 @@ class FacebookAdsService
                 'account_id' => $accountId,
                 'campaign_id' => $campaign->id,
                 'campaign_name' => $campaign->name,
+                'ads_type' => 'facebook',
                 'daily_budget' => $campaign->daily_budget,
                 'lifetime_budget' => $campaign->lifetime_budget,
                 'status' => $campaign->status,
