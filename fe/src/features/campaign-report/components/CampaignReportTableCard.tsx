@@ -182,14 +182,14 @@ function makeUsdCol(
     Cell: ({ row }) => {
       const v = formatUsd(metric(row.original, key))
       return (
-        <span className="tabular-nums text-[8px] text-muted-foreground truncate" title={v}>
+        <span className="tabular-nums text-[10px] text-muted-foreground truncate" title={v}>
           {v}
         </span>
       )
     },
     Footer: () =>
       summary ? (
-        <span className="tabular-nums text-[8px] font-semibold">
+        <span className="tabular-nums text-[10px] font-semibold">
           {formatUsd(toNumber(summary[key]))}
         </span>
       ) : null,
@@ -213,14 +213,14 @@ function makeRatioCol(
     Cell: ({ row }) => {
       const v = formatDecimal(metric(row.original, key), digits)
       return (
-        <span className="tabular-nums text-[8px] text-muted-foreground truncate" title={v}>
+        <span className="tabular-nums text-[10px] text-muted-foreground truncate" title={v}>
           {v}
         </span>
       )
     },
     Footer: () =>
       summary ? (
-        <span className="tabular-nums text-[8px] font-semibold">
+        <span className="tabular-nums text-[10px] font-semibold">
           {formatDecimal(toNumber(summary[key]), digits)}
         </span>
       ) : null,
@@ -243,14 +243,14 @@ function makeCountCol(
     Cell: ({ row }) => {
       const v = String(metric(row.original, key))
       return (
-        <span className="tabular-nums text-[8px] truncate" title={v}>
+        <span className="tabular-nums text-[10px] truncate" title={v}>
           {v}
         </span>
       )
     },
     Footer: () =>
       summary ? (
-        <span className="tabular-nums text-[8px] font-semibold">{summary[key]}</span>
+        <span className="tabular-nums text-[10px] font-semibold">{summary[key]}</span>
       ) : null,
   }
 }
@@ -281,23 +281,23 @@ function GroupLabelCell({
   return (
     <div className="flex flex-col pl-1">
       <span
-        className="block max-w-[160px] truncate text-[8px] font-semibold text-foreground"
+        className="block max-w-[160px] truncate text-[10px] font-semibold text-foreground"
         title={groupLabel}
       >
         {groupLabel}
       </span>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[8px] text-muted-foreground">{row.record_count} record(s)</span>
+        <span className="text-[10px] text-muted-foreground">{row.record_count} record(s)</span>
         {isChannelGroup && (
           <div className="flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
             <button
-              className="inline-flex cursor-pointer items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-[8px] font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:hover:bg-amber-900/60"
+              className="inline-flex cursor-pointer items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:hover:bg-amber-900/60"
               onClick={() => onOpenRevenueRange({ channelCode, dateFrom, dateTo })}
             >
               Revenue Range
             </button>
             <button
-              className="inline-flex cursor-pointer items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[8px] font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
+              className="inline-flex cursor-pointer items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
               onClick={() => onOpenRevenueChart({ channelCode, dateFrom, dateTo })}
             >
               View Chart
@@ -312,17 +312,11 @@ function GroupLabelCell({
 function GroupSubRowCell({ row }: { row: Exclude<TableRow, CampaignReportGroupRow> }) {
   return (
     <div className="flex flex-col pl-1">
-      <span className="text-[8px] text-muted-foreground">{row.date_start ?? '—'}</span>
-      <span
-        className="block max-w-[160px] truncate text-[8px] font-medium text-foreground"
-        title={String(row.campaign_name ?? row.campaign_id)}
-      >
+      <span className="text-[10px] text-muted-foreground">{row.date_start ?? '—'}</span>
+      <span className="block whitespace-normal wrap-break-word text-[10px] font-medium text-foreground leading-tight">
         {row.campaign_name ?? row.campaign_id}
       </span>
-      <span
-        className="block max-w-[160px] truncate text-[8px] font-mono text-muted-foreground"
-        title={String(row.campaign_id)}
-      >
+      <span className="block truncate text-[9px] font-mono text-muted-foreground">
         {row.campaign_id}
       </span>
     </div>
@@ -383,7 +377,7 @@ function getColumns(
             <HeaderLabel>{GROUP_BY_LABEL[groupBy] ?? 'Group'}</HeaderLabel>
           </div>
         ),
-        size: 160,
+        size: 190,
         enableSorting: false,
         Cell: ({ row }) =>
           isGroupRow(row.original) ? (
@@ -417,11 +411,11 @@ function getColumns(
     accessorKey: 'date_start',
     header: 'Date',
     Header: <HeaderLabel>Date</HeaderLabel>,
-    size: 85,
+    size: 100,
     enableSorting: isSortable('date_start'),
     Cell: ({ row }) =>
       isGroupRow(row.original) ? null : (
-        <span className="text-[8px] text-muted-foreground">{row.original.date_start ?? '—'}</span>
+        <span className="text-[10px] text-muted-foreground">{row.original.date_start ?? '—'}</span>
       ),
   }
 
@@ -429,14 +423,14 @@ function getColumns(
     accessorKey: 'account_name',
     header: 'Account',
     Header: <HeaderLabel>Account</HeaderLabel>,
-    size: 120,
+    size: 145,
     enableSorting: isSortable('account_name'),
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
       const label = row.original.account_name ?? row.original.account_id ?? '—'
       return (
         <span
-          className="block max-w-[110px] truncate text-[8px] text-muted-foreground"
+          className="block max-w-[110px] truncate text-[10px] text-muted-foreground"
           title={String(label)}
         >
           {label}
@@ -449,20 +443,17 @@ function getColumns(
     accessorKey: 'campaign_name',
     header: 'Campaign',
     Header: <HeaderLabel>Campaign</HeaderLabel>,
-    size: 160,
+    size: 220,
     enableSorting: isSortable('campaign_name'),
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
       return (
-        <div className="flex flex-col">
-          <span
-            className="block max-w-[160px] truncate text-[8px] font-medium text-foreground"
-            title={String(row.original.campaign_name ?? row.original.campaign_id)}
-          >
+        <div className="flex flex-col gap-0.5 py-0.5">
+          <span className="block whitespace-normal wrap-break-word text-[10px] font-medium text-foreground leading-tight">
             {row.original.campaign_name ?? row.original.campaign_id}
           </span>
           <span
-            className="block max-w-[160px] truncate text-[8px] font-mono text-muted-foreground"
+            className="block truncate text-[9px] font-mono text-muted-foreground"
             title={String(row.original.campaign_id)}
           >
             {row.original.campaign_id}
@@ -476,7 +467,7 @@ function getColumns(
     accessorKey: 'campaign_status',
     header: 'Status',
     Header: <HeaderLabel>Status</HeaderLabel>,
-    size: 70,
+    size: 85,
     enableSorting: isSortable('campaign_status'),
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
@@ -485,7 +476,7 @@ function getColumns(
         <StatusBadge
           status={status}
           label={status ?? undefined}
-          className="h-3.5 px-1 py-0 text-[8px] font-medium"
+          className="h-3.5 px-1 py-0 text-[10px] font-medium"
         />
       )
     },
@@ -495,7 +486,7 @@ function getColumns(
     id: 'campaign_onoff',
     header: 'On/Off',
     Header: <HeaderLabel>On/Off</HeaderLabel>,
-    size: 45,
+    size: 55,
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
@@ -520,7 +511,7 @@ function getColumns(
     id: 'link',
     header: 'Link',
     Header: <HeaderLabel>Link</HeaderLabel>,
-    size: 100,
+    size: 120,
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
@@ -528,7 +519,7 @@ function getColumns(
       if (!link) return <span className="text-muted-foreground/50">—</span>
       return (
         <a
-          className="block max-w-[110px] truncate font-mono text-[8px] text-primary underline-offset-4 hover:underline"
+          className="block max-w-[110px] truncate font-mono text-[10px] text-primary underline-offset-4 hover:underline"
           href={link}
           target="_blank"
           rel="noopener noreferrer"
@@ -545,14 +536,14 @@ function getColumns(
     id: 'tracking_analytic',
     header: 'Tracking',
     Header: <HeaderLabel>Tracking</HeaderLabel>,
-    size: 85,
+    size: 105,
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
       const r = row.original
       return (
         <button
-          className="inline-flex items-center cursor-pointer gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[8px] font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60"
+          className="inline-flex items-center cursor-pointer gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60"
           onClick={(e) => {
             e.stopPropagation()
             onOpenTrackingAnalytics(r)
@@ -568,7 +559,7 @@ function getColumns(
     id: 'ads_adset_report',
     header: 'Ads/Adset',
     Header: <HeaderLabel>Ads/Adset</HeaderLabel>,
-    size: 100,
+    size: 125,
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
@@ -576,7 +567,7 @@ function getColumns(
       const r = row.original
       return (
         <button
-          className="inline-flex cursor-pointer items-center gap-1 rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-[8px] font-medium text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/60 dark:text-violet-300 dark:hover:bg-violet-900/60"
+          className="inline-flex cursor-pointer items-center gap-1 rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/60 dark:text-violet-300 dark:hover:bg-violet-900/60"
           onClick={(e) => {
             e.stopPropagation()
             onOpenAdsAdsetReport(r)
@@ -592,7 +583,7 @@ function getColumns(
     accessorKey: 'ads_type',
     header: 'Ads Type',
     Header: <HeaderLabel>Ads Type</HeaderLabel>,
-    size: 70,
+    size: 85,
     enableSorting: isSortable('ads_type'),
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return <span className="text-muted-foreground/50">—</span>
@@ -600,7 +591,7 @@ function getColumns(
       return (
         <StatusBadge
           status={val}
-          className="h-3.5 px-1 py-0 text-[8px] font-medium"
+          className="h-3.5 px-1 py-0 text-[10px] font-medium"
           label={val ?? undefined}
         />
       )
@@ -611,7 +602,7 @@ function getColumns(
     accessorKey: 'channel_name',
     header: 'Channel',
     Header: <HeaderLabel>Channel</HeaderLabel>,
-    size: 70,
+    size: 90,
     enableSorting: isSortable('channel_name'),
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
@@ -619,13 +610,13 @@ function getColumns(
       return (
         <div className="flex flex-col">
           <span
-            className="max-w-[70px] truncate text-[8px] text-muted-foreground"
+            className="max-w-[70px] truncate text-[10px] text-muted-foreground"
             title={String(r.channel_name ?? r.channel_code ?? '—')}
           >
             {r.channel_name ?? r.channel_code ?? '—'}
           </span>
           <span
-            className="max-w-[70px] truncate text-[8px] font-mono text-muted-foreground/70"
+            className="max-w-[70px] truncate text-[10px] font-mono text-muted-foreground/70"
             title={String(r.channel_code ?? '—')}
           >
             {r.channel_code ?? '—'}
@@ -638,21 +629,21 @@ function getColumns(
   // ── Revenue Est column (realtime-based) ──
   const colRevenueEst: MRT_ColumnDef<TableRow> = {
     accessorKey: 'revenue_est',
-    header: 'Rev Est',
-    Header: <HeaderLabel icon="green">Revenue Est</HeaderLabel>,
+    header: 'R. Rev',
+    Header: <HeaderLabel icon="green">R. Rev</HeaderLabel>,
     size: 75,
     enableSorting: isSortable('revenue_est'),
     Cell: ({ row }) => {
       const v = formatUsd(metric(row.original, 'revenue_est'))
       return (
-        <span className="tabular-nums text-[8px] text-muted-foreground truncate" title={v}>
+        <span className="tabular-nums text-[10px] text-muted-foreground truncate" title={v}>
           {v}
         </span>
       )
     },
     Footer: () =>
       summary ? (
-        <span className="tabular-nums text-[8px] font-semibold">
+        <span className="tabular-nums text-[10px] font-semibold">
           {formatUsd(toNumber(summary.revenue_est))}
         </span>
       ) : null,
@@ -661,9 +652,9 @@ function getColumns(
   // ── ROI Realtime column ──
   const colRoiRealtime: MRT_ColumnDef<TableRow> = {
     accessorKey: 'roi_realtime',
-    header: 'ROI RT',
-    Header: <HeaderLabel icon="green">ROI RT</HeaderLabel>,
-    size: 70,
+    header: 'R. ROI',
+    Header: <HeaderLabel icon="green">R. ROI</HeaderLabel>,
+    size: 65,
     enableSorting: isSortable('roi_realtime'),
     Cell: ({ row }) => {
       const v = isGroupRow(row.original)
@@ -673,7 +664,7 @@ function getColumns(
       return (
         <span
           className={cn(
-            'tabular-nums text-[8px] truncate font-medium',
+            'tabular-nums text-[10px] truncate font-medium',
             v >= 0 ? 'text-emerald-500' : 'text-rose-500',
           )}
           title={vFormatted}
@@ -686,7 +677,7 @@ function getColumns(
       summary ? (
         <span
           className={cn(
-            'tabular-nums text-[8px] font-semibold',
+            'tabular-nums text-[10px] font-semibold',
             summary.roi_realtime >= 0 ? 'text-emerald-500' : 'text-rose-500',
           )}
         >
@@ -698,47 +689,53 @@ function getColumns(
   // ── Real-time computed columns (calculated by BE, display-only) ──
   const colRtCpa: MRT_ColumnDef<TableRow> = {
     accessorKey: 'rt_cpa',
-    header: 'RT CPA',
+    header: 'R. CPA',
     Header: <HeaderLabel icon="green">R. CPA</HeaderLabel>,
-    size: 50,
+    size: 70,
     enableSorting: false,
     Cell: ({ row }) => {
       const v = isGroupRow(row.original) ? row.original.group_summary.rt_cpa : row.original.rt_cpa
       if (v === null || v === 0)
-        return <span className="text-muted-foreground/50 text-[8px]">—</span>
+        return <span className="text-muted-foreground/50 text-[10px]">—</span>
       const vFormatted = formatUsd(v)
       return (
-        <span className="tabular-nums text-[8px] text-muted-foreground truncate" title={vFormatted}>
+        <span
+          className="tabular-nums text-[10px] text-muted-foreground truncate"
+          title={vFormatted}
+        >
           {vFormatted}
         </span>
       )
     },
     Footer: () =>
       summary ? (
-        <span className="tabular-nums text-[8px] font-semibold">{formatUsd(summary.rt_cpa)}</span>
+        <span className="tabular-nums text-[10px] font-semibold">{formatUsd(summary.rt_cpa)}</span>
       ) : null,
   }
 
   const colRtCvr: MRT_ColumnDef<TableRow> = {
     accessorKey: 'rt_cvr',
-    header: 'RT CVR',
+    header: 'R. CVR',
     Header: <HeaderLabel icon="green">R. CVR</HeaderLabel>,
-    size: 55,
+    size: 70,
     enableSorting: false,
     Cell: ({ row }) => {
       const v = isGroupRow(row.original) ? row.original.group_summary.rt_cvr : row.original.rt_cvr
       if (v === null || v === 0)
-        return <span className="text-muted-foreground/50 text-[8px]">—</span>
+        return <span className="text-muted-foreground/50 text-[10px]">—</span>
       const vFormatted = `${formatDecimal(v)}%`
       return (
-        <span className="tabular-nums text-[8px] text-muted-foreground truncate" title={vFormatted}>
+        <span
+          className="tabular-nums text-[10px] text-muted-foreground truncate"
+          title={vFormatted}
+        >
           {vFormatted}
         </span>
       )
     },
     Footer: () =>
       summary ? (
-        <span className="tabular-nums text-[8px] font-semibold">
+        <span className="tabular-nums text-[10px] font-semibold">
           {formatDecimal(summary.rt_cvr)}%
         </span>
       ) : null,
@@ -746,26 +743,29 @@ function getColumns(
 
   const colRtCtrKeyword: MRT_ColumnDef<TableRow> = {
     accessorKey: 'rt_ctr_keyword',
-    header: 'RT CTR Kwd',
-    Header: <HeaderLabel icon="green">R. CTR keyword</HeaderLabel>,
-    size: 80,
+    header: 'R. CTR Kw',
+    Header: <HeaderLabel icon="green">R. CTR Kw</HeaderLabel>,
+    size: 100,
     enableSorting: false,
     Cell: ({ row }) => {
       const v = isGroupRow(row.original)
         ? row.original.group_summary.rt_ctr_keyword
         : row.original.rt_ctr_keyword
       if (v === null || v === 0)
-        return <span className="text-muted-foreground/50 text-[8px]">—</span>
+        return <span className="text-muted-foreground/50 text-[10px]">—</span>
       const vFormatted = `${formatDecimal(v)}%`
       return (
-        <span className="tabular-nums text-[8px] text-muted-foreground truncate" title={vFormatted}>
+        <span
+          className="tabular-nums text-[10px] text-muted-foreground truncate"
+          title={vFormatted}
+        >
           {vFormatted}
         </span>
       )
     },
     Footer: () =>
       summary ? (
-        <span className="tabular-nums text-[8px] font-semibold">
+        <span className="tabular-nums text-[10px] font-semibold">
           {formatDecimal(summary.rt_ctr_keyword)}%
         </span>
       ) : null,
@@ -773,26 +773,29 @@ function getColumns(
 
   const colRtCtrSearch: MRT_ColumnDef<TableRow> = {
     accessorKey: 'rt_ctr_search',
-    header: 'RT CTR Search',
-    Header: <HeaderLabel icon="green">R. CTR Search</HeaderLabel>,
-    size: 75,
+    header: 'R. CTR S.',
+    Header: <HeaderLabel icon="green">R. CTR S.</HeaderLabel>,
+    size: 95,
     enableSorting: false,
     Cell: ({ row }) => {
       const v = isGroupRow(row.original)
         ? row.original.group_summary.rt_ctr_search
         : row.original.rt_ctr_search
       if (v === null || v === 0)
-        return <span className="text-muted-foreground/50 text-[8px]">—</span>
+        return <span className="text-muted-foreground/50 text-[10px]">—</span>
       const vFormatted = `${formatDecimal(v)}%`
       return (
-        <span className="tabular-nums text-[8px] text-muted-foreground truncate" title={vFormatted}>
+        <span
+          className="tabular-nums text-[10px] text-muted-foreground truncate"
+          title={vFormatted}
+        >
           {vFormatted}
         </span>
       )
     },
     Footer: () =>
       summary ? (
-        <span className="tabular-nums text-[8px] font-semibold">
+        <span className="tabular-nums text-[10px] font-semibold">
           {formatDecimal(summary.rt_ctr_search)}%
         </span>
       ) : null,
@@ -803,14 +806,14 @@ function getColumns(
     accessorKey: 'profit',
     header: 'Profit',
     Header: <HeaderLabel>Profit</HeaderLabel>,
-    size: 60,
+    size: 70,
     Cell: ({ row }) => {
       const v = isGroupRow(row.original) ? row.original.group_summary.profit : row.original.profit
       const vFormatted = formatUsd(v)
       return (
         <span
           className={cn(
-            'tabular-nums text-[8px] truncate font-medium',
+            'tabular-nums text-[10px] truncate font-medium',
             v >= 0 ? 'text-emerald-500' : 'text-rose-500',
           )}
           title={vFormatted}
@@ -823,7 +826,7 @@ function getColumns(
       summary ? (
         <span
           className={cn(
-            'tabular-nums text-[8px] font-semibold',
+            'tabular-nums text-[10px] font-semibold',
             summary.profit >= 0 ? 'text-emerald-500' : 'text-rose-500',
           )}
         >
@@ -836,7 +839,7 @@ function getColumns(
     accessorKey: 'roi',
     header: 'ROI',
     Header: <HeaderLabel>ROI</HeaderLabel>,
-    size: 60,
+    size: 55,
     enableSorting: isSortable('roi'),
     Cell: ({ row }) => {
       const v = isGroupRow(row.original) ? row.original.group_summary.roi : row.original.roi
@@ -844,7 +847,7 @@ function getColumns(
       return (
         <span
           className={cn(
-            'tabular-nums text-[8px] truncate font-medium',
+            'tabular-nums text-[10px] truncate font-medium',
             v >= 0 ? 'text-emerald-500' : 'text-rose-500',
           )}
           title={vFormatted}
@@ -857,7 +860,7 @@ function getColumns(
       summary ? (
         <span
           className={cn(
-            'tabular-nums text-[8px] font-semibold',
+            'tabular-nums text-[10px] font-semibold',
             summary.roi >= 0 ? 'text-emerald-500' : 'text-rose-500',
           )}
         >
@@ -867,10 +870,10 @@ function getColumns(
   }
 
   // ── Realtime (rt_*) columns — top-level fields from BE, display-only ──
-  const colRtClickAdCount = count('rt_click_ad_count', 'RT Conv.', 50, 'green')
-  const colRtClickKeywordCount = count('rt_click_keyword_count', 'R. Click keyword', 80, 'green')
-  const colRtViewSearchCount = count('rt_view_search_count', 'RT. S.View', 60, 'green')
-  const colRtViewArticleCount = count('rt_view_article_count', 'R. Article Views', 80, 'green')
+  const colRtClickAdCount = count('rt_click_ad_count', 'R. Conv.', 65, 'green')
+  const colRtClickKeywordCount = count('rt_click_keyword_count', 'R. Click keyword', 100, 'green')
+  const colRtViewSearchCount = count('rt_view_search_count', 'R. S.View', 78, 'green')
+  const colRtViewArticleCount = count('rt_view_article_count', 'R. Article Views', 100, 'green')
 
   // Column order matches AllReportResource.php
   return [
@@ -890,27 +893,27 @@ function getColumns(
     colChannelName,
 
     // ── Revenue & spend ──
-    usd('r_revenue', 'Revenue', 70, 'yellow'),
+    usd('r_revenue', 'Rev', 70, 'yellow'),
     colRevenueEst,
-    usd('a_spend', 'Spend', 60, 'blue'),
+    usd('a_spend', 'Spend', 78, 'blue'),
     colProfit,
     colRoi,
     colRoiRealtime,
 
     // ── Conversions ──
     colRtClickAdCount,
-    count('r_conversion', 'Rev Conv.', 70, 'yellow'),
-    count('a_conversion', 'ADS Conv.', 74, 'blue'),
+    count('r_conversion', 'Rev Conv.', 88, 'yellow'),
+    count('a_conversion', 'ADS Conv.', 92, 'blue'),
 
     // ── Search impressions & RPM ──
-    count('r_impressions', 'Impr', 50, 'yellow'),
-    ratio('r_ad_requests_rpm', 'Srch RPM', 70, 4, 'yellow'),
-    ratio('r_rpc', 'RPC', 55, 4, 'yellow'),
+    count('r_impressions', 'Impr', 65, 'yellow'),
+    ratio('r_ad_requests_rpm', 'S. RPM', 88, 4, 'yellow'),
+    ratio('r_rpc', 'RPC', 70, 4, 'yellow'),
 
     // ── CPA ──
     colRtCpa,
-    ratio('r_cpa', 'CPA', 53, 4, 'yellow'),
-    ratio('a_cpa', 'ADS CPA', 68, 4, 'blue'),
+    ratio('r_cpa', 'CPA', 68, 4, 'yellow'),
+    ratio('a_cpa', 'ADS CPA', 85, 4, 'blue'),
 
     // ── CVR ──
     colRtCvr,
@@ -918,16 +921,16 @@ function getColumns(
       accessorKey: 'cvr',
       header: 'CVR',
       Header: <HeaderLabel icon="yellow">CVR</HeaderLabel>,
-      size: 55,
+      size: 70,
       enableSorting: isSortable('cvr'),
       Cell: ({ row }) => {
         const v = isGroupRow(row.original) ? row.original.group_summary.cvr : row.original.cvr
         if (v === null || v === 0)
-          return <span className="text-muted-foreground/50 text-[8px]">—</span>
+          return <span className="text-muted-foreground/50 text-[10px]">—</span>
         const vFormatted = `${formatDecimal(v)}%`
         return (
           <span
-            className="tabular-nums text-[8px] text-muted-foreground truncate"
+            className="tabular-nums text-[10px] text-muted-foreground truncate"
             title={vFormatted}
           >
             {vFormatted}
@@ -936,7 +939,7 @@ function getColumns(
       },
       Footer: () =>
         summary ? (
-          <span className="tabular-nums text-[8px] font-semibold">
+          <span className="tabular-nums text-[10px] font-semibold">
             {formatDecimal(summary.cvr)}%
           </span>
         ) : null,
@@ -944,56 +947,56 @@ function getColumns(
 
     // ── Search views ──
     colRtViewSearchCount,
-    count('r_search_views', 'S.Views', 64, 'yellow'),
-    count('a_search_views', 'ADS S.View', 78, 'blue'),
+    count('r_search_views', 'S.Views', 80, 'yellow'),
+    count('a_search_views', 'ADS S.View', 98, 'blue'),
 
     // ── Keyword / funnel ──
     colRtClickKeywordCount,
-    count('a_clicks', 'Supply clicks', 85, 'blue'),
-    count('r_funnel_clicks', 'Click keyword', 85, 'yellow'),
-    count('r_funnel_requests', 'Keyword request', 100, 'yellow'),
+    count('a_clicks', 'Supply clicks', 105, 'blue'),
+    count('r_funnel_clicks', 'Click keyword', 105, 'yellow'),
+    count('r_funnel_requests', 'Keyword request', 120, 'yellow'),
     colRtCtrKeyword,
-    count('r_funnel_impressions', 'Keyword impr', 85, 'yellow'),
-    ratio('r_funnel_rpm', 'Keyword RPM', 90, 4, 'yellow'),
+    count('r_funnel_impressions', 'Keyword impr', 105, 'yellow'),
+    ratio('r_funnel_rpm', 'Keyword RPM', 110, 4, 'yellow'),
 
     // ── CTR Search ──
     colRtCtrSearch,
 
     // ── ADS platform metrics ──
-    { ...ratio('a_ctr_link', 'ADS CTR', 75, 4, 'blue'), Footer: undefined },
+    { ...ratio('a_ctr_link', 'ADS CTR', 92, 4, 'blue'), Footer: undefined },
     {
-      ...count('a_article_views', 'ADS LP View', 80, 'blue'),
+      ...count('a_article_views', 'ADS LP View', 100, 'blue'),
       Footer: undefined,
     },
     {
-      ...ratio('a_cpc_link', 'ADS CPC', 68, 4, 'blue'),
+      ...ratio('a_cpc_link', 'ADS CPC', 85, 4, 'blue'),
       Footer: undefined,
     },
-    { ...count('a_reach', 'Reach', 60, 'blue'), Footer: undefined },
+    { ...count('a_reach', 'Reach', 75, 'blue'), Footer: undefined },
     {
-      ...count('a_impressions', 'ADS Impr', 68, 'blue'),
+      ...count('a_impressions', 'ADS Impr', 85, 'blue'),
       Footer: undefined,
     },
-    { ...ratio('a_cpm', 'CPM', 55, 4, 'blue'), Footer: undefined },
-    { ...ratio('a_frequency', 'FB Freq', 65, 4, 'blue'), Footer: undefined },
-    { ...ratio('a_ctr', 'FB CTR', 75, 4, 'blue'), Footer: undefined },
+    { ...ratio('a_cpm', 'CPM', 70, 4, 'blue'), Footer: undefined },
+    { ...ratio('a_frequency', 'FB Freq', 82, 4, 'blue'), Footer: undefined },
+    { ...ratio('a_ctr', 'FB CTR', 92, 4, 'blue'), Footer: undefined },
     {
-      ...usd('daily_budget', 'ADS Budget (Daily)', 80, 'blue'),
+      ...usd('daily_budget', 'ADS Budget (Daily)', 100, 'blue'),
       Footer: undefined,
     },
     {
-      ...usd('lifetime_budget', 'ADS Budget (Lifetime)', 80, 'blue'),
+      ...usd('lifetime_budget', 'ADS Budget (Lifetime)', 105, 'blue'),
       Footer: undefined,
     },
 
     // ── No AllReport equivalent — kept for completeness ──
-    ratio('r_impressions_rpm', 'Impr RPM', 75, 4, 'yellow'),
-    count('r_ad_requests', 'Ad Reqs', 65, 'yellow'),
+    ratio('r_impressions_rpm', 'Impr RPM', 92, 4, 'yellow'),
+    count('r_ad_requests', 'Ad Reqs', 82, 'yellow'),
     {
-      ...count('a_ad_clicks', 'Ad Clicks', 70, 'blue'),
+      ...count('a_ad_clicks', 'Ad Clicks', 88, 'blue'),
       Footer: undefined,
     },
-    { ...ratio('a_cpc', 'ADS CPC', 70, 4, 'blue'), Footer: undefined },
+    { ...ratio('a_cpc', 'ADS CPC', 88, 4, 'blue'), Footer: undefined },
     colRtViewArticleCount,
   ]
 }
@@ -1179,10 +1182,15 @@ function CampaignReportTableCardInner({
       },
     },
     mantineTableFooterCellProps: {
-      sx: {
-        fontSize: '10px',
-        paddingLeft: '2px !important',
-        paddingRight: '2px !important',
+      sx: (theme) => {
+        const isDark = theme.colorScheme === 'dark'
+        return {
+          fontSize: '10px',
+          paddingLeft: '2px !important',
+          paddingRight: '2px !important',
+          backgroundColor: isDark ? theme.colors.dark[5] : theme.colors.blue[0],
+          color: isDark ? theme.colors.blue[2] : theme.colors.blue[8],
+        }
       },
     },
     enableColumnActions: false,
@@ -1307,34 +1315,25 @@ function CampaignReportTableCardInner({
           if (isGroup) {
             return {
               fontWeight: 600,
-              boxShadow: `inset 3px 0 0 0 ${isDark ? theme.colors.dark[2] : theme.colors.gray[5]}`,
+              boxShadow: `inset 3px 0 0 0 ${isDark ? theme.colors.indigo[7] : theme.colors.indigo[4]}`,
             }
           }
           if (isSubRow) {
             return {
               backgroundColor: isDark ? theme.colors.dark[8] : theme.colors.gray[0],
-              '&:hover td': {
-                backgroundColor: isDark
-                  ? `${theme.colors.dark[6]} !important`
-                  : `${theme.colors.gray[1]} !important`,
-              },
               cursor: link ? 'pointer' : undefined,
             }
           }
           return {
             backgroundColor: isDark ? theme.colors.dark[7] : theme.white,
-            '&:hover td': {
-              backgroundColor: isDark
-                ? `${theme.colors.dark[5]} !important`
-                : `${theme.colors.gray[0]} !important`,
-            },
             cursor: link ? 'pointer' : undefined,
           }
         },
       }
     },
-    mantineTableBodyCellProps: ({ row }) => {
+    mantineTableBodyCellProps: ({ row, column }) => {
       const isGroup = grouped && (row.getCanExpand() || isGroupRow(row.original))
+      const isCampaignCol = column.id === 'campaign_name'
       return {
         className: isGroup ? 'campaign-group-cell' : undefined,
         sx: {
@@ -1342,9 +1341,9 @@ function CampaignReportTableCardInner({
           paddingLeft: '2px !important',
           paddingRight: '2px !important',
           fontWeight: isGroup ? 600 : undefined,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          overflow: isCampaignCol ? 'visible' : 'hidden',
+          textOverflow: isCampaignCol ? 'unset' : 'ellipsis',
+          whiteSpace: isCampaignCol ? 'normal' : 'nowrap',
         },
       }
     },

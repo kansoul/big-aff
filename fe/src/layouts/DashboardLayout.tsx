@@ -22,7 +22,7 @@ function DashboardLayoutInner() {
     <div className="min-h-screen bg-background text-foreground">
       <NavigationProgress />
       <Header />
-      <main className="w-full px-4 md:px-8 py-4">
+      <main className="w-full px-2 md:px-4 py-4">
         <ScreenTitle />
         <Outlet />
       </main>

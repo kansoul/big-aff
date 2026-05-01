@@ -1,8 +1,8 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/inter";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/inter';
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -186,7 +186,9 @@
   border-right: none !important;
   font-size: 0.875rem !important;
   padding: 0.625rem 1rem !important;
-  transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out !important;
+  transition:
+    background-color 0.1s ease-in-out,
+    color 0.1s ease-in-out !important;
   vertical-align: middle !important;
 }
 
@@ -195,7 +197,7 @@
   border-bottom: none !important;
 }
 
-/* Row hover */
+/* Row hover — generic tables */
 .mantine-Table-root tbody tr:hover td {
   background-color: var(--accent) !important;
   color: var(--accent-foreground) !important;
@@ -227,6 +229,36 @@
   background-color: var(--accent) !important;
 }
 
+/* ── Campaign report table: scoped hover overrides (more visible) ── */
+.campaign-report-table-container .mantine-Table-root tbody tr:hover td {
+  background-color: rgba(99, 102, 241, 0.15) !important;
+  color: var(--accent-foreground) !important;
+}
+
+.dark .campaign-report-table-container .mantine-Table-root tbody tr:hover td {
+  background-color: rgba(99, 102, 241, 0.22) !important;
+}
+
+.campaign-report-table-container .mantine-Table-root tbody tr.campaign-group-row td {
+  background-color: rgba(99, 102, 241, 0.08) !important;
+  border-top: 1px solid rgba(99, 102, 241, 0.3) !important;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.3) !important;
+}
+
+.dark .campaign-report-table-container .mantine-Table-root tbody tr.campaign-group-row td {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+.campaign-report-table-container .mantine-Table-root tbody tr.campaign-group-row:hover td,
+.campaign-report-table-container .mantine-Table-root tbody tr:hover td.campaign-group-cell {
+  background-color: rgba(99, 102, 241, 0.25) !important;
+}
+
+.dark .campaign-report-table-container .mantine-Table-root tbody tr.campaign-group-row:hover td,
+.dark .campaign-report-table-container .mantine-Table-root tbody tr:hover td.campaign-group-cell {
+  background-color: rgba(99, 102, 241, 0.32) !important;
+}
+
 /* Campaign report table: remove row separators and set tight padding */
 .campaign-report-table-container .mantine-Table-root thead tr th,
 .campaign-report-table-container .mantine-Table-root tbody tr td,
@@ -235,7 +267,8 @@
   padding-right: 2px !important;
   border-top: none !important;
   border-bottom: none !important;
-  font-size: 7px !important;
+  font-size: 10px !important;
+  font-weight: 400 !important;
 }
 
 /* Campaign report table: shrink sort icons */
@@ -245,7 +278,10 @@
   min-width: 14px !important;
   min-height: 14px !important;
 }
-.campaign-report-table-container .mantine-TableHeadCell-Content-Labels .mantine-ActionIcon-root svg {
+.campaign-report-table-container
+  .mantine-TableHeadCell-Content-Labels
+  .mantine-ActionIcon-root
+  svg {
   width: 10px !important;
   height: 10px !important;
 }
@@ -298,7 +334,9 @@
   color: var(--foreground) !important;
   border-color: var(--border) !important;
   border-radius: var(--radius-sm) !important;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out !important;
 }
 .mantine-TextInput-input:focus {
   border-color: var(--ring) !important;
@@ -337,7 +375,9 @@
   color: var(--popover-foreground) !important;
   border-color: var(--border) !important;
   border-radius: var(--radius-md) !important;
-  box-shadow: 0 4px 16px -4px oklch(0 0 0 / 12%), 0 2px 6px -2px oklch(0 0 0 / 8%) !important;
+  box-shadow:
+    0 4px 16px -4px oklch(0 0 0 / 12%),
+    0 2px 6px -2px oklch(0 0 0 / 8%) !important;
 }
 .mantine-Select-item[data-selected],
 .mantine-Select-item:hover {
@@ -348,7 +388,9 @@
 /* Toolbar action icons (column visibility, density, etc.) */
 .mantine-ActionIcon-root {
   color: var(--muted-foreground) !important;
-  transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out !important;
+  transition:
+    background-color 0.1s ease-in-out,
+    color 0.1s ease-in-out !important;
   border-radius: var(--radius-sm) !important;
 }
 .mantine-ActionIcon-root:hover {
