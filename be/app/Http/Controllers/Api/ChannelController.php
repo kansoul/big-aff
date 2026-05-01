@@ -89,9 +89,9 @@ class ChannelController extends BaseController
      */
     public function assignToUser(AssignChannelRequest $request, User $user): JsonResponse
     {
-        $this->channelService->assignToUser($user, $request->validated('channel_codes', []));
+        $result = $this->channelService->assignToUser($user, $request->validated('channel_codes', []));
 
-        return $this->sendResponse([]);
+        return $this->sendResponse(['skipped_codes' => $result['skipped_codes']]);
     }
 
     /**
