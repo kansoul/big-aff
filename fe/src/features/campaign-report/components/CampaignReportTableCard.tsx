@@ -166,6 +166,12 @@ const SORTABLE_COLUMNS = new Set([
 // Each factory produces a MRT column definition for a numeric metric.
 // They share the same Cell/Footer pattern but differ in formatting and style.
 
+// Returns min size expanded to fit the footer text (6px/char at 10px tabular-nums + 8px padding).
+function autoSize(minSize: number, footerText: string | null | undefined): number {
+  if (!footerText) return minSize
+  return Math.max(minSize, footerText.length * 6 + 8)
+}
+
 function makeUsdCol(
   key: MetricKey,
   header: string,
@@ -174,11 +180,12 @@ function makeUsdCol(
   icon?: 'yellow' | 'blue' | 'green',
 ): MRT_ColumnDef<TableRow> {
   const isRevenueField = (key as string).startsWith('r_')
+  const footerText = summary ? formatUsd(toNumber(summary[key])) : null
   return {
     accessorKey: key as string,
     header,
     Header: <HeaderLabel icon={icon}>{header}</HeaderLabel>,
-    size,
+    size: autoSize(size, footerText),
     enableSorting: SORTABLE_COLUMNS.has(key as string),
     Cell: ({ row }) => {
       if (isRevenueField && !isGroupRow(row.original))
@@ -190,12 +197,14 @@ function makeUsdCol(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatUsd(toNumber(summary[key]))}
+    Footer: () => {
+      if (!summary) return null
+      return (
+        <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+          {footerText}
         </span>
-      ) : null,
+      )
+    },
   }
 }
 
@@ -208,11 +217,12 @@ function makeRatioCol(
   icon?: 'yellow' | 'blue' | 'green',
 ): MRT_ColumnDef<TableRow> {
   const isRevenueField = (key as string).startsWith('r_')
+  const footerText = summary ? formatDecimal(toNumber(summary[key]), digits) : null
   return {
     accessorKey: key as string,
     header,
     Header: <HeaderLabel icon={icon}>{header}</HeaderLabel>,
-    size,
+    size: autoSize(size, footerText),
     enableSorting: SORTABLE_COLUMNS.has(key as string),
     Cell: ({ row }) => {
       if (isRevenueField && !isGroupRow(row.original))
@@ -224,12 +234,14 @@ function makeRatioCol(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatDecimal(toNumber(summary[key]), digits)}
+    Footer: () => {
+      if (!summary) return null
+      return (
+        <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+          {footerText}
         </span>
-      ) : null,
+      )
+    },
   }
 }
 
@@ -241,11 +253,12 @@ function makeCountCol(
   icon?: 'yellow' | 'blue' | 'green',
 ): MRT_ColumnDef<TableRow> {
   const isRevenueField = (key as string).startsWith('r_')
+  const footerText = summary ? String(summary[key]) : null
   return {
     accessorKey: key as string,
     header,
     Header: <HeaderLabel icon={icon}>{header}</HeaderLabel>,
-    size,
+    size: autoSize(size, footerText),
     enableSorting: SORTABLE_COLUMNS.has(key as string),
     Cell: ({ row }) => {
       if (isRevenueField && !isGroupRow(row.original))
@@ -257,10 +270,14 @@ function makeCountCol(
         </span>
       )
     },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">{summary[key]}</span>
-      ) : null,
+    Footer: () => {
+      if (!summary) return null
+      return (
+        <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+          {footerText}
+        </span>
+      )
+    },
   }
 }
 
@@ -635,247 +652,273 @@ function getColumns(
   }
 
   // ── Revenue Est column (realtime-based) ──
-  const colRevenueEst: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'revenue_est',
-    header: 'R. Rev',
-    Header: <HeaderLabel icon="green">R. Rev</HeaderLabel>,
-    size: 75,
-    enableSorting: isSortable('revenue_est'),
-    Cell: ({ row }) => {
-      const v = formatUsd(metric(row.original, 'revenue_est'))
-      return (
-        <span className="tabular-nums text-[10px] text-muted-foreground truncate" title={v}>
-          {v}
-        </span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatUsd(toNumber(summary.revenue_est))}
-        </span>
-      ) : null,
-  }
+  const colRevenueEst: MRT_ColumnDef<TableRow> = (() => {
+    const footerText = summary ? formatUsd(toNumber(summary.revenue_est)) : null
+    return {
+      accessorKey: 'revenue_est',
+      header: 'R. Rev',
+      Header: <HeaderLabel icon="green">R. Rev</HeaderLabel>,
+      size: autoSize(75, footerText),
+      enableSorting: isSortable('revenue_est'),
+      Cell: ({ row }) => {
+        const v = formatUsd(metric(row.original, 'revenue_est'))
+        return (
+          <span className="tabular-nums text-[10px] text-muted-foreground truncate" title={v}>
+            {v}
+          </span>
+        )
+      },
+      Footer: () =>
+        footerText ? (
+          <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+            {footerText}
+          </span>
+        ) : null,
+    }
+  })()
 
   // ── ROI Realtime column ──
-  const colRoiRealtime: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'roi_realtime',
-    header: 'R. ROI',
-    Header: <HeaderLabel icon="green">R. ROI</HeaderLabel>,
-    size: 65,
-    enableSorting: isSortable('roi_realtime'),
-    Cell: ({ row }) => {
-      const v = isGroupRow(row.original)
-        ? row.original.group_summary.roi_realtime
-        : row.original.roi_realtime
-      const vFormatted = formatRoi(v)
-      return (
-        <span
-          className={cn(
-            'tabular-nums text-[10px] truncate font-medium',
-            v >= 0 ? 'text-emerald-500' : 'text-rose-500',
-          )}
-          title={vFormatted}
-        >
-          {vFormatted}
-        </span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span
-          className={cn(
-            'tabular-nums text-[10px] font-semibold',
-            summary.roi_realtime >= 0 ? 'text-emerald-500' : 'text-rose-500',
-          )}
-        >
-          {formatRoi(toNumber(summary.roi_realtime))}
-        </span>
-      ) : null,
-  }
+  const colRoiRealtime: MRT_ColumnDef<TableRow> = (() => {
+    const footerText = summary ? formatRoi(toNumber(summary.roi_realtime)) : null
+    return {
+      accessorKey: 'roi_realtime',
+      header: 'R. ROI',
+      Header: <HeaderLabel icon="green">R. ROI</HeaderLabel>,
+      size: autoSize(65, footerText),
+      enableSorting: isSortable('roi_realtime'),
+      Cell: ({ row }) => {
+        const v = isGroupRow(row.original)
+          ? row.original.group_summary.roi_realtime
+          : row.original.roi_realtime
+        const vFormatted = formatRoi(v)
+        return (
+          <span
+            className={cn(
+              'tabular-nums text-[10px] truncate font-medium',
+              v >= 0 ? 'text-emerald-500' : 'text-rose-500',
+            )}
+            title={vFormatted}
+          >
+            {vFormatted}
+          </span>
+        )
+      },
+      Footer: () =>
+        footerText ? (
+          <span
+            className={cn(
+              'tabular-nums text-[10px] font-semibold whitespace-nowrap',
+              summary!.roi_realtime >= 0 ? 'text-emerald-500' : 'text-rose-500',
+            )}
+          >
+            {footerText}
+          </span>
+        ) : null,
+    }
+  })()
 
   // ── Real-time computed columns (calculated by BE, display-only) ──
-  const colRtCpa: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'rt_cpa',
-    header: 'R. CPA',
-    Header: <HeaderLabel icon="green">R. CPA</HeaderLabel>,
-    size: 70,
-    enableSorting: false,
-    Cell: ({ row }) => {
-      const v = isGroupRow(row.original) ? row.original.group_summary.rt_cpa : row.original.rt_cpa
-      if (v === null || v === 0)
-        return <span className="text-muted-foreground/50 text-[10px]">—</span>
-      const vFormatted = formatUsd(v)
-      return (
-        <span
-          className="tabular-nums text-[10px] text-muted-foreground truncate"
-          title={vFormatted}
-        >
-          {vFormatted}
-        </span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">{formatUsd(summary.rt_cpa)}</span>
-      ) : null,
-  }
+  const colRtCpa: MRT_ColumnDef<TableRow> = (() => {
+    const footerText = summary ? formatUsd(summary.rt_cpa) : null
+    return {
+      accessorKey: 'rt_cpa',
+      header: 'R. CPA',
+      Header: <HeaderLabel icon="green">R. CPA</HeaderLabel>,
+      size: autoSize(70, footerText),
+      enableSorting: false,
+      Cell: ({ row }) => {
+        const v = isGroupRow(row.original) ? row.original.group_summary.rt_cpa : row.original.rt_cpa
+        if (v === null || v === 0)
+          return <span className="text-muted-foreground/50 text-[10px]">—</span>
+        const vFormatted = formatUsd(v)
+        return (
+          <span
+            className="tabular-nums text-[10px] text-muted-foreground truncate"
+            title={vFormatted}
+          >
+            {vFormatted}
+          </span>
+        )
+      },
+      Footer: () =>
+        footerText ? (
+          <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+            {footerText}
+          </span>
+        ) : null,
+    }
+  })()
 
-  const colRtCvr: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'rt_cvr',
-    header: 'R. CVR',
-    Header: <HeaderLabel icon="green">R. CVR</HeaderLabel>,
-    size: 70,
-    enableSorting: false,
-    Cell: ({ row }) => {
-      const v = isGroupRow(row.original) ? row.original.group_summary.rt_cvr : row.original.rt_cvr
-      if (v === null || v === 0)
-        return <span className="text-muted-foreground/50 text-[10px]">—</span>
-      const vFormatted = `${formatDecimal(v)}%`
-      return (
-        <span
-          className="tabular-nums text-[10px] text-muted-foreground truncate"
-          title={vFormatted}
-        >
-          {vFormatted}
-        </span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatDecimal(summary.rt_cvr)}%
-        </span>
-      ) : null,
-  }
+  const colRtCvr: MRT_ColumnDef<TableRow> = (() => {
+    const footerText = summary ? `${formatDecimal(summary.rt_cvr)}%` : null
+    return {
+      accessorKey: 'rt_cvr',
+      header: 'R. CVR',
+      Header: <HeaderLabel icon="green">R. CVR</HeaderLabel>,
+      size: autoSize(70, footerText),
+      enableSorting: false,
+      Cell: ({ row }) => {
+        const v = isGroupRow(row.original) ? row.original.group_summary.rt_cvr : row.original.rt_cvr
+        if (v === null || v === 0)
+          return <span className="text-muted-foreground/50 text-[10px]">—</span>
+        const vFormatted = `${formatDecimal(v)}%`
+        return (
+          <span
+            className="tabular-nums text-[10px] text-muted-foreground truncate"
+            title={vFormatted}
+          >
+            {vFormatted}
+          </span>
+        )
+      },
+      Footer: () =>
+        footerText ? (
+          <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+            {footerText}
+          </span>
+        ) : null,
+    }
+  })()
 
-  const colRtCtrKeyword: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'rt_ctr_keyword',
-    header: 'R. CTR Kw',
-    Header: <HeaderLabel icon="green">R. CTR Kw</HeaderLabel>,
-    size: 100,
-    enableSorting: false,
-    Cell: ({ row }) => {
-      const v = isGroupRow(row.original)
-        ? row.original.group_summary.rt_ctr_keyword
-        : row.original.rt_ctr_keyword
-      if (v === null || v === 0)
-        return <span className="text-muted-foreground/50 text-[10px]">—</span>
-      const vFormatted = `${formatDecimal(v)}%`
-      return (
-        <span
-          className="tabular-nums text-[10px] text-muted-foreground truncate"
-          title={vFormatted}
-        >
-          {vFormatted}
-        </span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatDecimal(summary.rt_ctr_keyword)}%
-        </span>
-      ) : null,
-  }
+  const colRtCtrKeyword: MRT_ColumnDef<TableRow> = (() => {
+    const footerText = summary ? `${formatDecimal(summary.rt_ctr_keyword)}%` : null
+    return {
+      accessorKey: 'rt_ctr_keyword',
+      header: 'R. CTR Kw',
+      Header: <HeaderLabel icon="green">R. CTR Kw</HeaderLabel>,
+      size: autoSize(100, footerText),
+      enableSorting: false,
+      Cell: ({ row }) => {
+        const v = isGroupRow(row.original)
+          ? row.original.group_summary.rt_ctr_keyword
+          : row.original.rt_ctr_keyword
+        if (v === null || v === 0)
+          return <span className="text-muted-foreground/50 text-[10px]">—</span>
+        const vFormatted = `${formatDecimal(v)}%`
+        return (
+          <span
+            className="tabular-nums text-[10px] text-muted-foreground truncate"
+            title={vFormatted}
+          >
+            {vFormatted}
+          </span>
+        )
+      },
+      Footer: () =>
+        footerText ? (
+          <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+            {footerText}
+          </span>
+        ) : null,
+    }
+  })()
 
-  const colRtCtrSearch: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'rt_ctr_search',
-    header: 'R. CTR S.',
-    Header: <HeaderLabel icon="green">R. CTR S.</HeaderLabel>,
-    size: 95,
-    enableSorting: false,
-    Cell: ({ row }) => {
-      const v = isGroupRow(row.original)
-        ? row.original.group_summary.rt_ctr_search
-        : row.original.rt_ctr_search
-      if (v === null || v === 0)
-        return <span className="text-muted-foreground/50 text-[10px]">—</span>
-      const vFormatted = `${formatDecimal(v)}%`
-      return (
-        <span
-          className="tabular-nums text-[10px] text-muted-foreground truncate"
-          title={vFormatted}
-        >
-          {vFormatted}
-        </span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span className="tabular-nums text-[10px] font-semibold">
-          {formatDecimal(summary.rt_ctr_search)}%
-        </span>
-      ) : null,
-  }
+  const colRtCtrSearch: MRT_ColumnDef<TableRow> = (() => {
+    const footerText = summary ? `${formatDecimal(summary.rt_ctr_search)}%` : null
+    return {
+      accessorKey: 'rt_ctr_search',
+      header: 'R. CTR S.',
+      Header: <HeaderLabel icon="green">R. CTR S.</HeaderLabel>,
+      size: autoSize(95, footerText),
+      enableSorting: false,
+      Cell: ({ row }) => {
+        const v = isGroupRow(row.original)
+          ? row.original.group_summary.rt_ctr_search
+          : row.original.rt_ctr_search
+        if (v === null || v === 0)
+          return <span className="text-muted-foreground/50 text-[10px]">—</span>
+        const vFormatted = `${formatDecimal(v)}%`
+        return (
+          <span
+            className="tabular-nums text-[10px] text-muted-foreground truncate"
+            title={vFormatted}
+          >
+            {vFormatted}
+          </span>
+        )
+      },
+      Footer: () =>
+        footerText ? (
+          <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+            {footerText}
+          </span>
+        ) : null,
+    }
+  })()
 
   // ── Profit / ROI columns ──
-  const colProfit: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'profit',
-    header: 'Profit',
-    Header: <HeaderLabel>Profit</HeaderLabel>,
-    size: 70,
-    Cell: ({ row }) => {
-      const v = isGroupRow(row.original) ? row.original.group_summary.profit : row.original.profit
-      const vFormatted = formatUsd(v)
-      return (
-        <span
-          className={cn(
-            'tabular-nums text-[10px] truncate font-medium',
-            v >= 0 ? 'text-emerald-500' : 'text-rose-500',
-          )}
-          title={vFormatted}
-        >
-          {vFormatted}
-        </span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span
-          className={cn(
-            'tabular-nums text-[10px] font-semibold',
-            summary.profit >= 0 ? 'text-emerald-500' : 'text-rose-500',
-          )}
-        >
-          {formatUsd(toNumber(summary.profit))}
-        </span>
-      ) : null,
-  }
+  const colProfit: MRT_ColumnDef<TableRow> = (() => {
+    const footerText = summary ? formatUsd(toNumber(summary.profit)) : null
+    return {
+      accessorKey: 'profit',
+      header: 'Profit',
+      Header: <HeaderLabel>Profit</HeaderLabel>,
+      size: autoSize(70, footerText),
+      Cell: ({ row }) => {
+        const v = isGroupRow(row.original) ? row.original.group_summary.profit : row.original.profit
+        const vFormatted = formatUsd(v)
+        return (
+          <span
+            className={cn(
+              'tabular-nums text-[10px] truncate font-medium',
+              v >= 0 ? 'text-emerald-500' : 'text-rose-500',
+            )}
+            title={vFormatted}
+          >
+            {vFormatted}
+          </span>
+        )
+      },
+      Footer: () =>
+        footerText ? (
+          <span
+            className={cn(
+              'tabular-nums text-[10px] font-semibold whitespace-nowrap',
+              summary!.profit >= 0 ? 'text-emerald-500' : 'text-rose-500',
+            )}
+          >
+            {footerText}
+          </span>
+        ) : null,
+    }
+  })()
 
-  const colRoi: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'roi',
-    header: 'ROI',
-    Header: <HeaderLabel>ROI</HeaderLabel>,
-    size: 55,
-    enableSorting: isSortable('roi'),
-    Cell: ({ row }) => {
-      const v = isGroupRow(row.original) ? row.original.group_summary.roi : row.original.roi
-      const vFormatted = formatRoi(v)
-      return (
-        <span
-          className={cn(
-            'tabular-nums text-[10px] truncate font-medium',
-            v >= 0 ? 'text-emerald-500' : 'text-rose-500',
-          )}
-          title={vFormatted}
-        >
-          {vFormatted}
-        </span>
-      )
-    },
-    Footer: () =>
-      summary ? (
-        <span
-          className={cn(
-            'tabular-nums text-[10px] font-semibold',
-            summary.roi >= 0 ? 'text-emerald-500' : 'text-rose-500',
-          )}
-        >
-          {formatRoi(toNumber(summary.roi))}
-        </span>
-      ) : null,
-  }
+  const colRoi: MRT_ColumnDef<TableRow> = (() => {
+    const footerText = summary ? formatRoi(toNumber(summary.roi)) : null
+    return {
+      accessorKey: 'roi',
+      header: 'ROI',
+      Header: <HeaderLabel>ROI</HeaderLabel>,
+      size: autoSize(55, footerText),
+      enableSorting: isSortable('roi'),
+      Cell: ({ row }) => {
+        const v = isGroupRow(row.original) ? row.original.group_summary.roi : row.original.roi
+        const vFormatted = formatRoi(v)
+        return (
+          <span
+            className={cn(
+              'tabular-nums text-[10px] truncate font-medium',
+              v >= 0 ? 'text-emerald-500' : 'text-rose-500',
+            )}
+            title={vFormatted}
+          >
+            {vFormatted}
+          </span>
+        )
+      },
+      Footer: () =>
+        footerText ? (
+          <span
+            className={cn(
+              'tabular-nums text-[10px] font-semibold whitespace-nowrap',
+              summary!.roi >= 0 ? 'text-emerald-500' : 'text-rose-500',
+            )}
+          >
+            {footerText}
+          </span>
+        ) : null,
+    }
+  })()
 
   // ── Realtime (rt_*) columns — top-level fields from BE, display-only ──
   const colRtClickAdCount = count('rt_click_ad_count', 'R. Conv.', 65, 'green')
@@ -915,7 +958,7 @@ function getColumns(
 
     // ── Search impressions & RPM ──
     count('r_impressions', 'Impr', 65, 'yellow'),
-    ratio('r_ad_requests_rpm', 'S. RPM', 88, 2, 'yellow'),
+    ratio('r_ad_requests_rpm', 'S. RPM', 70, 2, 'yellow'),
     ratio('r_rpc', 'RPC', 70, 2, 'yellow'),
 
     // ── CPA ──
@@ -925,33 +968,36 @@ function getColumns(
 
     // ── CVR ──
     colRtCvr,
-    {
-      accessorKey: 'cvr',
-      header: 'CVR',
-      Header: <HeaderLabel icon="yellow">CVR</HeaderLabel>,
-      size: 70,
-      enableSorting: isSortable('cvr'),
-      Cell: ({ row }) => {
-        const v = isGroupRow(row.original) ? row.original.group_summary.cvr : row.original.cvr
-        if (v === null || v === 0)
-          return <span className="text-muted-foreground/50 text-[10px]">—</span>
-        const vFormatted = `${formatDecimal(v)}%`
-        return (
-          <span
-            className="tabular-nums text-[10px] text-muted-foreground truncate"
-            title={vFormatted}
-          >
-            {vFormatted}
-          </span>
-        )
-      },
-      Footer: () =>
-        summary ? (
-          <span className="tabular-nums text-[10px] font-semibold">
-            {formatDecimal(summary.cvr)}%
-          </span>
-        ) : null,
-    } as MRT_ColumnDef<TableRow>,
+    (() => {
+      const footerText = summary ? `${formatDecimal(summary.cvr)}%` : null
+      return {
+        accessorKey: 'cvr',
+        header: 'CVR',
+        Header: <HeaderLabel icon="yellow">CVR</HeaderLabel>,
+        size: autoSize(70, footerText),
+        enableSorting: isSortable('cvr'),
+        Cell: ({ row }) => {
+          const v = isGroupRow(row.original) ? row.original.group_summary.cvr : row.original.cvr
+          if (v === null || v === 0)
+            return <span className="text-muted-foreground/50 text-[10px]">—</span>
+          const vFormatted = `${formatDecimal(v)}%`
+          return (
+            <span
+              className="tabular-nums text-[10px] text-muted-foreground truncate"
+              title={vFormatted}
+            >
+              {vFormatted}
+            </span>
+          )
+        },
+        Footer: () =>
+          footerText ? (
+            <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+              {footerText}
+            </span>
+          ) : null,
+      } as MRT_ColumnDef<TableRow>
+    })(),
 
     // ── Search views ──
     colRtViewSearchCount,
@@ -1198,6 +1244,11 @@ function CampaignReportTableCardInner({
           paddingRight: '2px !important',
           backgroundColor: isDark ? theme.colors.dark[5] : theme.colors.blue[0],
           color: isDark ? theme.colors.blue[2] : theme.colors.blue[8],
+          overflow: 'visible',
+          '& > div': {
+            overflow: 'visible',
+            whiteSpace: 'nowrap',
+          },
         }
       },
     },
