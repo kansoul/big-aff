@@ -61,6 +61,20 @@ export function AssignSiteUsersDialog({
                   {userIds.length}
                 </span>
               ) : null}
+              {!optionsLoading && options.length > 0 && (
+                <button
+                  type="button"
+                  disabled={!canAssign || saving}
+                  onClick={() =>
+                    userIds.length === options.length
+                      ? onUserIdsChange([])
+                      : onUserIdsChange(options.map((o) => o.id))
+                  }
+                  className="ml-auto text-[11px] font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {userIds.length === options.length ? 'Deselect all' : 'Select all'}
+                </button>
+              )}
             </div>
             {optionsLoading ? (
               <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">

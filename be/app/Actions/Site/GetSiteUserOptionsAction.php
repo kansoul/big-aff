@@ -19,14 +19,14 @@ class GetSiteUserOptionsAction
 
         $query = User::query()
             ->select(['id', 'name', 'email'])
-            ->whereDoesntHave('role', fn ($q) => $q->where('permissions', Permission::FULL_ACCESS_SENTINEL))
-            ->orderBy('name');
+            ->whereDoesntHave('role', fn($q) => $q->where('permissions', Permission::FULL_ACCESS_SENTINEL))
+            ->orderBy('id');
 
         $ownership->applyTo($query, 'id');
 
         $options = $query->get();
 
-        $assignedUserIds = $site->users()->pluck('users.id')->map(fn ($id) => (int) $id)->all();
+        $assignedUserIds = $site->users()->pluck('users.id')->map(fn($id) => (int) $id)->all();
 
         return [
             'options' => $options,
