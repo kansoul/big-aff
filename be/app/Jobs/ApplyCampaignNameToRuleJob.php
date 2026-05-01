@@ -24,7 +24,7 @@ class ApplyCampaignNameToRuleJob implements ShouldQueue
     public function __construct(
         protected array $campaignIds,
     ) {
-        $this->onQueue('automation-off-campaign');
+        $this->onQueue('apply-campaign-name-to-rule');
     }
 
     public function handle(AutoMatchCampaignRulesAction $action): void
