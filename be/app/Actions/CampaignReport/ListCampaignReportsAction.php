@@ -86,10 +86,10 @@ class ListCampaignReportsAction
             ->select(
                 'campaign_reports.*',
                 DB::raw('COALESCE(rv.estimated_earnings, 0) as r_estimated_earnings'),
-                DB::raw('COALESCE(campaign_reports.r_rpc, 0) as rpc'),
-                DB::raw('COALESCE(rt.click_keyword_count, 0) * COALESCE(campaign_reports.r_rpc, 0) as revenue_est'),
-                DB::raw('(COALESCE(rt.click_keyword_count, 0) * COALESCE(campaign_reports.r_rpc, 0)) - COALESCE(campaign_reports.a_spend, 0) as profit'),
-                DB::raw('IF(COALESCE(campaign_reports.a_spend, 0) > 0, ((COALESCE(rt.click_keyword_count, 0) * COALESCE(campaign_reports.r_rpc, 0)) - COALESCE(campaign_reports.a_spend, 0)) / COALESCE(campaign_reports.a_spend, 0) * 100, 0) as roi'),
+                DB::raw('IF(NULLIF(campaign_reports.r_rpc, 0) IS NOT NULL, campaign_reports.r_rpc, IF(NULLIF(campaign_reports.r_conversion, 0) IS NOT NULL, campaign_reports.r_revenue / campaign_reports.r_conversion, 0)) as rpc'),
+                DB::raw('COALESCE(rt.click_keyword_count, 0) * IF(NULLIF(campaign_reports.r_rpc, 0) IS NOT NULL, campaign_reports.r_rpc, IF(NULLIF(campaign_reports.r_conversion, 0) IS NOT NULL, campaign_reports.r_revenue / campaign_reports.r_conversion, 0)) as revenue_est'),
+                DB::raw('(COALESCE(rt.click_keyword_count, 0) * IF(NULLIF(campaign_reports.r_rpc, 0) IS NOT NULL, campaign_reports.r_rpc, IF(NULLIF(campaign_reports.r_conversion, 0) IS NOT NULL, campaign_reports.r_revenue / campaign_reports.r_conversion, 0))) - COALESCE(campaign_reports.a_spend, 0) as profit'),
+                DB::raw('IF(COALESCE(campaign_reports.a_spend, 0) > 0, ((COALESCE(rt.click_keyword_count, 0) * IF(NULLIF(campaign_reports.r_rpc, 0) IS NOT NULL, campaign_reports.r_rpc, IF(NULLIF(campaign_reports.r_conversion, 0) IS NOT NULL, campaign_reports.r_revenue / campaign_reports.r_conversion, 0))) - COALESCE(campaign_reports.a_spend, 0)) / COALESCE(campaign_reports.a_spend, 0) * 100, 0) as roi'),
                 DB::raw('IF(COALESCE(rt.click_ad_count, 0) > 0, COALESCE(campaign_reports.a_spend, 0) / rt.click_ad_count, NULL) as rt_cpa'),
                 DB::raw('IF(COALESCE(campaign_reports.r_funnel_requests, 0) > 0, COALESCE(rt.click_ad_count, 0) / campaign_reports.r_funnel_requests * 100, NULL) as rt_cvr'),
                 DB::raw('IF(COALESCE(campaign_reports.r_funnel_requests, 0) > 0, COALESCE(rt.click_keyword_count, 0) / campaign_reports.r_funnel_requests * 100, NULL) as rt_ctr_keyword'),
@@ -105,6 +105,8 @@ class ListCampaignReportsAction
             defaultColumn: 'date_start',
             defaultDirection: 'desc',
         )->applyTo($query);
+
+        $query->orderBy('campaign_reports.channel_code');
 
         return PaginationInput::fromValidatedArray($filters)->paginateQuery($query);
     }

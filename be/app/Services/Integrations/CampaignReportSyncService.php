@@ -67,7 +67,7 @@ class CampaignReportSyncService
                 'success' => false,
                 'synced_count' => $syncedCount,
                 'error_count' => $errorCount + 1,
-                'message' => 'Sync failed: '.$e->getMessage(),
+                'message' => 'Sync failed: ' . $e->getMessage(),
             ];
         }
     }
@@ -142,7 +142,7 @@ class CampaignReportSyncService
             $costPerClick = isset($revenueData['cost_per_click']) && $revenueData['cost_per_click'] !== null
                 ? (float) $revenueData['cost_per_click']
                 : null;
-            if ($costPerClick === null) {
+            if ($costPerClick === null || $costPerClick <= 0) {
                 $realtimeClicks = $rConversion > 0
                     ? $rConversion
                     : self::sumRealtimeClickAdCount($date, $linkData->channel_code);

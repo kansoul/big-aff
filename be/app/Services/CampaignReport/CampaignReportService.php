@@ -113,7 +113,7 @@ class CampaignReportService
         // revenue_est = SUM(click_keyword_count * r_rpc) per campaign row.
         // No dedup needed: click_keyword_count is already per-campaign.
         // r_rpc is pre-computed at sync time (with fallback when cost_per_click is null).
-        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_gs.click_keyword_count, 0) * COALESCE(campaign_reports.r_rpc, 0)), 0) AS revenue_est';
+        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_gs.click_keyword_count, 0) * IF(NULLIF(campaign_reports.r_rpc, 0) IS NOT NULL, campaign_reports.r_rpc, IF(NULLIF(campaign_reports.r_conversion, 0) IS NOT NULL, campaign_reports.r_revenue / campaign_reports.r_conversion, 0))), 0) AS revenue_est';
 
         // Realtime aggregates
         $selectParts[] = 'COALESCE(SUM(rt_gs.click_ad_count), 0) AS rt_click_ad_count';
@@ -266,7 +266,7 @@ class CampaignReportService
             $selectParts[] = "COALESCE(SUM(campaign_reports.{$col}), 0) AS {$col}";
         }
 
-        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_grp.click_keyword_count, 0) * COALESCE(campaign_reports.r_rpc, 0)), 0) AS revenue_est';
+        $selectParts[] = 'COALESCE(SUM(COALESCE(rt_grp.click_keyword_count, 0) * IF(NULLIF(campaign_reports.r_rpc, 0) IS NOT NULL, campaign_reports.r_rpc, IF(NULLIF(campaign_reports.r_conversion, 0) IS NOT NULL, campaign_reports.r_revenue / campaign_reports.r_conversion, 0))), 0) AS revenue_est';
         $selectParts[] = 'COALESCE(SUM(rt_grp.click_ad_count), 0) AS rt_click_ad_count';
         $selectParts[] = 'COALESCE(SUM(rt_grp.click_keyword_count), 0) AS rt_click_keyword_count';
         $selectParts[] = 'COALESCE(SUM(rt_grp.view_search_count), 0) AS rt_view_search_count';
