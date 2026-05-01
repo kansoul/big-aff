@@ -40,7 +40,7 @@ class ListCampaignRuleSettingsAction
         SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
-            defaultColumn: 'name',
+            defaultColumn: 'id',
             defaultDirection: 'asc',
         )->applyTo($query);
 

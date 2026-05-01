@@ -44,7 +44,7 @@ class ListGoogleConversionsAction
         SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
-            defaultColumn: 'account_name',
+            defaultColumn: 'id',
             defaultDirection: 'asc',
         )->applyTo($query);
 

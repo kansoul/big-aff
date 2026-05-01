@@ -7,6 +7,7 @@ use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class ListUsersAction
 {
@@ -32,12 +33,20 @@ class ListUsersAction
     {
         $ownership = OwnershipFilter::forAuthUser();
         $query = User::query()->with(['role', 'style', 'assignedParentLink.parentUser', 'accounts.businessCenter', 'accounts.team']);
-        $ownership->applyTo($query, 'id');
+
+        $query->when(! $ownership->isAdmin(), function ($q) use ($ownership): void {
+            $allowedIds = $ownership->allowedUserIds();
+            $authId = (int) Auth::id();
+            $q->where(function ($q) use ($allowedIds, $authId): void {
+                $q->whereIn('id', $allowedIds)
+                    ->orWhere('created_by', $authId);
+            });
+        });
 
         SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
-            defaultColumn: 'name',
+            defaultColumn: 'id',
             defaultDirection: 'asc',
         )->applyTo($query);
 

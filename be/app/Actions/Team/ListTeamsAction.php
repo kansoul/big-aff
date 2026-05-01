@@ -42,7 +42,7 @@ class ListTeamsAction
         SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
-            defaultColumn: 'created_at',
+            defaultColumn: 'id',
             defaultDirection: 'desc',
         )->applyTo($query);
 

@@ -36,12 +36,12 @@ class ListChannelsAction
                         ->orWhere('code', 'like', "%{$search}%");
                 });
             })
-            ->when(isset($filters['is_active']), fn ($q) => $q->where('is_active', (bool) $filters['is_active']));
+            ->when(isset($filters['is_active']), fn($q) => $q->where('is_active', (bool) $filters['is_active']));
 
         SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
-            defaultColumn: 'created_at',
+            defaultColumn: 'id',
             defaultDirection: 'desc',
         )->applyTo($query);
 

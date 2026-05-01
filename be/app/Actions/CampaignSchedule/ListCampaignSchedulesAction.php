@@ -33,12 +33,12 @@ class ListCampaignSchedulesAction
         $ownership->applyTo($query);
 
         if (! empty($filters['name'])) {
-            $query->where('name', 'like', '%'.$filters['name'].'%');
+            $query->where('name', 'like', '%' . $filters['name'] . '%');
         }
 
         if (! empty($filters['campaign_id'])) {
             $query->whereHas('items', function ($q) use ($filters) {
-                $q->where('campaign_id', 'like', '%'.$filters['campaign_id'].'%');
+                $q->where('campaign_id', 'like', '%' . $filters['campaign_id'] . '%');
             });
         }
 
@@ -53,7 +53,7 @@ class ListCampaignSchedulesAction
         SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
-            defaultColumn: 'created_at',
+            defaultColumn: 'id',
             defaultDirection: 'desc',
         )->applyTo($query);
 

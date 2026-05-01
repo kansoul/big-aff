@@ -28,12 +28,12 @@ class ListKeywordSetsAction
 
         $ownership->applyTo($query);
 
-        $query->when(! empty($filters['keyword']), fn ($q) => $q->where('name', 'like', '%'.$filters['keyword'].'%'));
+        $query->when(! empty($filters['keyword']), fn($q) => $q->where('name', 'like', '%' . $filters['keyword'] . '%'));
 
         SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
-            defaultColumn: 'created_at',
+            defaultColumn: 'id',
             defaultDirection: 'desc',
         )->applyTo($query);
 

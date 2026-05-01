@@ -30,7 +30,7 @@ class ListParentChildAssignmentsAction
         SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
-            defaultColumn: 'name',
+            defaultColumn: 'id',
             defaultDirection: 'asc',
         )->applyTo($assignmentsQuery);
 
@@ -65,7 +65,7 @@ class ListParentChildAssignmentsAction
         // Options: all visible users who are a leader or member in a team (eligible to be children).
         $assignedChildIds = UserParentChild::query()
             ->pluck('child_user_id')
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->all();
 
         $optionsQuery = $this->teamMemberUsersQuery($ownership)
@@ -75,7 +75,7 @@ class ListParentChildAssignmentsAction
         $optionsPaginator = PaginationInput::fromValidatedArray($filters, prefix: 'options_')
             ->simplePaginateQuery($optionsQuery, pageName: 'options_page');
 
-        $optionsPaginator = $optionsPaginator->through(fn (User $user) => [
+        $optionsPaginator = $optionsPaginator->through(fn(User $user) => [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
