@@ -50,7 +50,7 @@ class SyncCampaignReportsCommand extends Command
             $adClientIds = AdClient::query()
                 ->whereNotNull('ad_client_id')
                 ->pluck('ad_client_id')
-                ->filter(fn ($v) => trim((string) $v) !== '')
+                ->filter(fn($v) => trim((string) $v) !== '')
                 ->values();
 
             foreach ($adClientIds as $adClientId) {
@@ -69,7 +69,7 @@ class SyncCampaignReportsCommand extends Command
                             'ad_client_id' => $adClientId,
                             'message' => $resp['message'] ?? null,
                         ]);
-                        $this->error("Failed to sync AdSense client {$adClientId}: ".($resp['message'] ?? 'Unknown error'));
+                        $this->error("Failed to sync AdSense client {$adClientId}: " . ($resp['message'] ?? 'Unknown error'));
                     }
                 } catch (Throwable $e) {
                     $failedAdClientIds = true;
@@ -77,34 +77,27 @@ class SyncCampaignReportsCommand extends Command
                         'ad_client_id' => $adClientId,
                         'error' => $e->getMessage(),
                     ]);
-                    $this->error("Exception syncing AdSense client {$adClientId}: ".$e->getMessage());
+                    $this->error("Exception syncing AdSense client {$adClientId}: " . $e->getMessage());
                 }
             }
         } catch (Throwable $e) {
             $logger->error('[SyncAllReports][Adsense] Fatal error', [
                 'error' => $e->getMessage(),
             ]);
-            $this->error('Fatal error in AdSense sync: '.$e->getMessage());
+            $this->error('Fatal error in AdSense sync: ' . $e->getMessage());
         }
 
-        if (! config('google-ads.disable_google_ads')) {
-            $isCommand = $this->argument('start_date') || $this->argument('end_date');
-            $cacheKey = 'sync-google-ads-cooldown';
-            $time = (int) config('define.time_limit_google_ads');
 
-            if ($isCommand || Cache::add($cacheKey, true, now()->addSeconds($time))) {
-                try {
-                    GoogleCampaignSyncService::syncWithoutConversions([
-                        'start_date' => $startDate,
-                        'end_date' => $endDate,
-                    ]);
-                } catch (Throwable $e) {
-                    $logger->error('[SyncAllReports][GoogleAds] Throwable', [
-                        'error' => $e->getMessage(),
-                    ]);
-                    $this->error('Exception syncing Google Ads campaigns: '.$e->getMessage());
-                }
-            }
+        try {
+            GoogleCampaignSyncService::sync([
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]);
+        } catch (Throwable $e) {
+            $logger->error('[SyncAllReports][GoogleAds] Throwable', [
+                'error' => $e->getMessage(),
+            ]);
+            $this->error('Exception syncing Google Ads campaigns: ' . $e->getMessage());
         }
 
         try {
@@ -117,7 +110,7 @@ class SyncCampaignReportsCommand extends Command
             $logger->error('[SyncAllReports][Facebook] Throwable', [
                 'error' => $e->getMessage(),
             ]);
-            $this->error('Exception syncing Facebook campaigns: '.$e->getMessage());
+            $this->error('Exception syncing Facebook campaigns: ' . $e->getMessage());
         }
 
         return Command::SUCCESS;
