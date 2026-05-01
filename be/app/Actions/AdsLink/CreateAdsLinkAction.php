@@ -29,10 +29,10 @@ class CreateAdsLinkAction
         $ownership = OwnershipFilter::forAuthUser();
 
         $site = Site::query()->findOrFail($data['site_id']);
-        $ownership->authorize($site->created_by);
+        $ownership->authorizeSite($site);
 
         $post = Post::query()->findOrFail($data['post_id']);
-        $ownership->authorize($post->created_by);
+        $ownership->authorizePost($post);
 
         $racValidation = $this->racValidationService->validateRAC($data['rac'] ?? '');
         if (! $racValidation['is_valid']) {
