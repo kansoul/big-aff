@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import dayjs from 'dayjs'
+import dayjs from '@/lib/dayjs'
 import { CalendarIcon, X } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 

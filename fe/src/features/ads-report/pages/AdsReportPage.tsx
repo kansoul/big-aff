@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import dayjs from 'dayjs'
+import dayjs from '@/lib/dayjs'
 import { toast } from 'sonner'
 
 import { adsReportApi } from '@/features/ads-report/api'

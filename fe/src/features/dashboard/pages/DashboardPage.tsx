@@ -1,4 +1,4 @@
-import dayjs from 'dayjs'
+import dayjs from '@/lib/dayjs'
 import { Activity, ArrowUpRight, Calendar, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Area, AreaChart, ResponsiveContainer } from 'recharts'

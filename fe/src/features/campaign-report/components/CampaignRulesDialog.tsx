@@ -1,4 +1,4 @@
-import dayjs from 'dayjs'
+import dayjs from '@/lib/dayjs'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowDown,

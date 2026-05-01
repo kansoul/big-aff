@@ -18,7 +18,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react'
-import dayjs from 'dayjs'
+import dayjs from '@/lib/dayjs'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'

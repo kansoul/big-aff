@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import dayjs from 'dayjs'
+import dayjs from '@/lib/dayjs'
 import { toast } from 'sonner'
 import { teamReportApi } from '@/features/team-report/api'
 import type {

@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
-import dayjs from 'dayjs'
+import dayjs from '@/lib/dayjs'
 import { ArrowDown, ArrowUp, ArrowUpDown, Copy, Loader2, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 
