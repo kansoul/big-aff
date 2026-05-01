@@ -20,15 +20,6 @@ class CampaignReportService
         // Budget
         'daily_budget',
         'lifetime_budget',
-        // Revenue (r_*)
-        'r_search_views',
-        'r_conversion',
-        'r_revenue',
-        'r_ad_requests',
-        'r_impressions',
-        'r_funnel_requests',
-        'r_funnel_clicks',
-        'r_funnel_impressions',
         // Ads (a_*)
         'a_ad_clicks',
         'a_article_views',
@@ -38,6 +29,22 @@ class CampaignReportService
         'a_impressions',
         'a_reach',
         'a_clicks',
+    ];
+
+    /**
+     * Mapping from campaign_reports r_* alias → revenue_reports column name.
+     * These values are denormalized copies; summing them from campaign_reports
+     * double-counts when multiple campaigns share the same (channel_code, date_start).
+     */
+    private const REVENUE_REPORT_COLUMNS = [
+        'r_search_views' => 'page_views',
+        'r_conversion' => 'clicks',
+        'r_revenue' => 'estimated_earnings',
+        'r_ad_requests' => 'ad_requests',
+        'r_impressions' => 'impressions',
+        'r_funnel_requests' => 'funnel_requests',
+        'r_funnel_clicks' => 'funnel_clicks',
+        'r_funnel_impressions' => 'funnel_impressions',
     ];
 
     public function __construct(
@@ -84,14 +91,15 @@ class CampaignReportService
     {
         $baseQuery = $this->listCampaignReportsAction->buildBaseQuery($filters);
 
-        // Join revenue_reports (rv_gs) and realtime_reports (rt_gs) for aggregation.
-        // buildBaseQuery() may already join rv via execute(), but here we add them
-        // explicitly for the raw aggregate query.
         $baseQuery
-            ->leftJoin('revenue_reports as rv_gs', function ($join) {
-                $join->on('rv_gs.channel_code', '=', 'campaign_reports.channel_code')
-                    ->on('rv_gs.date', '=', 'campaign_reports.date_start');
-            })
+            ->leftJoin(
+                DB::raw('(SELECT MAX(id) AS id, channel_code, date FROM revenue_reports WHERE deleted_at IS NULL GROUP BY channel_code, date) AS rv_gs_unique'),
+                function ($join) {
+                    $join->on('rv_gs_unique.channel_code', '=', 'campaign_reports.channel_code')
+                        ->on('rv_gs_unique.date', '=', 'campaign_reports.date_start');
+                },
+            )
+            ->leftJoin('revenue_reports as rv_gs', 'rv_gs.id', '=', 'rv_gs_unique.id')
             ->leftJoin('realtime_reports as rt_gs', 'rt_gs.id', '=', 'campaign_reports.realtime_report_id');
 
         $selectParts = ['COUNT(*) AS record_count'];
@@ -112,21 +120,23 @@ class CampaignReportService
 
         $row = $baseQuery->selectRaw(implode(', ', $selectParts))->first();
 
-        // Channel revenue must be queried separately to avoid double-counting when multiple
-        // campaigns share the same (channel_code, date_start) → same revenue_reports row.
-        $revenue = $this->computeChannelRevenue($filters);
+        // r_* and revenue must be queried separately from revenue_reports to avoid
+        // double-counting when multiple campaigns share the same (channel_code, date_start).
+        $revenueStats = $this->computeRevenueReportStats($filters);
 
-        return $this->normalizeSummaryRow($row, $revenue);
+        return $this->normalizeSummaryRow($row, $revenueStats);
     }
 
     /**
-     * Sum estimated_earnings from RevenueReport for the filtered channels/dates.
-     * Queries distinct channel_codes from the base query to avoid double-counting
-     * revenue when multiple campaigns share a channel on the same date.
+     * Sum all revenue_reports columns (estimated_earnings and r_* fields) for
+     * the filtered channels/dates. Queries revenue_reports directly so each
+     * (channel_code, date) row is counted exactly once regardless of how many
+     * campaigns share that channel on the same date.
      *
      * @param  array<string, mixed>  $filters
+     * @return array<string, float>
      */
-    private function computeChannelRevenue(array $filters): float
+    private function computeRevenueReportStats(array $filters): array
     {
         $revenueQuery = RevenueReport::query();
 
@@ -148,13 +158,38 @@ class CampaignReportService
                 ->values();
 
             if ($channelCodes->isEmpty()) {
-                return 0.0;
+                return $this->emptyRevenueStats();
             }
 
             $revenueQuery->whereIn('channel_code', $channelCodes);
         }
 
-        return (float) $revenueQuery->sum('estimated_earnings');
+        $selectParts = ['COALESCE(SUM(estimated_earnings), 0) AS revenue'];
+        foreach (self::REVENUE_REPORT_COLUMNS as $alias => $col) {
+            $selectParts[] = "COALESCE(SUM({$col}), 0) AS {$alias}";
+        }
+
+        $row = $revenueQuery->selectRaw(implode(', ', $selectParts))->first();
+
+        $stats = ['revenue' => (float) ($row->revenue ?? 0)];
+        foreach (array_keys(self::REVENUE_REPORT_COLUMNS) as $alias) {
+            $stats[$alias] = (float) ($row->{$alias} ?? 0);
+        }
+
+        return $stats;
+    }
+
+    /**
+     * @return array<string, float>
+     */
+    private function emptyRevenueStats(): array
+    {
+        $stats = ['revenue' => 0.0];
+        foreach (array_keys(self::REVENUE_REPORT_COLUMNS) as $alias) {
+            $stats[$alias] = 0.0;
+        }
+
+        return $stats;
     }
 
     // ─── Group building ───────────────────────────────────────────────────────
@@ -240,7 +275,7 @@ class CampaignReportService
     }
 
     /**
-     * Accumulate channel revenue once per unique (channel_code, date_start) pair
+     * Accumulate channel revenue and r_* stats once per unique (channel_code, date_start) pair
      * to avoid double-counting when multiple campaigns share the same channel/date.
      *
      * @param  array<string, mixed>  $summary
@@ -250,9 +285,15 @@ class CampaignReportService
     {
         $pairKey = ($row->channel_code ?? '').'_'.($row->date_start?->toDateString() ?? '');
 
-        if (! isset($seenPairs[$pairKey])) {
-            $seenPairs[$pairKey] = true;
-            $summary['revenue'] += (float) ($row->r_estimated_earnings ?? 0);
+        if (isset($seenPairs[$pairKey])) {
+            return;
+        }
+
+        $seenPairs[$pairKey] = true;
+        $summary['revenue'] += (float) ($row->r_estimated_earnings ?? 0);
+
+        foreach (array_keys(self::REVENUE_REPORT_COLUMNS) as $alias) {
+            $summary[$alias] += (float) ($row->{$alias} ?? 0);
         }
     }
 
@@ -379,18 +420,27 @@ class CampaignReportService
             $summary[$col] = 0.0;
         }
 
+        foreach (array_keys(self::REVENUE_REPORT_COLUMNS) as $alias) {
+            $summary[$alias] = 0.0;
+        }
+
         return $summary;
     }
 
     /**
      * Cast a raw aggregate query row to a normalized summary array, then finalize.
      *
+     * @param  array<string, float>  $revenueStats  Result of computeRevenueReportStats()
      * @return array<string, mixed>
      */
-    private function normalizeSummaryRow(?object $row, float $revenue = 0.0): array
+    private function normalizeSummaryRow(?object $row, array $revenueStats = []): array
     {
         $summary = $this->emptySummary();
-        $summary['revenue'] = $revenue;
+        $summary['revenue'] = $revenueStats['revenue'] ?? 0.0;
+
+        foreach (array_keys(self::REVENUE_REPORT_COLUMNS) as $alias) {
+            $summary[$alias] = $revenueStats[$alias] ?? 0.0;
+        }
 
         if ($row === null) {
             return $this->finalizeSummary($summary, 0);
