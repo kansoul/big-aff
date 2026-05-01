@@ -38,11 +38,7 @@ class GetPostBySlugAction
             if ($isAdsLink) {
                 $adsLink = AdsLink::with('post.featureMedia', 'keywordSet')->where('slug', $slug)->first();
                 if (! $adsLink) {
-                    Log::channel('getpost')->warning('AdsLink not found for slug', [
-                        'slug' => $slug,
-                    ]);
-
-                    return null;
+                    return $this->findPostByTruncatedSlug($slug);
                 }
             }
             $post = $adsLink->post;
@@ -146,6 +142,25 @@ class GetPostBySlugAction
                 'updated_at' => $now,
             ]
         );
+    }
+
+    /**
+     * Strip at least 3 trailing dash-segments from slug and find a published post.
+     */
+    private function findPostByTruncatedSlug(string $slug): ?Post
+    {
+        $parts = explode('-', $slug);
+
+        if (\count($parts) <= 3) {
+            return null;
+        }
+
+        $truncated = implode('-', \array_slice($parts, 0, \count($parts) - 3));
+
+        return Post::with('featureMedia')
+            ->where('status', PostStatus::PUBLISHED)
+            ->where('slug', $truncated)
+            ->first();
     }
 
     /**

@@ -1038,19 +1038,30 @@ function CampaignReportTableCardInner({
   const [revenueChartOpen, setRevenueChartOpen] = useState(false)
   const [revenueChartTarget, setRevenueChartTarget] = useState<RevenueDialogTarget | null>(null)
   const [summaryOnly, setSummaryOnly] = useState(false)
+  const [prevPerPage, setPrevPerPage] = useState<number | null>(null)
   const effectiveSummaryOnly = grouped && summaryOnly
   const { pathname } = useLocation()
   const { columnVisibility: userColumnVisibility, setColumnVisibility: setUserColumnVisibility } =
     useColumnVisibilityStorage(pathname)
 
-  const forcedColumnVisibility = useMemo(
-    () =>
-      (grouped ? { date_start: false, campaign_name: false } : { group_label: false }) as Record<
-        string,
-        boolean
-      >,
-    [grouped],
-  )
+  const forcedColumnVisibility = useMemo<Record<string, boolean>>(() => {
+    const base: Record<string, boolean> = grouped
+      ? { date_start: false, campaign_name: false }
+      : { group_label: false }
+
+    if (effectiveSummaryOnly) {
+      base.account_name = false
+      base.tracking_analytic = false
+      base.ads_adset_report = false
+      base.campaign_status = false
+      base.campaign_onoff = false
+      base.link = false
+      base.ads_type = false
+      base.channel_name = false
+    }
+
+    return base
+  }, [grouped, effectiveSummaryOnly])
 
   const columnVisibility = useMemo(
     () => ({ ...userColumnVisibility, ...forcedColumnVisibility }),
@@ -1375,7 +1386,19 @@ function CampaignReportTableCardInner({
                   ? 'border-orange-300 bg-orange-100 text-orange-700 hover:bg-orange-200 dark:border-orange-700 dark:bg-orange-900/60 dark:text-orange-300 dark:hover:bg-orange-800/60'
                   : 'border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground',
               )}
-              onClick={() => setSummaryOnly((v) => !v)}
+              onClick={() => {
+                setSummaryOnly((v) => {
+                  const next = !v
+                  if (next) {
+                    setPrevPerPage(filters.per_page ?? 30)
+                    onPaginationChange(1, 1000000)
+                  } else {
+                    onPaginationChange(1, prevPerPage ?? filters.per_page ?? 30)
+                    setPrevPerPage(null)
+                  }
+                  return next
+                })
+              }}
             >
               Totals Only
             </button>
