@@ -135,7 +135,7 @@ class CampaignReportSyncService
                 ->whereDate('event_time', $date)
                 ->first();
             $channelName = Channel::where('code', $linkData->channel_code)->value('name');
-            $revenueData = $failedAdClientIds ? [] : self::getRevenueData($date, $linkData->style_code, $linkData->channel_code);
+            $revenueData = $failedAdClientIds ? [] : self::getRevenueData($date, $linkData->channel_code);
             $rConversion = (int) ($revenueData['clicks'] ?? 0);
             $rCpa = $rConversion > 0 ? $spend / $rConversion : 0;
             $estimatedEarnings = (float) ($revenueData['estimated_earnings'] ?? 0);
@@ -219,12 +219,11 @@ class CampaignReportSyncService
     }
 
     /**
-     * Get aggregated RevenueReport data for a specific style and channel on a date.
+     * Get aggregated RevenueReport data for a specific channel on a date.
      */
-    private static function getRevenueData(string $date, string $styleCode, string $channelCode): array
+    private static function getRevenueData(string $date, string $channelCode): array
     {
         $report = RevenueReport::where('date', $date)
-            ->where('style_code', $styleCode)
             ->where('channel_code', $channelCode)
             ->selectRaw('
                 SUM(estimated_earnings) as estimated_earnings,
