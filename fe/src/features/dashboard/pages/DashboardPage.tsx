@@ -372,9 +372,23 @@ export function DashboardPage() {
       {/* 6 Stats Cards */}
       {canViewStats && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {statsCards.map((card, idx) => (
-            <StatsCard key={idx} {...card} loading={statsLoading} index={idx} />
-          ))}
+          {statsCards.map((card, idx) => {
+            // Mobile: Daily Rev, Daily Spend, Weekly Rev, Weekly Spend, Monthly Rev, Monthly Spend
+            // Desktop (md+): reset to natural order
+            const mobileOrderClass = [
+              'max-md:order-1',
+              'max-md:order-3',
+              'max-md:order-5',
+              'max-md:order-2',
+              'max-md:order-4',
+              'max-md:order-6',
+            ][idx]
+            return (
+              <div key={idx} className={mobileOrderClass}>
+                <StatsCard {...card} loading={statsLoading} index={idx} />
+              </div>
+            )
+          })}
         </div>
       )}
 
