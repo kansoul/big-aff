@@ -44,34 +44,36 @@ final readonly class OwnershipFilter
      */
     public static function forAuthUser(): self
     {
-        /** @var User $user */
-        $user = Auth::user();
+        return once(function () {
+            /** @var User $user */
+            $user = Auth::user();
 
-        if ($user->is_admin) {
-            return new self(isAdmin: true, allowedUserIds: []);
-        }
+            if ($user->is_admin) {
+                return new self(isAdmin: true, allowedUserIds: []);
+            }
 
-        // BFS transitive descendants (self + all children recursively via user_parent_child).
-        $allowedIds = $user->manageableUserIds();
+            // BFS transitive descendants (self + all children recursively via user_parent_child).
+            $allowedIds = $user->manageableUserIds();
 
-        // Managers can also access all leaders and members in their teams.
-        $managerTeamIds = TeamUser::query()
-            ->where('user_id', $user->id)
-            ->where('team_role', TeamRole::MANAGER->value)
-            ->pluck('team_id')
-            ->all();
-
-        if ($managerTeamIds !== []) {
-            $teamMemberIds = TeamUser::query()
-                ->whereIn('team_id', $managerTeamIds)
-                ->whereIn('team_role', [TeamRole::LEADER->value, TeamRole::MEMBER->value])
-                ->pluck('user_id')
+            // Managers can also access all leaders and members in their teams.
+            $managerTeamIds = TeamUser::query()
+                ->where('user_id', $user->id)
+                ->where('team_role', TeamRole::MANAGER->value)
+                ->pluck('team_id')
                 ->all();
 
-            $allowedIds = array_values(array_unique(array_merge($allowedIds, $teamMemberIds)));
-        }
+            if ($managerTeamIds !== []) {
+                $teamMemberIds = TeamUser::query()
+                    ->whereIn('team_id', $managerTeamIds)
+                    ->whereIn('team_role', [TeamRole::LEADER->value, TeamRole::MEMBER->value])
+                    ->pluck('user_id')
+                    ->all();
 
-        return new self(isAdmin: false, allowedUserIds: $allowedIds);
+                $allowedIds = array_values(array_unique(array_merge($allowedIds, $teamMemberIds)));
+            }
+
+            return new self(isAdmin: false, allowedUserIds: $allowedIds);
+        });
     }
 
     /**

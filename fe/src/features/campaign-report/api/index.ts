@@ -210,15 +210,15 @@ export const campaignReportApi = {
       '/campaign-reports/delivery-entities-reports/status-options',
     ),
 
-  toggleAdsetStatus: (campaignId: string, adsetInsightId: number, status: 'ACTIVE' | 'PAUSED') =>
+  toggleAdsetStatus: (adsetInsightId: number, status: 'ACTIVE' | 'PAUSED') =>
     axiosInstance.patch<ToggleAdsetStatusResponse>(
-      `/campaign-reports/${encodeURIComponent(campaignId)}/adsets/${adsetInsightId}/toggle-status`,
+      `/campaign-reports/adsets/${adsetInsightId}/toggle-status`,
       { status },
     ),
 
-  toggleAdStatus: (campaignId: string, adsInsightId: number, status: 'ACTIVE' | 'PAUSED') =>
+  toggleAdStatus: (adsInsightId: number, status: 'ACTIVE' | 'PAUSED') =>
     axiosInstance.patch<ToggleAdStatusResponse>(
-      `/campaign-reports/${encodeURIComponent(campaignId)}/ads/${adsInsightId}/toggle-status`,
+      `/campaign-reports/ads/${adsInsightId}/toggle-status`,
       { status },
     ),
 }

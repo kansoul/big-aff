@@ -132,10 +132,17 @@ class ListCampaignReportsAction
         }
 
         if (! empty($filters['user_ids'])) {
-            $userIds = $filters['user_ids'];
-            $query->whereIn('campaign_reports.account_id', function ($sub) use ($userIds) {
-                $sub->select('account_id')
+            $userIds = $ownership->isAdmin()
+                ? $filters['user_ids']
+                : array_values(array_intersect($filters['user_ids'], $ownership->allowedUserIds()));
+
+            $query->whereIn('campaign_reports.account_id', function ($sub) use ($userIds, $filters) {
+                $sub->select('accounts.account_id')
                     ->from('account_user')
+                    ->join('accounts', 'accounts.id', '=', 'account_user.account_id')
+                    ->when(! empty($filters['account_ids']), function ($sub) use ($filters) {
+                        $sub->whereIn('accounts.account_id', $filters['account_ids']);
+                    })
                     ->whereIn('user_id', $userIds);
             });
         }

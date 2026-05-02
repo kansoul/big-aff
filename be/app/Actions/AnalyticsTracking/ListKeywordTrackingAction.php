@@ -21,7 +21,7 @@ class ListKeywordTrackingAction
 
         $query->when(
             ! empty($filters['keyword']),
-            fn($q) => $q->where('name', 'like', '%' . $filters['keyword'] . '%')
+            fn ($q) => $q->where('name', 'like', '%'.$filters['keyword'].'%')
         );
 
         SortInput::fromValidatedArray(
