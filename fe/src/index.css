@@ -5,6 +5,13 @@
 @import '@fontsource-variable/inter';
 @plugin "@tailwindcss/typography";
 
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
