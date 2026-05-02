@@ -93,6 +93,11 @@ function formatUsd(value: number | null | undefined): string {
   })}`
 }
 
+function formatPercent(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '-'
+  return `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
+}
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return '-'
   const d = dayjs(value)
@@ -600,6 +605,40 @@ function AdsAdsetDeliveryReportDialogInner({
           <span className="tabular-nums text-xs text-muted-foreground">{formatUsd(r.spend)}</span>
         ),
       },
+      {
+        key: 'profit_realtime',
+        label: 'Profit',
+        sortKey: 'profit_realtime',
+        className: 'min-w-[120px] text-right',
+        render: (r) => {
+          const v = r.profit_realtime
+          if (v == null) return <span className="text-xs text-muted-foreground">-</span>
+          return (
+            <span
+              className={`tabular-nums text-xs ${v >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
+            >
+              {formatUsd(v)}
+            </span>
+          )
+        },
+      },
+      {
+        key: 'roi_realtime',
+        label: 'ROI',
+        sortKey: 'roi_realtime',
+        className: 'min-w-[100px] text-right',
+        render: (r) => {
+          const v = r.roi_realtime
+          if (v == null) return <span className="text-xs text-muted-foreground">-</span>
+          return (
+            <span
+              className={`tabular-nums text-xs ${v >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
+            >
+              {formatPercent(v)}
+            </span>
+          )
+        },
+      },
     ],
     [canToggle, onToggleAdsetStatus, toggling],
   )
@@ -692,6 +731,40 @@ function AdsAdsetDeliveryReportDialogInner({
         render: (r) => (
           <span className="tabular-nums text-xs text-muted-foreground">{formatUsd(r.spend)}</span>
         ),
+      },
+      {
+        key: 'profit_realtime',
+        label: 'Profit',
+        sortKey: 'profit_realtime',
+        className: 'min-w-[120px] text-right',
+        render: (r) => {
+          const v = r.profit_realtime
+          if (v == null) return <span className="text-xs text-muted-foreground">-</span>
+          return (
+            <span
+              className={`tabular-nums text-xs ${v >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
+            >
+              {formatUsd(v)}
+            </span>
+          )
+        },
+      },
+      {
+        key: 'roi_realtime',
+        label: 'ROI',
+        sortKey: 'roi_realtime',
+        className: 'min-w-[100px] text-right',
+        render: (r) => {
+          const v = r.roi_realtime
+          if (v == null) return <span className="text-xs text-muted-foreground">-</span>
+          return (
+            <span
+              className={`tabular-nums text-xs ${v >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
+            >
+              {formatPercent(v)}
+            </span>
+          )
+        },
       },
     ],
     [canToggle, onToggleAdStatus, toggling],

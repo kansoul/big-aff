@@ -63,8 +63,6 @@ class AdsLinkController extends BaseController
      */
     public function toggleHide(AdsLink $adsLink): JsonResponse
     {
-        $this->authorize('toggleHide', $adsLink);
-
         $updated = $this->adsLinkService->toggleHide($adsLink);
 
         return $this->sendResponse(['data' => new AdsLinkResource($updated)]);

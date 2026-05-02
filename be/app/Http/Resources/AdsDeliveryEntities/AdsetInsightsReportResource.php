@@ -12,10 +12,10 @@ class AdsetInsightsReportResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $conversionRealtime = (int) ($this->conversion_realtime ?? 0);
-        $rpcEst = (float) ($this->rpc_est ?? 0);
+        $clickAdRealtime = (int) ($this->conversion_realtime ?? 0);
+        $rRpc = (float) ($this->rpc_est ?? 0);
         $spend = (float) ($this->spend ?? 0);
-        $revenueEst = $rpcEst * $conversionRealtime;
+        $revenueEst = $rRpc * $clickAdRealtime;
 
         return [
             'id' => $this->id,
@@ -45,12 +45,12 @@ class AdsetInsightsReportResource extends JsonResource
             'cost_per_inline_link_click' => $this->cost_per_inline_link_click,
             'frequency' => $this->frequency,
             // realtime computed
-            'conversion_realtime' => $conversionRealtime,
-            'rpc_est' => $rpcEst ?: null,
+            'conversion_realtime' => $clickAdRealtime,
+            'rpc_est' => $rRpc ?: null,
             'revenue_est' => $revenueEst ?: null,
             'profit_realtime' => $spend > 0 ? round($revenueEst - $spend, 4) : null,
             'roi_realtime' => $spend > 0 ? round(($revenueEst - $spend) / $spend * 100, 2) : null,
-            'cpa_realtime' => $conversionRealtime > 0 ? round($spend / $conversionRealtime, 4) : null,
+            'cpa_realtime' => $clickAdRealtime > 0 ? round($spend / $clickAdRealtime, 4) : null,
             // timestamps
             'updated_time' => $this->updated_time?->toISOString(),
             'created_time' => $this->created_time?->toISOString(),

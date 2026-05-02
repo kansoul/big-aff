@@ -66,7 +66,9 @@ trait AdsetInsightsReportRelationship
         return CampaignReport::query()
             ->select('r_rpc')
             ->whereColumn('campaign_reports.campaign_id', 'adset_insights_reports.campaign_id')
-            ->whereColumn('campaign_reports.date_start', 'adset_insights_reports.date_start')
+            ->whereColumn('campaign_reports.date_start', '<=', 'adset_insights_reports.date_start')
+            ->whereNotNull('campaign_reports.r_rpc')
+            ->orderByDesc('campaign_reports.date_start')
             ->limit(1);
     }
 }
