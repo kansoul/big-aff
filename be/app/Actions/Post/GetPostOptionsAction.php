@@ -26,7 +26,11 @@ class GetPostOptionsAction
             $authUserId = Auth::id();
             $query->where(function ($q) use ($allowedIds, $authUserId): void {
                 $q->whereIn('created_by', $allowedIds)
-                    ->orWhereHas('assignedUsers', fn ($q2) => $q2->where('users.id', $authUserId));
+                    ->orWhereHas('assignedUsers', fn ($q2) => $q2->where('users.id', $authUserId))
+                    ->orWhereExists(fn ($q3) => $q3->from('ads_links')
+                        ->whereColumn('ads_links.post_id', 'posts.id')
+                        ->whereIn('ads_links.created_by', $allowedIds)
+                    );
             });
         }
 

@@ -629,7 +629,7 @@ interface DeliveryInsightCommon {
   ad_clicks: number | null
   article_views: number | null
   search_views: number | null
-  search_click: number | null
+  ads_conv: number | null
   inline_link_click_ctr: number | null
   cost_per_inline_link_click: number | null
   frequency: number | null

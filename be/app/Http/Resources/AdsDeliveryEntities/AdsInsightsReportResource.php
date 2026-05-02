@@ -41,7 +41,7 @@ class AdsInsightsReportResource extends JsonResource
             'ad_clicks' => $this->ad_clicks,
             'article_views' => $this->article_views,
             'search_views' => $this->search_views,
-            'search_click' => $this->search_click,
+            'ads_conv' => $this->ads_conv,
             'inline_link_click_ctr' => $this->inline_link_click_ctr,
             'cost_per_inline_link_click' => $this->cost_per_inline_link_click,
             'frequency' => $this->frequency,

@@ -109,7 +109,7 @@ function formatDate(value: string | null | undefined): string {
 type SortState = { column: string | null; direction: 'asc' | 'desc' | null }
 
 type SortHeaderProps = {
-  label: string
+  label: React.ReactNode
   column?: string
   sort: SortState
   onSort: (column: string) => void
@@ -246,10 +246,28 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
 type ColDef<TRow> = {
   key: string
   label: string
+  header?: React.ReactNode
   sortKey?: string
   className?: string
   render: (row: TRow) => React.ReactNode
   summary?: 'sum' | null
+}
+
+type ColColor = 'green' | 'blue'
+
+function ColHeader({ color, children }: { color?: ColColor; children: React.ReactNode }) {
+  const dot =
+    color === 'green' ? (
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+    ) : color === 'blue' ? (
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+    ) : null
+  return (
+    <span className="inline-flex items-center gap-1">
+      {dot}
+      {children}
+    </span>
+  )
 }
 
 // ─── Dialog body ──────────────────────────────────────────────────────────────
@@ -508,8 +526,12 @@ function AdsAdsetDeliveryReportDialogInner({
 
   // ── Column definitions (memoized per tab) ──────────────────────────────────
 
+  const g = (label: string) => <ColHeader color="green">{label}</ColHeader>
+  const b = (label: string) => <ColHeader color="blue">{label}</ColHeader>
+
   const adsetColumns = useMemo<ColDef<AdsetInsightRow>[]>(
     () => [
+      // ── Identity ──
       {
         key: 'adset_id',
         label: 'Adset ID',
@@ -532,21 +554,21 @@ function AdsAdsetDeliveryReportDialogInner({
         key: 'account_id',
         label: 'Account ID',
         sortKey: 'account_id',
-        className: 'min-w-[160px]',
+        className: 'min-w-[140px]',
         render: (r) => <span className="font-mono text-[11px]">{r.account_id ?? '-'}</span>,
       },
       {
         key: 'campaign_id',
         label: 'Campaign ID',
         sortKey: 'campaign_id',
-        className: 'min-w-[160px]',
+        className: 'min-w-[140px]',
         render: (r) => <span className="font-mono text-[11px]">{r.campaign_id ?? '-'}</span>,
       },
       {
         key: 'date_start',
         label: 'Date',
         sortKey: 'date_start',
-        className: 'min-w-[110px]',
+        className: 'min-w-[100px]',
         render: (r) => (
           <span className="tabular-nums text-xs text-muted-foreground">
             {formatDate(r.date_start)}
@@ -557,13 +579,13 @@ function AdsAdsetDeliveryReportDialogInner({
         key: 'status',
         label: 'Status',
         sortKey: 'status',
-        className: 'min-w-[120px]',
+        className: 'min-w-[110px]',
         render: (r) => <StatusBadge status={r.status} label={r.status ?? undefined} />,
       },
       {
         key: 'toggle',
         label: 'Off/On',
-        className: 'min-w-[80px]',
+        className: 'min-w-[70px]',
         render: (r) => {
           const key = `adset:${r.id}`
           const isActive = (r.status ?? '').toUpperCase() === 'ACTIVE'
@@ -577,19 +599,13 @@ function AdsAdsetDeliveryReportDialogInner({
           )
         },
       },
-      {
-        key: 'daily_budget',
-        label: 'Daily Budget',
-        sortKey: 'daily_budget',
-        className: 'min-w-[120px] text-right',
-        summary: 'sum',
-        render: (r) => <span className="tabular-nums text-xs">{formatUsd(r.daily_budget)}</span>,
-      },
+      // ── Metrics ──
       {
         key: 'revenue_est',
-        label: 'Revenue Est',
+        label: 'R. Rev',
+        header: g('R. Rev'),
         sortKey: 'revenue_est',
-        className: 'min-w-[120px] text-right',
+        className: 'min-w-[110px] text-right',
         summary: 'sum',
         render: (r) => (
           <span className="tabular-nums text-xs text-emerald-500">{formatUsd(r.revenue_est)}</span>
@@ -598,18 +614,20 @@ function AdsAdsetDeliveryReportDialogInner({
       {
         key: 'spend',
         label: 'Spend',
+        header: b('Spend'),
         sortKey: 'spend',
-        className: 'min-w-[110px] text-right',
+        className: 'min-w-[100px] text-right',
         summary: 'sum',
         render: (r) => (
-          <span className="tabular-nums text-xs text-muted-foreground">{formatUsd(r.spend)}</span>
+          <span className="tabular-nums text-xs text-blue-500">{formatUsd(r.spend)}</span>
         ),
       },
       {
         key: 'profit_realtime',
         label: 'Profit',
+        header: g('Profit'),
         sortKey: 'profit_realtime',
-        className: 'min-w-[120px] text-right',
+        className: 'min-w-[110px] text-right',
         render: (r) => {
           const v = r.profit_realtime
           if (v == null) return <span className="text-xs text-muted-foreground">-</span>
@@ -624,9 +642,10 @@ function AdsAdsetDeliveryReportDialogInner({
       },
       {
         key: 'roi_realtime',
-        label: 'ROI',
+        label: 'R. ROI',
+        header: g('R. ROI'),
         sortKey: 'roi_realtime',
-        className: 'min-w-[100px] text-right',
+        className: 'min-w-[90px] text-right',
         render: (r) => {
           const v = r.roi_realtime
           if (v == null) return <span className="text-xs text-muted-foreground">-</span>
@@ -641,19 +660,204 @@ function AdsAdsetDeliveryReportDialogInner({
       },
       {
         key: 'rpc_est',
-        label: 'RPC',
+        label: 'R. RPC',
+        header: g('R. RPC'),
         sortKey: 'rpc_est',
-        className: 'min-w-[100px] text-right',
+        className: 'min-w-[95px] text-right',
         render: (r) => (
-          <span className="tabular-nums text-xs text-muted-foreground">{formatUsd(r.rpc_est)}</span>
+          <span className="tabular-nums text-xs text-emerald-500">{formatUsd(r.rpc_est)}</span>
+        ),
+      },
+      {
+        key: 'conversion_realtime',
+        label: 'R. Conv.',
+        header: g('R. Conv.'),
+        sortKey: 'conversion_realtime',
+        className: 'min-w-[90px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-emerald-500">{r.conversion_realtime}</span>
+        ),
+      },
+      {
+        key: 'ads_conv',
+        label: 'Ads Conv.',
+        header: b('Ads Conv.'),
+        sortKey: 'ads_conv',
+        className: 'min-w-[90px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.ads_conv ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'cpa_realtime',
+        label: 'R. CPA',
+        header: g('R. CPA'),
+        sortKey: 'cpa_realtime',
+        className: 'min-w-[95px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-emerald-500">{formatUsd(r.cpa_realtime)}</span>
+        ),
+      },
+      {
+        key: 'cpa',
+        label: 'ADS CPA',
+        header: b('ADS CPA'),
+        sortKey: 'cpa',
+        className: 'min-w-[90px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatUsd(r.cpa)}</span>
+        ),
+      },
+      // ── Remaining ──
+      {
+        key: 'daily_budget',
+        label: 'Daily Budget',
+        header: b('Daily Budget'),
+        sortKey: 'daily_budget',
+        className: 'min-w-[110px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatUsd(r.daily_budget)}</span>
+        ),
+      },
+      {
+        key: 'impressions',
+        label: 'ADS Impr',
+        header: b('ADS Impr'),
+        sortKey: 'impressions',
+        className: 'min-w-[90px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.impressions ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'clicks',
+        label: 'Supply Clicks',
+        header: b('Supply Clicks'),
+        sortKey: 'clicks',
+        className: 'min-w-[100px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.clicks ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'ad_clicks',
+        label: 'Ad Clicks',
+        header: b('Ad Clicks'),
+        sortKey: 'ad_clicks',
+        className: 'min-w-[90px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.ad_clicks ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'reach',
+        label: 'Reach',
+        header: b('Reach'),
+        sortKey: 'reach',
+        className: 'min-w-[80px] text-right',
+        summary: 'sum',
+        render: (r) => <span className="tabular-nums text-xs text-blue-500">{r.reach ?? '-'}</span>,
+      },
+      {
+        key: 'article_views',
+        label: 'LP View',
+        header: b('LP View'),
+        sortKey: 'article_views',
+        className: 'min-w-[85px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.article_views ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'search_views',
+        label: 'S.View',
+        header: b('S.View'),
+        sortKey: 'search_views',
+        className: 'min-w-[80px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.search_views ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'cpc',
+        label: 'ADS CPC',
+        header: b('ADS CPC'),
+        sortKey: 'cpc',
+        className: 'min-w-[85px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatUsd(r.cpc)}</span>
+        ),
+      },
+      {
+        key: 'cpm',
+        label: 'CPM',
+        header: b('CPM'),
+        sortKey: 'cpm',
+        className: 'min-w-[80px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatUsd(r.cpm)}</span>
+        ),
+      },
+      {
+        key: 'ctr',
+        label: 'FB CTR',
+        header: b('FB CTR'),
+        sortKey: 'ctr',
+        className: 'min-w-[80px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatPercent(r.ctr)}</span>
+        ),
+      },
+      {
+        key: 'inline_link_click_ctr',
+        label: 'CTR Link',
+        header: b('CTR Link'),
+        sortKey: 'inline_link_click_ctr',
+        className: 'min-w-[85px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">
+            {formatPercent(r.inline_link_click_ctr)}
+          </span>
+        ),
+      },
+      {
+        key: 'cost_per_inline_link_click',
+        label: 'CPC Link',
+        header: b('CPC Link'),
+        sortKey: 'cost_per_inline_link_click',
+        className: 'min-w-[88px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">
+            {formatUsd(r.cost_per_inline_link_click)}
+          </span>
+        ),
+      },
+      {
+        key: 'frequency',
+        label: 'FB Freq',
+        header: b('FB Freq'),
+        sortKey: 'frequency',
+        className: 'min-w-[80px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatPercent(r.frequency)}</span>
         ),
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [canToggle, onToggleAdsetStatus, toggling],
   )
 
   const adColumns = useMemo<ColDef<AdsInsightRow>[]>(
     () => [
+      // ── Identity ──
       {
         key: 'ad_id',
         label: 'Ad ID',
@@ -673,24 +877,31 @@ function AdsAdsetDeliveryReportDialogInner({
         ),
       },
       {
+        key: 'adset_id',
+        label: 'Adset ID',
+        sortKey: 'adset_id',
+        className: 'min-w-[140px]',
+        render: (r) => <span className="font-mono text-[11px]">{r.adset_id ?? '-'}</span>,
+      },
+      {
         key: 'account_id',
         label: 'Account ID',
         sortKey: 'account_id',
-        className: 'min-w-[160px]',
+        className: 'min-w-[140px]',
         render: (r) => <span className="font-mono text-[11px]">{r.account_id ?? '-'}</span>,
       },
       {
         key: 'campaign_id',
         label: 'Campaign ID',
         sortKey: 'campaign_id',
-        className: 'min-w-[160px]',
+        className: 'min-w-[140px]',
         render: (r) => <span className="font-mono text-[11px]">{r.campaign_id ?? '-'}</span>,
       },
       {
         key: 'date_start',
         label: 'Date',
         sortKey: 'date_start',
-        className: 'min-w-[110px]',
+        className: 'min-w-[100px]',
         render: (r) => (
           <span className="tabular-nums text-xs text-muted-foreground">
             {formatDate(r.date_start)}
@@ -701,13 +912,13 @@ function AdsAdsetDeliveryReportDialogInner({
         key: 'status',
         label: 'Status',
         sortKey: 'status',
-        className: 'min-w-[120px]',
+        className: 'min-w-[110px]',
         render: (r) => <StatusBadge status={r.status} label={r.status ?? undefined} />,
       },
       {
         key: 'toggle',
         label: 'Off/On',
-        className: 'min-w-[80px]',
+        className: 'min-w-[70px]',
         render: (r) => {
           const key = `ad:${r.id}`
           const isActive = (r.status ?? '').toUpperCase() === 'ACTIVE'
@@ -721,11 +932,13 @@ function AdsAdsetDeliveryReportDialogInner({
           )
         },
       },
+      // ── Metrics (same order as adsetColumns) ──
       {
         key: 'revenue_est',
-        label: 'Revenue Est',
+        label: 'R. Rev',
+        header: g('R. Rev'),
         sortKey: 'revenue_est',
-        className: 'min-w-[120px] text-right',
+        className: 'min-w-[110px] text-right',
         summary: 'sum',
         render: (r) => (
           <span className="tabular-nums text-xs text-emerald-500">{formatUsd(r.revenue_est)}</span>
@@ -734,18 +947,20 @@ function AdsAdsetDeliveryReportDialogInner({
       {
         key: 'spend',
         label: 'Spend',
+        header: b('Spend'),
         sortKey: 'spend',
-        className: 'min-w-[110px] text-right',
+        className: 'min-w-[100px] text-right',
         summary: 'sum',
         render: (r) => (
-          <span className="tabular-nums text-xs text-muted-foreground">{formatUsd(r.spend)}</span>
+          <span className="tabular-nums text-xs text-blue-500">{formatUsd(r.spend)}</span>
         ),
       },
       {
         key: 'profit_realtime',
         label: 'Profit',
+        header: g('Profit'),
         sortKey: 'profit_realtime',
-        className: 'min-w-[120px] text-right',
+        className: 'min-w-[110px] text-right',
         render: (r) => {
           const v = r.profit_realtime
           if (v == null) return <span className="text-xs text-muted-foreground">-</span>
@@ -760,9 +975,10 @@ function AdsAdsetDeliveryReportDialogInner({
       },
       {
         key: 'roi_realtime',
-        label: 'ROI',
+        label: 'R. ROI',
+        header: g('R. ROI'),
         sortKey: 'roi_realtime',
-        className: 'min-w-[100px] text-right',
+        className: 'min-w-[90px] text-right',
         render: (r) => {
           const v = r.roi_realtime
           if (v == null) return <span className="text-xs text-muted-foreground">-</span>
@@ -777,14 +993,196 @@ function AdsAdsetDeliveryReportDialogInner({
       },
       {
         key: 'rpc_est',
-        label: 'RPC',
+        label: 'R. RPC',
+        header: g('R. RPC'),
         sortKey: 'rpc_est',
-        className: 'min-w-[100px] text-right',
+        className: 'min-w-[95px] text-right',
         render: (r) => (
-          <span className="tabular-nums text-xs text-muted-foreground">{formatUsd(r.rpc_est)}</span>
+          <span className="tabular-nums text-xs text-emerald-500">{formatUsd(r.rpc_est)}</span>
+        ),
+      },
+      {
+        key: 'conversion_realtime',
+        label: 'R. Conv.',
+        header: g('R. Conv.'),
+        sortKey: 'conversion_realtime',
+        className: 'min-w-[90px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-emerald-500">{r.conversion_realtime}</span>
+        ),
+      },
+      {
+        key: 'ads_conv',
+        label: 'Ads Conv.',
+        header: b('Ads Conv.'),
+        sortKey: 'ads_conv',
+        className: 'min-w-[90px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.ads_conv ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'cpa_realtime',
+        label: 'R. CPA',
+        header: g('R. CPA'),
+        sortKey: 'cpa_realtime',
+        className: 'min-w-[95px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-emerald-500">{formatUsd(r.cpa_realtime)}</span>
+        ),
+      },
+      {
+        key: 'cpa',
+        label: 'ADS CPA',
+        header: b('ADS CPA'),
+        sortKey: 'cpa',
+        className: 'min-w-[90px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatUsd(r.cpa)}</span>
+        ),
+      },
+      {
+        key: 'daily_budget',
+        label: 'Daily Budget',
+        header: b('Daily Budget'),
+        sortKey: 'daily_budget',
+        className: 'min-w-[110px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatUsd(r.daily_budget)}</span>
+        ),
+      },
+      {
+        key: 'impressions',
+        label: 'ADS Impr',
+        header: b('ADS Impr'),
+        sortKey: 'impressions',
+        className: 'min-w-[90px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.impressions ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'clicks',
+        label: 'Supply Clicks',
+        header: b('Supply Clicks'),
+        sortKey: 'clicks',
+        className: 'min-w-[100px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.clicks ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'ad_clicks',
+        label: 'Ad Clicks',
+        header: b('Ad Clicks'),
+        sortKey: 'ad_clicks',
+        className: 'min-w-[90px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.ad_clicks ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'reach',
+        label: 'Reach',
+        header: b('Reach'),
+        sortKey: 'reach',
+        className: 'min-w-[80px] text-right',
+        summary: 'sum',
+        render: (r) => <span className="tabular-nums text-xs text-blue-500">{r.reach ?? '-'}</span>,
+      },
+      {
+        key: 'article_views',
+        label: 'LP View',
+        header: b('LP View'),
+        sortKey: 'article_views',
+        className: 'min-w-[85px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.article_views ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'search_views',
+        label: 'S.View',
+        header: b('S.View'),
+        sortKey: 'search_views',
+        className: 'min-w-[80px] text-right',
+        summary: 'sum',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{r.search_views ?? '-'}</span>
+        ),
+      },
+      {
+        key: 'cpc',
+        label: 'ADS CPC',
+        header: b('ADS CPC'),
+        sortKey: 'cpc',
+        className: 'min-w-[85px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatUsd(r.cpc)}</span>
+        ),
+      },
+      {
+        key: 'cpm',
+        label: 'CPM',
+        header: b('CPM'),
+        sortKey: 'cpm',
+        className: 'min-w-[80px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatUsd(r.cpm)}</span>
+        ),
+      },
+      {
+        key: 'ctr',
+        label: 'FB CTR',
+        header: b('FB CTR'),
+        sortKey: 'ctr',
+        className: 'min-w-[80px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatPercent(r.ctr)}</span>
+        ),
+      },
+      {
+        key: 'inline_link_click_ctr',
+        label: 'CTR Link',
+        header: b('CTR Link'),
+        sortKey: 'inline_link_click_ctr',
+        className: 'min-w-[85px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">
+            {formatPercent(r.inline_link_click_ctr)}
+          </span>
+        ),
+      },
+      {
+        key: 'cost_per_inline_link_click',
+        label: 'CPC Link',
+        header: b('CPC Link'),
+        sortKey: 'cost_per_inline_link_click',
+        className: 'min-w-[88px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">
+            {formatUsd(r.cost_per_inline_link_click)}
+          </span>
+        ),
+      },
+      {
+        key: 'frequency',
+        label: 'FB Freq',
+        header: b('FB Freq'),
+        sortKey: 'frequency',
+        className: 'min-w-[80px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-blue-500">{formatPercent(r.frequency)}</span>
         ),
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [canToggle, onToggleAdStatus, toggling],
   )
 
@@ -1030,7 +1428,7 @@ function AdsAdsetDeliveryReportDialogInner({
                         )}
                       >
                         <SortHeader
-                          label={col.label}
+                          label={col.header ?? col.label}
                           column={col.sortKey}
                           sort={sort}
                           onSort={onSortColumn}
