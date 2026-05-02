@@ -99,13 +99,14 @@ function CopyLinkDialog({ state, onClose }: CopyLinkDialogProps) {
 
 type ActionMeta = {
   canUpdate: boolean
+  users: UserOption[]
   onEditRow: (row: AdsLink) => void
   onToggleHide: (row: AdsLink) => void
   onOpenCopyDialog: (state: Omit<CopyDialogState, 'open'>) => void
 }
 
 function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
-  const { canUpdate, onEditRow, onToggleHide, onOpenCopyDialog } = meta
+  const { canUpdate, users, onEditRow, onToggleHide, onOpenCopyDialog } = meta
 
   return [
     {
@@ -195,6 +196,25 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
       ),
     },
     {
+      accessorKey: 'rac',
+      header: 'RAC',
+      size: 100,
+      Cell: ({ row }) => {
+        const rac = row.original.rac
+        if (!rac) return <span className="text-muted-foreground">—</span>
+        return (
+          <a
+            href={rac}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-xs text-primary hover:underline truncate block max-w-full"
+          >
+            {rac}
+          </a>
+        )
+      },
+    },
+    {
       accessorKey: 'is_hidden',
       header: 'Status',
       size: 100,
@@ -205,6 +225,33 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
         />
       ),
     },
+    {
+      accessorKey: 'created_at',
+      header: 'Created at',
+      size: 120,
+      Cell: ({ row }) => {
+        const val = row.original.created_at
+        if (!val) return <span className="text-muted-foreground">—</span>
+        const d = new Date(val)
+        return (
+          <span className="text-xs text-muted-foreground">
+            {d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: 'created_by',
+      header: 'Created by',
+      size: 130,
+      Cell: ({ row }) => {
+        const id = row.original.created_by
+        if (!id) return <span className="text-muted-foreground">—</span>
+        const user = users.find((u) => u.id === id)
+        return <span className="text-xs text-foreground">{user?.name ?? String(id)}</span>
+      },
+    },
+
     {
       id: 'copy_links',
       header: 'Copy Link',
@@ -374,11 +421,12 @@ function AdsLinksTableCardInner({
     () =>
       getColumns({
         canUpdate,
+        users,
         onEditRow,
         onToggleHide,
         onOpenCopyDialog: (state) => setCopyDialog({ ...state, open: true }),
       }),
-    [canUpdate, onEditRow, onToggleHide],
+    [canUpdate, users, onEditRow, onToggleHide],
   )
 
   // Build filter field definitions for FilterPanel

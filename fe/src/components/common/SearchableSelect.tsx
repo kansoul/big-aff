@@ -97,7 +97,7 @@ function SearchableSelectInner({
                 type="button"
                 onClick={() => handleSelect(opt.value)}
                 className={cn(
-                  'flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted',
+                  'flex w-full items-center gap-2 px-3 py-1.5 text-sm text-left hover:bg-muted',
                   value === opt.value && 'bg-muted/60 font-medium',
                 )}
               >
