@@ -62,10 +62,7 @@ function parseFiltersFromUrl(params: URLSearchParams): CampaignReportFilterParam
       .getAll('user_ids[]')
       .map(Number)
       .filter((n) => !Number.isNaN(n)),
-    account_ids: params
-      .getAll('account_ids[]')
-      .map(Number)
-      .filter((n) => !Number.isNaN(n)),
+    account_ids: params.getAll('account_ids[]').filter(Boolean),
     ads_type: params.get('ads_type') ?? null,
     campaign_ids: params.getAll('campaign_ids[]'),
     channel_codes: params.getAll('channel_codes[]'),
@@ -249,7 +246,7 @@ export function CampaignReportPage() {
       date_from: range?.from ?? null,
       date_to: range?.to ?? null,
       user_ids: parseNumberArray(values.user_ids),
-      account_ids: parseNumberArray(values.account_ids),
+      account_ids: parseStringArray(values.account_ids),
       ads_type: parseStringOrNull(values.ads_type),
       campaign_ids: parseStringArray(values.campaign_ids),
       channel_codes: parseStringArray(values.channel_codes),
@@ -287,7 +284,7 @@ export function CampaignReportPage() {
   const accountOptions = useMemo<SelectOption[]>(
     () =>
       options.accounts.map((a) => ({
-        value: String(a.id),
+        value: a.account_id,
         label: a.account_name ? `${a.account_name} (${a.account_id})` : a.account_id,
       })),
     [options.accounts],

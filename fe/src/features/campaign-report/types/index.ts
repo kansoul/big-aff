@@ -240,7 +240,7 @@ export interface CampaignReportFilterParams {
   date_from?: string | null
   date_to?: string | null
   user_ids?: number[]
-  account_ids?: number[]
+  account_ids?: string[]
   ads_type?: string | null
   campaign_ids?: string[]
   channel_codes?: string[]

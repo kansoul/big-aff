@@ -50,7 +50,7 @@ class ListPostsAction
             $authUserId = Auth::id();
             $query->where(function ($q) use ($allowedIds, $authUserId): void {
                 $q->whereIn('created_by', $allowedIds)
-                    ->orWhereHas('assignedUsers', fn($q2) => $q2->where('users.id', $authUserId));
+                    ->orWhereHas('assignedUsers', fn ($q2) => $q2->where('users.id', $authUserId));
             });
         }
 

@@ -32,9 +32,9 @@ class AssignChannelAction
         $channels = Channel::whereIn('code', $channelCodes)
             ->get(['id', 'code'])
             ->keyBy('id')
-            ->map(fn($c) => ['id' => (int) $c->id, 'code' => $c->code]);
+            ->map(fn ($c) => ['id' => (int) $c->id, 'code' => $c->code]);
 
-        $channelIds = $channels->keys()->map(fn($id) => (int) $id)->all();
+        $channelIds = $channels->keys()->map(fn ($id) => (int) $id)->all();
 
         $requesterId = Auth::id();
         $skippedCodes = [];
@@ -79,7 +79,7 @@ class AssignChannelAction
 
             ChannelUser::query()
                 ->where('user_id', $user->id)
-                ->when(! empty($allowedIds), fn($q) => $q->whereNotIn('channel_id', $allowedIds))
+                ->when(! empty($allowedIds), fn ($q) => $q->whereNotIn('channel_id', $allowedIds))
                 ->delete();
 
             if (empty($allowedIds)) {
@@ -96,14 +96,14 @@ class AssignChannelAction
                 ->where('user_id', $user->id)
                 ->whereIn('channel_id', $allowedIds)
                 ->pluck('channel_id')
-                ->map(fn($id) => (int) $id)
+                ->map(fn ($id) => (int) $id)
                 ->all();
 
             $toInsert = array_diff($allowedIds, $existing);
 
             if (! empty($toInsert)) {
                 $now = now();
-                $rows = array_map(fn(int $channelId) => [
+                $rows = array_map(fn (int $channelId) => [
                     'user_id' => $user->id,
                     'channel_id' => $channelId,
                     'created_at' => $now,

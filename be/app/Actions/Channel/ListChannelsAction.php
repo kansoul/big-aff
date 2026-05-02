@@ -36,7 +36,7 @@ class ListChannelsAction
                         ->orWhere('code', 'like', "%{$search}%");
                 });
             })
-            ->when(isset($filters['is_active']), fn($q) => $q->where('is_active', (bool) $filters['is_active']));
+            ->when(isset($filters['is_active']), fn ($q) => $q->where('is_active', (bool) $filters['is_active']));
 
         SortInput::fromValidatedArray(
             $filters,

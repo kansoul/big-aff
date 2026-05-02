@@ -225,8 +225,8 @@ class CampaignReportService
     {
         if ($groupBy === 'user_id') {
             $query->leftJoin(
-                DB::raw('(SELECT account_id, MIN(user_id) AS primary_user_id FROM account_user GROUP BY account_id) AS pu_grp'),
-                'pu_grp.account_id',
+                DB::raw('(SELECT accounts.account_id AS string_account_id, MIN(account_user.user_id) AS primary_user_id FROM account_user JOIN accounts ON accounts.id = account_user.account_id JOIN users ON users.id = account_user.user_id WHERE users.role_id != 1 GROUP BY accounts.account_id) AS pu_grp'),
+                'pu_grp.string_account_id',
                 '=',
                 'campaign_reports.account_id',
             );
@@ -417,7 +417,7 @@ class CampaignReportService
 
         $accountIds = array_unique(array_map(fn (CampaignReport $r) => $r->account_id, $items));
         $accountUserMap = $this->resolveAccountPrimaryUser($accountIds);
-
+        info($accountUserMap);
         $userIds = array_unique(array_values($accountUserMap));
         $userNameMap = User::query()
             ->whereIn('id', $userIds)
@@ -428,8 +428,8 @@ class CampaignReportService
     }
 
     /**
-     * @param  array<int, string|int>  $accountIds
-     * @return array<string, int> account_id => user_id (primary = min user_id per account)
+     * @param  array<int, string>  $accountIds  String account_id values from campaign_reports (e.g. "act_xxx")
+     * @return array<string, int> string account_id => user_id (primary = min user_id per account)
      */
     private function resolveAccountPrimaryUser(array $accountIds): array
     {
@@ -438,15 +438,16 @@ class CampaignReportService
         }
 
         $rows = DB::table('account_user')
-            ->whereIn('account_id', $accountIds)
-            ->orderBy('account_id')
-            ->orderBy('user_id')
-            ->select('account_id', 'user_id')
+            ->join('accounts', 'accounts.id', '=', 'account_user.account_id')
+            ->join('users', 'users.id', '=', 'account_user.user_id')
+            ->whereIn('accounts.account_id', $accountIds)
+            ->orderBy('accounts.account_id')
+            ->orderBy('account_user.user_id')
+            ->select('accounts.account_id as string_account_id', 'account_user.user_id')
             ->get();
-
         $map = [];
         foreach ($rows as $row) {
-            $key = (string) $row->account_id;
+            $key = (string) $row->string_account_id;
             if (! isset($map[$key])) {
                 $map[$key] = (int) $row->user_id;
             }
@@ -473,6 +474,7 @@ class CampaignReportService
             'campaign_id' => [$row->campaign_id, $row->campaign_name ?: $row->campaign_id],
             'user_id' => (function () use ($row, $accountUserMap, $userNameMap): array {
                 $accountKey = (string) $row->account_id;
+                // info([$accountKey, $accountUserMap]);
                 $userId = $accountUserMap[$accountKey] ?? null;
                 $label = $userId !== null ? ($userNameMap[$userId] ?? (string) $userId) : '(Unassigned)';
 

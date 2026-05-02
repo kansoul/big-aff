@@ -93,7 +93,7 @@ class ToggleCampaignReportStatusAction
 
             return [
                 'success' => false,
-                'message' => 'An error occurred while updating status: '.$e->getMessage(),
+                'message' => 'An error occurred while updating status: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }

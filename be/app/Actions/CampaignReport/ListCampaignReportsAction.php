@@ -133,7 +133,7 @@ class ListCampaignReportsAction
 
         if (! empty($filters['user_ids'])) {
             $userIds = $filters['user_ids'];
-            $query->whereIn('account_id', function ($sub) use ($userIds) {
+            $query->whereIn('campaign_reports.account_id', function ($sub) use ($userIds) {
                 $sub->select('account_id')
                     ->from('account_user')
                     ->whereIn('user_id', $userIds);
@@ -141,7 +141,7 @@ class ListCampaignReportsAction
         }
 
         if (! empty($filters['account_ids'])) {
-            $query->whereIn('account_id', $filters['account_ids']);
+            $query->whereIn('campaign_reports.account_id', $filters['account_ids']);
         }
 
         if (! empty($filters['ads_type'])) {

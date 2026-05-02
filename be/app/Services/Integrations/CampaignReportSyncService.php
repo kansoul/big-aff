@@ -67,7 +67,7 @@ class CampaignReportSyncService
                 'success' => false,
                 'synced_count' => $syncedCount,
                 'error_count' => $errorCount + 1,
-                'message' => 'Sync failed: ' . $e->getMessage(),
+                'message' => 'Sync failed: '.$e->getMessage(),
             ];
         }
     }

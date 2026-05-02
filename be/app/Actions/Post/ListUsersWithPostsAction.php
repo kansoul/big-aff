@@ -26,7 +26,7 @@ class ListUsersWithPostsAction
 
         $query->when(
             ! empty($filters['query']),
-            fn($q) => $q->where(function ($inner) use ($filters): void {
+            fn ($q) => $q->where(function ($inner) use ($filters): void {
                 $search = $filters['query'];
                 $inner->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
