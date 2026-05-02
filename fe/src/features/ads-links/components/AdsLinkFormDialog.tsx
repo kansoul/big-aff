@@ -1,4 +1,5 @@
 import type { UseFormReturn } from 'react-hook-form'
+import { AlertCircle, Loader2, Save } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -20,7 +21,6 @@ import { Input } from '@/components/ui/input'
 import { SearchableSelect } from '@/components/common/SearchableSelect'
 
 import { Textarea } from '@/components/ui/textarea'
-import { RoleFormErrorAlert } from '@/features/settings/components/RoleFormErrorAlert'
 import type {
   AdsLink,
   AdsLinkCreateFormValues,
@@ -66,26 +66,26 @@ export function CreateAdsLinkDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-black tracking-tight uppercase text-base">
-            New Ads Link
-          </DialogTitle>
+          <DialogTitle>New Ads Link</DialogTitle>
         </DialogHeader>
-        {formError && open ? <RoleFormErrorAlert message={formError} className="shrink-0" /> : null}
+
         <Form {...form}>
           <form
             onSubmit={(e) => {
               void form.handleSubmit((values) => onSubmit(values, { createAnother: false }))(e)
             }}
-            className="space-y-4"
+            className="flex flex-col gap-4"
           >
             <FormField
               control={form.control}
               name="site_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Site *</FormLabel>
+                  <FormLabel>
+                    Site <span className="text-destructive">*</span>
+                  </FormLabel>
                   <SearchableSelect
                     value={field.value ? String(field.value) : undefined}
                     onValueChange={(v) => field.onChange(Number(v))}
@@ -102,14 +102,19 @@ export function CreateAdsLinkDialog({
               name="post_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Post *</FormLabel>
+                  <FormLabel>
+                    Post <span className="text-destructive">*</span>
+                  </FormLabel>
                   <SearchableSelect
                     value={field.value ? String(field.value) : undefined}
                     onValueChange={(v) => {
                       field.onChange(Number(v))
                       form.setValue('keyword_set_id', null)
                     }}
-                    options={posts.map((p) => ({ label: p.title, value: String(p.id) }))}
+                    options={posts.map((p) => ({
+                      label: `${p.id} - ${p.title}`,
+                      value: String(p.id),
+                    }))}
                     placeholder="Select post"
                   />
                   <FormMessage />
@@ -122,7 +127,9 @@ export function CreateAdsLinkDialog({
               name="channel_code"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Channel *</FormLabel>
+                  <FormLabel>
+                    Channel <span className="text-destructive">*</span>
+                  </FormLabel>
                   <SearchableSelect
                     value={field.value ?? undefined}
                     onValueChange={field.onChange}
@@ -139,7 +146,9 @@ export function CreateAdsLinkDialog({
               name="rac"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>RAC *</FormLabel>
+                  <FormLabel>
+                    RAC <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Textarea rows={3} {...field} />
                   </FormControl>
@@ -153,7 +162,9 @@ export function CreateAdsLinkDialog({
               name="fbid"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Facebook Pixel ID(s)</FormLabel>
+                  <FormLabel>
+                    Facebook Pixel ID(s) <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. 12313123312" {...field} value={field.value ?? ''} />
                   </FormControl>
@@ -212,8 +223,20 @@ export function CreateAdsLinkDialog({
               )}
             />
 
-            <DialogFooter className="mt-2 shrink-0 gap-2 border-0 bg-transparent sm:justify-end">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {formError && open ? (
+              <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <p>{formError}</p>
+              </div>
+            ) : null}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={() => onOpenChange(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -226,8 +249,18 @@ export function CreateAdsLinkDialog({
               >
                 Create & create another
               </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? 'Creating…' : 'Create'}
+              <Button type="submit" disabled={submitting} className="gap-1.5">
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3.5 w-3.5" />
+                    Create Ads Link
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>
@@ -237,7 +270,7 @@ export function CreateAdsLinkDialog({
   )
 }
 
-// ——— Edit dialog (only rac, fbid, googleid) ———
+// ——— Edit dialog ———
 
 type EditAdsLinkDialogProps = {
   adsLink: AdsLink | null
@@ -268,26 +301,26 @@ export function EditAdsLinkDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-black tracking-tight uppercase text-base">
-            Edit Ads Link
-          </DialogTitle>
+          <DialogTitle>Edit Ads Link</DialogTitle>
         </DialogHeader>
-        {formError && open ? <RoleFormErrorAlert message={formError} className="shrink-0" /> : null}
+
         <Form {...form}>
           <form
             onSubmit={(e) => {
               void form.handleSubmit(onSubmit)(e)
             }}
-            className="space-y-4"
+            className="flex flex-col gap-4"
           >
             <FormField
               control={form.control}
               name="rac"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>RAC *</FormLabel>
+                  <FormLabel>
+                    RAC <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Textarea rows={3} {...field} />
                   </FormControl>
@@ -365,12 +398,34 @@ export function EditAdsLinkDialog({
               )}
             />
 
-            <DialogFooter className="mt-2 shrink-0 gap-2 border-0 bg-transparent sm:justify-end">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {formError && open ? (
+              <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <p>{formError}</p>
+              </div>
+            ) : null}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={() => onOpenChange(false)}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? 'Saving…' : 'Save'}
+              <Button type="submit" disabled={submitting} className="gap-1.5">
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3.5 w-3.5" />
+                    Save Changes
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>
