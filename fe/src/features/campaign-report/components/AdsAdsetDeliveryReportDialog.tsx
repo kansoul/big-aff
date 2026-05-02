@@ -251,6 +251,8 @@ type ColDef<TRow> = {
   className?: string
   render: (row: TRow) => React.ReactNode
   summary?: 'sum' | null
+  summaryFormat?: 'usd' | 'number'
+  summaryRender?: (totals: Record<string, number>) => React.ReactNode
 }
 
 type ColColor = 'green' | 'blue'
@@ -628,6 +630,17 @@ function AdsAdsetDeliveryReportDialogInner({
         header: g('Profit'),
         sortKey: 'profit_realtime',
         className: 'min-w-[110px] text-right',
+        summary: 'sum',
+        summaryRender: (totals) => {
+          const v = totals.profit_realtime ?? 0
+          return (
+            <span
+              className={`tabular-nums text-xs font-semibold ${v >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
+            >
+              {formatUsd(v)}
+            </span>
+          )
+        },
         render: (r) => {
           const v = r.profit_realtime
           if (v == null) return <span className="text-xs text-muted-foreground">-</span>
@@ -646,6 +659,18 @@ function AdsAdsetDeliveryReportDialogInner({
         header: g('R. ROI'),
         sortKey: 'roi_realtime',
         className: 'min-w-[90px] text-right',
+        summaryRender: (totals) => {
+          const spend = totals.spend ?? 0
+          if (spend === 0) return <span className="text-xs text-muted-foreground">-</span>
+          const roi = ((totals.profit_realtime ?? 0) / spend) * 100
+          return (
+            <span
+              className={`tabular-nums text-xs font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
+            >
+              {formatPercent(roi)}
+            </span>
+          )
+        },
         render: (r) => {
           const v = r.roi_realtime
           if (v == null) return <span className="text-xs text-muted-foreground">-</span>
@@ -675,6 +700,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'conversion_realtime',
         className: 'min-w-[90px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-emerald-500">{r.conversion_realtime}</span>
         ),
@@ -686,6 +712,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'ads_conv',
         className: 'min-w-[90px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.ads_conv ?? '-'}</span>
         ),
@@ -729,6 +756,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'impressions',
         className: 'min-w-[90px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.impressions ?? '-'}</span>
         ),
@@ -740,6 +768,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'clicks',
         className: 'min-w-[100px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.clicks ?? '-'}</span>
         ),
@@ -751,6 +780,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'ad_clicks',
         className: 'min-w-[90px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.ad_clicks ?? '-'}</span>
         ),
@@ -762,6 +792,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'reach',
         className: 'min-w-[80px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => <span className="tabular-nums text-xs text-blue-500">{r.reach ?? '-'}</span>,
       },
       {
@@ -771,6 +802,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'article_views',
         className: 'min-w-[85px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.article_views ?? '-'}</span>
         ),
@@ -782,6 +814,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'search_views',
         className: 'min-w-[80px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.search_views ?? '-'}</span>
         ),
@@ -961,6 +994,17 @@ function AdsAdsetDeliveryReportDialogInner({
         header: g('Profit'),
         sortKey: 'profit_realtime',
         className: 'min-w-[110px] text-right',
+        summary: 'sum',
+        summaryRender: (totals) => {
+          const v = totals.profit_realtime ?? 0
+          return (
+            <span
+              className={`tabular-nums text-xs font-semibold ${v >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
+            >
+              {formatUsd(v)}
+            </span>
+          )
+        },
         render: (r) => {
           const v = r.profit_realtime
           if (v == null) return <span className="text-xs text-muted-foreground">-</span>
@@ -979,6 +1023,18 @@ function AdsAdsetDeliveryReportDialogInner({
         header: g('R. ROI'),
         sortKey: 'roi_realtime',
         className: 'min-w-[90px] text-right',
+        summaryRender: (totals) => {
+          const spend = totals.spend ?? 0
+          if (spend === 0) return <span className="text-xs text-muted-foreground">-</span>
+          const roi = ((totals.profit_realtime ?? 0) / spend) * 100
+          return (
+            <span
+              className={`tabular-nums text-xs font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
+            >
+              {formatPercent(roi)}
+            </span>
+          )
+        },
         render: (r) => {
           const v = r.roi_realtime
           if (v == null) return <span className="text-xs text-muted-foreground">-</span>
@@ -1008,6 +1064,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'conversion_realtime',
         className: 'min-w-[90px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-emerald-500">{r.conversion_realtime}</span>
         ),
@@ -1019,6 +1076,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'ads_conv',
         className: 'min-w-[90px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.ads_conv ?? '-'}</span>
         ),
@@ -1060,6 +1118,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'impressions',
         className: 'min-w-[90px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.impressions ?? '-'}</span>
         ),
@@ -1071,6 +1130,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'clicks',
         className: 'min-w-[100px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.clicks ?? '-'}</span>
         ),
@@ -1082,6 +1142,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'ad_clicks',
         className: 'min-w-[90px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.ad_clicks ?? '-'}</span>
         ),
@@ -1093,6 +1154,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'reach',
         className: 'min-w-[80px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => <span className="tabular-nums text-xs text-blue-500">{r.reach ?? '-'}</span>,
       },
       {
@@ -1102,6 +1164,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'article_views',
         className: 'min-w-[85px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.article_views ?? '-'}</span>
         ),
@@ -1113,6 +1176,7 @@ function AdsAdsetDeliveryReportDialogInner({
         sortKey: 'search_views',
         className: 'min-w-[80px] text-right',
         summary: 'sum',
+        summaryFormat: 'number',
         render: (r) => (
           <span className="tabular-nums text-xs text-blue-500">{r.search_views ?? '-'}</span>
         ),
@@ -1493,9 +1557,13 @@ function AdsAdsetDeliveryReportDialogInner({
                             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Summary
                             </span>
+                          ) : col.summaryRender ? (
+                            col.summaryRender(summaryTotals)
                           ) : col.summary === 'sum' ? (
                             <span className="tabular-nums text-xs font-semibold">
-                              {formatUsd(summaryTotals[col.key])}
+                              {col.summaryFormat === 'number'
+                                ? summaryTotals[col.key].toLocaleString()
+                                : formatUsd(summaryTotals[col.key])}
                             </span>
                           ) : null}
                         </TableCell>
