@@ -2,13 +2,12 @@
 
 namespace App\Actions\CampaignReport;
 
+use App\Models\Account;
 use App\Models\Campaign;
 use App\Models\CampaignReport;
-use App\Services\Integrations\Facebook\FacebookAdsService;
-use App\Services\Integrations\Google\GoogleAdsService;
+use App\Services\Integrations\Ads\AdsStatusService;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ToggleCampaignReportStatusAction
@@ -44,24 +43,21 @@ class ToggleCampaignReportStatusAction
 
         $ownership = OwnershipFilter::forAuthUser();
         if (! $ownership->isAdmin()) {
-            $allowed = DB::table('accounts')
-                ->where('accounts.id', $accountId)
-                ->whereNull('accounts.deleted_at')
-                ->join('account_user', 'account_user.account_id', '=', 'accounts.id')
-                ->whereIn('account_user.user_id', $ownership->allowedUserIds())
-                ->exists();
+            $account = Account::where('account_id', $accountId)->first();
 
-            if (! $allowed) {
-                $ownership->authorize(null);
+            if ($account === null) {
+                return [
+                    'success' => false,
+                    'message' => 'Account not found.',
+                    'status' => 404,
+                ];
             }
+
+            $ownership->authorizeAccount($account);
         }
 
         try {
-            $success = match ($adsType) {
-                'facebook' => app(FacebookAdsService::class)->updateCampaignStatus($campaignId, $newStatus),
-                'google' => app(GoogleAdsService::class)->updateCampaignStatus($accountId, $campaignId, $newStatus),
-                default => false,
-            };
+            $success = app(AdsStatusService::class)->updateCampaignStatus($campaignId, $newStatus, canChangeGoogle: true);
 
             if (! $success) {
                 return [
