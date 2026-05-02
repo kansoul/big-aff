@@ -639,6 +639,15 @@ function AdsAdsetDeliveryReportDialogInner({
           )
         },
       },
+      {
+        key: 'rpc_est',
+        label: 'RPC',
+        sortKey: 'rpc_est',
+        className: 'min-w-[100px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-muted-foreground">{formatUsd(r.rpc_est)}</span>
+        ),
+      },
     ],
     [canToggle, onToggleAdsetStatus, toggling],
   )
@@ -765,6 +774,15 @@ function AdsAdsetDeliveryReportDialogInner({
             </span>
           )
         },
+      },
+      {
+        key: 'rpc_est',
+        label: 'RPC',
+        sortKey: 'rpc_est',
+        className: 'min-w-[100px] text-right',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-muted-foreground">{formatUsd(r.rpc_est)}</span>
+        ),
       },
     ],
     [canToggle, onToggleAdStatus, toggling],
