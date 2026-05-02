@@ -495,7 +495,7 @@ function AdsAdsetDeliveryReportDialogInner({
       const key = `adset:${row.id}`
       setToggling((prev) => ({ ...prev, [key]: true }))
       try {
-        const { data } = await campaignReportApi.toggleAdsetStatus(campaignId, row.id, next)
+        const { data } = await campaignReportApi.toggleAdsetStatus(row.id, next)
         setAdsets((prev) => prev.map((r) => (r.id === row.id ? data.data : r)))
         toast.success(`Adset is now ${data.data.status}`)
       } catch (err) {
@@ -514,7 +514,7 @@ function AdsAdsetDeliveryReportDialogInner({
       const key = `ad:${row.id}`
       setToggling((prev) => ({ ...prev, [key]: true }))
       try {
-        const { data } = await campaignReportApi.toggleAdStatus(campaignId, row.id, next)
+        const { data } = await campaignReportApi.toggleAdStatus(row.id, next)
         setAds((prev) => prev.map((r) => (r.id === row.id ? data.data : r)))
         toast.success(`Ad is now ${data.data.status}`)
       } catch (err) {
@@ -884,7 +884,7 @@ function AdsAdsetDeliveryReportDialogInner({
         ),
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [canToggle, onToggleAdsetStatus, toggling],
   )
 
@@ -1246,7 +1246,7 @@ function AdsAdsetDeliveryReportDialogInner({
         ),
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [canToggle, onToggleAdStatus, toggling],
   )
 
