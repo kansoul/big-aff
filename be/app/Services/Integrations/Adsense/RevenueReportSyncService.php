@@ -167,7 +167,7 @@ class RevenueReportSyncService
 
             return [
                 'success' => true,
-                'message' => "Synced {$synced} chart snapshots" . ($errors ? (' with ' . count($errors) . ' errors') : ''),
+                'message' => "Synced {$synced} chart snapshots".($errors ? (' with '.count($errors).' errors') : ''),
                 'synced_count' => $synced,
                 'skipped' => $skipped,
                 'aggregated_dates' => count($syncedDates),
@@ -178,7 +178,7 @@ class RevenueReportSyncService
         } catch (Throwable $e) {
             $logger->error('[RevenueReportSync] Fatal error', ['error' => $e->getMessage()]);
 
-            return ['success' => false, 'message' => 'Sync failed: ' . $e->getMessage()];
+            return ['success' => false, 'message' => 'Sync failed: '.$e->getMessage()];
         }
     }
 
@@ -194,7 +194,7 @@ class RevenueReportSyncService
 
             $start = Carbon::parse($startDate);
             $end = Carbon::parse($endDate);
-            $accountResource = 'accounts/' . ltrim($accountId, 'accounts/');
+            $accountResource = 'accounts/'.ltrim($accountId, 'accounts/');
 
             $reports = $this->service->accounts_reports->generate(
                 $accountResource,
@@ -252,7 +252,7 @@ class RevenueReportSyncService
 
         $date = $map['DATE'] ?? null;
         $chanId = $map['CUSTOM_CHANNEL_ID'] ?? null;
-        $channelId = str_replace($account->product_code . ':', '', $chanId);
+        $channelId = str_replace($account->product_code.':', '', $chanId);
 
         if (! $date || ! $channelId) {
             return null;
@@ -383,7 +383,7 @@ class RevenueReportSyncService
 
         $now = Carbon::now();
 
-        $upsertRows = $rows->map(fn(RevenueChartReport $r) => [
+        $upsertRows = $rows->map(fn (RevenueChartReport $r) => [
             'ad_client_id' => $r->ad_client_id,
             'style_code' => $r->style_code,
             'channel_code' => $r->channel_code,

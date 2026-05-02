@@ -102,7 +102,7 @@ class MigrateUserBackupCommand extends Command
         return DB::table($table)
             ->select('id')
             ->pluck('id')
-            ->mapWithKeys(fn(mixed $id): array => [(int) $id => true])
+            ->mapWithKeys(fn (mixed $id): array => [(int) $id => true])
             ->all();
     }
 

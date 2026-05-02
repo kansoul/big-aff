@@ -45,7 +45,7 @@ class ListCampaignReportsRequest extends FormRequest
                 'user_ids' => ['nullable', 'array'],
                 'user_ids.*' => ['integer'],
                 'account_ids' => ['nullable', 'array'],
-                'account_ids.*' => ['integer'],
+                'account_ids.*' => ['string', 'max:255'],
                 'ads_type' => ['nullable', 'string', Rule::in(['facebook', 'google'])],
                 'campaign_ids' => ['nullable', 'array'],
                 'campaign_ids.*' => ['string', 'max:255'],

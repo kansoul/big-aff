@@ -33,12 +33,12 @@ class ListCampaignSchedulesAction
         $ownership->applyTo($query);
 
         if (! empty($filters['name'])) {
-            $query->where('name', 'like', '%' . $filters['name'] . '%');
+            $query->where('name', 'like', '%'.$filters['name'].'%');
         }
 
         if (! empty($filters['campaign_id'])) {
             $query->whereHas('items', function ($q) use ($filters) {
-                $q->where('campaign_id', 'like', '%' . $filters['campaign_id'] . '%');
+                $q->where('campaign_id', 'like', '%'.$filters['campaign_id'].'%');
             });
         }
 

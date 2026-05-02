@@ -26,7 +26,7 @@ class CampaignReportResource extends JsonResource
         }
 
         if ($adsType === 'google') {
-            return 'https://ads.google.com/aw/campaigns?campaignId=' . $campaignId;
+            return 'https://ads.google.com/aw/campaigns?campaignId='.$campaignId;
         }
 
         $accountId = (string) ($this->account_id ?? '');
@@ -44,13 +44,13 @@ class CampaignReportResource extends JsonResource
 
         $base = 'https://adsmanager.facebook.com/adsmanager/manage/adsets';
 
-        return $base .
-            '?act=' . $accountId .
-            '&date=' . $startDate . '_' . $endDate . '%2Ctoday' .
-            '&comparison_date=' .
-            '&insights_date=' . $startDate . '_' . $endDate . '%2Ctoday' .
-            '&insights_comparison_date=' .
-            '&selected_campaign_ids=' . $campaignId .
+        return $base.
+            '?act='.$accountId.
+            '&date='.$startDate.'_'.$endDate.'%2Ctoday'.
+            '&comparison_date='.
+            '&insights_date='.$startDate.'_'.$endDate.'%2Ctoday'.
+            '&insights_comparison_date='.
+            '&selected_campaign_ids='.$campaignId.
             '&nav_source=no_referrer';
     }
 

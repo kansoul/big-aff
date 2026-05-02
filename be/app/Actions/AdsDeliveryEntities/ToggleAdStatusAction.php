@@ -2,6 +2,7 @@
 
 namespace App\Actions\AdsDeliveryEntities;
 
+use App\Models\Account;
 use App\Models\AdsInsightsReport;
 use App\Services\Integrations\Ads\AdsStatusService;
 use App\Support\OwnershipFilter\OwnershipFilter;
@@ -18,13 +19,16 @@ class ToggleAdStatusAction
      */
     public function execute(int $adsInsightId, string $newStatus): AdsInsightsReport
     {
+        $record = AdsInsightsReport::findOrFail($adsInsightId);
+
         $ownership = OwnershipFilter::forAuthUser();
 
-        $query = AdsInsightsReport::query()->where('id', $adsInsightId);
-
-        $ownership->applyThroughAccount($query);
-
-        $record = $query->firstOrFail();
+        if (! $ownership->isAdmin()) {
+            $account = Account::where('account_id', $record->account_id)->first();
+            if ($account) {
+                $ownership->authorizeAccount($account);
+            }
+        }
 
         if (! in_array($record->status, ['ACTIVE', 'PAUSED'])) {
             throw new AuthorizationException('Cannot toggle status for ad with current status: '.$record->status);

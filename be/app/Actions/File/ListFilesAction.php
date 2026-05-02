@@ -46,7 +46,7 @@ class ListFilesAction
                 $query->where('created_at', '<=', Carbon::parse($payload['created_to'])->endOfDay());
             })
             ->when(isset($payload['alt_text']), function ($query) use ($payload) {
-                $query->where('alt_text', 'like', '%' . $payload['alt_text'] . '%');
+                $query->where('alt_text', 'like', '%'.$payload['alt_text'].'%');
             });
 
         SortInput::fromValidatedArray(
