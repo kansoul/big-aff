@@ -80,17 +80,21 @@ class GetRevenueTableAction
 
         // insight_reports.account_id stores the business string ID (e.g. act_xxx),
         // so we resolve each account's primary user via accounts.account_id (string).
+        $latestAccountUserIds = DB::table('account_user')
+            ->groupBy('account_id')
+            ->selectRaw('MAX(id) as id');
+
         $primaryUserPerAccount = DB::table('account_user')
+            ->joinSub($latestAccountUserIds, 'latest', 'latest.id', '=', 'account_user.id')
             ->join('accounts', 'accounts.id', '=', 'account_user.account_id')
-            ->selectRaw('accounts.account_id as account_id, MIN(account_user.user_id) as user_id')
-            ->groupBy('accounts.account_id');
+            ->select('accounts.account_id as account_id', 'account_user.user_id as user_id');
 
         return DB::query()
             ->fromSub($perAccount, 'ir')
-            ->joinSub($primaryUserPerAccount, 'pu', 'pu.account_id', '=', 'ir.account_id')
+            ->leftJoinSub($primaryUserPerAccount, 'pu', 'pu.account_id', '=', 'ir.account_id')
             ->groupBy('pu.user_id')
             ->selectRaw('
-                pu.user_id as user_id,
+                COALESCE(pu.user_id, 0) as user_id,
                 COALESCE(SUM(ir.daily_spend), 0) as daily_spend,
                 COALESCE(SUM(ir.monthly_spend), 0) as monthly_spend
             ')
@@ -119,17 +123,22 @@ class GetRevenueTableAction
 
         $ownership->applyThroughChannel($perChannel);
 
+        $latestChannelUserIds = DB::table('channel_user')
+            ->whereNull('deleted_at')
+            ->groupBy('channel_id')
+            ->selectRaw('MAX(id) as id');
+
         $primaryUserPerChannel = DB::table('channel_user')
+            ->joinSub($latestChannelUserIds, 'latest', 'latest.id', '=', 'channel_user.id')
             ->join('channels', 'channels.id', '=', 'channel_user.channel_id')
-            ->selectRaw('channels.code as channel_code, MIN(channel_user.user_id) as user_id')
-            ->groupBy('channels.code');
+            ->select('channels.code as channel_code', 'channel_user.user_id as user_id');
 
         return DB::query()
             ->fromSub($perChannel, 'rr')
-            ->joinSub($primaryUserPerChannel, 'pu', 'pu.channel_code', '=', 'rr.channel_code')
+            ->leftJoinSub($primaryUserPerChannel, 'pu', 'pu.channel_code', '=', 'rr.channel_code')
             ->groupBy('pu.user_id')
             ->selectRaw('
-                pu.user_id as user_id,
+                COALESCE(pu.user_id, 0) as user_id,
                 COALESCE(SUM(rr.daily_revenue), 0) as daily_revenue,
                 COALESCE(SUM(rr.monthly_revenue), 0) as monthly_revenue
             ')
@@ -150,9 +159,11 @@ class GetRevenueTableAction
             return [];
         }
 
-        $names = DB::table('users')
-            ->whereIn('id', $userIds)
-            ->pluck('name', 'id');
+        $realUserIds = array_values(array_filter($userIds, fn ($id) => $id !== 0));
+
+        $names = $realUserIds !== []
+            ? DB::table('users')->whereIn('id', $realUserIds)->pluck('name', 'id')
+            : collect();
 
         $rolePriority = sprintf(
             "FIELD(tu.team_role, '%s', '%s', '%s')",
@@ -163,7 +174,7 @@ class GetRevenueTableAction
 
         $teamRows = DB::table('team_user as tu')
             ->join('teams as t', 't.id', '=', 'tu.team_id')
-            ->whereIn('tu.user_id', $userIds)
+            ->whereIn('tu.user_id', $realUserIds)
             ->orderBy('tu.user_id')
             ->orderByRaw($rolePriority)
             ->orderBy('tu.team_id')
@@ -180,11 +191,13 @@ class GetRevenueTableAction
 
         $result = [];
         foreach ($userIds as $uid) {
-            $result[$uid] = [
-                'user_name' => $names[$uid] ?? '(Unknown)',
-                'team_id' => $primaryTeam[$uid]['team_id'] ?? 0,
-                'team_name' => $primaryTeam[$uid]['team_name'] ?? '(No team)',
-            ];
+            $result[$uid] = $uid === 0
+                ? ['user_name' => '(Unassigned)', 'team_id' => 0, 'team_name' => '(No team)']
+                : [
+                    'user_name' => $names[$uid] ?? '(Unknown)',
+                    'team_id' => $primaryTeam[$uid]['team_id'] ?? 0,
+                    'team_name' => $primaryTeam[$uid]['team_name'] ?? '(No team)',
+                ];
         }
 
         return $result;
