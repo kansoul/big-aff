@@ -174,7 +174,6 @@ export function TeamFormDialog({ open, onOpenChange, team, onSuccess }: TeamForm
               {!isEdit ? (
                 <Button
                   type="button"
-                  variant="outline"
                   disabled={submitting}
                   onClick={() => {
                     void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()

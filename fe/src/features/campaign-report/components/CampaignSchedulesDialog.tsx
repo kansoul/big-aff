@@ -195,8 +195,8 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
       </div>
       <div className="ml-auto flex items-center gap-1">
         <Button
-          variant="outline"
           size="icon"
+          variant="outline"
           className="hidden h-7 w-7 sm:inline-flex"
           disabled={page <= 1}
           aria-label="First page"
@@ -205,8 +205,8 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
           <ChevronFirst className="h-3.5 w-3.5" />
         </Button>
         <Button
-          variant="outline"
           size="icon"
+          variant="outline"
           className="h-7 w-7"
           disabled={page <= 1}
           aria-label="Previous page"

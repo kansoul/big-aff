@@ -95,7 +95,6 @@ export function BulkCreateStyleDialog({
               </Button>
               <Button
                 type="button"
-                variant="outline"
                 disabled={submitting}
                 onClick={() => void form.handleSubmit(onSubmitAnother)()}
               >

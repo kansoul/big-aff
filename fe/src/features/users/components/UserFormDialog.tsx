@@ -206,7 +206,6 @@ export function UserFormDialog({
               {!isEdit ? (
                 <Button
                   type="button"
-                  variant="outline"
                   disabled={submitting || roles.length === 0}
                   onClick={() => {
                     void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()

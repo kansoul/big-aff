@@ -175,12 +175,7 @@ export function EditPostPage() {
           </Button>
         </div>
         {id ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => void navigate(postViewPath(id))}
-          >
+          <Button type="button" size="sm" onClick={() => void navigate(postViewPath(id))}>
             <Eye className="h-3.5 w-3.5" />
             View Detail
           </Button>

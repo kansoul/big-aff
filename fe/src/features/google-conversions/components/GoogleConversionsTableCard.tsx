@@ -164,7 +164,6 @@ export function GoogleConversionsTableCard({
         ) : null}
         <Button
           size="sm"
-          variant="outline"
           className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
           disabled={loading}
           onClick={onReload}
@@ -175,7 +174,6 @@ export function GoogleConversionsTableCard({
         {canCreate ? (
           <Button
             size="sm"
-            variant="outline"
             className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
             onClick={onImportClick}
           >

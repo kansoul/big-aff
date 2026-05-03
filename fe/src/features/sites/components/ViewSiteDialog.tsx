@@ -75,7 +75,6 @@ export function ViewSiteDialog({
               <div className="flex items-center gap-2">
                 {canUpdate && detail ? (
                   <Button
-                    variant="outline"
                     size="sm"
                     className="h-8 gap-1.5"
                     onClick={() => {

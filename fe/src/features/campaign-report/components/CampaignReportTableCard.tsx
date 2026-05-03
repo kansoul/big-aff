@@ -81,6 +81,13 @@ function formatRoi(v: number): string {
   return `${v.toFixed(2)}%`
 }
 
+function formatDate(date: string | null | undefined): string {
+  if (!date) return '—'
+  const [y, m, d] = date.split('-')
+  if (!y || !m || !d) return date
+  return `${d}/${m}/${y}`
+}
+
 function toNumber(v: unknown): number {
   if (v === null || v === undefined) return 0
   if (typeof v === 'number') return Number.isFinite(v) ? v : 0
@@ -334,17 +341,22 @@ function GroupLabelCell({
   )
 }
 
-function GroupSubRowCell({ row }: { row: Exclude<TableRow, CampaignReportGroupRow> }) {
+function CopyIdCell({ id }: { id: string }) {
+  const [copied, setCopied] = useState(false)
   return (
-    <div className="flex flex-col pl-1">
-      <span className="text-[10px] text-muted-foreground">{row.date_start ?? '—'}</span>
-      <span className="block whitespace-normal wrap-break-word text-[10px] font-medium text-foreground leading-tight">
-        {row.campaign_name ?? row.campaign_id}
-      </span>
-      <span className="block truncate text-[9px] font-mono text-muted-foreground">
-        {row.campaign_id}
-      </span>
-    </div>
+    <button
+      className="block truncate text-[9px] font-mono text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-left w-full"
+      title={copied ? 'Copied!' : `Click to copy: ${id}`}
+      onClick={(e) => {
+        e.stopPropagation()
+        void navigator.clipboard.writeText(id).then(() => {
+          setCopied(true)
+          setTimeout(() => setCopied(false), 1500)
+        })
+      }}
+    >
+      {copied ? <span className="text-emerald-500">Copied!</span> : id}
+    </button>
   )
 }
 
@@ -425,9 +437,11 @@ function getColumns(
               }
             />
           ) : (
-            <GroupSubRowCell row={row.original} />
+            <span className="pl-1 text-[10px] text-muted-foreground">
+              {formatDate(row.original.date_start)}
+            </span>
           ),
-        Footer: () => 'Totals',
+        Footer: () => <div className="text-sm!">Summary</div>,
       }
     : null
 
@@ -440,7 +454,9 @@ function getColumns(
     enableSorting: isSortable('date_start'),
     Cell: ({ row }) =>
       isGroupRow(row.original) ? null : (
-        <span className="text-[10px] text-muted-foreground">{row.original.date_start ?? '—'}</span>
+        <span className="text-[10px] text-muted-foreground">
+          {formatDate(row.original.date_start)}
+        </span>
       ),
   }
 
@@ -468,23 +484,43 @@ function getColumns(
     accessorKey: 'campaign_name',
     header: 'Campaign',
     Header: <HeaderLabel>Campaign</HeaderLabel>,
-    size: 220,
+    size: 200,
     enableSorting: isSortable('campaign_name'),
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
-      return (
-        <div className="flex flex-col gap-0.5 py-0.5">
-          <span className="block whitespace-normal wrap-break-word text-[10px] font-medium text-foreground leading-tight">
-            {row.original.campaign_name ?? row.original.campaign_id}
-          </span>
-          <span
-            className="block truncate text-[9px] font-mono text-muted-foreground"
-            title={String(row.original.campaign_id)}
+      const link = getRowAdsManagerLink(row.original)
+      const name = row.original.campaign_name ?? '—'
+      if (link) {
+        return (
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block whitespace-normal wrap-break-word text-[10px] font-medium text-primary hover:underline underline-offset-2 leading-tight"
+            onClick={(e) => e.stopPropagation()}
+            title={name}
           >
-            {row.original.campaign_id}
-          </span>
-        </div>
+            {name}
+          </a>
+        )
+      }
+      return (
+        <span className="block whitespace-normal wrap-break-word text-[10px] font-medium text-foreground leading-tight">
+          {name}
+        </span>
       )
+    },
+  }
+
+  const colCampaignId: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'campaign_id',
+    header: 'Campaign ID',
+    Header: <HeaderLabel>Campaign ID</HeaderLabel>,
+    size: 140,
+    enableSorting: isSortable('campaign_id'),
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      return <CopyIdCell id={String(row.original.campaign_id)} />
     },
   }
 
@@ -561,21 +597,21 @@ function getColumns(
     id: 'tracking_analytic',
     header: 'Tracking',
     Header: <HeaderLabel>Tracking</HeaderLabel>,
-    size: 105,
+    size: 80,
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
       const r = row.original
       return (
-        <button
-          className="inline-flex items-center cursor-pointer gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60"
+        <p
+          className="cursor-pointer text-red-400"
           onClick={(e) => {
             e.stopPropagation()
             onOpenTrackingAnalytics(r)
           }}
         >
           View Analytics
-        </button>
+        </p>
       )
     },
   }
@@ -584,22 +620,22 @@ function getColumns(
     id: 'ads_adset_report',
     header: 'Ads/Adset',
     Header: <HeaderLabel>Ads/Adset</HeaderLabel>,
-    size: 125,
+    size: 100,
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
       if (!canViewDeliveryReports) return <span className="text-muted-foreground/50">—</span>
       const r = row.original
       return (
-        <button
-          className="inline-flex cursor-pointer items-center gap-1 rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/60 dark:text-violet-300 dark:hover:bg-violet-900/60"
+        <p
+          className="cursor-pointer text-red-400"
           onClick={(e) => {
             e.stopPropagation()
             onOpenAdsAdsetReport(r)
           }}
         >
           Ads / Adset Report
-        </button>
+        </p>
       )
     },
   }
@@ -889,7 +925,7 @@ function getColumns(
       accessorKey: 'roi',
       header: 'ROI',
       Header: <HeaderLabel>ROI</HeaderLabel>,
-      size: autoSize(55, footerText),
+      size: autoSize(58, footerText),
       enableSorting: isSortable('roi'),
       Cell: ({ row }) => {
         const v = isGroupRow(row.original) ? row.original.group_summary.roi : row.original.roi
@@ -935,6 +971,7 @@ function getColumns(
     colDateStart,
     colAccountName,
     colTrackingAnalytic,
+    colCampaignId,
     colCampaignName,
     colAdsAdsetReport,
     colCampaignStatus,
@@ -1099,26 +1136,18 @@ function CampaignReportTableCardInner({
   const effectiveSummaryOnly = grouped && summaryOnly
   const { pathname } = useLocation()
 
-  const groupIndexMap = useMemo(() => {
-    const map = new Map<string, number>()
-    let idx = 0
-    for (const row of data) {
-      if (isGroupRow(row)) map.set(String(row.group_key ?? 'null'), idx++)
-    }
-    return map
-  }, [data])
   const { columnVisibility: userColumnVisibility, setColumnVisibility: setUserColumnVisibility } =
     useColumnVisibilityStorage(pathname)
 
   const forcedColumnVisibility = useMemo<Record<string, boolean>>(() => {
-    const base: Record<string, boolean> = grouped
-      ? { date_start: false, campaign_name: false }
-      : { group_label: false }
+    const base: Record<string, boolean> = grouped ? { date_start: false } : { group_label: false }
 
     if (effectiveSummaryOnly) {
       base.account_name = false
       base.tracking_analytic = false
       base.ads_adset_report = false
+      base.campaign_id = false
+      base.campaign_name = false
       base.campaign_status = false
       base.campaign_onoff = false
       base.link = false
@@ -1216,7 +1245,8 @@ function CampaignReportTableCardInner({
   )
 
   const pinnedLeftColumns = useMemo(
-    () => (isMobile ? [] : grouped ? ['group_label'] : ['date_start', 'campaign_name']),
+    () =>
+      isMobile ? [] : grouped ? ['group_label'] : ['date_start', 'campaign_name', 'campaign_id'],
     [grouped, isMobile],
   )
 
@@ -1365,112 +1395,38 @@ function CampaignReportTableCardInner({
     mantineTableBodyRowProps: ({ row }) => {
       const isGroup = grouped && (row.getCanExpand() || isGroupRow(row.original))
       const isSubRow = row.depth > 0
-      const link = getRowAdsManagerLink(row.original)
-
-      const groupKey =
-        isGroup && isGroupRow(row.original)
-          ? String(row.original.group_key ?? 'null')
-          : isSubRow
-            ? String(
-                (row.getParentRow()?.original as CampaignReportGroupRow | undefined)?.group_key ??
-                  'null',
-              )
-            : null
-      const groupIdx = groupKey != null ? (groupIndexMap.get(groupKey) ?? 0) : 0
-      const isOddGroup = groupIdx % 2 === 1
 
       return {
         className: isGroup ? 'campaign-group-row' : undefined,
-        onClick: (e) => {
-          if (
-            (e.target as HTMLElement).closest(
-              'a, button, input, textarea, select, [role="switch"], [role="menuitem"]',
-            )
-          ) {
-            return
-          }
-          if (link) window.open(link, '_blank', 'noopener,noreferrer')
-        },
         sx: (theme) => {
           const isDark = theme.colorScheme === 'dark'
           if (isGroup) {
-            const accentColor = isOddGroup ? theme.colors.teal : theme.colors.indigo
             return {
               fontWeight: 600,
-              boxShadow: `inset 3px 0 0 0 ${isDark ? accentColor[7] : accentColor[4]}`,
-              backgroundColor: isDark
-                ? isOddGroup
-                  ? theme.colors.dark[6]
-                  : theme.colors.dark[5]
-                : isOddGroup
-                  ? theme.colors.teal[0]
-                  : theme.colors.indigo[0],
+              backgroundColor: isDark ? theme.colors.dark[6] : theme.colors.gray[1],
             }
           }
           if (isSubRow) {
-            return {
-              backgroundColor: isDark
-                ? isOddGroup
-                  ? theme.colors.dark[9]
-                  : theme.colors.dark[8]
-                : isOddGroup
-                  ? theme.colors.teal[0]
-                  : theme.colors.gray[0],
-              cursor: link ? 'pointer' : undefined,
-            }
+            return { backgroundColor: isDark ? theme.colors.dark[8] : theme.white }
           }
-          return {
-            backgroundColor: isDark ? theme.colors.dark[7] : theme.white,
-            cursor: link ? 'pointer' : undefined,
-          }
+          return { backgroundColor: isDark ? theme.colors.dark[7] : theme.white }
         },
       }
     },
     mantineTableBodyCellProps: ({ row, column }) => {
       const isGroup = grouped && (row.getCanExpand() || isGroupRow(row.original))
-      const isSubRow = row.depth > 0
       const isCampaignCol = column.id === 'campaign_name'
-      const isPinnedFirstCol = column.id === 'group_label'
-
-      const groupKey =
-        isGroup && isGroupRow(row.original)
-          ? String(row.original.group_key ?? 'null')
-          : isSubRow
-            ? String(
-                (row.getParentRow()?.original as CampaignReportGroupRow | undefined)?.group_key ??
-                  'null',
-              )
-            : null
-      const groupIdx = groupKey != null ? (groupIndexMap.get(groupKey) ?? 0) : 0
-      const isOddGroup = groupIdx % 2 === 1
 
       return {
         className: isGroup ? 'campaign-group-cell' : undefined,
-        sx: (theme) => {
-          const isDark = theme.colorScheme === 'dark'
-          const accentColor = isOddGroup ? theme.colors.teal : theme.colors.indigo
-          return {
-            fontSize: '10px',
-            paddingLeft: '2px !important',
-            paddingRight: '2px !important',
-            fontWeight: isGroup ? 600 : undefined,
-            overflow: isCampaignCol ? 'visible' : 'hidden',
-            textOverflow: isCampaignCol ? 'unset' : 'ellipsis',
-            whiteSpace: isCampaignCol ? 'normal' : 'nowrap',
-            ...((isGroup || isSubRow) &&
-              isPinnedFirstCol && {
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: 3,
-                  backgroundColor: isDark ? accentColor[7] : accentColor[4],
-                  zIndex: 1,
-                },
-              }),
-          }
+        sx: {
+          fontSize: '10px',
+          paddingLeft: '2px !important',
+          paddingRight: '2px !important',
+          fontWeight: isGroup ? 600 : undefined,
+          overflow: isCampaignCol ? 'visible' : 'hidden',
+          textOverflow: isCampaignCol ? 'unset' : 'ellipsis',
+          whiteSpace: isCampaignCol ? 'normal' : 'nowrap',
         },
       }
     },

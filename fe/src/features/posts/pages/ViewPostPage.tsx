@@ -78,7 +78,7 @@ export function ViewPostPage() {
           <p className="mt-1 text-sm text-muted-foreground">Read-only view of the post.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-1.5" onClick={() => void navigate(PATHS.posts)}>
+          <Button className="gap-1.5" onClick={() => void navigate(PATHS.posts)}>
             <ArrowLeft className="size-4" />
             Back to Posts
           </Button>
