@@ -44,21 +44,6 @@ function getColumns(): MRT_ColumnDef<RevenueReportRow>[] {
       Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.date}</span>,
     },
     {
-      accessorKey: 'style_name',
-      id: 'style_code',
-      header: 'Style',
-      size: 160,
-      enableSorting: true,
-      Cell: ({ row }) => (
-        <div className="flex flex-col gap-0.5">
-          <span className="text-foreground">{row.original.style_name}</span>
-          <span className="font-mono text-[11px] text-muted-foreground/70">
-            {row.original.style_code}
-          </span>
-        </div>
-      ),
-    },
-    {
       accessorKey: 'channel_name',
       id: 'channel_code',
       header: 'Channel',

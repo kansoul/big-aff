@@ -29,6 +29,7 @@ class GetRevenueStatsByTeamAction
                 $revenue = (float) $rows->sum('revenue');
                 $spend = (float) $rows->sum('spend');
                 $profit = $revenue - $spend;
+                $roi = $spend > 0 ? round(($profit / $spend) * 100, 2) : 0.0;
 
                 return (object) [
                     'team_id' => (int) ($first['team_id'] ?? 0),
@@ -36,6 +37,7 @@ class GetRevenueStatsByTeamAction
                     'revenue' => round($revenue, 2),
                     'spend' => round($spend, 2),
                     'profit' => round($profit, 2),
+                    'roi' => $roi,
                 ];
             })
             ->sortByDesc('revenue')

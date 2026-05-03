@@ -37,6 +37,7 @@ export interface RevenueTeamRow {
   team_id: number
   team_name: string
   daily: RevenueStats
+  yesterday: RevenueStats
   monthly: RevenueStats
 }
 
@@ -46,6 +47,7 @@ export interface RevenueTopUserRow {
   team_id: number
   team_name: string
   daily: RevenueStats
+  yesterday: RevenueStats
   monthly: RevenueStats
 }
 

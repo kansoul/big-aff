@@ -66,14 +66,17 @@ class GetRevenueTableAction
         $to = $now->copy()->endOfMonth()->toDateString();
         $today = $now->toDateString();
 
+        $yesterday = $now->copy()->subDay()->toDateString();
+
         $perAccount = InsightReport::query()
             ->whereDate('date_start', '>=', $from)
             ->whereDate('date_start', '<=', $to)
             ->selectRaw('
                 account_id,
                 COALESCE(SUM(CASE WHEN date_start = ? THEN spend ELSE 0 END), 0) as daily_spend,
+                COALESCE(SUM(CASE WHEN date_start = ? THEN spend ELSE 0 END), 0) as yesterday_spend,
                 COALESCE(SUM(spend), 0) as monthly_spend
-            ', [$today])
+            ', [$today, $yesterday])
             ->groupBy('account_id');
 
         $ownership->applyThroughAccount($perAccount);
@@ -96,6 +99,7 @@ class GetRevenueTableAction
             ->selectRaw('
                 COALESCE(pu.user_id, 0) as user_id,
                 COALESCE(SUM(ir.daily_spend), 0) as daily_spend,
+                COALESCE(SUM(ir.yesterday_spend), 0) as yesterday_spend,
                 COALESCE(SUM(ir.monthly_spend), 0) as monthly_spend
             ')
             ->get()
@@ -111,14 +115,17 @@ class GetRevenueTableAction
         $to = $now->copy()->endOfMonth()->toDateString();
         $today = $now->toDateString();
 
+        $yesterday = $now->copy()->subDay()->toDateString();
+
         $perChannel = RevenueReport::query()
             ->whereDate('date', '>=', $from)
             ->whereDate('date', '<=', $to)
             ->selectRaw('
                 channel_code,
                 COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as daily_revenue,
+                COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as yesterday_revenue,
                 COALESCE(SUM(estimated_earnings), 0) as monthly_revenue
-            ', [$today])
+            ', [$today, $yesterday])
             ->groupBy('channel_code');
 
         $ownership->applyThroughChannel($perChannel);
@@ -140,6 +147,7 @@ class GetRevenueTableAction
             ->selectRaw('
                 COALESCE(pu.user_id, 0) as user_id,
                 COALESCE(SUM(rr.daily_revenue), 0) as daily_revenue,
+                COALESCE(SUM(rr.yesterday_revenue), 0) as yesterday_revenue,
                 COALESCE(SUM(rr.monthly_revenue), 0) as monthly_revenue
             ')
             ->get()
@@ -227,6 +235,8 @@ class GetRevenueTableAction
                 'team_name' => $info['team_name'],
                 'daily_revenue' => (float) ($revenue?->daily_revenue ?? 0),
                 'daily_spend' => (float) ($spend?->daily_spend ?? 0),
+                'yesterday_revenue' => (float) ($revenue?->yesterday_revenue ?? 0),
+                'yesterday_spend' => (float) ($spend?->yesterday_spend ?? 0),
                 'monthly_revenue' => (float) ($revenue?->monthly_revenue ?? 0),
                 'monthly_spend' => (float) ($spend?->monthly_spend ?? 0),
             ];
@@ -245,6 +255,11 @@ class GetRevenueTableAction
                 $dailyProfit = $dailyRevenue - $dailySpend;
                 $dailyRoi = $dailySpend > 0 ? round(($dailyProfit / $dailySpend) * 100, 2) : 0.0;
 
+                $yesterdayRevenue = (float) $rows->sum('yesterday_revenue');
+                $yesterdaySpend = (float) $rows->sum('yesterday_spend');
+                $yesterdayProfit = $yesterdayRevenue - $yesterdaySpend;
+                $yesterdayRoi = $yesterdaySpend > 0 ? round(($yesterdayProfit / $yesterdaySpend) * 100, 2) : 0.0;
+
                 $monthlyRevenue = (float) $rows->sum('monthly_revenue');
                 $monthlySpend = (float) $rows->sum('monthly_spend');
                 $monthlyProfit = $monthlyRevenue - $monthlySpend;
@@ -258,6 +273,12 @@ class GetRevenueTableAction
                         'spend' => round($dailySpend, 2),
                         'profit' => round($dailyProfit, 2),
                         'roi' => $dailyRoi,
+                    ],
+                    'yesterday' => [
+                        'revenue' => round($yesterdayRevenue, 2),
+                        'spend' => round($yesterdaySpend, 2),
+                        'profit' => round($yesterdayProfit, 2),
+                        'roi' => $yesterdayRoi,
                     ],
                     'monthly' => [
                         'revenue' => round($monthlyRevenue, 2),
@@ -280,6 +301,11 @@ class GetRevenueTableAction
                 $dailyProfit = $dailyRevenue - $dailySpend;
                 $dailyRoi = $dailySpend > 0 ? round(($dailyProfit / $dailySpend) * 100, 2) : 0.0;
 
+                $yesterdayRevenue = $row['yesterday_revenue'];
+                $yesterdaySpend = $row['yesterday_spend'];
+                $yesterdayProfit = $yesterdayRevenue - $yesterdaySpend;
+                $yesterdayRoi = $yesterdaySpend > 0 ? round(($yesterdayProfit / $yesterdaySpend) * 100, 2) : 0.0;
+
                 $monthlyRevenue = $row['monthly_revenue'];
                 $monthlySpend = $row['monthly_spend'];
                 $monthlyProfit = $monthlyRevenue - $monthlySpend;
@@ -295,6 +321,12 @@ class GetRevenueTableAction
                         'spend' => round($dailySpend, 2),
                         'profit' => round($dailyProfit, 2),
                         'roi' => $dailyRoi,
+                    ],
+                    'yesterday' => [
+                        'revenue' => round($yesterdayRevenue, 2),
+                        'spend' => round($yesterdaySpend, 2),
+                        'profit' => round($yesterdayProfit, 2),
+                        'roi' => $yesterdayRoi,
                     ],
                     'monthly' => [
                         'revenue' => round($monthlyRevenue, 2),

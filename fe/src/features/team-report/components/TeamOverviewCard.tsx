@@ -1,100 +1,71 @@
-import { Banknote, BarChart3, Monitor, TrendingDown, TrendingUp } from 'lucide-react'
-import type { ComponentType } from 'react'
-
-import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { TeamOverviewData } from '@/features/team-report/types'
+
+function formatCurrency(val: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+  }).format(val)
+}
 
 type Props = {
   data: TeamOverviewData | null
   loading: boolean
 }
 
-type StatItem = {
-  label: string
-  hint: string
-  value: string
-  icon: ComponentType<{ className?: string }>
-  tone: string
-}
-
-function formatUsd(value: number): string {
-  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-function formatRoi(value: number): string {
-  return `${value.toFixed(2)}%`
-}
-
-function buildItems(d: TeamOverviewData): StatItem[] {
-  return [
+export function TeamOverviewCard({ data, loading }: Props) {
+  const items = [
     {
       label: 'Revenue',
-      hint: 'Total revenue',
-      value: formatUsd(d.revenue),
-      icon: Banknote,
-      tone: 'text-emerald-500',
+      value: data ? formatCurrency(data.revenue) : '$0.00',
+      color: 'text-foreground',
+      bg: 'bg-emerald-500/10',
+      dot: 'bg-emerald-500',
     },
     {
       label: 'Spend',
-      hint: 'Total spend',
-      value: formatUsd(d.spend),
-      icon: Monitor,
-      tone: 'text-blue-500',
+      value: data ? formatCurrency(data.spend) : '$0.00',
+      color: 'text-foreground',
+      bg: 'bg-blue-500/10',
+      dot: 'bg-blue-500',
     },
     {
       label: 'Profit',
-      hint: 'Revenue - Spend',
-      value: formatUsd(d.profit),
-      icon: d.profit >= 0 ? BarChart3 : TrendingDown,
-      tone: d.profit >= 0 ? 'text-emerald-500' : 'text-rose-500',
+      value: data ? formatCurrency(data.profit) : '$0.00',
+      color: data && data.profit >= 0 ? 'text-emerald-500' : 'text-rose-500',
+      bg: data && data.profit >= 0 ? 'bg-emerald-500/10' : 'bg-rose-500/10',
+      dot: data && data.profit >= 0 ? 'bg-emerald-500' : 'bg-rose-500',
     },
     {
       label: 'ROI',
-      hint: 'Profit / Spend',
-      value: formatRoi(d.roi),
-      icon: d.roi >= 0 ? TrendingUp : TrendingDown,
-      tone: d.roi >= 0 ? 'text-emerald-500' : 'text-rose-500',
+      value: data ? `${data.roi.toFixed(2)}%` : '0.00%',
+      color: data && data.roi >= 0 ? 'text-emerald-500' : 'text-rose-500',
+      bg: data && data.roi >= 0 ? 'bg-emerald-500/10' : 'bg-rose-500/10',
+      dot: data && data.roi >= 0 ? 'bg-emerald-500' : 'bg-rose-500',
     },
   ]
-}
-
-export function TeamOverviewCard({ data, loading }: Props) {
-  if (loading) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="border-border/60 bg-card/80">
-            <CardContent className="space-y-3 py-5">
-              <div className="h-4 w-24 animate-pulse rounded bg-muted" />
-              <div className="h-8 w-32 animate-pulse rounded bg-muted" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  }
-
-  if (!data) return null
-
-  const items = buildItems(data)
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {items.map((item) => {
-        const Icon = item.icon
-        return (
-          <Card key={item.label} className="border-border/60 bg-card/80">
-            <CardContent className="space-y-1.5 py-5">
-              <p className="text-sm font-medium text-muted-foreground">{item.label}</p>
-              <p className="text-3xl font-semibold tracking-tight text-foreground">{item.value}</p>
-              <p className={`inline-flex items-center gap-1 text-xs font-medium ${item.tone}`}>
-                {item.hint}
-                <Icon className="h-3.5 w-3.5" />
-              </p>
-            </CardContent>
-          </Card>
-        )
-      })}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="rounded-2xl border border-border/50 bg-card px-5 py-4 shadow-sm"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className={`inline-block h-2 w-2 rounded-full ${item.dot}`} />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {item.label}
+            </span>
+          </div>
+          {loading ? (
+            <Skeleton className="h-7 w-32" />
+          ) : (
+            <p className={`text-2xl font-bold tracking-tight ${item.color}`}>{item.value}</p>
+          )}
+        </div>
+      ))}
     </div>
   )
 }

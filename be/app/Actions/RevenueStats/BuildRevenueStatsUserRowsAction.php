@@ -108,10 +108,14 @@ class BuildRevenueStatsUserRowsAction
 
         $ownership->applyThroughAccount($perAccount);
 
+        $latestAccountUserIds = DB::table('account_user')
+            ->groupBy('account_id')
+            ->selectRaw('MAX(id) as id');
+
         $primaryUserPerAccount = DB::table('account_user')
+            ->joinSub($latestAccountUserIds, 'latest', 'latest.id', '=', 'account_user.id')
             ->join('accounts', 'accounts.id', '=', 'account_user.account_id')
-            ->selectRaw('accounts.account_id as account_id, MIN(account_user.user_id) as user_id')
-            ->groupBy('accounts.account_id');
+            ->select('accounts.account_id as account_id', 'account_user.user_id as user_id');
 
         return DB::query()
             ->fromSub($perAccount, 'ir')
@@ -149,10 +153,15 @@ class BuildRevenueStatsUserRowsAction
 
         $ownership->applyThroughChannel($perChannel);
 
+        $latestChannelUserIds = DB::table('channel_user')
+            ->whereNull('deleted_at')
+            ->groupBy('channel_id')
+            ->selectRaw('MAX(id) as id');
+
         $primaryUserPerChannel = DB::table('channel_user')
+            ->joinSub($latestChannelUserIds, 'latest', 'latest.id', '=', 'channel_user.id')
             ->join('channels', 'channels.id', '=', 'channel_user.channel_id')
-            ->selectRaw('channels.code as channel_code, MIN(channel_user.user_id) as user_id')
-            ->groupBy('channels.code');
+            ->select('channels.code as channel_code', 'channel_user.user_id as user_id');
 
         return DB::query()
             ->fromSub($perChannel, 'rr')

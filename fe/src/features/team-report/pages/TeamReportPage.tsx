@@ -238,7 +238,7 @@ export function TeamReportPage() {
       />
       <TeamOverviewCard data={overview} loading={loading} />
       <TeamReportByTeamTableCard data={byTeam} loading={loading} />
-      <TeamReportByUserTableCard data={byUser} loading={loading} />
+      <TeamReportByUserTableCard data={byUser} loading={loading} filters={filters} />
     </div>
   )
 }

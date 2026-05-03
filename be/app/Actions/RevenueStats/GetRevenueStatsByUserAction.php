@@ -24,7 +24,11 @@ class GetRevenueStatsByUserAction
     {
         return $this->buildRevenueStatsUserRowsAction->execute($filters)
             ->sortByDesc('profit')
-            ->map(fn (array $row) => (object) $row)
+            ->map(function (array $row) {
+                $roi = $row['spend'] > 0 ? round(($row['profit'] / $row['spend']) * 100, 2) : 0.0;
+
+                return (object) array_merge($row, ['roi' => $roi]);
+            })
             ->values();
     }
 }

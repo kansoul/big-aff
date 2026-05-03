@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { dashboardApi } from '@/features/dashboard/api'
-import type { InsightStatsData, RevenueTableData } from '@/features/dashboard/types'
+import type { InsightStatsData, RevenueTableData, RevenueTeamRow } from '@/features/dashboard/types'
 import { useAuthStore } from '@/hooks/useAuthStore'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -214,7 +214,15 @@ export function DashboardPage() {
   }, [loadRevenueTable])
 
   // ── derived insight cards ────────────────────────────────────────────────
-  const teams = useMemo(() => revenueTable?.by_team ?? [], [revenueTable])
+  const teams = useMemo((): RevenueTeamRow[] => revenueTable?.by_team ?? [], [revenueTable])
+
+  const yesterdayTotals = useMemo(() => {
+    const revenue = teams.reduce((s, r) => s + r.yesterday.revenue, 0)
+    const spend = teams.reduce((s, r) => s + r.yesterday.spend, 0)
+    const profit = teams.reduce((s, r) => s + r.yesterday.profit, 0)
+    const roi = spend > 0 ? ((revenue - spend) / spend) * 100 : 0
+    return { revenue, spend, profit, roi }
+  }, [teams])
 
   return (
     <div className="flex flex-col gap-6 pb-8 animate-in fade-in duration-500">
@@ -259,251 +267,151 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats Table */}
+      {/* Stats Summary Cards */}
       {canViewStats && (
-        <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden bg-card">
-          <div className="overflow-x-auto">
-            <Table className="whitespace-nowrap">
-              <TableHeader>
-                <TableRow className="hover:bg-transparent border-b-0 bg-muted/10">
-                  <TableHead
-                    rowSpan={2}
-                    className="py-3 px-6 font-semibold text-muted-foreground w-[140px] sticky left-0 z-20 bg-muted/10 border-r border-border/30 align-middle"
-                  />
-                  <TableHead
-                    colSpan={2}
-                    className="text-center font-semibold text-foreground border-l border-b border-border/30 py-2.5"
+        <div className="grid gap-4 lg:grid-cols-3">
+          {(
+            [
+              // mobile order: 1,2,3,4,5,6 — desktop order (lg): col1=Today/Yesterday, col2=ThisWeek/LastWeek, col3=ThisMonth/LastMonth
+              {
+                label: 'Today',
+                badge: 'Daily',
+                badgeClass: 'bg-blue-500/15 text-blue-400',
+                iconClass: 'bg-blue-500/15 text-blue-400',
+                lgOrder: 'lg:order-1',
+                rev: rawStats?.daily_revenue.today ?? 0,
+                spend: rawStats?.daily_spend.today ?? 0,
+              },
+              {
+                label: 'Yesterday',
+                badge: 'Daily',
+                badgeClass: 'bg-blue-500/15 text-blue-400',
+                iconClass: 'bg-blue-500/15 text-blue-400',
+                lgOrder: 'lg:order-4',
+                rev: rawStats?.daily_revenue.yesterday ?? 0,
+                spend: rawStats?.daily_spend.yesterday ?? 0,
+              },
+              {
+                label: 'This Week',
+                badge: 'Weekly',
+                badgeClass: 'bg-indigo-500/15 text-indigo-400',
+                iconClass: 'bg-indigo-500/15 text-indigo-400',
+                lgOrder: 'lg:order-2',
+                rev: rawStats?.weekly_revenue.this_week ?? 0,
+                spend: rawStats?.weekly_spend.this_week ?? 0,
+              },
+              {
+                label: 'Last Week',
+                badge: 'Weekly',
+                badgeClass: 'bg-indigo-500/15 text-indigo-400',
+                iconClass: 'bg-indigo-500/15 text-indigo-400',
+                lgOrder: 'lg:order-5',
+                rev: rawStats?.weekly_revenue.last_week ?? 0,
+                spend: rawStats?.weekly_spend.last_week ?? 0,
+              },
+              {
+                label: 'This Month',
+                badge: 'Monthly',
+                badgeClass: 'bg-emerald-500/15 text-emerald-400',
+                iconClass: 'bg-emerald-500/15 text-emerald-400',
+                lgOrder: 'lg:order-3',
+                rev: rawStats?.monthly_revenue.this_month ?? 0,
+                spend: rawStats?.monthly_spend.this_month ?? 0,
+              },
+              {
+                label: 'Last Month',
+                badge: 'Monthly',
+                badgeClass: 'bg-emerald-500/15 text-emerald-400',
+                iconClass: 'bg-emerald-500/15 text-emerald-400',
+                lgOrder: 'lg:order-6',
+                rev: rawStats?.monthly_revenue.last_month ?? 0,
+                spend: rawStats?.monthly_spend.last_month ?? 0,
+              },
+            ] as const
+          ).map(({ label, badge, badgeClass, iconClass, lgOrder, rev, spend }) => {
+            const profit = rev - spend
+            const roi = spend > 0 ? ((rev - spend) / spend) * 100 : 0
+            return (
+              <Card
+                key={label}
+                className={`rounded-2xl border-border/50 shadow-sm bg-card px-2 md:px-4 py-4 flex items-start gap-3 ${lgOrder}`}
+              >
+                <div className="min-w-0 flex-1 flex items-center gap-x-2">
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg mt-0.5 ${iconClass}`}
                   >
-                    <span className="inline-flex items-center gap-2">
-                      Daily
-                      <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-500">
-                        Today
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {label}
                       </span>
-                    </span>
-                  </TableHead>
-                  <TableHead
-                    colSpan={2}
-                    className="text-center font-semibold text-foreground border-l border-b border-border/30 py-2.5"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      Weekly
-                      <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-500">
-                        This week
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${badgeClass}`}
+                      >
+                        {badge}
                       </span>
-                    </span>
-                  </TableHead>
-                  <TableHead
-                    colSpan={2}
-                    className="text-center font-semibold text-foreground border-l border-b border-border/30 py-2.5 pr-6"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      Monthly
-                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500">
-                        This month
-                      </span>
-                    </span>
-                  </TableHead>
-                </TableRow>
-                <TableRow className="hover:bg-transparent border-b border-border/50 bg-muted/10">
-                  {[
-                    { label: 'Today', sub: 'Yesterday', border: true },
-                    { label: 'Yesterday', sub: 'vs prev' },
-                    { label: 'This Week', sub: 'Last Week', border: true },
-                    { label: 'Last Week', sub: 'vs prev' },
-                    { label: 'This Month', sub: 'Last Month', border: true },
-                    { label: 'Last Month', sub: 'vs prev' },
-                  ].map(({ label, border }, i) => (
-                    <TableHead
-                      key={i}
-                      className={`py-2.5 text-xs font-semibold text-muted-foreground w-36 ${border ? 'border-l border-border/30' : ''} ${i === 5 ? 'pr-6' : ''}`}
-                    >
-                      {label}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {/* Revenue row */}
-                <TableRow className="border-b border-border/30 hover:bg-muted/30 transition-colors">
-                  <TableCell className="px-6 py-5 sticky left-0 z-10 bg-card/80 backdrop-blur-sm border-r border-border/30">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="font-bold text-sm text-foreground">Revenue</span>
                     </div>
-                  </TableCell>
-                  {statsLoading ? (
-                    Array.from({ length: 6 }).map((_, i) => (
-                      <TableCell key={i} className={i % 2 === 0 ? 'border-l border-border/30' : ''}>
-                        <Skeleton className="h-5 w-24" />
-                      </TableCell>
-                    ))
-                  ) : (
-                    <>
-                      <TableCell className="border-l border-border/30">
-                        <span className="text-base font-bold text-foreground">
-                          {statsCards[0]?.primaryValue}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground font-medium">
-                        {statsCards[0]?.secondaryValue}
-                      </TableCell>
-                      <TableCell className="border-l border-border/30">
-                        <span className="text-base font-bold text-foreground">
-                          {statsCards[1]?.primaryValue}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground font-medium">
-                        {statsCards[1]?.secondaryValue}
-                      </TableCell>
-                      <TableCell className="border-l border-border/30">
-                        <span className="text-base font-bold text-foreground">
-                          {statsCards[2]?.primaryValue}
-                        </span>
-                      </TableCell>
-                      <TableCell className="pr-6 text-muted-foreground font-medium">
-                        {statsCards[2]?.secondaryValue}
-                      </TableCell>
-                    </>
-                  )}
-                </TableRow>
-
-                {/* Spend row */}
-                <TableRow className="border-b border-border/30 hover:bg-muted/30 transition-colors">
-                  <TableCell className="px-6 py-5 sticky left-0 z-10 bg-card/80 backdrop-blur-sm border-r border-border/30">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-blue-500" />
-                      <span className="font-bold text-sm text-foreground">Spend</span>
-                    </div>
-                  </TableCell>
-                  {statsLoading ? (
-                    Array.from({ length: 6 }).map((_, i) => (
-                      <TableCell key={i} className={i % 2 === 0 ? 'border-l border-border/30' : ''}>
-                        <Skeleton className="h-5 w-24" />
-                      </TableCell>
-                    ))
-                  ) : (
-                    <>
-                      <TableCell className="border-l border-border/30">
-                        <span className="text-base font-bold text-foreground">
-                          {statsCards[3]?.primaryValue}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground font-medium">
-                        {statsCards[3]?.secondaryValue}
-                      </TableCell>
-                      <TableCell className="border-l border-border/30">
-                        <span className="text-base font-bold text-foreground">
-                          {statsCards[4]?.primaryValue}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground font-medium">
-                        {statsCards[4]?.secondaryValue}
-                      </TableCell>
-                      <TableCell className="border-l border-border/30">
-                        <span className="text-base font-bold text-foreground">
-                          {statsCards[5]?.primaryValue}
-                        </span>
-                      </TableCell>
-                      <TableCell className="pr-6 text-muted-foreground font-medium">
-                        {statsCards[5]?.secondaryValue}
-                      </TableCell>
-                    </>
-                  )}
-                </TableRow>
-
-                {/* Profit row */}
-                <TableRow className="border-b border-border/30 hover:bg-muted/30 transition-colors">
-                  <TableCell className="px-6 py-5 sticky left-0 z-10 bg-card/80 backdrop-blur-sm border-r border-border/30">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-violet-500" />
-                      <span className="font-bold text-sm text-foreground">Profit</span>
-                    </div>
-                  </TableCell>
-                  {statsLoading ? (
-                    Array.from({ length: 6 }).map((_, i) => (
-                      <TableCell key={i} className={i % 2 === 0 ? 'border-l border-border/30' : ''}>
-                        <Skeleton className="h-5 w-24" />
-                      </TableCell>
-                    ))
-                  ) : (
-                    <>
-                      {[
-                        [rawStats?.daily_revenue.today, rawStats?.daily_spend.today],
-                        [rawStats?.daily_revenue.yesterday, rawStats?.daily_spend.yesterday],
-                        [rawStats?.weekly_revenue.this_week, rawStats?.weekly_spend.this_week],
-                        [rawStats?.weekly_revenue.last_week, rawStats?.weekly_spend.last_week],
-                        [rawStats?.monthly_revenue.this_month, rawStats?.monthly_spend.this_month],
-                        [rawStats?.monthly_revenue.last_month, rawStats?.monthly_spend.last_month],
-                      ].map(([rev, spend], i) => {
-                        const profit = (rev ?? 0) - (spend ?? 0)
-                        return (
-                          <TableCell
-                            key={i}
-                            className={`${i % 2 === 0 ? 'border-l border-border/30' : ''} ${i === 5 ? 'pr-6' : ''}`}
+                    <div className="grid grid-cols-4 gap-x-4">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground/70 mb-0.5">Revenue</p>
+                        {statsLoading ? (
+                          <Skeleton className="h-5 w-16" />
+                        ) : (
+                          <p className="text-[11px] md:text-sm font-bold text-foreground">
+                            {formatCurrency(rev)}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground/70 mb-0.5">Spend</p>
+                        {statsLoading ? (
+                          <Skeleton className="h-5 w-16" />
+                        ) : (
+                          <p className="text-[11px] md:text-sm font-bold text-foreground">
+                            {formatCurrency(spend)}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground/70 mb-0.5">Profit</p>
+                        {statsLoading ? (
+                          <Skeleton className="h-5 w-16" />
+                        ) : (
+                          <p
+                            className={`text-[11px] md:text-sm font-bold ${profit > 0 ? 'text-emerald-400' : profit < 0 ? 'text-rose-400' : 'text-muted-foreground'}`}
                           >
-                            <ProfitCell value={profit} />
-                          </TableCell>
-                        )
-                      })}
-                    </>
-                  )}
-                </TableRow>
-
-                {/* ROI row */}
-                <TableRow className="hover:bg-muted/30 transition-colors">
-                  <TableCell className="px-6 py-5 sticky left-0 z-10 bg-card/80 backdrop-blur-sm border-r border-border/30">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-amber-500" />
-                      <span className="font-bold text-sm text-foreground">ROI %</span>
-                    </div>
-                  </TableCell>
-                  {statsLoading ? (
-                    Array.from({ length: 6 }).map((_, i) => (
-                      <TableCell key={i} className={i % 2 === 0 ? 'border-l border-border/30' : ''}>
-                        <Skeleton className="h-5 w-24" />
-                      </TableCell>
-                    ))
-                  ) : (
-                    <>
-                      {[
-                        [rawStats?.daily_revenue.today, rawStats?.daily_spend.today],
-                        [rawStats?.daily_revenue.yesterday, rawStats?.daily_spend.yesterday],
-                        [rawStats?.weekly_revenue.this_week, rawStats?.weekly_spend.this_week],
-                        [rawStats?.weekly_revenue.last_week, rawStats?.weekly_spend.last_week],
-                        [rawStats?.monthly_revenue.this_month, rawStats?.monthly_spend.this_month],
-                        [rawStats?.monthly_revenue.last_month, rawStats?.monthly_spend.last_month],
-                      ].map(([rev, spend], i) => {
-                        const r = rev ?? 0
-                        const s = spend ?? 0
-                        const roi = s > 0 ? ((r - s) / s) * 100 : 0
-                        return (
-                          <TableCell
-                            key={i}
-                            className={`${i % 2 === 0 ? 'border-l border-border/30' : ''} ${i === 5 ? 'pr-6' : ''}`}
+                            {formatCurrency(profit)}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground/70 mb-0.5">ROI</p>
+                        {statsLoading ? (
+                          <Skeleton className="h-5 w-12" />
+                        ) : (
+                          <p
+                            className={`text-[11px] md:text-sm font-bold ${roi > 0 ? 'text-emerald-400' : roi < 0 ? 'text-rose-400' : 'text-muted-foreground'}`}
                           >
-                            <span
-                              className={`font-semibold ${roi > 0 ? 'text-emerald-500 dark:text-emerald-400' : roi < 0 ? 'text-rose-500 dark:text-rose-400' : 'text-muted-foreground'}`}
-                            >
-                              {roi.toFixed(2)}%
-                            </span>
-                          </TableCell>
-                        )
-                      })}
-                    </>
-                  )}
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
+                            {roi.toFixed(2)}%
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )
+          })}
+        </div>
       )}
 
       {/* Team Breakdown Table */}
       {canViewTeamTable && (
         <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden flex flex-col bg-card mt-2">
           {/* Card Header: title + summary stat cards */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-border/50 px-6 py-5 bg-muted/20">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-border/50 px-2 md:px-6 py-5 bg-muted/20">
             <div className="shrink-0">
               <CardTitle className="text-xl font-bold">Team Breakdown</CardTitle>
               <CardDescription className="mt-1 text-sm">
@@ -526,7 +434,7 @@ export function DashboardPage() {
                       Today
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2 flex-nowrap">
                     {tableLoading ? (
                       <>
                         <Skeleton className="h-4 w-20" />
@@ -538,20 +446,20 @@ export function DashboardPage() {
                       <>
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Revenue</span>
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="text-xs font-semibold text-foreground">
                             {formatCurrency(teams.reduce((s, r) => s + r.daily.revenue, 0))}
                           </span>
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Spend</span>
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="text-xs font-semibold text-foreground">
                             {formatCurrency(teams.reduce((s, r) => s + r.daily.spend, 0))}
                           </span>
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Profit</span>
                           <span
-                            className={`text-sm font-semibold ${teams.reduce((s, r) => s + r.daily.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                            className={`text-xs font-semibold ${teams.reduce((s, r) => s + r.daily.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                           >
                             {formatCurrency(teams.reduce((s, r) => s + r.daily.profit, 0))}
                           </span>
@@ -564,7 +472,71 @@ export function DashboardPage() {
                             const roi = spend > 0 ? ((rev - spend) / spend) * 100 : 0
                             return (
                               <span
-                                className={`text-sm font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                className={`text-xs font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                              >
+                                {roi.toFixed(2)}%
+                              </span>
+                            )
+                          })()}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* YESTERDAY SUMMARY */}
+              <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 min-w-0 flex-1">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
+                  <Calendar className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Yesterday Summary
+                    </span>
+                    <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-500">
+                      Yesterday
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-nowrap">
+                    {tableLoading ? (
+                      <>
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-16" />
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-muted-foreground/70">Revenue</span>
+                          <span className="text-xs font-semibold text-foreground">
+                            {formatCurrency(teams.reduce((s, r) => s + r.yesterday.revenue, 0))}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-muted-foreground/70">Spend</span>
+                          <span className="text-xs font-semibold text-foreground">
+                            {formatCurrency(teams.reduce((s, r) => s + r.yesterday.spend, 0))}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-muted-foreground/70">Profit</span>
+                          <span
+                            className={`text-xs font-semibold ${teams.reduce((s, r) => s + r.yesterday.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                          >
+                            {formatCurrency(teams.reduce((s, r) => s + r.yesterday.profit, 0))}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-muted-foreground/70">ROI</span>
+                          {(() => {
+                            const rev = teams.reduce((s, r) => s + r.yesterday.revenue, 0)
+                            const spend = teams.reduce((s, r) => s + r.yesterday.spend, 0)
+                            const roi = spend > 0 ? ((rev - spend) / spend) * 100 : 0
+                            return (
+                              <span
+                                className={`text-xs font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                               >
                                 {roi.toFixed(2)}%
                               </span>
@@ -591,7 +563,7 @@ export function DashboardPage() {
                       Current month
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2 flex-nowrap">
                     {tableLoading ? (
                       <>
                         <Skeleton className="h-4 w-20" />
@@ -603,20 +575,20 @@ export function DashboardPage() {
                       <>
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Revenue</span>
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="text-xs font-semibold text-foreground">
                             {formatCurrency(teams.reduce((s, r) => s + r.monthly.revenue, 0))}
                           </span>
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Spend</span>
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="text-xs font-semibold text-foreground">
                             {formatCurrency(teams.reduce((s, r) => s + r.monthly.spend, 0))}
                           </span>
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Profit</span>
                           <span
-                            className={`text-sm font-semibold ${teams.reduce((s, r) => s + r.monthly.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                            className={`text-xs font-semibold ${teams.reduce((s, r) => s + r.monthly.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                           >
                             {formatCurrency(teams.reduce((s, r) => s + r.monthly.profit, 0))}
                           </span>
@@ -629,7 +601,7 @@ export function DashboardPage() {
                             const roi = spend > 0 ? ((rev - spend) / spend) * 100 : 0
                             return (
                               <span
-                                className={`text-sm font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                className={`text-xs font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                               >
                                 {roi.toFixed(2)}%
                               </span>
@@ -652,7 +624,7 @@ export function DashboardPage() {
                 <TableRow className="hover:bg-transparent border-b-0 bg-muted/10">
                   <TableHead
                     rowSpan={2}
-                    className="py-3 px-6 font-semibold text-muted-foreground w-[180px] sticky left-0 z-20 bg-muted/10 border-r border-border/30 align-middle"
+                    className="py-3 px-6 font-semibold text-muted-foreground w-[180px] left-0 z-20 bg-muted/10 border-r border-border/30 align-middle"
                   >
                     Team
                   </TableHead>
@@ -664,6 +636,17 @@ export function DashboardPage() {
                       Daily
                       <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-500">
                         Today
+                      </span>
+                    </span>
+                  </TableHead>
+                  <TableHead
+                    colSpan={4}
+                    className="text-center font-semibold text-foreground border-l border-b border-border/30 py-2.5"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      Yesterday
+                      <span className="rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold text-orange-500">
+                        Yesterday
                       </span>
                     </span>
                   </TableHead>
@@ -681,16 +664,13 @@ export function DashboardPage() {
                 </TableRow>
                 {/* Sub-header row */}
                 <TableRow className="hover:bg-transparent border-b border-border/50 bg-muted/10">
-                  {['Daily', 'Monthly'].flatMap((period) =>
+                  {(['Daily', 'Yesterday', 'Monthly'] as const).flatMap((period) =>
                     ['Revenue', 'Spend', 'Profit', 'ROI %'].map((label, li) => (
                       <TableHead
                         key={`${period}-${label}`}
                         className={`py-2.5 text-xs font-semibold text-muted-foreground w-32 ${li === 0 ? 'border-l border-border/30' : ''} ${period === 'Monthly' && li === 3 ? 'pr-6' : ''}`}
                       >
                         {label}
-                        <div className="text-[10px] font-normal text-muted-foreground/60">
-                          ({period})
-                        </div>
                       </TableHead>
                     )),
                   )}
@@ -701,60 +681,80 @@ export function DashboardPage() {
                 {tableLoading
                   ? Array.from({ length: 4 }).map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell className="px-6 py-4 sticky left-0 bg-card/80 border-r border-border/30">
+                        <TableCell className="px-6 py-4 left-0 bg-card/80 border-r border-border/30">
                           <Skeleton className="h-4 w-28" />
                         </TableCell>
-                        {Array.from({ length: 8 }).map((__, j) => (
+                        {Array.from({ length: 12 }).map((__, j) => (
                           <TableCell key={j}>
                             <Skeleton className="h-4 w-20" />
                           </TableCell>
                         ))}
                       </TableRow>
                     ))
-                  : teams.map((row) => (
-                      <TableRow
-                        key={row.team_id}
-                        className="border-b border-border/30 transition-colors hover:bg-muted/30"
-                      >
-                        <TableCell className="px-6 py-4 font-semibold text-foreground sticky left-0 z-10 bg-card/80 backdrop-blur-sm border-r border-border/30">
-                          {row.team_name}
-                        </TableCell>
-                        {/* Daily */}
-                        <TableCell className="text-foreground font-medium border-l border-border/30">
-                          {formatCurrency(row.daily.revenue)}
-                        </TableCell>
-                        <TableCell className="text-foreground font-medium">
-                          {formatCurrency(row.daily.spend)}
-                        </TableCell>
-                        <TableCell>
-                          <ProfitCell value={row.daily.profit} />
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={`font-semibold ${row.daily.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
-                          >
-                            {row.daily.roi.toFixed(2)}%
-                          </span>
-                        </TableCell>
-                        {/* Monthly */}
-                        <TableCell className="text-foreground font-medium border-l border-border/30">
-                          {formatCurrency(row.monthly.revenue)}
-                        </TableCell>
-                        <TableCell className="text-foreground font-medium">
-                          {formatCurrency(row.monthly.spend)}
-                        </TableCell>
-                        <TableCell>
-                          <ProfitCell value={row.monthly.profit} />
-                        </TableCell>
-                        <TableCell className="pr-6">
-                          <span
-                            className={`font-semibold ${row.monthly.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
-                          >
-                            {row.monthly.roi.toFixed(2)}%
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                  : teams.map((row: RevenueTeamRow) => {
+                      const yday = row.yesterday
+                      return (
+                        <TableRow
+                          key={row.team_id}
+                          className="border-b border-border/30 transition-colors hover:bg-muted/30"
+                        >
+                          <TableCell className="text-xs md:text-sm px-2 md:px-6 py-4 font-semibold text-foreground border-r border-border/30">
+                            {row.team_name}
+                          </TableCell>
+                          {/* Daily */}
+                          <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
+                            {formatCurrency(row.daily.revenue)}
+                          </TableCell>
+                          <TableCell className="text-foreground font-medium">
+                            {formatCurrency(row.daily.spend)}
+                          </TableCell>
+                          <TableCell>
+                            <ProfitCell value={row.daily.profit} />
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`font-semibold ${row.daily.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                            >
+                              {row.daily.roi.toFixed(2)}%
+                            </span>
+                          </TableCell>
+                          {/* Yesterday */}
+                          <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
+                            {formatCurrency(yday.revenue)}
+                          </TableCell>
+                          <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium">
+                            {formatCurrency(yday.spend)}
+                          </TableCell>
+                          <TableCell>
+                            <ProfitCell value={yday.profit} />
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`font-semibold ${yday.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                            >
+                              {yday.roi.toFixed(2)}%
+                            </span>
+                          </TableCell>
+                          {/* Monthly */}
+                          <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
+                            {formatCurrency(row.monthly.revenue)}
+                          </TableCell>
+                          <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium">
+                            {formatCurrency(row.monthly.spend)}
+                          </TableCell>
+                          <TableCell>
+                            <ProfitCell value={row.monthly.profit} />
+                          </TableCell>
+                          <TableCell className="pr-6">
+                            <span
+                              className={`font-semibold ${row.monthly.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                            >
+                              {row.monthly.roi.toFixed(2)}%
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
               </TableBody>
 
               {!tableLoading && teams.length > 0 && (
@@ -790,6 +790,23 @@ export function DashboardPage() {
                         )
                       })()}
                     </TableCell>
+                    {/* Yesterday totals */}
+                    <TableCell className="font-bold text-foreground border-l border-border/30">
+                      {formatCurrency(yesterdayTotals.revenue)}
+                    </TableCell>
+                    <TableCell className="font-bold text-foreground">
+                      {formatCurrency(yesterdayTotals.spend)}
+                    </TableCell>
+                    <TableCell>
+                      <ProfitCell value={yesterdayTotals.profit} />
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`font-bold ${yesterdayTotals.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                      >
+                        {yesterdayTotals.roi.toFixed(2)}%
+                      </span>
+                    </TableCell>
                     {/* Monthly totals */}
                     <TableCell className="font-bold text-foreground border-l border-border/30">
                       {formatCurrency(teams.reduce((s, r) => s + r.monthly.revenue, 0))}
@@ -824,48 +841,166 @@ export function DashboardPage() {
 
       {/* Top Users Table */}
       {canViewUserTable && (
-        <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden flex flex-col bg-card">
-          <CardHeader className="border-b border-border/50 pb-5 pt-6 bg-muted/20">
-            <CardTitle className="text-lg font-bold">Top Users by Revenue</CardTitle>
-            <CardDescription className="mt-1 text-sm">
-              Highest revenue contributors this month.
-            </CardDescription>
-          </CardHeader>
+        <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden flex flex-col bg-card mt-2">
+          {/* Card Header: title + top 3 monthly profit cards */}
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-border/50 px-2 md:px-6 py-5 bg-muted/20">
+            <div className="shrink-0">
+              <CardTitle className="text-xl font-bold">Top Users by Profit</CardTitle>
+              <CardDescription className="mt-1 text-sm">
+                Sorted by daily profit — top 3 monthly profit leaders
+              </CardDescription>
+            </div>
 
+            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+              {tableLoading
+                ? Array.from({ length: 3 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 min-w-0 flex-1"
+                    >
+                      <Skeleton className="h-9 w-9 rounded-lg shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-4 w-28" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  ))
+                : [...(revenueTable?.top_users ?? [])]
+                    .sort((a, b) => b.monthly.profit - a.monthly.profit)
+                    .slice(0, 3)
+                    .map((user, i) => {
+                      const medals = ['🥇', '🥈', '🥉']
+                      const colors = [
+                        {
+                          bg: 'bg-yellow-500/10',
+                          text: 'text-yellow-600 dark:text-yellow-400',
+                          badge: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
+                        },
+                        {
+                          bg: 'bg-slate-400/10',
+                          text: 'text-slate-500 dark:text-slate-400',
+                          badge: 'bg-slate-400/10 text-slate-500 dark:text-slate-400',
+                        },
+                        {
+                          bg: 'bg-orange-400/10',
+                          text: 'text-orange-500 dark:text-orange-400',
+                          badge: 'bg-orange-400/10 text-orange-500 dark:text-orange-400',
+                        },
+                      ]
+                      const c = colors[i]
+                      return (
+                        <div
+                          key={user.user_id}
+                          className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 min-w-0 flex-1"
+                        >
+                          <div
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg ${c.bg}`}
+                          >
+                            {medals[i]}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span
+                                className={`text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${c.text}`}
+                              >
+                                #{i + 1} Monthly Profit
+                              </span>
+                            </div>
+                            <div className="text-sm font-bold text-foreground truncate">
+                              {user.user_name}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1">
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-muted-foreground/70">
+                                  Monthly
+                                </span>
+                                <span
+                                  className={`text-xs font-semibold ${user.monthly.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                >
+                                  {formatCurrency(user.monthly.profit)}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-muted-foreground/70">ROI</span>
+                                <span
+                                  className={`text-xs font-semibold ${user.monthly.roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                >
+                                  {user.monthly.roi.toFixed(2)}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+            </div>
+          </div>
+
+          {/* Table */}
           <div className="overflow-x-auto">
             <Table className="whitespace-nowrap">
               <TableHeader>
-                <TableRow className="hover:bg-transparent border-b-border/50 bg-muted/10">
-                  <TableHead className="py-4 px-6 font-semibold text-muted-foreground">#</TableHead>
-                  <TableHead className="font-semibold text-muted-foreground">User</TableHead>
-                  <TableHead className="font-semibold text-muted-foreground">Team</TableHead>
-                  <TableHead className="font-semibold text-muted-foreground w-40">
-                    Revenue
-                    <br />
-                    <span className="text-[10px] font-normal text-muted-foreground/60">
-                      (Daily / Monthly)
+                {/* Group header row */}
+                <TableRow className="hover:bg-transparent border-b-0 bg-muted/10">
+                  <TableHead
+                    rowSpan={2}
+                    className="py-3 px-6 font-semibold text-muted-foreground w-16 border-r border-border/30 align-middle"
+                  >
+                    Rank
+                  </TableHead>
+                  <TableHead
+                    rowSpan={2}
+                    className="py-3 px-4 font-semibold text-muted-foreground w-[160px] border-r border-border/30 align-middle"
+                  >
+                    User
+                  </TableHead>
+                  <TableHead
+                    colSpan={4}
+                    className="text-center font-semibold text-foreground border-l border-b border-border/30 py-2.5"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      Daily
+                      <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-500">
+                        Today
+                      </span>
                     </span>
                   </TableHead>
-                  <TableHead className="font-semibold text-muted-foreground w-40">
-                    Spend
-                    <br />
-                    <span className="text-[10px] font-normal text-muted-foreground/60">
-                      (Daily / Monthly)
+                  <TableHead
+                    colSpan={4}
+                    className="text-center font-semibold text-foreground border-l border-b border-border/30 py-2.5"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      Yesterday
+                      <span className="rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold text-orange-500">
+                        Yesterday
+                      </span>
                     </span>
                   </TableHead>
-                  <TableHead className="font-semibold text-muted-foreground w-40">
-                    Profit
-                    <br />
-                    <span className="text-[10px] font-normal text-muted-foreground/60">
-                      (Daily / Monthly)
+                  <TableHead
+                    colSpan={4}
+                    className="text-center font-semibold text-foreground border-l border-b border-border/30 py-2.5 pr-6"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      Monthly
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500">
+                        Current month
+                      </span>
                     </span>
                   </TableHead>
-                  <TableHead className="font-semibold text-muted-foreground pr-6 w-32">
-                    ROI %<br />
-                    <span className="text-[10px] font-normal text-muted-foreground/60">
-                      (Daily / Monthly)
-                    </span>
-                  </TableHead>
+                </TableRow>
+                {/* Sub-header row */}
+                <TableRow className="hover:bg-transparent border-b border-border/50 bg-muted/10">
+                  {(['Daily', 'Yesterday', 'Monthly'] as const).flatMap((period) =>
+                    ['Revenue', 'Spend', 'Profit', 'ROI %'].map((label, li) => (
+                      <TableHead
+                        key={`${period}-${label}`}
+                        className={`py-2.5 text-xs font-semibold text-muted-foreground w-32 ${li === 0 ? 'border-l border-border/30' : ''} ${period === 'Monthly' && li === 3 ? 'pr-6' : ''}`}
+                      >
+                        {label}
+                      </TableHead>
+                    )),
+                  )}
                 </TableRow>
               </TableHeader>
 
@@ -873,83 +1008,94 @@ export function DashboardPage() {
                 {tableLoading
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell className="px-6 py-4">
+                        <TableCell className="px-6 py-4 border-r border-border/30">
                           <Skeleton className="h-4 w-6" />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="border-r border-border/30">
                           <Skeleton className="h-4 w-28" />
                         </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-4 w-20" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-4 w-24" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-4 w-24" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-4 w-24" />
-                        </TableCell>
-                        <TableCell className="pr-6">
-                          <Skeleton className="h-4 w-16" />
-                        </TableCell>
+                        {Array.from({ length: 12 }).map((__, j) => (
+                          <TableCell key={j}>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                        ))}
                       </TableRow>
                     ))
-                  : (revenueTable?.top_users ?? []).map((row, idx) => (
-                      <TableRow
-                        key={row.user_id}
-                        className="border-b-border/30 transition-colors hover:bg-muted/30"
-                      >
-                        <TableCell className="px-6 py-4 text-muted-foreground font-medium">
-                          {idx + 1}
-                        </TableCell>
-                        <TableCell className="font-semibold text-foreground">
-                          {row.user_name}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{row.team_name}</TableCell>
-                        <TableCell className="font-medium text-muted-foreground">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-foreground">
+                  : [...(revenueTable?.top_users ?? [])]
+                      .sort((a, b) => b.daily.profit - a.daily.profit)
+                      .map((row, idx) => {
+                        const isTopThree = idx < 3
+                        return (
+                          <TableRow
+                            key={row.user_id}
+                            className={`border-b border-border/30 transition-colors ${isTopThree ? 'bg-blue-300/5 hover:bg-blue-300/10' : 'hover:bg-muted/30'}`}
+                          >
+                            <TableCell className="px-6 py-4 font-bold border-r border-border/30">
+                              {isTopThree ? (
+                                <span className="text-rose-500 dark:text-rose-400">
+                                  {['🥇', '🥈', '🥉'][idx]} {idx + 1}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground font-medium">{idx + 1}</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="px-4 font-semibold text-foreground border-r border-border/30">
+                              {row.user_name}
+                            </TableCell>
+                            {/* Daily */}
+                            <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
                               {formatCurrency(row.daily.revenue)}
-                            </span>
-                            <span className="text-xs text-muted-foreground/70">
-                              {formatCurrency(row.monthly.revenue)}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium text-muted-foreground">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-foreground">
+                            </TableCell>
+                            <TableCell className="text-foreground font-medium">
                               {formatCurrency(row.daily.spend)}
-                            </span>
-                            <span className="text-xs text-muted-foreground/70">
+                            </TableCell>
+                            <TableCell>
+                              <ProfitCell value={row.daily.profit} />
+                            </TableCell>
+                            <TableCell>
+                              <span
+                                className={`font-semibold ${row.daily.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                              >
+                                {row.daily.roi.toFixed(2)}%
+                              </span>
+                            </TableCell>
+                            {/* Yesterday */}
+                            <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
+                              {formatCurrency(row.yesterday.revenue)}
+                            </TableCell>
+                            <TableCell className="text-foreground font-medium">
+                              {formatCurrency(row.yesterday.spend)}
+                            </TableCell>
+                            <TableCell>
+                              <ProfitCell value={row.yesterday.profit} />
+                            </TableCell>
+                            <TableCell>
+                              <span
+                                className={`font-semibold ${row.yesterday.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                              >
+                                {row.yesterday.roi.toFixed(2)}%
+                              </span>
+                            </TableCell>
+                            {/* Monthly */}
+                            <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
+                              {formatCurrency(row.monthly.revenue)}
+                            </TableCell>
+                            <TableCell className="text-foreground font-medium">
                               {formatCurrency(row.monthly.spend)}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <ProfitCell value={row.daily.profit} />
-                            <span className="text-xs text-muted-foreground/70">
-                              {formatCurrency(row.monthly.profit)}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="pr-6">
-                          <div className="flex flex-col gap-1">
-                            <span
-                              className={`font-semibold ${row.daily.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
-                            >
-                              {row.daily.roi.toFixed(2)}%
-                            </span>
-                            <span className="text-xs text-muted-foreground/70">
-                              {row.monthly.roi.toFixed(2)}%
-                            </span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                            </TableCell>
+                            <TableCell>
+                              <ProfitCell value={row.monthly.profit} />
+                            </TableCell>
+                            <TableCell className="pr-6">
+                              <span
+                                className={`font-semibold ${row.monthly.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                              >
+                                {row.monthly.roi.toFixed(2)}%
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
               </TableBody>
             </Table>
           </div>
