@@ -1409,7 +1409,7 @@ function CampaignReportTableCardInner({
         onSortingChange(next[0].id as CampaignReportOrderBy, next[0].desc ? 'desc' : 'asc')
       }
     },
-    enableRowVirtualization: true,
+    enableRowVirtualization: !isMobile,
     rowVirtualizerProps: { overscan: 5 },
     enablePagination: true,
     paginationDisplayMode: 'pages',
