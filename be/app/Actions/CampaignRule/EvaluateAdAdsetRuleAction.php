@@ -300,7 +300,7 @@ class EvaluateAdAdsetRuleAction
             $message .= "{$prefix} ID: {$entityFbId}\n";
 
             if ($entityName) {
-                $safeName = str_replace('_', '\\_', (string) $entityName);
+                $safeName = str_replace('_', '\_', (string) $entityName);
                 $message .= "{$prefix} Name: {$safeName}\n";
             }
 

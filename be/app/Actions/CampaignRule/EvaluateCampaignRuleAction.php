@@ -153,7 +153,11 @@ class EvaluateCampaignRuleAction
             $message = "{$title}\n\n";
             $message .= 'Time: '.now()->format('d/m/Y H:i:s')."\n";
             $message .= "Rule: {$rule->title}\n";
-            $message .= "Campaign: {$campaign->campaign_name}\n";
+            $message .= "Campaign ID: {$campaign->campaign_id}\n";
+            if ($campaign->campaign_name) {
+                $campaignName = str_replace('_', '\_', $campaign->campaign_name);
+                $message .= "Campaign Name: {$campaignName}\n";
+            }
             $message .= "================\n\n";
             $message .= "*Metrics:*\n";
             $message .= "```\n";
