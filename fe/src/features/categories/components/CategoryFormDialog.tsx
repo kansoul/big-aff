@@ -184,7 +184,6 @@ export function CategoryFormDialog({
               {!isEdit ? (
                 <Button
                   type="button"
-                  variant="outline"
                   disabled={submitting}
                   onClick={() => {
                     void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()

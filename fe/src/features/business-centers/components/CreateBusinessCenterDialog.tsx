@@ -105,7 +105,6 @@ export function CreateBusinessCenterDialog({ open, onOpenChange, onSuccess }: Pr
               </Button>
               <Button
                 type="submit"
-                variant="outline"
                 disabled={submitting}
                 className="gap-1.5"
                 onClick={() => {

@@ -235,7 +235,6 @@ export const LogsTableCard = memo(function LogsTableCard({
           </div>
           <div className="flex items-center gap-1.5">
             <Button
-              variant="outline"
               size="sm"
               className="h-7 gap-1.5 px-2.5 text-xs"
               onClick={onRefresh}

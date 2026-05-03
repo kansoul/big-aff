@@ -236,34 +236,22 @@
   background-color: var(--accent) !important;
 }
 
-/* ── Campaign report table: scoped hover overrides (more visible) ── */
+/* ── Campaign report table: disable all hover effects ── */
 .campaign-report-table-container .mantine-Table-root tbody tr:hover td {
-  background-color: rgba(99, 102, 241, 0.15) !important;
-  color: var(--accent-foreground) !important;
+  background-color: inherit !important;
+  color: inherit !important;
 }
 
-.dark .campaign-report-table-container .mantine-Table-root tbody tr:hover td {
-  background-color: rgba(99, 102, 241, 0.22) !important;
-}
-
-.campaign-report-table-container .mantine-Table-root tbody tr.campaign-group-row td {
-  background-color: rgba(99, 102, 241, 0.08) !important;
-  border-top: 1px solid rgba(99, 102, 241, 0.3) !important;
-  border-bottom: 1px solid rgba(99, 102, 241, 0.3) !important;
-}
-
-.dark .campaign-report-table-container .mantine-Table-root tbody tr.campaign-group-row td {
-  background-color: rgba(99, 102, 241, 0.12) !important;
+.campaign-report-table-container .mantine-Table-root tbody tr.campaign-group-row td,
+.campaign-report-table-container .mantine-Table-root tbody td.campaign-group-cell {
+  background-color: var(--muted) !important;
+  border-top: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border) !important;
 }
 
 .campaign-report-table-container .mantine-Table-root tbody tr.campaign-group-row:hover td,
 .campaign-report-table-container .mantine-Table-root tbody tr:hover td.campaign-group-cell {
-  background-color: rgba(99, 102, 241, 0.25) !important;
-}
-
-.dark .campaign-report-table-container .mantine-Table-root tbody tr.campaign-group-row:hover td,
-.dark .campaign-report-table-container .mantine-Table-root tbody tr:hover td.campaign-group-cell {
-  background-color: rgba(99, 102, 241, 0.32) !important;
+  background-color: var(--muted) !important;
 }
 
 /* Campaign report table: remove row separators and set tight padding */
@@ -272,7 +260,6 @@
 .campaign-report-table-container .mantine-Table-root tfoot tr td {
   padding-left: 2px !important;
   padding-right: 2px !important;
-  border-top: none !important;
   border-bottom: none !important;
   font-size: 10px !important;
   font-weight: 400 !important;

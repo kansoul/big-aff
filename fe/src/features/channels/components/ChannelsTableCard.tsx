@@ -275,7 +275,6 @@ function ChannelsTableCardInner({
             {canAssign ? (
               <Button
                 size="sm"
-                variant="outline"
                 className="h-7 gap-1.5 px-2.5 text-xs font-medium"
                 onClick={onAssignClick}
               >

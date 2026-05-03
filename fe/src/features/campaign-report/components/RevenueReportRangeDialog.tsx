@@ -701,7 +701,6 @@ export function RevenueReportRangeDialog({
           ))}
           <Button
             type="button"
-            variant="outline"
             size="sm"
             className="mx-auto mt-1 w-full max-w-xs gap-2 border-dashed sm:w-auto"
             onClick={addRange}

@@ -163,7 +163,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Team>[] {
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
                   className="h-7 gap-1 px-2 text-xs font-medium"
                   onClick={() => onAssignToLeaders(team)}
                 >

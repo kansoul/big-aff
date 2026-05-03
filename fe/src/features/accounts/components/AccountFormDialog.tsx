@@ -373,8 +373,8 @@ export function CreateAccountDialog({
 
             <DialogFooter>
               <Button
-                type="button"
                 variant="outline"
+                type="button"
                 disabled={submitting}
                 onClick={() => onOpenChange(false)}
               >
@@ -382,7 +382,6 @@ export function CreateAccountDialog({
               </Button>
               <Button
                 type="button"
-                variant="outline"
                 disabled={submitting}
                 onClick={() => {
                   void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()

@@ -121,7 +121,6 @@ export function CreateRoleDialog({
               </Button>
               <Button
                 type="button"
-                variant="outline"
                 disabled={submitting}
                 onClick={() => {
                   void createForm.handleSubmit((values) =>

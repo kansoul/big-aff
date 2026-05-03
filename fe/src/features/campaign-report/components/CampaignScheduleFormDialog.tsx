@@ -278,7 +278,6 @@ export function CampaignScheduleFormDialog({
                 <>
                   <Button
                     type="button"
-                    variant="outline"
                     disabled={submitting}
                     className="gap-1.5"
                     onClick={() => submitForm('create_another')}

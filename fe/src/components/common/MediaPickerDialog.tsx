@@ -817,7 +817,7 @@ const FileSelected = ({
       <p className="max-w-xs truncate text-sm font-medium text-foreground">{file.name}</p>
       <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>
     </div>
-    <Button type="button" variant="outline" size="sm" onClick={onReset}>
+    <Button type="button" size="sm" onClick={onReset}>
       Choose different file
     </Button>
   </div>

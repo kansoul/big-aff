@@ -76,6 +76,7 @@ class CampaignReportResource extends JsonResource
 
             'account_id' => $this->account_id,
             'account_name' => $this->account_name,
+            'user_email' => $this->user_email,
             'campaign_id' => $this->campaign_id,
             'campaign_name' => $this->campaign_name,
             'campaign_status' => $this->campaign_status,

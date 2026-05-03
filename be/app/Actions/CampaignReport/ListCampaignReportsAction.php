@@ -81,8 +81,16 @@ class ListCampaignReportsAction
 
         $query = $this->buildBaseQuery($filters)
             ->leftJoin('realtime_reports as rt', 'rt.id', '=', 'campaign_reports.realtime_report_id')
+            ->leftJoin(
+                DB::raw('(SELECT accounts.account_id AS str_acct_id, MIN(account_user.user_id) AS primary_user_id FROM account_user JOIN accounts ON accounts.id = account_user.account_id JOIN users ON users.id = account_user.user_id WHERE users.role_id != 1 GROUP BY accounts.account_id) AS pu_list'),
+                'pu_list.str_acct_id',
+                '=',
+                'campaign_reports.account_id',
+            )
+            ->leftJoin('users as u_list', 'u_list.id', '=', 'pu_list.primary_user_id')
             ->select(
                 'campaign_reports.*',
+                DB::raw('u_list.email as user_email'),
                 DB::raw("({$rpcExpr}) as rpc"),
                 DB::raw("COALESCE(rt.click_ad_count, 0) * ({$rpcExpr}) as revenue_est"),
                 DB::raw("(COALESCE(rt.click_ad_count, 0) * ({$rpcExpr})) - COALESCE(campaign_reports.a_spend, 0) as profit"),

@@ -44,7 +44,6 @@ export function NotFoundPage() {
           Go to Dashboard
         </Button>
         <Button
-          variant="outline"
           size="lg"
           className="min-w-36 gap-2 font-semibold"
           onClick={() => void navigate(-1)}

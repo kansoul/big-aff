@@ -711,7 +711,6 @@ export function CampaignRuleFormDialog({
               {!isEdit && (
                 <Button
                   type="button"
-                  variant="outline"
                   disabled={submitting}
                   onClick={handleCreateAndAnother}
                   className="gap-1.5"

@@ -169,7 +169,6 @@ export function CreateAdClientDialog({ open, onOpenChange, onSuccess }: CreateAd
               </Button>
               <Button
                 type="button"
-                variant="outline"
                 disabled={submitting}
                 onClick={() => {
                   void form.handleSubmit((values) => onSubmit(values, { createAnother: true }))()
