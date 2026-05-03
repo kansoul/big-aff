@@ -26,7 +26,6 @@ class AdsConversion extends Model
     {
         return [
             'conversion_value' => 'decimal:6',
-            'conversion_date_time' => 'datetime',
             'synced_at' => 'datetime',
         ];
     }
