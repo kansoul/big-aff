@@ -32,7 +32,7 @@ const formatCurrency = (val: number) =>
 
 const ProfitCell = ({ value }: { value: number }) => (
   <span
-    className={`font-semibold ${value > 0 ? 'text-emerald-500 dark:text-emerald-400' : value < 0 ? 'text-rose-500 dark:text-rose-400' : 'text-muted-foreground'}`}
+    className={`text-xs md:text-sm font-semibold ${value > 0 ? 'text-emerald-500 dark:text-emerald-400' : value < 0 ? 'text-rose-500 dark:text-rose-400' : 'text-muted-foreground'}`}
   >
     {formatCurrency(value)}
   </span>
@@ -227,7 +227,7 @@ export function DashboardPage() {
   return (
     <div className="flex flex-col gap-6 pb-8 animate-in fade-in duration-500">
       {/* Hero Banner */}
-      <div className="relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-8 p-8 sm:p-10 rounded-3xl border border-border/50 shadow-sm bg-zinc-950 text-white">
+      <div className="hidden relative overflow-hidden md:flex flex-col md:flex-row justify-between items-start md:items-center gap-8 p-8 sm:p-10 rounded-3xl border border-border/50 shadow-sm bg-zinc-950 text-white">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] bg-emerald-500/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none" />
 
@@ -459,7 +459,7 @@ export function DashboardPage() {
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Profit</span>
                           <span
-                            className={`text-xs font-semibold ${teams.reduce((s, r) => s + r.daily.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                            className={`text-xs text-xs md:text-sm font-semibold ${teams.reduce((s, r) => s + r.daily.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                           >
                             {formatCurrency(teams.reduce((s, r) => s + r.daily.profit, 0))}
                           </span>
@@ -472,7 +472,7 @@ export function DashboardPage() {
                             const roi = spend > 0 ? ((rev - spend) / spend) * 100 : 0
                             return (
                               <span
-                                className={`text-xs font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                className={`text-xs text-xs md:text-sm font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                               >
                                 {roi.toFixed(2)}%
                               </span>
@@ -523,7 +523,7 @@ export function DashboardPage() {
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Profit</span>
                           <span
-                            className={`text-xs font-semibold ${teams.reduce((s, r) => s + r.yesterday.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                            className={`text-xs text-xs md:text-sm font-semibold ${teams.reduce((s, r) => s + r.yesterday.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                           >
                             {formatCurrency(teams.reduce((s, r) => s + r.yesterday.profit, 0))}
                           </span>
@@ -536,7 +536,7 @@ export function DashboardPage() {
                             const roi = spend > 0 ? ((rev - spend) / spend) * 100 : 0
                             return (
                               <span
-                                className={`text-xs font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                className={`text-xs text-xs md:text-sm font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                               >
                                 {roi.toFixed(2)}%
                               </span>
@@ -588,7 +588,7 @@ export function DashboardPage() {
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Profit</span>
                           <span
-                            className={`text-xs font-semibold ${teams.reduce((s, r) => s + r.monthly.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                            className={`text-xs text-xs md:text-sm font-semibold ${teams.reduce((s, r) => s + r.monthly.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                           >
                             {formatCurrency(teams.reduce((s, r) => s + r.monthly.profit, 0))}
                           </span>
@@ -601,7 +601,7 @@ export function DashboardPage() {
                             const roi = spend > 0 ? ((rev - spend) / spend) * 100 : 0
                             return (
                               <span
-                                className={`text-xs font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                className={`text-xs text-xs md:text-sm font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                               >
                                 {roi.toFixed(2)}%
                               </span>
@@ -617,14 +617,14 @@ export function DashboardPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto row-stripe">
             <Table className="whitespace-nowrap">
               <TableHeader>
                 {/* Group header row */}
                 <TableRow className="hover:bg-transparent border-b-0 bg-muted/10">
                   <TableHead
                     rowSpan={2}
-                    className="py-3 px-6 font-semibold text-muted-foreground w-[180px] left-0 z-20 bg-muted/10 border-r border-border/30 align-middle"
+                    className="py-3 px-3 md:px-6 text-xs md:text-sm font-semibold text-muted-foreground w-[120px] md:w-[180px] sticky left-0 z-20 sticky-col border-r border-border/30 align-middle"
                   >
                     Team
                   </TableHead>
@@ -681,7 +681,7 @@ export function DashboardPage() {
                 {tableLoading
                   ? Array.from({ length: 4 }).map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell className="px-6 py-4 left-0 bg-card/80 border-r border-border/30">
+                        <TableCell className="px-6 py-4 sticky left-0 z-10 sticky-col border-r border-border/30">
                           <Skeleton className="h-4 w-28" />
                         </TableCell>
                         {Array.from({ length: 12 }).map((__, j) => (
@@ -696,16 +696,16 @@ export function DashboardPage() {
                       return (
                         <TableRow
                           key={row.team_id}
-                          className="border-b border-border/30 transition-colors hover:bg-muted/30"
+                          className="border-b border-border/30 transition-colors"
                         >
-                          <TableCell className="text-xs md:text-sm px-2 md:px-6 py-4 font-semibold text-foreground border-r border-border/30">
+                          <TableCell className="text-xs md:text-sm px-3 md:px-6 py-3 md:py-4 sticky left-0 z-10 sticky-col font-semibold text-foreground border-r border-border/30">
                             {row.team_name}
                           </TableCell>
                           {/* Daily */}
                           <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
                             {formatCurrency(row.daily.revenue)}
                           </TableCell>
-                          <TableCell className="text-foreground font-medium">
+                          <TableCell className="text-xs md:text-sm text-foreground font-medium">
                             {formatCurrency(row.daily.spend)}
                           </TableCell>
                           <TableCell>
@@ -713,7 +713,7 @@ export function DashboardPage() {
                           </TableCell>
                           <TableCell>
                             <span
-                              className={`font-semibold ${row.daily.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                              className={`text-xs md:text-sm font-semibold ${row.daily.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
                             >
                               {row.daily.roi.toFixed(2)}%
                             </span>
@@ -722,7 +722,7 @@ export function DashboardPage() {
                           <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
                             {formatCurrency(yday.revenue)}
                           </TableCell>
-                          <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium">
+                          <TableCell className="text-xs md:text-sm px-2 md:px-6 text-xs md:text-sm text-foreground font-medium">
                             {formatCurrency(yday.spend)}
                           </TableCell>
                           <TableCell>
@@ -730,7 +730,7 @@ export function DashboardPage() {
                           </TableCell>
                           <TableCell>
                             <span
-                              className={`font-semibold ${yday.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                              className={`text-xs md:text-sm font-semibold ${yday.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
                             >
                               {yday.roi.toFixed(2)}%
                             </span>
@@ -739,7 +739,7 @@ export function DashboardPage() {
                           <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
                             {formatCurrency(row.monthly.revenue)}
                           </TableCell>
-                          <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium">
+                          <TableCell className="text-xs md:text-sm px-2 md:px-6 text-xs md:text-sm text-foreground font-medium">
                             {formatCurrency(row.monthly.spend)}
                           </TableCell>
                           <TableCell>
@@ -747,7 +747,7 @@ export function DashboardPage() {
                           </TableCell>
                           <TableCell className="pr-6">
                             <span
-                              className={`font-semibold ${row.monthly.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                              className={`text-xs md:text-sm font-semibold ${row.monthly.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
                             >
                               {row.monthly.roi.toFixed(2)}%
                             </span>
@@ -759,8 +759,8 @@ export function DashboardPage() {
 
               {!tableLoading && teams.length > 0 && (
                 <TableBody>
-                  <TableRow className="bg-muted/40 hover:bg-muted/40 border-t-2 border-border">
-                    <TableCell className="px-6 py-4 sticky left-0 z-10 bg-muted/90 backdrop-blur-sm border-r border-border/30">
+                  <TableRow data-summary className="border-t-2 border-border">
+                    <TableCell className="px-6 py-4 sticky left-0 z-10 sticky-col border-r border-border/30">
                       <span className="inline-flex items-center gap-2 font-bold text-foreground text-sm">
                         <Activity className="h-4 w-4 text-muted-foreground" />
                         Summary
@@ -916,7 +916,7 @@ export function DashboardPage() {
                                   Monthly
                                 </span>
                                 <span
-                                  className={`text-xs font-semibold ${user.monthly.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                  className={`text-xs text-xs md:text-sm font-semibold ${user.monthly.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                                 >
                                   {formatCurrency(user.monthly.profit)}
                                 </span>
@@ -924,7 +924,7 @@ export function DashboardPage() {
                               <div className="flex flex-col">
                                 <span className="text-[10px] text-muted-foreground/70">ROI</span>
                                 <span
-                                  className={`text-xs font-semibold ${user.monthly.roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                  className={`text-xs text-xs md:text-sm font-semibold ${user.monthly.roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                                 >
                                   {user.monthly.roi.toFixed(2)}%
                                 </span>
@@ -938,20 +938,20 @@ export function DashboardPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto row-stripe">
             <Table className="whitespace-nowrap">
               <TableHeader>
                 {/* Group header row */}
                 <TableRow className="hover:bg-transparent border-b-0 bg-muted/10">
                   <TableHead
                     rowSpan={2}
-                    className="py-3 px-6 font-semibold text-muted-foreground w-16 border-r border-border/30 align-middle"
+                    className="py-3 px-3 md:px-6 text-xs md:text-sm font-semibold text-muted-foreground w-12 md:w-16 sticky left-0 z-20 sticky-col border-r border-border/30 align-middle"
                   >
                     Rank
                   </TableHead>
                   <TableHead
                     rowSpan={2}
-                    className="py-3 px-4 font-semibold text-muted-foreground w-[160px] border-r border-border/30 align-middle"
+                    className="py-3 px-2 md:px-4 text-xs md:text-sm font-semibold text-muted-foreground w-[120px] md:w-[160px] sticky left-[53px] md:left-[80px] z-20 sticky-col border-r border-border/30 align-middle"
                   >
                     User
                   </TableHead>
@@ -1008,10 +1008,10 @@ export function DashboardPage() {
                 {tableLoading
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell className="px-6 py-4 border-r border-border/30">
+                        <TableCell className="px-3 md:px-6 py-4 sticky left-0 z-10 sticky-col border-r border-border/30">
                           <Skeleton className="h-4 w-6" />
                         </TableCell>
-                        <TableCell className="border-r border-border/30">
+                        <TableCell className="px-2 md:px-4 sticky left-[53px] md:left-[80px] z-10 sticky-col border-r border-border/30">
                           <Skeleton className="h-4 w-28" />
                         </TableCell>
                         {Array.from({ length: 12 }).map((__, j) => (
@@ -1028,9 +1028,9 @@ export function DashboardPage() {
                         return (
                           <TableRow
                             key={row.user_id}
-                            className={`border-b border-border/30 transition-colors ${isTopThree ? 'bg-blue-300/5 hover:bg-blue-300/10' : 'hover:bg-muted/30'}`}
+                            className={`border-b border-border/30 transition-colors ${isTopThree ? 'bg-blue-300/5 hover:bg-blue-300/10' : ''}`}
                           >
-                            <TableCell className="px-6 py-4 font-bold border-r border-border/30">
+                            <TableCell className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-bold sticky left-0 z-10 sticky-col border-r border-border/30">
                               {isTopThree ? (
                                 <span className="text-rose-500 dark:text-rose-400">
                                   {['🥇', '🥈', '🥉'][idx]} {idx + 1}
@@ -1039,14 +1039,14 @@ export function DashboardPage() {
                                 <span className="text-muted-foreground font-medium">{idx + 1}</span>
                               )}
                             </TableCell>
-                            <TableCell className="px-4 font-semibold text-foreground border-r border-border/30">
+                            <TableCell className="px-2 md:px-4 text-xs md:text-sm font-semibold text-foreground sticky left-[53px] md:left-[80px] z-10 sticky-col border-r border-border/30">
                               {row.user_name}
                             </TableCell>
                             {/* Daily */}
                             <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
                               {formatCurrency(row.daily.revenue)}
                             </TableCell>
-                            <TableCell className="text-foreground font-medium">
+                            <TableCell className="text-xs md:text-sm text-foreground font-medium">
                               {formatCurrency(row.daily.spend)}
                             </TableCell>
                             <TableCell>
@@ -1054,7 +1054,7 @@ export function DashboardPage() {
                             </TableCell>
                             <TableCell>
                               <span
-                                className={`font-semibold ${row.daily.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                                className={`text-xs md:text-sm font-semibold ${row.daily.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
                               >
                                 {row.daily.roi.toFixed(2)}%
                               </span>
@@ -1063,7 +1063,7 @@ export function DashboardPage() {
                             <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
                               {formatCurrency(row.yesterday.revenue)}
                             </TableCell>
-                            <TableCell className="text-foreground font-medium">
+                            <TableCell className="text-xs md:text-sm text-foreground font-medium">
                               {formatCurrency(row.yesterday.spend)}
                             </TableCell>
                             <TableCell>
@@ -1071,7 +1071,7 @@ export function DashboardPage() {
                             </TableCell>
                             <TableCell>
                               <span
-                                className={`font-semibold ${row.yesterday.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                                className={`text-xs md:text-sm font-semibold ${row.yesterday.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
                               >
                                 {row.yesterday.roi.toFixed(2)}%
                               </span>
@@ -1080,7 +1080,7 @@ export function DashboardPage() {
                             <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
                               {formatCurrency(row.monthly.revenue)}
                             </TableCell>
-                            <TableCell className="text-foreground font-medium">
+                            <TableCell className="text-xs md:text-sm text-foreground font-medium">
                               {formatCurrency(row.monthly.spend)}
                             </TableCell>
                             <TableCell>
@@ -1088,7 +1088,7 @@ export function DashboardPage() {
                             </TableCell>
                             <TableCell className="pr-6">
                               <span
-                                className={`font-semibold ${row.monthly.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+                                className={`text-xs md:text-sm font-semibold ${row.monthly.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
                               >
                                 {row.monthly.roi.toFixed(2)}%
                               </span>

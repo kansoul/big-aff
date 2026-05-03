@@ -14,6 +14,33 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.row-stripe tbody tr:nth-child(even) td {
+  background-color: color-mix(in oklch, var(--muted-foreground) 8%, transparent);
+}
+.row-stripe tbody tr:hover td {
+  background-color: color-mix(in oklch, var(--muted-foreground) 12%, transparent);
+}
+.row-stripe tbody tr[data-summary] td {
+  background-color: color-mix(in oklch, var(--muted-foreground) 18%, transparent);
+}
+
+/* Sticky columns need solid backgrounds so content doesn't bleed through on scroll */
+.row-stripe thead th.sticky-col {
+  background-color: color-mix(in oklch, var(--muted-foreground) 6%, var(--card));
+}
+.row-stripe tbody tr td.sticky-col {
+  background-color: var(--card);
+}
+.row-stripe tbody tr:nth-child(even) td.sticky-col {
+  background-color: color-mix(in oklch, var(--muted-foreground) 8%, var(--card));
+}
+.row-stripe tbody tr:hover td.sticky-col {
+  background-color: color-mix(in oklch, var(--muted-foreground) 12%, var(--card));
+}
+.row-stripe tbody tr[data-summary] td.sticky-col {
+  background-color: color-mix(in oklch, var(--muted-foreground) 18%, var(--card));
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

@@ -69,13 +69,11 @@ export function TeamReportByUserTableCard({ data, loading, filters }: Props) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto row-stripe">
         <Table className="whitespace-nowrap">
           <TableHeader>
             <TableRow className="hover:bg-transparent border-b border-border/50 bg-muted/10">
-              <TableHead className="py-3 px-6 font-semibold text-muted-foreground w-8">
-                #
-              </TableHead>
+              <TableHead className="py-3 px-6 font-semibold text-muted-foreground w-8">#</TableHead>
               <TableHead className="font-semibold text-muted-foreground w-[220px]">User</TableHead>
               <TableHead className="font-semibold text-muted-foreground w-[140px]">Team</TableHead>
               <TableHead className="font-semibold text-muted-foreground">Revenue</TableHead>
@@ -108,7 +106,7 @@ export function TeamReportByUserTableCard({ data, loading, filters }: Props) {
               : data.map((row, idx) => (
                   <TableRow
                     key={row.user_id}
-                    className="border-b border-border/30 transition-colors hover:bg-muted/30"
+                    className="border-b border-border/30 transition-colors"
                   >
                     <TableCell className="px-6 py-4 text-muted-foreground font-medium">
                       {idx + 1}
@@ -118,11 +116,11 @@ export function TeamReportByUserTableCard({ data, loading, filters }: Props) {
                         <span>{row.user_name}</span>
                         <Link
                           to={buildCampaignReportUrl(row.user_id, filters)}
-                          className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          className="inline-flex items-center gap-1 text-[11px] mx-5 font-medium text-[#d25252] hover:text-[#d25252] hover:underline leading-none"
                           title="View campaign report for this user"
                         >
                           <ExternalLink className="h-3 w-3" />
-                          Campaign
+                          View Report
                         </Link>
                       </div>
                     </TableCell>
@@ -149,7 +147,7 @@ export function TeamReportByUserTableCard({ data, loading, filters }: Props) {
 
           {!loading && data.length > 0 && (
             <TableBody>
-              <TableRow className="bg-muted/40 hover:bg-muted/40 border-t-2 border-border">
+              <TableRow data-summary className="border-t-2 border-border">
                 <TableCell className="px-6 py-4" />
                 <TableCell className="font-bold text-foreground text-sm" colSpan={2}>
                   Summary

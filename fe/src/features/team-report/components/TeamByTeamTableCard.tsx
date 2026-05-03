@@ -58,7 +58,7 @@ export function TeamReportByTeamTableCard({ data, loading }: Props) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto row-stripe">
         <Table className="whitespace-nowrap">
           <TableHeader>
             <TableRow className="hover:bg-transparent border-b border-border/50 bg-muted/10">
@@ -89,7 +89,7 @@ export function TeamReportByTeamTableCard({ data, loading }: Props) {
               : data.map((row) => (
                   <TableRow
                     key={row.team_id}
-                    className="border-b border-border/30 transition-colors hover:bg-muted/30"
+                    className="border-b border-border/30 transition-colors"
                   >
                     <TableCell className="px-6 py-4 font-semibold text-foreground">
                       {row.team_name}
@@ -116,7 +116,7 @@ export function TeamReportByTeamTableCard({ data, loading }: Props) {
 
           {!loading && data.length > 0 && (
             <TableBody>
-              <TableRow className="bg-muted/40 hover:bg-muted/40 border-t-2 border-border">
+              <TableRow data-summary className="border-t-2 border-border">
                 <TableCell className="px-6 py-4 font-bold text-foreground text-sm">
                   Summary
                 </TableCell>

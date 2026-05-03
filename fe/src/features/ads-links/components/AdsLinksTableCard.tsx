@@ -118,141 +118,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
       ),
     },
     {
-      accessorKey: 'slug',
-      header: 'Slug',
-      size: 180,
-      Cell: ({ row }) => (
-        <span className="font-mono text-xs text-foreground">{row.original.slug}</span>
-      ),
-    },
-    {
-      accessorKey: 'site',
-      header: 'Site',
-      size: 140,
-      Cell: ({ row }) => {
-        const name = row.original.site?.name
-        if (!name) return <span className="text-muted-foreground">—</span>
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="truncate block text-muted-foreground max-w-full">{name}</span>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
-                {name}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )
-      },
-    },
-    {
-      accessorKey: 'post',
-      header: 'Post',
-      size: 180,
-      Cell: ({ row }) => {
-        const post = row.original.post
-        if (!post?.title) return <span className="text-muted-foreground">—</span>
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to={postViewPath(post.id)}
-                  className="truncate block text-xs text-primary hover:underline max-w-full"
-                >
-                  {post.title}
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
-                {post.title}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )
-      },
-    },
-    {
-      accessorKey: 'channel_code',
-      header: 'Channel',
-      size: 140,
-      Cell: ({ row }) => {
-        const { channel_code: code, channel_name: name } = row.original
-        if (!code) return <span className="text-muted-foreground">—</span>
-        return (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs text-foreground truncate">{name ?? code}</span>
-            <span className="font-mono text-[11px] text-muted-foreground">{code}</span>
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: 'style_code',
-      header: 'Style',
-      size: 80,
-      Cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.style_code ?? '—'}</span>
-      ),
-    },
-    {
-      accessorKey: 'rac',
-      header: 'RAC',
-      size: 100,
-      Cell: ({ row }) => {
-        const rac = row.original.rac
-        if (!rac) return <span className="text-muted-foreground">—</span>
-        return (
-          <a
-            href={rac}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-mono text-xs text-primary hover:underline truncate block max-w-full"
-          >
-            {rac}
-          </a>
-        )
-      },
-    },
-    {
-      accessorKey: 'is_hidden',
-      header: 'Status',
-      size: 100,
-      Cell: ({ row }) => (
-        <StatusBadge
-          status={row.original.is_hidden ? 'hidden' : 'active'}
-          label={row.original.is_hidden ? 'Hidden' : 'Active'}
-        />
-      ),
-    },
-    {
-      accessorKey: 'created_at',
-      header: 'Created at',
-      size: 120,
-      Cell: ({ row }) => {
-        const val = row.original.created_at
-        if (!val) return <span className="text-muted-foreground">—</span>
-        const d = new Date(val)
-        return (
-          <span className="text-xs text-muted-foreground">
-            {d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-          </span>
-        )
-      },
-    },
-    {
-      accessorKey: 'created_by',
-      header: 'Created by',
-      size: 130,
-      Cell: ({ row }) => {
-        const id = row.original.created_by
-        if (!id) return <span className="text-muted-foreground">—</span>
-        const user = users.find((u) => u.id === id)
-        return <span className="text-xs text-foreground">{user?.name ?? String(id)}</span>
-      },
-    },
-
-    {
       id: 'copy_links',
       header: 'Copy Link',
       size: 120,
@@ -301,6 +166,144 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
             </Button>
           </div>
         )
+      },
+    },
+    {
+      accessorKey: 'site',
+      header: 'Site',
+      size: 140,
+      Cell: ({ row }) => {
+        const name = row.original.site?.name
+        if (!name) return <span className="text-muted-foreground">—</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="truncate block text-muted-foreground max-w-full">{name}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {name}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
+      },
+    },
+    {
+      accessorKey: 'post',
+      header: 'Post',
+      size: 180,
+      Cell: ({ row }) => {
+        const post = row.original.post
+        if (!post?.title) return <span className="text-muted-foreground">—</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to={postViewPath(post.id)}
+                  className="truncate block text-xs text-primary hover:underline max-w-full"
+                >
+                  {post.title.length > 30 ? post.title.slice(0, 30) + '...' : post.title}
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {post.title}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
+      },
+    },
+    {
+      accessorKey: 'rac',
+      header: 'RAC',
+      size: 100,
+      Cell: ({ row }) => {
+        const rac = row.original.rac
+        if (!rac) return <span className="text-muted-foreground">—</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                asChild
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void navigator.clipboard.writeText(rac).then(() => {
+                    toast.success('Copied to clipboard')
+                  })
+                }}
+              >
+                <span className="font-mono text-xs text-primary cursor-pointer whitespace-pre-wrap line-clamp-3 wrap-break-word">
+                  {rac}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {rac}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
+      },
+    },
+    {
+      accessorKey: 'channel_code',
+      header: 'Channel',
+      size: 140,
+      Cell: ({ row }) => {
+        const { channel_code: code, channel_name: name } = row.original
+        if (!code) return <span className="text-muted-foreground">—</span>
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs text-foreground truncate">{name ?? code}</span>
+            <span className="font-mono text-[11px] text-muted-foreground">{code}</span>
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: 'style_code',
+      header: 'Style',
+      size: 80,
+      Cell: ({ row }) => (
+        <span className="text-muted-foreground">{row.original.style_code ?? '—'}</span>
+      ),
+    },
+    {
+      accessorKey: 'is_hidden',
+      header: 'Status',
+      size: 100,
+      Cell: ({ row }) => (
+        <StatusBadge
+          status={row.original.is_hidden ? 'hidden' : 'active'}
+          label={row.original.is_hidden ? 'Hidden' : 'Active'}
+        />
+      ),
+    },
+    {
+      accessorKey: 'created_at',
+      header: 'Created at',
+      size: 120,
+      Cell: ({ row }) => {
+        const val = row.original.created_at
+        if (!val) return <span className="text-muted-foreground">—</span>
+        const d = new Date(val)
+        return (
+          <span className="text-xs text-muted-foreground">
+            {d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: 'created_by',
+      header: 'Created by',
+      size: 130,
+      Cell: ({ row }) => {
+        const id = row.original.created_by
+        if (!id) return <span className="text-muted-foreground">—</span>
+        const user = users.find((u) => u.id === id)
+        return <span className="text-xs text-foreground">{user?.name ?? String(id)}</span>
       },
     },
     ...(canUpdate
