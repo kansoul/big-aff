@@ -109,6 +109,7 @@ class GoogleCampaignSyncService
         if (isset($data['account_id']) && ! empty($data['account_id'])) {
             $accountFilters = Account::whereIn('account_id', $data['account_id'])
                 ->where('ads_type', AdsType::GOOGLE->value)
+                ->where('status', 'ACTIVE')
                 ->get();
         }
 

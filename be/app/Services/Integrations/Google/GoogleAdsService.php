@@ -9,12 +9,16 @@ use Google\Ads\GoogleAds\Lib\V21\GoogleAdsClient;
 use Google\Ads\GoogleAds\Lib\V21\GoogleAdsClientBuilder;
 use Google\Ads\GoogleAds\Util\FieldMasks;
 use Google\Ads\GoogleAds\V21\Enums\CampaignStatusEnum\CampaignStatus;
+use Google\Ads\GoogleAds\V21\Errors\ConversionUploadErrorEnum\ConversionUploadError;
+use Google\Ads\GoogleAds\V21\Errors\GoogleAdsFailure;
 use Google\Ads\GoogleAds\V21\Resources\Campaign;
 use Google\Ads\GoogleAds\V21\Services\CampaignOperation;
+use Google\Ads\GoogleAds\V21\Services\ClickConversion;
 use Google\Ads\GoogleAds\V21\Services\Client\GoogleAdsServiceClient;
 use Google\Ads\GoogleAds\V21\Services\MutateGoogleAdsRequest;
 use Google\Ads\GoogleAds\V21\Services\MutateOperation;
 use Google\Ads\GoogleAds\V21\Services\SearchGoogleAdsRequest;
+use Google\Ads\GoogleAds\V21\Services\UploadClickConversionsRequest;
 use Google\Auth\Credentials\UserRefreshCredentials;
 use Illuminate\Support\Facades\Log;
 
@@ -363,7 +367,7 @@ class GoogleAdsService
                     metrics.average_cpc
                 FROM campaign
                 WHERE segments.date BETWEEN '$start' AND '$end'
-                AND campaign.status IN ('ENABLED', 'PAUSED')
+                AND campaign.status IN ('ENABLED', 'PAUSED', 'REMOVED')
             ";
 
             $performanceResponse = $this->gaService->search(new SearchGoogleAdsRequest(['customer_id' => $preAccountId, 'query' => $performanceGaql]));
@@ -593,118 +597,122 @@ class GoogleAdsService
         }
     }
 
-    //     /**
-    //  * Sync ad revenue to Google Ads.
-    //  *
-    //  * @param string|int $customerId
-    //  * @param array $AdRevenues
-    //  *
-    //  * @return array|null Returns array of failed indices, empty array if all success, null if critical error.
-    //  */
-    // public function syncAdRevenue(string|int $customerId, array $AdRevenues): ?array
-    // {
-    //     try {
-    //         if (empty($AdRevenues)) {
-    //             return [];
-    //         }
+    /**
+     * Sync ad revenue to Google Ads.
+     *
+     *
+     * @return array|null Returns array of failed indices, empty array if all success, null if critical error.
+     */
+    public function syncAdsConversion(string|int $customerId, array $AdRevenues): ?array
+    {
+        try {
+            if (empty($AdRevenues)) {
+                return [];
+            }
 
-    //         if (! $customerId) {
-    //             Log::error('Missing customer_id in Ad Revenue sync data');
-    //             return null;
-    //         }
-    //         $preAccountId = preg_replace('/-/', '', $customerId);
+            if (! $customerId) {
+                Log::error('Missing customer_id in Ad Revenue sync data');
 
-    //         $conversionUploadService = $this->googleAdsClient->getConversionUploadServiceClient();
-    //         $conversions = [];
-    //         foreach ($AdRevenues as $AdRevenue) {
-    //             $conversion = new ClickConversion();
-    //             if (!empty($AdRevenue['gclid'])) {
-    //                 $conversion->setGclid($AdRevenue['gclid']);
-    //             } elseif (!empty($AdRevenue['wbraid'])) {
-    //                 $conversion->setWbraid($AdRevenue['wbraid']);
-    //             } elseif (!empty($AdRevenue['gbraid'])) {
-    //                 $conversion->setGbraid($AdRevenue['gbraid']);
-    //             }
-    //             $conversion->setConversionAction($AdRevenue['conversion_action_resource_name']);
-    //             if ($AdRevenue['conversion_value']) {
-    //                 // convert micro value to decimal
-    //                 $conversion->setConversionValue($AdRevenue['conversion_value'] / 1000000);
-    //             }
-    //             if ($AdRevenue['currency_code']) {
-    //                 $conversion->setCurrencyCode($AdRevenue['currency_code']);
-    //             }
-    //             $conversion->setConversionDateTime($AdRevenue['conversion_date_time']);
-    //             $conversions[] = $conversion;
-    //         }
+                return null;
+            }
+            $preAccountId = preg_replace('/-/', '', $customerId);
 
-    //         $request = new UploadClickConversionsRequest([
-    //             'customer_id' => $preAccountId,
-    //             'conversions' => $conversions,
-    //             'partial_failure' => true,
-    //         ]);
+            $conversionUploadService = $this->googleAdsClient->getConversionUploadServiceClient();
+            $conversions = [];
+            foreach ($AdRevenues as $AdRevenue) {
+                $conversion = new ClickConversion;
+                if (! empty($AdRevenue['gclid'])) {
+                    $conversion->setGclid($AdRevenue['gclid']);
+                } elseif (! empty($AdRevenue['wbraid'])) {
+                    $conversion->setWbraid($AdRevenue['wbraid']);
+                } elseif (! empty($AdRevenue['gbraid'])) {
+                    $conversion->setGbraid($AdRevenue['gbraid']);
+                }
+                $conversion->setConversionAction($AdRevenue['conversion_action_resource_name']);
+                if ($AdRevenue['conversion_value']) {
+                    // convert micro value to decimal
+                    $conversion->setConversionValue($AdRevenue['conversion_value'] / 1000000);
+                }
+                if ($AdRevenue['currency_code']) {
+                    $conversion->setCurrencyCode($AdRevenue['currency_code']);
+                }
+                $conversion->setConversionDateTime($AdRevenue['conversion_date_time']);
+                $conversions[] = $conversion;
+            }
 
-    //         $response = $conversionUploadService->uploadClickConversions($request);
-    //         $failedIndices = [];
+            $request = new UploadClickConversionsRequest([
+                'customer_id' => $preAccountId,
+                'conversions' => $conversions,
+                'partial_failure' => true,
+            ]);
 
-    //         if ($response->hasPartialFailureError()) {
-    //             $partialFailure = $response->getPartialFailureError();
+            $response = $conversionUploadService->uploadClickConversions($request);
+            $failedIndices = [];
 
-    //             foreach ($partialFailure->getDetails() as $detail) {
+            if ($response->hasPartialFailureError()) {
+                $partialFailure = $response->getPartialFailureError();
 
-    //                 if ($detail->getTypeUrl() === 'type.googleapis.com/google.ads.googleads.v21.errors.GoogleAdsFailure') {
+                foreach ($partialFailure->getDetails() as $detail) {
 
-    //                     $googleAdsFailure = new GoogleAdsFailure();
-    //                     $googleAdsFailure->mergeFromString($detail->getValue());
+                    if ($detail->getTypeUrl() === 'type.googleapis.com/google.ads.googleads.v21.errors.GoogleAdsFailure') {
 
-    //                     foreach ($googleAdsFailure->getErrors() as $error) {
+                        $googleAdsFailure = new GoogleAdsFailure;
+                        $googleAdsFailure->mergeFromString($detail->getValue());
 
-    //                         $index = null;
-    //                         if ($error->hasLocation()) {
-    //                             foreach ($error->getLocation()->getFieldPathElements() as $pathElement) {
-    //                                 if ($pathElement->getFieldName() === 'conversions' && $pathElement->hasIndex()) {
-    //                                     $index = $pathElement->getIndex();
-    //                                     break;
-    //                                 }
-    //                             }
-    //                         }
+                        foreach ($googleAdsFailure->getErrors() as $error) {
 
-    //                         $gclid     = 'unknown';
+                            $index = null;
+                            if ($error->hasLocation()) {
+                                foreach ($error->getLocation()->getFieldPathElements() as $pathElement) {
+                                    if ($pathElement->getFieldName() === 'conversions' && $pathElement->hasIndex()) {
+                                        $index = $pathElement->getIndex();
+                                        break;
+                                    }
+                                }
+                            }
 
-    //                         if (!is_null($index) && isset($conversions[$index])) {
-    //                             $failedRecord = $conversions[$index];
-    //                             $gclid        = $failedRecord->getGclid();
-    //                         }
+                            $gclid = 'unknown';
 
-    //                         $errorCode    = $error->getErrorCode()->getConversionUploadError();
-    //                         $errorMessage = $error->getMessage();
+                            if (! is_null($index) && isset($conversions[$index])) {
+                                $failedRecord = $conversions[$index];
+                                $gclid = $failedRecord->getGclid();
+                            }
 
-    //                         switch ($errorCode) {
+                            $errorCode = $error->getErrorCode()->getConversionUploadError();
+                            $errorMessage = $error->getMessage();
 
-    //                             case ConversionUploadError::CLICK_CONVERSION_ALREADY_EXISTS:
-    //                             case ConversionUploadError::EXPIRED_EVENT:
-    //                             case ConversionUploadError::UNPARSEABLE_GCLID:
-    //                                 break;
+                            switch ($errorCode) {
 
-    //                             case ConversionUploadError::CONVERSION_PRECEDES_EVENT:
-    //                             case ConversionUploadError::EVENT_NOT_FOUND:
-    //                             case ConversionUploadError::TOO_RECENT_EVENT:
-    //                                 if (!is_null($index)) $failedIndices[] = $index;
-    //                                 break;
+                                case ConversionUploadError::CLICK_CONVERSION_ALREADY_EXISTS:
+                                case ConversionUploadError::EXPIRED_EVENT:
+                                case ConversionUploadError::UNPARSEABLE_GCLID:
+                                    break;
 
-    //                             default:
-    //                                 Log::error("Unhandled UploadError for account {$customerId} [Index: {$index}] GCLID {$gclid}: {$errorMessage}");
-    //                                 if (!is_null($index)) $failedIndices[] = $index;
-    //                                 break;
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
+                                case ConversionUploadError::CONVERSION_PRECEDES_EVENT:
+                                case ConversionUploadError::EVENT_NOT_FOUND:
+                                case ConversionUploadError::TOO_RECENT_EVENT:
+                                    if (! is_null($index)) {
+                                        $failedIndices[] = $index;
+                                    }
+                                    break;
 
-    //         return array_unique($failedIndices);
-    //     } catch (Exception $e) {
-    //         Log::error('Error syncing Ad Revenue to Google Ads: ' . $e->getMessage());
-    //         return null;
-    //     }
-    // }
+                                default:
+                                    Log::error("Unhandled UploadError for account {$customerId} [Index: {$index}] GCLID {$gclid}: {$errorMessage}");
+                                    if (! is_null($index)) {
+                                        $failedIndices[] = $index;
+                                    }
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return array_unique($failedIndices);
+        } catch (Exception $e) {
+            Log::error('Error syncing Ad Revenue to Google Ads: '.$e->getMessage());
+
+            return null;
+        }
+    }
 }

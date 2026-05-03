@@ -87,7 +87,7 @@ class SyncCampaignReportsCommand extends Command
         }
 
         try {
-            GoogleCampaignSyncService::sync([
+            GoogleCampaignSyncService::syncWithoutConversions([
                 'start_date' => $startDate,
                 'end_date' => $endDate,
             ]);
