@@ -2,9 +2,11 @@
 
 namespace App\Actions\Account;
 
+use App\Models\Account;
 use App\Models\User;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AssignAccountAction
@@ -25,53 +27,80 @@ class AssignAccountAction
             throw new AuthorizationException;
         }
 
-        // Get user's team IDs
-        $userTeamIds = DB::table('team_user')
-            ->where('user_id', $user->id)
-            ->pluck('team_id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
+        $authUserId = (int) Auth::id();
 
-        // All accounts in user's teams
-        $teamAccountIds = DB::table('accounts')
-            ->whereNull('deleted_at')
-            ->whereIn('team_id', $userTeamIds)
+        // All accounts accessible to the auth user
+        $accessibleQuery = Account::query()->select('id');
+        $ownership->applyThroughAccount($accessibleQuery);
+        $accessibleAccountIds = $accessibleQuery
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        // Filter requested account_ids to only those in user's teams
+        // Filter requested IDs to only accessible accounts
         $allowedAccountIds = array_values(array_intersect(
             array_map('intval', $accountIds),
-            $teamAccountIds,
+            $accessibleAccountIds,
         ));
 
-        DB::transaction(function () use ($user, $allowedAccountIds, $teamAccountIds): void {
-            // Remove all existing assignments for this user within their teams (sync)
+        DB::transaction(function () use ($user, $allowedAccountIds, $accessibleAccountIds, $authUserId): void {
+            // Accounts previously assigned to this user (within accessible scope)
+            $previouslyAssigned = DB::table('account_user')
+                ->where('user_id', $user->id)
+                ->whereIn('account_id', $accessibleAccountIds)
+                ->pluck('account_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $removedAccountIds = array_values(array_diff($previouslyAssigned, $allowedAccountIds));
+
+            // Remove all existing assignments for this user (within accessible scope)
             DB::table('account_user')
                 ->where('user_id', $user->id)
-                ->whereIn('account_id', $teamAccountIds)
+                ->whereIn('account_id', $accessibleAccountIds)
                 ->delete();
 
-            if (empty($allowedAccountIds)) {
-                return;
+            if (! empty($allowedAccountIds)) {
+                // Enforce 1-n: remove any other user's assignment for these accounts
+                DB::table('account_user')
+                    ->whereIn('account_id', $allowedAccountIds)
+                    ->where('user_id', '!=', $user->id)
+                    ->delete();
+
+                $now = now();
+                DB::table('account_user')->insert(
+                    array_map(fn (int $accountId) => [
+                        'user_id' => $user->id,
+                        'account_id' => $accountId,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ], $allowedAccountIds),
+                );
             }
 
-            // Enforce 1-n: remove any other user's assignment for these accounts
-            DB::table('account_user')
-                ->whereIn('account_id', $allowedAccountIds)
-                ->where('user_id', '!=', $user->id)
-                ->delete();
+            // Re-assign removed accounts back to the auth user (if they differ from target user)
+            if (! empty($removedAccountIds) && $authUserId !== $user->id) {
+                // Only accounts not already assigned to someone else
+                $alreadyAssigned = DB::table('account_user')
+                    ->whereIn('account_id', $removedAccountIds)
+                    ->pluck('account_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
 
-            $now = now();
-            $rows = array_map(fn (int $accountId) => [
-                'user_id' => $user->id,
-                'account_id' => $accountId,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ], $allowedAccountIds);
+                $toReassign = array_values(array_diff($removedAccountIds, $alreadyAssigned));
 
-            DB::table('account_user')->insert($rows);
+                if (! empty($toReassign)) {
+                    $now = now();
+                    DB::table('account_user')->insert(
+                        array_map(fn (int $accountId) => [
+                            'user_id' => $authUserId,
+                            'account_id' => $accountId,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ], $toReassign),
+                    );
+                }
+            }
         });
     }
 }

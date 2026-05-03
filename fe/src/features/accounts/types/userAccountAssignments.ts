@@ -13,8 +13,10 @@ export type AssignedAccountSummary = {
 }
 
 /**
- * User row from `GET /users` including currently assigned accounts.
+ * User row from `GET /users/account-assignments`.
  */
-export type UserAccountAssignmentRow = Pick<ManagedUser, 'id' | 'name' | 'email'> & {
+export type UserWithAccounts = Pick<ManagedUser, 'id' | 'name' | 'email'> & {
   accounts: AssignedAccountSummary[]
 }
+
+export type UserAccountAssignmentRow = UserWithAccounts

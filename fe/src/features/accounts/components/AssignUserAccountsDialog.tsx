@@ -3,9 +3,8 @@ import { AlertCircle, Search } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { accountsApi } from '@/features/accounts/api'
-import type { AccountOptionForAssign, UserFilterParams } from '@/features/accounts/types'
+import type { AccountOptionForAssign } from '@/features/accounts/types'
 import { AssignUserAccountsTableCard } from '@/features/accounts/components/AssignUserAccountsTableCard'
-import { usersApi } from '@/features/users/api/users'
 
 import { formatApiError } from '@/features/settings/components'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
@@ -13,42 +12,21 @@ import { useAuthStore } from '@/hooks/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import type {
-  AssignedAccountSummary,
-  UserAccountAssignmentRow,
-} from '../types/userAccountAssignments'
+import type { AssignedAccountSummary, UserWithAccounts } from '../types/userAccountAssignments'
 
-const USER_LIST_PAGE_SIZE = 100
-const USER_LIST_FILTERS: UserFilterParams = {
-  order: 'asc',
-  order_by: 'name',
-}
+const USERS_PAGE_SIZE = 100
 
 function toUniqueSortedIds(ids: number[]): number[] {
   return Array.from(new Set(ids)).sort((a, b) => a - b)
 }
 
-type UserListRowWithAccounts = {
-  id: number
-  name: string
-  email: string
-  accounts?: Array<{
-    id: number
-    account_id?: string | null
-    account_name?: string | null
-  }>
-}
-
 function normalizeAssignedAccounts(
-  accounts: UserListRowWithAccounts['accounts'],
+  accounts: UserWithAccounts['accounts'],
 ): AssignedAccountSummary[] {
-  if (!Array.isArray(accounts)) return []
-
   return accounts
     .map((account) => {
       const id = Number(account.id)
       if (!Number.isInteger(id)) return null
-
       const rawAccountId = typeof account.account_id === 'string' ? account.account_id.trim() : ''
       return {
         id,
@@ -59,38 +37,45 @@ function normalizeAssignedAccounts(
     .filter((a): a is AssignedAccountSummary => a !== null)
 }
 
-function toUserAccountAssignmentRows(rows: UserListRowWithAccounts[]): UserAccountAssignmentRow[] {
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    accounts: normalizeAssignedAccounts(row.accounts),
+function toUserRows(raw: UserWithAccounts[]): UserWithAccounts[] {
+  return raw.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    accounts: normalizeAssignedAccounts(u.accounts),
   }))
 }
 
-function assignedAccountIdsFromRow(row: UserAccountAssignmentRow): number[] {
+function assignedIdsFromRow(row: UserWithAccounts): number[] {
   return toUniqueSortedIds(
     row.accounts.map((a) => Number(a.id)).filter((id): id is number => Number.isInteger(id)),
   )
 }
 
-function savedByUserFromRows(rows: UserAccountAssignmentRow[]): Record<number, number[]> {
-  return Object.fromEntries(rows.map((row) => [row.id, assignedAccountIdsFromRow(row)]))
+function savedByUserFromRows(rows: UserWithAccounts[]): Record<number, number[]> {
+  return Object.fromEntries(rows.map((row) => [row.id, assignedIdsFromRow(row)]))
 }
 
 function draftsFromSaved(savedByUserId: Record<number, number[]>): Record<number, number[]> {
   return Object.fromEntries(
-    Object.entries(savedByUserId).map(([userId, accountIds]) => [Number(userId), [...accountIds]]),
+    Object.entries(savedByUserId).map(([userId, ids]) => [Number(userId), [...ids]]),
   )
 }
 
-/** Returns the set of account IDs claimed by OTHER users in the current draft state. */
-function claimedByOthers(drafts: Record<number, number[]>, excludeUserId: number): Set<number> {
+/**
+ * Account IDs claimed by OTHER editable users in the current draft state.
+ * excludeUserId: the user whose dropdown we're rendering (skip their own draft)
+ * authUserId: the auth user's row is disabled, so their draft doesn't "block" anyone
+ */
+function claimedByOthers(
+  drafts: Record<number, number[]>,
+  excludeUserId: number,
+  authUserId: number,
+): Set<number> {
   const claimed = new Set<number>()
   for (const [userIdStr, ids] of Object.entries(drafts)) {
-    if (Number(userIdStr) !== excludeUserId) {
-      ids.forEach((id) => claimed.add(id))
-    }
+    const uid = Number(userIdStr)
+    if (uid !== excludeUserId && uid !== authUserId) ids.forEach((id) => claimed.add(id))
   }
   return claimed
 }
@@ -102,13 +87,13 @@ type Props = {
 
 export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
   const user = useAuthStore((s) => s.user)
+  const authUserId = user?.id ?? -1
   const perms = user?.permissions ?? []
   const canAssign = hasPermission(perms, PermissionSlugs.AccountsAssign)
 
-  const [users, setUsers] = useState<UserAccountAssignmentRow[]>([])
-  const [accountOptionsByUser, setAccountOptionsByUser] = useState<
-    Record<number, AccountOptionForAssign[]>
-  >({})
+  const [users, setUsers] = useState<UserWithAccounts[]>([])
+  // Shared pool: unassigned or assigned to a specific user (fetched once, not per-user)
+  const [assignOptionPool, setAssignOptionPool] = useState<AccountOptionForAssign[]>([])
   const [savedByUserId, setSavedByUserId] = useState<Record<number, number[]>>({})
   const [drafts, setDrafts] = useState<Record<number, number[]>>({})
   const [loading, setLoading] = useState(false)
@@ -117,23 +102,29 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
   const [userSearch, setUserSearch] = useState('')
   const [debouncedUserSearch, setDebouncedUserSearch] = useState('')
 
-  const fetchUsers = useCallback(async () => {
-    const firstPage = await usersApi.list(1, USER_LIST_PAGE_SIZE, USER_LIST_FILTERS)
-    const firstRows = toUserAccountAssignmentRows(firstPage.data.data)
-    const lastPage = Math.max(firstPage.data.pagination.last_page || 1, 1)
+  const fetchAll = useCallback(async () => {
+    // Fetch all users (paginated) + shared assign pool in parallel
+    const firstPage = await accountsApi.listUsersWithAccounts({
+      page: 1,
+      per_page: USERS_PAGE_SIZE,
+    })
+    const lastPage = Math.max(firstPage.pagination.last_page ?? 1, 1)
 
-    if (lastPage === 1) return firstRows
-
-    const extraRows: UserAccountAssignmentRow[] = []
-    for (let page = 2; page <= lastPage; page += 1) {
-      const response = await usersApi.list(page, USER_LIST_PAGE_SIZE, USER_LIST_FILTERS)
-      extraRows.push(...toUserAccountAssignmentRows(response.data.data))
+    let allRaw = firstPage.data
+    if (lastPage > 1) {
+      const extraPages = await Promise.all(
+        Array.from({ length: lastPage - 1 }, (_, i) =>
+          accountsApi.listUsersWithAccounts({ page: i + 2, per_page: USERS_PAGE_SIZE }),
+        ),
+      )
+      allRaw = allRaw.concat(extraPages.flatMap((p) => p.data))
     }
 
-    return [...firstRows, ...extraRows]
+    return allRaw
   }, [])
 
-  const applyUserRows = useCallback((rows: UserAccountAssignmentRow[]) => {
+  const applyUserRows = useCallback((raw: UserWithAccounts[]) => {
+    const rows = toUserRows(raw)
     const saved = savedByUserFromRows(rows)
     setUsers(rows)
     setSavedByUserId(saved)
@@ -144,23 +135,14 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
     if (!open) return
     let ignore = false
 
-    const fetchData = async () => {
+    const load = async () => {
       try {
         setLoading(true)
-        const userRows = await fetchUsers()
+        // 2 calls total regardless of user count
+        const [raw, pool] = await Promise.all([fetchAll(), accountsApi.assignOptions()])
         if (ignore) return
-
-        applyUserRows(userRows)
-
-        const optionEntries = await Promise.all(
-          userRows.map(async (row) => {
-            const options = await accountsApi.listUserAssignOptions(row.id)
-            return [row.id, options] as const
-          }),
-        )
-        if (!ignore) {
-          setAccountOptionsByUser(Object.fromEntries(optionEntries))
-        }
+        applyUserRows(raw)
+        setAssignOptionPool(pool)
       } catch (err) {
         if (!ignore) toast.error(formatApiError(err))
       } finally {
@@ -168,24 +150,27 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
       }
     }
 
-    void fetchData()
+    void load()
     return () => {
       ignore = true
     }
-  }, [open, applyUserRows, fetchUsers])
+  }, [open, applyUserRows, fetchAll])
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedUserSearch(userSearch), 400)
     return () => clearTimeout(timer)
   }, [userSearch])
 
-  const onDraftChange = useCallback((userId: number, accountIds: number[]) => {
-    setDrafts((current) => {
-      const claimed = claimedByOthers(current, userId)
-      const safe = toUniqueSortedIds(accountIds.filter((id) => !claimed.has(id)))
-      return { ...current, [userId]: safe }
-    })
-  }, [])
+  const onDraftChange = useCallback(
+    (userId: number, accountIds: number[]) => {
+      setDrafts((current) => {
+        const claimed = claimedByOthers(current, userId, authUserId)
+        const safe = toUniqueSortedIds(accountIds.filter((id) => !claimed.has(id)))
+        return { ...current, [userId]: safe }
+      })
+    },
+    [authUserId],
+  )
 
   const saveRowAsync = useCallback(
     async (userId: number) => {
@@ -194,17 +179,11 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
         setFlashError(null)
         setSavingRowId(userId)
         await accountsApi.assignToUser(userId, accountIds)
-        const rows = await fetchUsers()
-        applyUserRows(rows)
 
-        // Refresh options for all users since assignments changed
-        const optionEntries = await Promise.all(
-          rows.map(async (row) => {
-            const options = await accountsApi.listUserAssignOptions(row.id)
-            return [row.id, options] as const
-          }),
-        )
-        setAccountOptionsByUser(Object.fromEntries(optionEntries))
+        // Refresh users + pool after save
+        const [raw, pool] = await Promise.all([fetchAll(), accountsApi.assignOptions()])
+        applyUserRows(raw)
+        setAssignOptionPool(pool)
 
         toast.success('Assigned accounts successfully')
       } catch (err) {
@@ -213,7 +192,7 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
         setSavingRowId(null)
       }
     },
-    [applyUserRows, drafts, fetchUsers, savedByUserId],
+    [applyUserRows, drafts, fetchAll, savedByUserId],
   )
 
   const onSaveRow = useCallback(
@@ -233,16 +212,15 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
     )
   }, [searchQuery, users])
 
-  // Per-user options filtered to exclude accounts claimed by other users in the draft
+  // Per-user options: pool accounts not claimed by other editable users in draft
   const filteredOptionsByUser = useMemo(() => {
     const result: Record<number, AccountOptionForAssign[]> = {}
-    for (const [userIdStr, options] of Object.entries(accountOptionsByUser)) {
-      const userId = Number(userIdStr)
-      const claimed = claimedByOthers(drafts, userId)
-      result[userId] = options.filter((opt) => !claimed.has(opt.id))
+    for (const row of users) {
+      const claimed = claimedByOthers(drafts, row.id, authUserId)
+      result[row.id] = assignOptionPool.filter((opt) => !claimed.has(opt.id))
     }
     return result
-  }, [accountOptionsByUser, drafts])
+  }, [users, assignOptionPool, drafts, authUserId])
 
   const emptyMessage = searchQuery ? 'No users found' : 'No users to assign'
 
@@ -288,6 +266,7 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
             onSaveRow={onSaveRow}
             savingRowId={savingRowId}
             canAssign={canAssign}
+            authUserId={authUserId}
             emptyMessage={emptyMessage}
           />
         </div>

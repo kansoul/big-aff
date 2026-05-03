@@ -12,7 +12,6 @@ import type {
 type AssignUserAccountsTableCardProps = {
   loading: boolean
   users: UserAccountAssignmentRow[]
-  /** Per-user account options filtered by their team */
   accountOptionsByUser: Record<number, AccountOptionForAssign[]>
   drafts: Record<number, number[]>
   savedByUserId: Record<number, number[]>
@@ -20,6 +19,7 @@ type AssignUserAccountsTableCardProps = {
   onSaveRow: (userId: number) => void
   savingRowId: number | null
   canAssign: boolean
+  authUserId: number
   emptyMessage?: string
 }
 
@@ -63,6 +63,7 @@ function AssignUserAccountsTableCardInner({
   onSaveRow,
   savingRowId,
   canAssign,
+  authUserId,
   emptyMessage = 'No users to assign',
 }: AssignUserAccountsTableCardProps) {
   return (
@@ -80,11 +81,13 @@ function AssignUserAccountsTableCardInner({
           </div>
         ) : (
           users.map((row) => {
+            const isAuthUser = row.id === authUserId
             const saved = savedByUserId[row.id] ?? []
             const draft = drafts[row.id] ?? saved
             const dirty = hasSelectionDiff(draft, saved)
             const isSaving = savingRowId === row.id
             const pickerOptions = accountOptionsForRow(row, accountOptionsByUser[row.id] ?? [])
+            const rowDisabled = !canAssign || isAuthUser
 
             return (
               <div
@@ -92,6 +95,7 @@ function AssignUserAccountsTableCardInner({
                 className={cn(
                   'rounded-xl border bg-card px-4 py-4 shadow-sm transition-[border-color] sm:px-5 sm:py-5',
                   dirty ? 'border-primary/40' : 'border-border',
+                  isAuthUser && 'opacity-60',
                 )}
               >
                 <div className="grid gap-5 sm:grid-cols-[1fr_2fr] sm:gap-8">
@@ -119,12 +123,12 @@ function AssignUserAccountsTableCardInner({
                     </div>
                     <div className="mt-1.5 space-y-2.5">
                       <AssignUserAccountsPicker
-                        disabled={!canAssign}
+                        disabled={rowDisabled}
                         value={draft}
                         onChange={(next) => onDraftChange(row.id, next)}
                         options={pickerOptions}
                       />
-                      {canAssign ? (
+                      {canAssign && !isAuthUser ? (
                         <div className="flex justify-end">
                           <Button
                             type="button"

@@ -8,6 +8,7 @@ import type {
   AccountOptionForAssign,
   AccountUpdatePayload,
 } from '@/features/accounts/types'
+import type { UserWithAccounts } from '@/features/accounts/types/userAccountAssignments'
 
 export const accountsApi = {
   listUserAssignOptions: async (userId: number): Promise<AccountOptionForAssign[]> => {
@@ -16,6 +17,26 @@ export const accountsApi = {
       { params: { user_id: userId } },
     )
     return response.data.data
+  },
+
+  assignOptions: async (forUserId?: number): Promise<AccountOptionForAssign[]> => {
+    const response = await axiosInstance.get<{ data: AccountOptionForAssign[] }>(
+      '/accounts/assign-options',
+      { params: forUserId != null ? { user_id: forUserId } : undefined },
+    )
+    return response.data.data
+  },
+
+  listUsersWithAccounts: async (params?: {
+    page?: number
+    per_page?: number
+    query?: string
+  }): Promise<{ data: UserWithAccounts[]; pagination: { last_page: number; total: number } }> => {
+    const response = await axiosInstance.get<{
+      data: UserWithAccounts[]
+      pagination: { last_page: number; total: number }
+    }>('/users/account-assignments', { params })
+    return response.data
   },
 
   assignToUser: async (userId: number, accountIds: number[]): Promise<void> => {

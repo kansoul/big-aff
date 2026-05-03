@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Account\AssignAccountRequest;
 use App\Http\Requests\Account\ListAccountsRequest;
+use App\Http\Requests\Account\ListUsersWithAccountsRequest;
 use App\Http\Requests\Account\StoreAccountRequest;
 use App\Http\Requests\Account\UpdateAccountRequest;
 use App\Http\Resources\AccountResource;
@@ -164,6 +165,58 @@ class AccountController extends BaseController
         $this->accountService->delete($account);
 
         return $this->sendResponse([], Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Account assignment options
+     *
+     * Return accounts that are either unassigned or assigned to the given user,
+     * scoped to the auth user's accessible accounts. Used to populate assign dropdowns.
+     *
+     * @queryParam user_id integer optional The user being assigned. Defaults to auth user. Example: 5
+     *
+     * @response 200 {"data": [{"id": 1, "account_id": "123456", "account_name": "My Account", "team_id": 1}]}
+     */
+    public function assignOptions(Request $request): JsonResponse
+    {
+        $userId = $request->integer('user_id') ?: null;
+
+        return $this->sendResponse(['data' => $this->accountService->assignOptions($userId)]);
+    }
+
+    /**
+     * List users with their assigned accounts
+     *
+     * Return paginated list of users including their currently assigned accounts.
+     * Used for the bulk account assignment UI.
+     *
+     * @queryParam query string Search by name or email. Example: john
+     * @queryParam order_by string Column to sort by. Enum: id, name, email, created_at. Example: name
+     * @queryParam order string Sort direction. Enum: asc, desc. Example: asc
+     * @queryParam per_page integer Items per page (max 100). Example: 50
+     * @queryParam page integer Page number. Example: 1
+     *
+     * @response 200 {"data": [{"id": 1, "name": "John", "email": "john@example.com", "accounts": [{"id": 1, "account_id": "123456", "account_name": "My Account"}]}], "pagination": {"total": 1, "per_page": 50, "current_page": 1, "last_page": 1}}
+     */
+    public function listUsersWithAccounts(ListUsersWithAccountsRequest $request): JsonResponse
+    {
+        $paginator = $this->accountService->listUsersWithAccounts($request->validated());
+
+        $data = collect($paginator->items())->map(fn (User $user) => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'accounts' => $user->accounts->map(fn ($a) => [
+                'id' => $a->id,
+                'account_id' => $a->account_id,
+                'account_name' => $a->account_name,
+            ])->values(),
+        ]);
+
+        return $this->sendResponse([
+            'data' => $data,
+            'pagination' => $this->parsePagination($paginator),
+        ]);
     }
 
     /**

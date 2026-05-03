@@ -72,6 +72,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::ChannelsAssign->value);
         Route::get('post-assignments', [UserController::class, 'listUsersWithPosts'])
             ->middleware('permission.scope:'.Permission::PostsAssign->value);
+        Route::get('account-assignments', [AccountController::class, 'listUsersWithAccounts'])
+            ->middleware('permission.scope:'.Permission::AccountsAssign->value);
         Route::get('parent-child-assignments', [UserParentChildController::class, 'index'])
             ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
         Route::post('/', [UserController::class, 'store'])
@@ -236,6 +238,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('accounts')->group(function () {
         Route::get('options', [AccountController::class, 'options']);
+        Route::get('assign-options', [AccountController::class, 'assignOptions'])
+            ->middleware('permission.scope:'.Permission::AccountsAssign->value);
         Route::get('/', [AccountController::class, 'index'])
             ->middleware('permission.scope:'.Permission::AccountsView->value);
         Route::post('/', [AccountController::class, 'store'])
