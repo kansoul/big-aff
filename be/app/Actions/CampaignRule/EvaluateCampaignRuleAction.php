@@ -183,6 +183,7 @@ class EvaluateCampaignRuleAction
                 (string) $campaign->campaign_id,
                 '',
                 $telegramChatId,
+                'Markdown',
             );
         } catch (Throwable $e) {
             Log::channel('tracking_events')->error('[EvaluateCampaignRuleAction] Notification error', [

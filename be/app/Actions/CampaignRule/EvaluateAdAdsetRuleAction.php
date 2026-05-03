@@ -338,6 +338,7 @@ class EvaluateAdAdsetRuleAction
                 (string) $entityFbId,
                 '',
                 $telegramChatId,
+                'Markdown',
             );
         } catch (Throwable $e) {
             Log::channel('tracking_events')->error('[EvaluateAdAdsetRuleAction] Notification error', [

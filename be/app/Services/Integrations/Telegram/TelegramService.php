@@ -21,7 +21,7 @@ class TelegramService
      * @param  ?string  $chatIdOverride  When set, sends to this chat instead of the default from config.
      * @param  string  $parseMode  Telegram parse_mode, e.g. HTML or Markdown.
      */
-    public function sendMessage(string $message, ?string $chatIdOverride = null): bool
+    public function sendMessage(string $message, ?string $chatIdOverride = null, string $parseMode = 'HTML'): bool
     {
         $chatId = $chatIdOverride ?? $this->chatId;
 
@@ -37,7 +37,7 @@ class TelegramService
             $response = Http::post($url, [
                 'chat_id' => $chatId,
                 'text' => $message,
-                'parse_mode' => 'HTML',
+                'parse_mode' => $parseMode,
             ]);
 
             if ($response->successful()) {
