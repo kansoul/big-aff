@@ -36,6 +36,7 @@ import {
   RevenueReportRangeDialog,
   TrackingAnalyticsDialog,
 } from '@/features/campaign-report/components'
+import { Button } from '@/components/ui'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -438,7 +439,11 @@ function getColumns(
             />
           ) : (
             <span className="pl-1 text-[10px] text-muted-foreground">
-              {formatDate(row.original.date_start)}
+              {groupBy === 'channel_code' && row.original.channel_name}
+              {groupBy === 'account_id' && row.original.account_name}
+              {groupBy === 'user_id' && row.original.user_email}
+              {groupBy === 'campaign_id' && row.original.campaign_id}
+              {` (${formatDate(row.original.date_start)})`}
             </span>
           ),
         Footer: () => <div className="text-sm!">Summary</div>,
@@ -620,7 +625,7 @@ function getColumns(
     id: 'ads_adset_report',
     header: 'Ads/Adset',
     Header: <HeaderLabel>Ads/Adset</HeaderLabel>,
-    size: 100,
+    size: 70,
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
@@ -634,7 +639,7 @@ function getColumns(
             onOpenAdsAdsetReport(r)
           }}
         >
-          Ads / Adset Report
+          Ads / Adset
         </p>
       )
     },
@@ -659,6 +664,27 @@ function getColumns(
     },
   }
 
+  const colUserEmail: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'user_email',
+    header: 'User',
+    Header: <HeaderLabel>User</HeaderLabel>,
+    size: 160,
+    enableSorting: false,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const email = row.original.user_email
+      if (!email) return <span className="text-muted-foreground/50 text-[10px]">—</span>
+      return (
+        <span
+          className="block max-w-[150px] truncate text-[10px] text-muted-foreground"
+          title={email}
+        >
+          {email}
+        </span>
+      )
+    },
+  }
+
   const colChannelName: MRT_ColumnDef<TableRow> = {
     accessorKey: 'channel_name',
     header: 'Channel',
@@ -675,12 +701,6 @@ function getColumns(
             title={String(r.channel_name ?? r.channel_code ?? '—')}
           >
             {r.channel_name ?? r.channel_code ?? '—'}
-          </span>
-          <span
-            className="max-w-[70px] truncate text-[10px] font-mono text-muted-foreground/70"
-            title={String(r.channel_code ?? '—')}
-          >
-            {r.channel_code ?? '—'}
           </span>
         </div>
       )
@@ -969,10 +989,11 @@ function getColumns(
 
     // ── Identity / dimension (mirrors AllReport column order) ──
     colDateStart,
-    colAccountName,
-    colTrackingAnalytic,
-    colCampaignId,
     colCampaignName,
+    colCampaignId,
+    colAccountName,
+    colUserEmail,
+    colTrackingAnalytic,
     colAdsAdsetReport,
     colCampaignStatus,
     colCampaignOnOff,
@@ -1142,8 +1163,23 @@ function CampaignReportTableCardInner({
   const forcedColumnVisibility = useMemo<Record<string, boolean>>(() => {
     const base: Record<string, boolean> = grouped ? { date_start: false } : { group_label: false }
 
+    if (filters.group_by === 'user_id') {
+      base.user_email = false
+    }
+
+    if (filters.group_by === 'channel_code') {
+      base.channel_name = false
+    }
+    if (filters.group_by === 'campaign_id') {
+      base.campaign_id = false
+    }
+    if (filters.group_by === 'account_id') {
+      base.account_name = false
+    }
+
     if (effectiveSummaryOnly) {
       base.account_name = false
+      base.user_email = false
       base.tracking_analytic = false
       base.ads_adset_report = false
       base.campaign_id = false
@@ -1156,7 +1192,7 @@ function CampaignReportTableCardInner({
     }
 
     return base
-  }, [grouped, effectiveSummaryOnly])
+  }, [grouped, effectiveSummaryOnly, filters.group_by])
 
   const columnVisibility = useMemo(
     () => ({ ...userColumnVisibility, ...forcedColumnVisibility }),
@@ -1418,7 +1454,7 @@ function CampaignReportTableCardInner({
       const isCampaignCol = column.id === 'campaign_name'
 
       return {
-        className: isGroup ? 'campaign-group-cell' : undefined,
+        className: isGroup ? 'campaign-group-cell border-t border-[#3e3e3e]' : undefined,
         sx: {
           fontSize: '10px',
           paddingLeft: '2px !important',
@@ -1437,27 +1473,27 @@ function CampaignReportTableCardInner({
         <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
           <CampaignSchedulesDialog
             trigger={
-              <button className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60">
+              <Button size="sm" className="h-7 gap-1.5 px-2.5 text-xs font-medium">
                 <CalendarClock className="h-3.5 w-3.5" />
                 Campaign Schedules
-              </button>
+              </Button>
             }
           />
           <CampaignRulesDialog
             trigger={
-              <button className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+              <Button size="sm" className="h-7 gap-1.5 px-2.5 text-xs font-medium">
                 <BookOpen className="h-3.5 w-3.5" />
                 Campaign Rules
-              </button>
+              </Button>
             }
           />
           <CampaignIdSelector
             filterOptions={filterOptions}
             trigger={
-              <button className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+              <Button size="sm" className="h-7 gap-1.5 px-2.5 text-xs font-medium">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 Campaign ID Selector
-              </button>
+              </Button>
             }
           />
           {grouped && (

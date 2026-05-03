@@ -59,6 +59,7 @@ export interface CampaignReportRow {
 
   account_id: string | number | null
   account_name: string | null
+  user_email: string | null
   campaign_id: string
   campaign_name: string | null
   campaign_status: string | null
