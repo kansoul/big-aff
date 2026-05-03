@@ -2,6 +2,7 @@
 
 namespace App\Actions\Post;
 
+use App\Enums\AdsType;
 use App\Enums\PostStatus;
 use App\Enums\TrafficType;
 use App\Models\AdsLink;
@@ -64,8 +65,11 @@ class GetPostBySlugAction
                     $post->channel = $linkData->channel_code;
                 }
                 $post->campaign_id = $campaign->campaign_id;
-                if ($trafficType === TrafficType::GOOGLE) {
+                if ($trafficType === TrafficType::GOOGLE || $campaign->ads_type === AdsType::GOOGLE->value) {
                     $post->account_id = $campaign->account_id;
+                    $post->traffic_type = TrafficType::GOOGLE->value;
+                } else {
+                    $post->traffic_type = TrafficType::FACEBOOK->value;
                 }
             }
 
