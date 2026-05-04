@@ -50,6 +50,7 @@ trait SiteRelationship
     {
         return $this->belongsToMany(User::class, 'user_sites')
             ->withTimestamps()
-            ->withPivot('deleted_at');
+            ->withPivot('deleted_at')
+            ->wherePivotNull('deleted_at');
     }
 }

@@ -31,10 +31,10 @@ class GetAnalyticsStatsAction
                 COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS search_views,
                 COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS article_views
             ', [EventViewType::ViewSearch->value, EventViewType::ViewArticle->value])
-            ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
-            ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
-            ->when($campaignId, fn($q) => $q->where('campaign_id', $campaignId))
-            ->when($linkDataIds, fn($q) => $q->whereIn('link_data_id', $linkDataIds))
+            ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))
+            ->when($linkDataIds, fn ($q) => $q->whereIn('link_data_id', $linkDataIds))
             ->first();
 
         $searchViews = (int) $viewTotals->search_views;
@@ -45,10 +45,10 @@ class GetAnalyticsStatsAction
                 COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS ad_clicks,
                 COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS keyword_clicks
             ', [EventClickType::ClickAd->value, EventClickType::ClickKeyword->value])
-            ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
-            ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
-            ->when($campaignId, fn($q) => $q->where('campaign_id', $campaignId))
-            ->when($linkDataIds, fn($q) => $q->whereIn('link_data_id', $linkDataIds))
+            ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))
+            ->when($linkDataIds, fn ($q) => $q->whereIn('link_data_id', $linkDataIds))
             ->first();
 
         $adClicks = (int) $clickTotals->ad_clicks;
@@ -59,10 +59,10 @@ class GetAnalyticsStatsAction
                 COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS failed_search,
                 COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS failed_article
             ', [EventAdLoadType::ErrorSearch->value, EventAdLoadType::ErrorArticle->value])
-            ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
-            ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
-            ->when($campaignId, fn($q) => $q->where('campaign_id', $campaignId))
-            ->when($linkDataIds, fn($q) => $q->whereIn('link_data_id', $linkDataIds))
+            ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))
+            ->when($linkDataIds, fn ($q) => $q->whereIn('link_data_id', $linkDataIds))
             ->first();
 
         $failedSearch = (int) $loadTotals->failed_search;
@@ -116,7 +116,7 @@ class GetAnalyticsStatsAction
             $ownership->applyThroughChannel($query);
         }
 
-        $query->when($adsLinkId, fn($q) => $q->where('ads_link_id', $adsLinkId));
+        $query->when($adsLinkId, fn ($q) => $q->where('ads_link_id', $adsLinkId));
 
         return $query->select('id');
     }

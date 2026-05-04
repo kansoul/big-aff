@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Models\Site;
 use App\Models\User;
 use App\Support\OwnerResource\UserOwnerResource;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Support\Collection;
 
 class GetSiteUserOptionsAction
@@ -15,16 +16,21 @@ class GetSiteUserOptionsAction
      */
     public function execute(Site $site): array
     {
+        $ownership = OwnershipFilter::forAuthUser();
+
+        $assignedUserIds = $site->users()->pluck('users.id')->map(fn ($id) => (int) $id)->all();
+
         $query = User::query()
             ->select(['id', 'name', 'email'])
             ->whereDoesntHave('role', fn ($q) => $q->where('permissions', Permission::FULL_ACCESS_SENTINEL))
             ->orderBy('id');
-
         (new UserOwnerResource)->applyTo($query);
 
-        $options = $query->get();
+        if (! $ownership->isAdmin()) {
+            $assignedUserIds = array_values(array_intersect($assignedUserIds, $ownership->allowedUserIds()));
+        }
 
-        $assignedUserIds = $site->users()->pluck('users.id')->map(fn ($id) => (int) $id)->all();
+        $options = $query->get();
 
         return [
             'options' => $options,

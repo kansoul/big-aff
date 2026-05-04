@@ -4,9 +4,8 @@ namespace App\Actions\Site;
 
 use App\Models\Site;
 use App\Models\UserSite;
-use App\Support\OwnerResource\SiteOwnerResource;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AssignSiteAction
@@ -18,70 +17,71 @@ class AssignSiteAction
      */
     public function execute(Site $site, array $userIds): void
     {
-        $resource = new SiteOwnerResource;
-        $removableIds = null; // null = admin (unrestricted), array = subtree minus self
+        $ownership = OwnershipFilter::forAuthUser();
+        $assignedUserIds = $site->users()->pluck('users.id')->map(fn ($id) => (int) $id)->all();
 
-        if (! $resource->isAdmin()) {
-            $authId = (int) Auth::id();
-            $allowedIds = $resource->allowedUserIds();
+        if (! $ownership->isAdmin()) {
+            $ownership->authorizeSite($site);
 
-            // Non-admin must have created the site or be currently assigned to it.
-            $hasAccess = $site->created_by === $authId
-                || UserSite::query()->where('site_id', $site->id)->where('user_id', $authId)->whereNull('deleted_at')->exists();
-
-            if (! $hasAccess) {
-                throw new AuthorizationException;
-            }
-
-            // Can only assign users within their allowed subtree; self is always kept.
-            $userIds = array_values(array_intersect($userIds, $allowedIds));
-            if (! in_array($authId, $userIds, true)) {
-                $userIds[] = $authId;
-            }
-
-            // Removable = subtree excluding self (self is protected above).
-            $removableIds = array_values(array_diff($allowedIds, [$authId]));
+            $userIds = array_values(array_intersect($userIds, $ownership->allowedUserIds()));
         }
 
-        DB::transaction(function () use ($site, $userIds, $removableIds): void {
-            $this->syncRemovals($site, $userIds, $removableIds);
-            $this->syncAdditions($site, $userIds);
+        $assignedInScope = $this->getAssignedInScope($site, $ownership);
+        $toRemove = array_values(array_diff($assignedInScope, $userIds));
+        $toAdd = array_values(array_diff($userIds, $assignedUserIds));
+
+        if (empty($toRemove) && empty($toAdd)) {
+            return;
+        }
+        DB::transaction(function () use ($site, $toRemove, $toAdd): void {
+            $this->addAssignments($site, $toAdd);
+            $this->removeAssignments($site, $toRemove);
         });
     }
 
     /**
-     * Soft-delete pivot rows that are no longer in $userIds.
-     * $removableIds === null means admin — remove anyone not in the new list.
-     * $removableIds === [] means non-admin with no subtree — nothing to remove.
-     *
-     * @param  array<int>  $userIds
-     * @param  array<int>|null  $removableIds
+     * @return array<int>
      */
-    private function syncRemovals(Site $site, array $userIds, ?array $removableIds): void
+    private function getAssignedInScope(Site $site, OwnershipFilter $ownership): array
     {
         $query = UserSite::query()
             ->where('site_id', $site->id)
-            ->whereNotIn('user_id', $userIds)
             ->whereNull('deleted_at');
 
-        if ($removableIds !== null) {
-            if (empty($removableIds)) {
-                return;
-            }
-            $query->whereIn('user_id', $removableIds);
+        if (! $ownership->isAdmin()) {
+            $query->whereIn('user_id', $ownership->allowedUserIds());
         }
 
-        $query->update(['deleted_at' => now(), 'updated_at' => now()]);
+        return $query->pluck('user_id')->map(fn ($id) => (int) $id)->all();
     }
 
     /**
-     * Restore soft-deleted pivots and insert brand-new rows for $userIds.
-     *
      * @param  array<int>  $userIds
      */
-    private function syncAdditions(Site $site, array $userIds): void
+    private function removeAssignments(Site $site, array $userIds): void
     {
+        if (empty($userIds)) {
+            return;
+        }
+
         UserSite::query()
+            ->where('site_id', $site->id)
+            ->whereIn('user_id', $userIds)
+            ->whereNull('deleted_at')
+            ->update(['deleted_at' => now(), 'updated_at' => now()]);
+    }
+
+    /**
+     * @param  array<int>  $userIds
+     */
+    private function addAssignments(Site $site, array $userIds): void
+    {
+        if (empty($userIds)) {
+            return;
+        }
+
+        UserSite::query()
+            ->withTrashed()
             ->where('site_id', $site->id)
             ->whereIn('user_id', $userIds)
             ->whereNotNull('deleted_at')

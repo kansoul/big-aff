@@ -7,7 +7,6 @@ use App\Support\OwnerResource\PostOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class UpdatePostAction
 {

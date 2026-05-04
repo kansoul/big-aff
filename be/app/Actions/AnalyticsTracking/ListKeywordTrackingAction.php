@@ -32,16 +32,16 @@ class ListKeywordTrackingAction
                 DB::raw('MIN(id) as id'),
                 DB::raw('keyword_clicked as keyword'),
                 DB::raw('COUNT(*) as click_count'),
-                DB::raw("SUM(CASE WHEN type = '" . EventClickType::ClickAd->value . "' THEN 1 ELSE 0 END) AS click_ad_count"),
+                DB::raw("SUM(CASE WHEN type = '".EventClickType::ClickAd->value."' THEN 1 ELSE 0 END) AS click_ad_count"),
             ])
             ->whereNotNull('keyword_clicked')
-            ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
-            ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
-            ->when($campaignId, fn($q) => $q->where('campaign_id', $campaignId))
-            ->when($linkDataIds, fn($q) => $q->whereIn('link_data_id', $linkDataIds))
+            ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))
+            ->when($linkDataIds, fn ($q) => $q->whereIn('link_data_id', $linkDataIds))
             ->when(
                 ! empty($filters['keyword']),
-                fn($q) => $q->where('keyword_clicked', 'like', '%' . $filters['keyword'] . '%')
+                fn ($q) => $q->where('keyword_clicked', 'like', '%'.$filters['keyword'].'%')
             )
             ->groupBy('keyword_clicked');
 
@@ -67,7 +67,7 @@ class ListKeywordTrackingAction
             $ownership->applyThroughChannel($query);
         }
 
-        $query->when($adsLinkId, fn($q) => $q->where('ads_link_id', $adsLinkId));
+        $query->when($adsLinkId, fn ($q) => $q->where('ads_link_id', $adsLinkId));
 
         return $query->select('id');
     }

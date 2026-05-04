@@ -83,7 +83,7 @@ class CreateAdsLinkAction
 
         do {
             $suffix = str_pad((string) random_int(0, 99999), 5, '0', STR_PAD_LEFT);
-            $slug = $baseSlug . '-' . $suffix;
+            $slug = $baseSlug.'-'.$suffix;
             $exists = AdsLink::withTrashed()->where('slug', $slug)->exists();
             $attempts++;
         } while ($exists && $attempts < 20);
