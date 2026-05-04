@@ -299,9 +299,10 @@ function PaginationBar({ page, perPage, rowCount, onPaginationChange }: Paginati
 type CampaignIdSelectorProps = {
   filterOptions: CampaignReportFiltersResponse['data']
   trigger?: React.ReactNode
+  role: import('@/shared/types').RBACRole
 }
 
-function CampaignIdSelectorInner({ filterOptions, trigger }: CampaignIdSelectorProps) {
+function CampaignIdSelectorInner({ filterOptions, trigger, role }: CampaignIdSelectorProps) {
   const [open, setOpen] = useState(false)
   const [copyDialogOpen, setCopyDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<SelectorTab>('campaigns')
@@ -525,6 +526,7 @@ function CampaignIdSelectorInner({ filterOptions, trigger }: CampaignIdSelectorP
         value: filters.user_id != null ? String(filters.user_id) : null,
         options: userOptions,
         placeholder: 'All users',
+        hidden: role.isMember,
       },
       {
         field: 'style_code',
@@ -566,6 +568,7 @@ function CampaignIdSelectorInner({ filterOptions, trigger }: CampaignIdSelectorP
       accountOptions,
       userOptions,
       styleOptions,
+      role,
     ],
   )
 

@@ -150,6 +150,7 @@ class CampaignReportResource extends JsonResource
                 return [
                     'id' => $rt->id,
                     'link_data_id' => $rt->link_data_id,
+                    'ads_link_id' => $rt->linkData?->ads_link_id,
                     'view_article_count' => $rt->view_article_count,
                     'view_search_count' => $rt->view_search_count,
                     'click_keyword_count' => $rt->click_keyword_count,

@@ -45,15 +45,15 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { cn, getPageNumbers } from '@/lib/utils'
-import { campaignReportApi } from '@/features/campaign-report/api'
+import { campaignReportApi } from '../api'
 import type {
-  CampaignReportFiltersResponse,
+  AnalyticsTrackingFilterOptions,
   KeywordTrackingFilterParams,
   KeywordTrackingOrderBy,
   KeywordTrackingRow,
   TrackingAnalyticsFilterParams,
   TrackingAnalyticsResponse,
-} from '@/features/campaign-report/types'
+} from '../types'
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
@@ -79,13 +79,14 @@ function StatCard({ title, value, ctrItems, footerLabel, icon, iconBg, fetching 
         )}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-        {ctrItems.map((item, i) => (
-          <span key={i} className="flex items-center gap-1">
-            {i > 0 && <span className="select-none text-border/80">|</span>}
-            <span>{item}</span>
-          </span>
-        ))}
-        {ctrItems.length > 0 && <span className="select-none text-border/80">|</span>}
+        {!fetching &&
+          ctrItems.map((item, i) => (
+            <span key={i} className="flex items-center gap-1">
+              {i > 0 && <span className="select-none text-border/80">|</span>}
+              <span>{item}</span>
+            </span>
+          ))}
+        {!fetching && ctrItems.length > 0 && <span className="select-none text-border/80">|</span>}
         <span className="flex items-center gap-1.5">
           <span>{footerLabel}</span>
           <span
@@ -268,47 +269,32 @@ type KeywordColDef = {
 
 const KEYWORD_COLUMNS: KeywordColDef[] = [
   {
-    key: 'id',
-    label: '#',
-    orderBy: 'id',
-    className: 'min-w-[60px]',
-    render: (row) => <span className="tabular-nums text-muted-foreground/70">{row.id}</span>,
-  },
-  {
-    key: 'name',
+    key: 'keyword',
     label: 'Keyword',
-    orderBy: 'name',
-    className: 'min-w-[240px]',
-    render: (row) => <span className="font-medium text-foreground">{row.name}</span>,
+    orderBy: 'keyword',
+    className: 'min-w-[280px]',
+    render: (row) => <span className="font-medium text-foreground">{row.keyword}</span>,
   },
   {
-    key: 'keywords',
-    label: 'Keywords',
-    className: 'min-w-[240px]',
-    render: (row) => {
-      if (!row.keywords?.length) return <span className="text-muted-foreground/50">—</span>
-      const items = row.keywords
-      return (
-        <div className="flex flex-wrap gap-1">
-          {items.map((k, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border"
-            >
-              {k}
-            </span>
-          ))}
-        </div>
-      )
-    },
+    key: 'click_count',
+    label: 'Count',
+    orderBy: 'click_count',
+    className: 'min-w-[100px]',
+    render: (row) => <span className="tabular-nums">{row.click_count.toLocaleString()}</span>,
   },
   {
-    key: 'created_at',
-    label: 'Created At',
-    orderBy: 'created_at',
-    className: 'min-w-[160px]',
+    key: 'click_ad_count',
+    label: 'Ad Clicks',
+    orderBy: 'click_ad_count',
+    className: 'min-w-[110px]',
+    render: (row) => <span className="tabular-nums">{row.click_ad_count.toLocaleString()}</span>,
+  },
+  {
+    key: 'ctr',
+    label: 'CTR',
+    className: 'min-w-[90px]',
     render: (row) => (
-      <span className="tabular-nums text-muted-foreground/95">{row.created_at}</span>
+      <span className="tabular-nums text-muted-foreground/95">{row.ctr.toFixed(2)}%</span>
     ),
   },
 ]
@@ -333,13 +319,13 @@ const DEFAULT_KEYWORD_STATE: KeywordTableState = {
 
 // ─── Dialog ───────────────────────────────────────────────────────────────────
 
-type FilterOptions = CampaignReportFiltersResponse['data']
+type FilterOptions = AnalyticsTrackingFilterOptions
 
 type TrackingAnalyticsDialogProps = {
   trigger?: React.ReactNode
   initialDate?: string | null
   initialCampaignId?: string | null
-  initialAccountId?: string | null
+  initialAdsLinkId?: number | null
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }
@@ -348,7 +334,7 @@ function TrackingAnalyticsDialogInner({
   trigger,
   initialDate,
   initialCampaignId,
-  initialAccountId,
+  initialAdsLinkId,
   open: controlledOpen,
   onOpenChange,
 }: TrackingAnalyticsDialogProps) {
@@ -372,7 +358,7 @@ function TrackingAnalyticsDialogInner({
   const [filters, setFilters] = useState<TrackingAnalyticsFilterParams>(() => ({
     date_from: initialDate ?? null,
     date_to: initialDate ?? null,
-    account_id: initialAccountId ?? null,
+    ads_link_id: initialAdsLinkId ?? null,
     campaign_id: initialCampaignId ?? null,
   }))
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null)
@@ -440,7 +426,7 @@ function TrackingAnalyticsDialogInner({
     if (keywordDebounceRef.current) clearTimeout(keywordDebounceRef.current)
     keywordDebounceRef.current = setTimeout(() => {
       setKeywordState((prev) => {
-        const next = keywordSearch || null
+        const next = keywordSearch.trim() || null
         if (prev.keyword === next) return prev
         return { ...prev, keyword: next, page: 1 }
       })
@@ -452,11 +438,16 @@ function TrackingAnalyticsDialogInner({
 
   useEffect(() => {
     if (!open || fetchedOptionsRef.current) return
-    fetchedOptionsRef.current = true
     campaignReportApi
-      .filters()
-      .then((res) => setFilterOptions(res.data.data))
-      .catch(() => toast.error('Failed to load filter options'))
+      .analyticsTrackingFilterOptions()
+      .then((res) => {
+        setFilterOptions(res.data.data)
+        fetchedOptionsRef.current = true
+      })
+      .catch(() => {
+        toast.error('Failed to load filter options')
+        fetchedOptionsRef.current = false
+      })
   }, [open])
 
   const handleOpenChange = useCallback(
@@ -466,7 +457,7 @@ function TrackingAnalyticsDialogInner({
         setFilters({
           date_from: initialDate ?? null,
           date_to: initialDate ?? null,
-          account_id: initialAccountId ?? null,
+          ads_link_id: initialAdsLinkId ?? null,
           campaign_id: initialCampaignId ?? null,
         })
         setStatsData(null)
@@ -477,7 +468,7 @@ function TrackingAnalyticsDialogInner({
         fetchedOptionsRef.current = false
       }
     },
-    [initialDate, initialCampaignId, initialAccountId, setDialogOpen],
+    [initialDate, initialCampaignId, initialAdsLinkId, setDialogOpen],
   )
 
   const onApplyFilters = useCallback((values: Record<string, unknown>) => {
@@ -485,7 +476,8 @@ function TrackingAnalyticsDialogInner({
     setFilters({
       date_from: dateRange?.from ?? null,
       date_to: dateRange?.to ?? null,
-      account_id: (values.account_id as string) || null,
+      ads_link_id:
+        values.ads_link_id != null && values.ads_link_id !== '' ? Number(values.ads_link_id) : null,
       campaign_id: (values.campaign_id as string) || null,
     })
     setKeywordState((prev) => ({ ...prev, page: 1 }))
@@ -495,12 +487,12 @@ function TrackingAnalyticsDialogInner({
     setFilters({
       date_from: initialDate ?? null,
       date_to: initialDate ?? null,
-      account_id: initialAccountId ?? null,
+      ads_link_id: initialAdsLinkId ?? null,
       campaign_id: initialCampaignId ?? null,
     })
     setKeywordState(DEFAULT_KEYWORD_STATE)
     setKeywordSearch('')
-  }, [initialDate, initialCampaignId, initialAccountId])
+  }, [initialDate, initialCampaignId, initialAdsLinkId])
 
   const onKeywordSort = useCallback(
     (orderBy: KeywordTrackingOrderBy | null, order: 'asc' | 'desc' | null) => {
@@ -513,11 +505,11 @@ function TrackingAnalyticsDialogInner({
     setKeywordState((prev) => ({ ...prev, page, per_page: perPage }))
   }, [])
 
-  const accountOptions = useMemo(
+  const adsLinkOptions = useMemo(
     () =>
-      (filterOptions?.accounts ?? []).map((a) => ({
-        label: a.account_name ? `${a.account_name} (${a.account_id})` : a.account_id,
-        value: a.account_id,
+      (filterOptions?.ads_links ?? []).map((l) => ({
+        label: l.slug,
+        value: String(l.id),
       })),
     [filterOptions],
   )
@@ -525,8 +517,8 @@ function TrackingAnalyticsDialogInner({
   const campaignOptions = useMemo(
     () =>
       (filterOptions?.campaigns ?? []).map((c) => ({
-        label: c.campaign_name ? `${c.campaign_name} (${c.campaign_id})` : c.campaign_id,
-        value: c.campaign_id,
+        label: c,
+        value: c,
       })),
     [filterOptions],
   )
@@ -543,11 +535,11 @@ function TrackingAnalyticsDialogInner({
             : null,
       },
       {
-        field: 'account_id',
-        label: 'Account',
+        field: 'ads_link_id',
+        label: 'Link Tracking',
         type: 'select',
-        value: filters.account_id ?? null,
-        options: accountOptions,
+        value: filters.ads_link_id != null ? String(filters.ads_link_id) : null,
+        options: adsLinkOptions,
       },
       {
         field: 'campaign_id',
@@ -560,9 +552,9 @@ function TrackingAnalyticsDialogInner({
     [
       filters.date_from,
       filters.date_to,
-      filters.account_id,
+      filters.ads_link_id,
       filters.campaign_id,
-      accountOptions,
+      adsLinkOptions,
       campaignOptions,
     ],
   )
@@ -648,10 +640,10 @@ function TrackingAnalyticsDialogInner({
                 fetching={fetching}
               />
               <StatCard
-                title="Article Ad Clicks"
+                title="Article Keyword Clicks"
                 value={d?.clicks.article_ad_clicks.value ?? 0}
                 ctrItems={[`CTR: ${(d?.clicks.article_ad_clicks.ctr ?? 0).toFixed(2)}%`]}
-                footerLabel="Total article ad clicks"
+                footerLabel="Total article keyword clicks"
                 icon={<MousePointerClick className="h-3 w-3" />}
                 iconBg="bg-blue-500/15 text-blue-500"
                 fetching={fetching}

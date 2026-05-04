@@ -3,6 +3,7 @@ import { isNil } from '@/lib/utils'
 import type {
   AdsReportStatsFilterParams,
   AdsReportStatsResponse,
+  AdsReportOptionsResponse,
 } from '@/features/ads-report/types'
 
 export const adsReportApi = {
@@ -17,4 +18,6 @@ export const adsReportApi = {
         ...(!isNil(filters.team_id) ? { team_id: filters.team_id } : {}),
       },
     }),
+
+  options: () => axiosInstance.get<AdsReportOptionsResponse>('/options/ads-report'),
 }

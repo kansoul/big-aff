@@ -5,13 +5,14 @@ namespace App\Actions\AdsReport;
 use App\Enums\TeamRole;
 use App\Models\Account;
 use App\Models\Campaign;
+use App\Models\CampaignReport;
+use App\Models\Channel;
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
-use App\Models\Style;
 use App\Models\TeamUser;
 use App\Models\User;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
-use App\Support\OwnerResource\StyleOwnerResource;
+use App\Support\OwnerResource\ChannelOwnerResource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -86,9 +87,15 @@ class GetAdsReportStatsAction
 
         if ($showRevenueProfit) {
             $revenueQuery = RevenueReport::query();
-            $styleSubquery = Style::query()->select('code');
-            (new StyleOwnerResource)->applyTo($styleSubquery);
-            $revenueQuery->whereIn('style_code', $styleSubquery);
+            $channelCodes = CampaignReport::query()
+                ->when($dateFrom, fn ($query) => $query->whereDate('date_start', '>=', $dateFrom))
+                ->when($dateTo, fn ($query) => $query->whereDate('date_start', '<=', $dateTo))
+                ->when($accountIds, fn ($query) => $query->whereIn('account_id', $accountIds))
+                ->when($campaignIds, fn ($query) => $query->whereIn('campaign_id', $campaignIds))
+                ->select('channel_code');
+            $channelSubquery = Channel::query()->whereIn('code', $channelCodes)->select('code');
+            (new ChannelOwnerResource)->applyTo($channelSubquery);
+            $revenueQuery->whereIn('channel_code', $channelSubquery);
 
             if ($dateFrom) {
                 $revenueQuery->whereDate('date', '>=', $dateFrom);

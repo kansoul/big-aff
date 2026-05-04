@@ -33,3 +33,33 @@ export interface AdsReportStatsFilterParams {
   date_to?: string | null
   team_id?: number | null
 }
+
+export interface AdsReportOptionAccount {
+  id: number
+  account_id: string
+  account_name: string | null
+  ads_type: string
+}
+
+export interface AdsReportOptionTeam {
+  id: number
+  name: string
+  accounts: AdsReportOptionAccount[]
+}
+
+export interface AdsReportOptionCampaign {
+  campaign_id: string
+  campaign_name: string | null
+  account_id: string | null
+  ads_type: string | null
+}
+
+export interface AdsReportOptionsData {
+  show_team_filter: boolean
+  teams: AdsReportOptionTeam[]
+  campaigns: AdsReportOptionCampaign[]
+}
+
+export interface AdsReportOptionsResponse {
+  data: AdsReportOptionsData
+}

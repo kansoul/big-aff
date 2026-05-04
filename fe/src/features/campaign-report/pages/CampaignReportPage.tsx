@@ -24,6 +24,7 @@ import {
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
 import { formatApiError } from '@/features/settings/components'
 import { useAuthStore } from '@/hooks/useAuthStore'
+import { getUserRole } from '@/constants/role'
 
 type FilterOptions = CampaignReportFiltersResponse['data']
 
@@ -159,7 +160,15 @@ export function CampaignReportPage() {
     setSearchParams(buildUrlParams(filters), { replace: true })
   }, [filters, setSearchParams])
 
-  const userPermissions = useAuthStore((s) => s.user?.permissions ?? [])
+  const user = useAuthStore((s) => s.user)
+  const userPermissions = useMemo(() => user?.permissions ?? [], [user?.permissions])
+
+  const role = getUserRole(user?.roles ?? [], !!user?.is_admin)
+
+  const groupByOptions = useMemo<SelectOption[]>(
+    () => GROUP_BY_OPTIONS.filter((o) => !role.isMember || o.value !== 'user_id'),
+    [role.isMember],
+  )
 
   const [options, setOptions] = useState<FilterOptions>(EMPTY_OPTIONS)
 
@@ -342,6 +351,7 @@ export function CampaignReportPage() {
         field: 'user_ids',
         label: 'User',
         type: 'multiselect',
+        hidden: role.isMember,
         value: (filters.user_ids ?? []).map(String),
         options: userOptions,
         placeholder: 'All users',
@@ -391,7 +401,7 @@ export function CampaignReportPage() {
         label: 'Group By',
         type: 'select',
         value: filters.group_by ? filters.group_by : '__none__',
-        options: GROUP_BY_OPTIONS,
+        options: groupByOptions,
         placeholder: 'No grouping',
         hideAllOption: true,
       },
@@ -404,6 +414,8 @@ export function CampaignReportPage() {
       campaignOptions,
       channelOptions,
       linkDataOptions,
+      role,
+      groupByOptions,
     ],
   )
 
@@ -428,6 +440,7 @@ export function CampaignReportPage() {
         onPaginationChange={onPaginationChange}
         onSortingChange={onSortingChange}
         onToggleCampaignStatus={handleToggleCampaignStatus}
+        role={role}
       />
     </div>
   )

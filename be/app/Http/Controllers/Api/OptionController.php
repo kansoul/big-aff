@@ -112,4 +112,16 @@ class OptionController extends BaseController
     {
         return $this->sendResponse(['data' => $this->optionService->businessCenters()]);
     }
+
+    /**
+     * Ads report options
+     *
+     * Return teams, accounts, and campaigns for the ads report page.
+     *
+     * @response 200 {"data": {"show_team_filter": true, "teams": [], "campaigns": []}}
+     */
+    public function adsReport(): JsonResponse
+    {
+        return $this->sendResponse(['data' => $this->optionService->adsReport()]);
+    }
 }

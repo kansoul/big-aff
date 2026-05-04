@@ -153,11 +153,20 @@ const schema = z
   })
   .superRefine((data, ctx) => {
     if (data.entity_type === 'campaign') {
-      if (!data.min_roi?.trim()) {
+      const hasRoi = data.min_roi != null && data.min_roi.trim() !== ''
+      const hasProfit = data.min_profit != null && data.min_profit.trim() !== ''
+
+      if (!hasRoi && !hasProfit) {
+        const msg = 'At least one of Min ROI or Min Profit is required'
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Min ROI is required',
+          message: msg,
           path: ['min_roi'],
+        })
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: msg,
+          path: ['min_profit'],
         })
       }
       if (!data.min_spend?.trim()) {
@@ -442,9 +451,7 @@ export function CampaignRuleFormDialog({
                     name="min_roi"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          Min ROI <span className="text-destructive">*</span>
-                        </FormLabel>
+                        <FormLabel>Min ROI</FormLabel>
                         <FormControl>
                           <Input
                             type="number"

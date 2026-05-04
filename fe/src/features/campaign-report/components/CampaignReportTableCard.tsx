@@ -37,6 +37,7 @@ import {
   TrackingAnalyticsDialog,
 } from '@/features/campaign-report/components'
 import { Button } from '@/components/ui'
+import type { RBACRole } from '@/shared/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -439,11 +440,7 @@ function getColumns(
             />
           ) : (
             <span className="pl-1 text-[10px] text-muted-foreground">
-              {groupBy === 'channel_code' && row.original.channel_name}
-              {groupBy === 'account_id' && row.original.account_name}
-              {groupBy === 'user_id' && row.original.user_email}
-              {groupBy === 'campaign_id' && row.original.campaign_id}
-              {` (${formatDate(row.original.date_start)})`}
+              {formatDate(row.original.date_start)}
             </span>
           ),
         Footer: () => <div className="text-sm!">Summary</div>,
@@ -469,16 +466,13 @@ function getColumns(
     accessorKey: 'account_name',
     header: 'Account',
     Header: <HeaderLabel>Account</HeaderLabel>,
-    size: 145,
+    size: 160,
     enableSorting: isSortable('account_name'),
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
       const label = row.original.account_name ?? row.original.account_id ?? '—'
       return (
-        <span
-          className="block max-w-[110px] truncate text-[10px] text-muted-foreground"
-          title={String(label)}
-        >
+        <span className="block truncate text-[10px] text-muted-foreground" title={String(label)}>
           {label}
         </span>
       )
@@ -1127,6 +1121,7 @@ type Props = {
   onPaginationChange: (page: number, perPage: number) => void
   onSortingChange: (orderBy: CampaignReportOrderBy | null, order: 'asc' | 'desc' | null) => void
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void
+  role: RBACRole
 }
 
 function CampaignReportTableCardInner({
@@ -1141,6 +1136,7 @@ function CampaignReportTableCardInner({
   onPaginationChange,
   onSortingChange,
   onToggleCampaignStatus,
+  role,
 }: Props) {
   const grouped = Boolean(filters.group_by)
   const isMobile = useIsMobile()
@@ -1163,7 +1159,7 @@ function CampaignReportTableCardInner({
   const forcedColumnVisibility = useMemo<Record<string, boolean>>(() => {
     const base: Record<string, boolean> = grouped ? { date_start: false } : { group_label: false }
 
-    if (filters.group_by === 'user_id') {
+    if (filters.group_by === 'user_id' || role.isMember) {
       base.user_email = false
     }
 
@@ -1172,6 +1168,7 @@ function CampaignReportTableCardInner({
     }
     if (filters.group_by === 'campaign_id') {
       base.campaign_id = false
+      base.campaign_name = false
     }
     if (filters.group_by === 'account_id') {
       base.account_name = false
@@ -1192,7 +1189,7 @@ function CampaignReportTableCardInner({
     }
 
     return base
-  }, [grouped, effectiveSummaryOnly, filters.group_by])
+  }, [grouped, effectiveSummaryOnly, filters.group_by, role])
 
   const columnVisibility = useMemo(
     () => ({ ...userColumnVisibility, ...forcedColumnVisibility }),
@@ -1489,6 +1486,7 @@ function CampaignReportTableCardInner({
           />
           <CampaignIdSelector
             filterOptions={filterOptions}
+            role={role}
             trigger={
               <Button size="sm" className="h-7 gap-1.5 px-2.5 text-xs font-medium">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -1543,11 +1541,7 @@ function CampaignReportTableCardInner({
           onOpenChange={onTrackingDialogOpenChange}
           initialDate={trackingDialogTarget.date_start ?? undefined}
           initialCampaignId={trackingDialogTarget.campaign_id ?? undefined}
-          initialAccountId={
-            trackingDialogTarget.account_id != null
-              ? String(trackingDialogTarget.account_id)
-              : undefined
-          }
+          initialAdsLinkId={trackingDialogTarget.realtime_report?.ads_link_id ?? null}
         />
       )}
 

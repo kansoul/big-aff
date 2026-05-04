@@ -46,6 +46,7 @@ export type CampaignReportGroupBy = '' | 'channel_code' | 'account_id' | 'user_i
 export interface CampaignReportRealtime {
   id: number
   link_data_id: number | null
+  ads_link_id: number | null
   view_article_count: number
   view_search_count: number
   click_keyword_count: number
@@ -288,7 +289,7 @@ export interface StyleReportRangeQueryResponse {
 // ─── Tracking Analytics ───────────────────────────────────────────────────────
 
 export interface TrackingAnalyticsFilterParams {
-  account_id?: string | null
+  ads_link_id?: number | null
   campaign_id?: string | null
   date_from?: string | null
   date_to?: string | null
@@ -311,12 +312,26 @@ export interface TrackingAnalyticsResponse {
   }
 }
 
+export interface AdsLinkOption {
+  id: number
+  slug: string
+}
+
+export interface AnalyticsTrackingFilterOptions {
+  ads_links: AdsLinkOption[]
+  campaigns: string[]
+}
+
+export interface AnalyticsTrackingFilterOptionsResponse {
+  data: AnalyticsTrackingFilterOptions
+}
+
 // ─── Keyword Tracking ─────────────────────────────────────────────────────────
 
-export type KeywordTrackingOrderBy = 'id' | 'name' | 'created_at'
+export type KeywordTrackingOrderBy = 'keyword' | 'click_count' | 'click_ad_count'
 
 export interface KeywordTrackingFilterParams {
-  account_id?: string | null
+  ads_link_id?: number | null
   campaign_id?: string | null
   date_from?: string | null
   date_to?: string | null
@@ -329,9 +344,10 @@ export interface KeywordTrackingFilterParams {
 
 export interface KeywordTrackingRow {
   id: number
-  name: string
-  keywords: string[] | null
-  created_at: string
+  keyword: string
+  click_count: number
+  click_ad_count: number
+  ctr: number
 }
 
 export interface KeywordTrackingListResponse {

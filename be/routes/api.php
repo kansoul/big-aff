@@ -74,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('accounts', [OptionController::class, 'accounts']);
         Route::get('teams', [OptionController::class, 'teams']);
         Route::get('business-centers', [OptionController::class, 'businessCenters']);
+        Route::get('ads-report', [OptionController::class, 'adsReport']);
     });
 
     Route::prefix('users')->group(function () {
@@ -382,6 +383,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('analytics-tracking')
         ->middleware('permission.scope:'.Permission::AnalyticsTrackingView->value)
         ->group(function () {
+            Route::get('filter-options', [AnalyticsTrackingController::class, 'filterOptions']);
             Route::get('stats', [AnalyticsTrackingController::class, 'stats']);
             Route::get('keywords', [AnalyticsTrackingController::class, 'keywords']);
         });

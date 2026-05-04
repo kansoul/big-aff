@@ -4,6 +4,7 @@ namespace App\Services\Option;
 
 use App\Actions\Account\GetAccountOptionsAction;
 use App\Actions\BusinessCenter\GetBusinessCenterOptionsAction;
+use App\Actions\Option\GetAdsReportOptionsAction;
 use App\Actions\Option\GetChannelOptionsAction;
 use App\Actions\Option\GetPostOptionsAction;
 use App\Actions\Option\GetSiteOptionsAction;
@@ -23,6 +24,7 @@ class OptionService
         private readonly GetAccountOptionsAction $getAccountOptions,
         private readonly GetTeamOptionsAction $getTeamOptions,
         private readonly GetBusinessCenterOptionsAction $getBusinessCenterOptions,
+        private readonly GetAdsReportOptionsAction $getAdsReportOptions,
     ) {}
 
     /** @return Collection<int, array{id: int, name: string, email: string}> */
@@ -71,5 +73,11 @@ class OptionService
     public function businessCenters(): Collection
     {
         return $this->getBusinessCenterOptions->execute();
+    }
+
+    /** @return array{show_team_filter: bool, teams: Collection, campaigns: Collection} */
+    public function adsReport(): array
+    {
+        return $this->getAdsReportOptions->execute();
     }
 }
