@@ -38,7 +38,13 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
-import { SearchableSelect } from '@/components/common/SearchableSelect'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Search } from 'lucide-react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -230,15 +236,20 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
     enableDensityToggle: false,
     enablePagination: false,
     positionToolbarAlertBanner: 'none',
-    initialState: { density: 'md' },
+    initialState: { density: 'xs' },
+    mantineTableBodyCellProps: { sx: { paddingTop: 4, paddingBottom: 4 } },
+    mantineTableHeadCellProps: { sx: { paddingTop: 6, paddingBottom: 6 } },
     mantineLoadingOverlayProps: {
       sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
+    },
+    mantinePaperProps: {
+      sx: { display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 },
     },
     mantineTableContainerProps: {
       onScroll: (e: React.UIEvent<HTMLDivElement>) => {
         e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
       },
-      sx: { maxHeight: 320, overflowY: 'auto' },
+      sx: { flex: 1, overflowY: 'auto' },
     },
     renderTopToolbar: ({ table: t }) => (
       <div className="flex justify-end border-b border-border px-2 py-1">
@@ -249,16 +260,25 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
       <div className="flex items-center justify-between border-t border-border px-3 py-2">
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Rows per page</span>
-          <SearchableSelect
+          <Select
             value={String(pageSize)}
             onValueChange={(v) => {
               setPageSize(Number(v))
               setPageIndex(0)
               setLoading(true)
             }}
-            options={PAGE_SIZE_OPTIONS.map((n) => ({ label: String(n), value: String(n) }))}
-            className="h-7 w-16 text-xs"
-          />
+          >
+            <SelectTrigger className="h-6! w-16 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <SelectItem key={n} value={String(n)} className="text-xs">
+                  {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-center gap-1">
           <span className="mr-1 text-xs text-muted-foreground">
@@ -338,7 +358,7 @@ function RecentMediaTable({ open, selected, onSelect }: RecentMediaTableProps) {
   })
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="border-b border-border px-3 py-2">
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -482,7 +502,7 @@ export function MediaPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex max-h-[min(92vh,720px)] w-full max-w-[min(94vw,60rem)] flex-col gap-0 p-6 sm:max-w-3xl">
+      <DialogContent className="flex h-[95vh] w-[95vw] max-w-none! flex-col gap-0 p-4 sm:h-[90vh] sm:w-[90vw] sm:p-6">
         <DialogHeader className="mb-3 shrink-0">
           <DialogTitle className="text-base font-black uppercase tracking-tight">
             {title}
@@ -490,7 +510,7 @@ export function MediaPickerDialog({
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={handleTabChange} className="flex min-h-0 flex-1 flex-col">
-          <TabsList className="mb-3 shrink-0 self-start">
+          <TabsList className="mb-3 w-full shrink-0 sm:w-auto sm:self-start">
             <TabsTrigger value="recent">Recent uploads</TabsTrigger>
             <TabsTrigger value="upload">Upload new</TabsTrigger>
           </TabsList>
@@ -562,7 +582,7 @@ export function MediaPickerDialog({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="mt-4 shrink-0 gap-2 border-0 bg-transparent sm:justify-end">
+        <DialogFooter className="mt-4 flex-row shrink-0 gap-2 border-0 bg-transparent justify-end">
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
