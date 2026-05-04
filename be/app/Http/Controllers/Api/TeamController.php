@@ -161,18 +161,6 @@ class TeamController extends BaseController
     }
 
     /**
-     * Team options
-     *
-     * Return a flat list of teams for use in select/dropdown inputs.
-     *
-     * @response 200 {"data": [{"id": 1, "name": "Marketing"}]}
-     */
-    public function options(): JsonResponse
-    {
-        return $this->sendResponse(['data' => $this->teamService->options()]);
-    }
-
-    /**
      * Team account options
      *
      * Return teams with their accounts for ads report filters.

@@ -3,7 +3,7 @@
 namespace App\Actions\Category;
 
 use App\Models\Category;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\CategoryOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +15,7 @@ class UpdateCategoryAction
      */
     public function execute(Category $category, array $data): Category
     {
-        OwnershipFilter::forAuthUser()->authorize($category->created_by);
+        (new CategoryOwnerResource)->authorize($category);
 
         $data['updated_by'] = Auth::id();
 

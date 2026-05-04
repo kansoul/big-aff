@@ -6,7 +6,7 @@ use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Models\TeamUser;
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,8 +46,7 @@ class GetRevenueStatsUserOptionsAction
             return collect();
         }
 
-        $ownership = OwnershipFilter::forAuthUser();
-        $query->whereIn('users.id', $ownership->allowedUserIds());
+        $query->whereIn('users.id', (new UserOwnerResource)->allowedUserIds());
 
         return $query->get();
     }

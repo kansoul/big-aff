@@ -3,7 +3,7 @@
 namespace App\Actions\Site;
 
 use App\Models\Site;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\SiteOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,7 +16,7 @@ class UpdateSiteAction
      */
     public function execute(Site $site, array $data): Site
     {
-        OwnershipFilter::forAuthUser()->authorize($site->created_by);
+        (new SiteOwnerResource)->authorize($site);
 
         $updateData = collect($data)
             ->merge(['updated_by' => Auth::id()])

@@ -34,6 +34,7 @@ import { userOptionsApi } from '@/features/posts/api'
 import { categoriesApi } from '@/features/categories/api'
 import type { Post, PostFilterParams } from '@/features/posts/types'
 import type { TablePaginationState } from '@/lib/utils'
+import type { RBACRole } from '@/shared/types'
 
 const STATUS_OPTIONS = [
   { label: 'Draft', value: 'draft' },
@@ -42,7 +43,6 @@ const STATUS_OPTIONS = [
 ]
 const TYPE_OPTIONS = [
   { label: 'Normal', value: 'normal' },
-  { label: 'AI', value: 'ai' },
   { label: 'Wordpress', value: 'wordpress' },
 ]
 const HIDDEN_OPTIONS = [
@@ -59,6 +59,7 @@ type ActionMeta = {
   onDeleteRow: (row: Post) => void
   onToggleHidden: (row: Post) => void
   onPublishRow: (row: Post, publish: boolean) => void
+  role: RBACRole
 }
 
 const TYPE_CONFIG: Record<string, { label: string; variant: 'secondary' | 'warning' | 'outline' }> =
@@ -69,8 +70,16 @@ const TYPE_CONFIG: Record<string, { label: string; variant: 'secondary' | 'warni
   }
 
 function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
-  const { canUpdate, canDelete, canPublish, onEditRow, onDeleteRow, onToggleHidden, onPublishRow } =
-    meta
+  const {
+    canUpdate,
+    canDelete,
+    canPublish,
+    onEditRow,
+    onDeleteRow,
+    onToggleHidden,
+    onPublishRow,
+    role,
+  } = meta
 
   return [
     {
@@ -188,15 +197,21 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
         )
       },
     },
-    {
-      accessorKey: 'created_by',
-      header: 'User',
-      size: 90,
-      enableSorting: false,
-      Cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground">{row.original.created_by ?? '—'}</span>
-      ),
-    },
+    ...(!role.isMember
+      ? [
+          {
+            accessorKey: 'created_by',
+            header: 'User',
+            size: 90,
+            enableSorting: false,
+            Cell: ({ row }) => (
+              <span className="text-xs text-muted-foreground">
+                {row.original.created_by ?? '—'}
+              </span>
+            ),
+          } satisfies MRT_ColumnDef<Post>,
+        ]
+      : []),
     {
       accessorKey: 'note',
       header: 'Note',
@@ -368,6 +383,7 @@ type PostsTableCardProps = {
   selectedIds: Set<number>
   onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
   onBulkDeleteClick: () => void
+  role: RBACRole
 }
 
 function PostsTableCardInner({
@@ -395,6 +411,7 @@ function PostsTableCardInner({
   selectedIds,
   onSelectionChange,
   onBulkDeleteClick,
+  role,
 }: PostsTableCardProps) {
   const isMobile = useIsMobile()
   const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
@@ -424,6 +441,7 @@ function PostsTableCardInner({
         onDeleteRow,
         onToggleHidden,
         onPublishRow,
+        role,
       }),
     [
       canUpdate,
@@ -434,6 +452,7 @@ function PostsTableCardInner({
       onDeleteRow,
       onToggleHidden,
       onPublishRow,
+      role,
     ],
   )
 
@@ -487,6 +506,7 @@ function PostsTableCardInner({
         field: 'created_by',
         label: 'Creator',
         type: 'select',
+        hidden: role.isMember,
         value: filters.created_by ? String(filters.created_by) : null,
         options: userOptions,
       },
@@ -511,7 +531,7 @@ function PostsTableCardInner({
         options: HIDDEN_OPTIONS,
       },
     ],
-    [filters, userOptions, categoryOptions],
+    [filters, userOptions, categoryOptions, role],
   )
 
   const activeChips = useMemo<ActiveFilterChip[]>(() => {
@@ -540,7 +560,7 @@ function PostsTableCardInner({
         displayValue: opt?.label ?? String(filters.category_id),
       })
     }
-    if (filters.created_by) {
+    if (filters.created_by && !role.isMember) {
       const opt = userOptions.find((o) => o.value === String(filters.created_by))
       chips.push({
         key: 'created_by',
@@ -565,7 +585,7 @@ function PostsTableCardInner({
     }
 
     return chips
-  }, [filters, categoryOptions, userOptions])
+  }, [filters, categoryOptions, userOptions, role])
 
   function handleRemoveChip(key: string) {
     if (key === 'created_at') {
@@ -670,7 +690,7 @@ function PostsTableCardInner({
             ) : null}
           </div>
           <div className="flex items-center gap-1.5">
-            {canAssignPosts ? (
+            {canAssignPosts && !role.isMember ? (
               <Button
                 size="sm"
                 className="h-7 gap-1.5 px-2.5 text-xs font-medium"
@@ -690,7 +710,9 @@ function PostsTableCardInner({
                 Add Post
               </Button>
             ) : null}
-            {(canAssignPosts || canCreate) && <div className="h-4 w-px bg-border" />}
+            {((canAssignPosts && !role.isMember) || canCreate) && (
+              <div className="h-4 w-px bg-border" />
+            )}
             <MRT_ShowHideColumnsButton table={t} />
           </div>
         </div>

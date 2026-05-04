@@ -71,11 +71,14 @@ export const postsApi = {
 
   publish: (id: number, publish: boolean) =>
     axiosInstance.post<{ data: Post }>(`/posts/${id}/publish`, { publish }),
+
+  toggleHidden: (id: number, isHidden: boolean) =>
+    axiosInstance.post<{ data: Post }>(`/posts/${id}/toggle-hidden`, { is_hidden: isHidden }),
 }
 
 export const userOptionsApi = {
   async list(): Promise<{ label: string; value: string }[]> {
-    const res = await axiosInstance.get<{ data: { id: number; name: string }[] }>('/users/options')
+    const res = await axiosInstance.get<{ data: { id: number; name: string }[] }>('/options/users')
     return res.data.data.map((u) => ({ label: u.name, value: String(u.id) }))
   },
 }

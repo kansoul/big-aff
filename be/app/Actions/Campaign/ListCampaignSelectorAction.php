@@ -4,7 +4,7 @@ namespace App\Actions\Campaign;
 
 use App\Models\Campaign;
 use App\Models\CampaignReport;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -27,7 +27,7 @@ class ListCampaignSelectorAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
+        $resource = new AccountLinkedOwnerResource;
 
         $query = CampaignReport::query()
             ->selectRaw('
@@ -41,11 +41,12 @@ class ListCampaignSelectorAction
             ')
             ->whereDate('date_start', today());
 
-        $ownership->applyThrough(
-            $query,
-            'campaign_id',
-            fn (array $ids) => Campaign::whereIn('created_by', $ids)->select('campaign_id'),
-        );
+        if (! $resource->isAdmin()) {
+            $query->whereIn(
+                'campaign_id',
+                Campaign::whereIn('created_by', $resource->allowedUserIds())->select('campaign_id'),
+            );
+        }
 
         if (! empty($filters['account_id'])) {
             $query->where('account_id', $filters['account_id']);

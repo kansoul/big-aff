@@ -19,7 +19,7 @@ import { ImagePreviewDialog } from '@/components/common/ImagePreviewDialog'
 import { useIsMobile } from '@/hooks/useMobile'
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
 import type { MediaFile, MediaFilterParams } from '@/features/media/types'
-import type { ManagedUser } from '@/shared/types'
+import type { ManagedUser, RBACRole } from '@/shared/types'
 
 type PaginationState = { pageIndex: number; pageSize: number }
 
@@ -35,12 +35,14 @@ type ColumnMeta = {
   canDelete: boolean
   onDeleteFile: (file: MediaFile) => void
   onPreviewClick: (file: MediaFile) => void
+  role: RBACRole
 }
 
 function getColumns({
   canDelete,
   onDeleteFile,
   onPreviewClick,
+  role,
 }: ColumnMeta): MRT_ColumnDef<MediaFile>[] {
   return [
     {
@@ -141,13 +143,19 @@ function getColumns({
         <span className="text-muted-foreground">{formatBytes(row.original.size)}</span>
       ),
     },
-    {
-      accessorKey: 'user_id',
-      header: 'User ID',
-      size: 80,
-      enableSorting: false,
-      Cell: ({ row }) => <span className="text-muted-foreground">{row.original.user_id}</span>,
-    },
+    ...(!role.isMember
+      ? [
+          {
+            accessorKey: 'user_id',
+            header: 'User ID',
+            size: 80,
+            enableSorting: false,
+            Cell: ({ row }) => (
+              <span className="text-muted-foreground">{row.original.user_id}</span>
+            ),
+          } satisfies MRT_ColumnDef<MediaFile>,
+        ]
+      : []),
     {
       accessorKey: 'created_at',
       header: 'Uploaded',
@@ -215,6 +223,7 @@ type MediaTableCardProps = {
   selectedIds: Set<number>
   onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
   onBulkDeleteClick: () => void
+  role: RBACRole
 }
 
 function MediaTableCardInner({
@@ -234,6 +243,7 @@ function MediaTableCardInner({
   selectedIds,
   onSelectionChange,
   onBulkDeleteClick,
+  role,
 }: MediaTableCardProps) {
   const isMobile = useIsMobile()
   const [previewFile, setPreviewFile] = useState<MediaFile | null>(null)
@@ -243,8 +253,8 @@ function MediaTableCardInner({
   )
 
   const columns = useMemo(
-    () => getColumns({ canDelete, onDeleteFile, onPreviewClick: setPreviewFile }),
-    [canDelete, onDeleteFile],
+    () => getColumns({ canDelete, onDeleteFile, onPreviewClick: setPreviewFile, role }),
+    [canDelete, onDeleteFile, role],
   )
 
   const sorting: MRT_SortingState = useMemo(
@@ -277,11 +287,12 @@ function MediaTableCardInner({
         field: 'user_id',
         label: 'User',
         type: 'select',
+        hidden: role.isMember,
         value: filters.user_id != null ? String(filters.user_id) : null,
         options: users.map((u) => ({ label: u.name, value: String(u.id) })),
       },
     ],
-    [filters, users],
+    [filters, users, role],
   )
 
   function handleApply(values: Record<string, unknown>) {

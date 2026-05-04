@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useTableUrlState } from '@/hooks/useTableUrlState'
 import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
+import { getUserRole } from '@/constants/role'
 
 const DEFAULT_FILTERS: MediaFilterParams = {
   created_from: null,
@@ -46,7 +47,10 @@ function parseFilters(params: URLSearchParams): MediaFilterParams {
   }
 }
 
-function buildParams(filters: MediaFilterParams, pagination: TablePaginationState): URLSearchParams {
+function buildParams(
+  filters: MediaFilterParams,
+  pagination: TablePaginationState,
+): URLSearchParams {
   const params = new URLSearchParams()
   if (filters.created_from) params.set('created_from', filters.created_from)
   if (filters.created_to) params.set('created_to', filters.created_to)
@@ -61,6 +65,7 @@ function buildParams(filters: MediaFilterParams, pagination: TablePaginationStat
 export function MediaPage() {
   const user = useAuthStore((s) => s.user)
   const isAdmin = hasFullAccess(user?.permissions ?? [])
+  const role = getUserRole(user?.roles ?? [], !!user?.is_admin)
 
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [data, setData] = useState<MediaFile[]>([])
@@ -255,6 +260,7 @@ export function MediaPage() {
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         onBulkDeleteClick={onBulkDeleteClick}
+        role={role}
       />
       <UploadFileDialog
         open={uploadOpen}

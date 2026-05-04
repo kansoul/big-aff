@@ -4,7 +4,7 @@ namespace App\Actions\Site;
 
 use App\Models\Site;
 use App\Models\UserSite;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\SiteOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,12 +18,12 @@ class AssignSiteAction
      */
     public function execute(Site $site, array $userIds): void
     {
-        $ownership = OwnershipFilter::forAuthUser();
+        $resource = new SiteOwnerResource;
         $removableIds = null; // null = admin (unrestricted), array = subtree minus self
 
-        if (! $ownership->isAdmin()) {
+        if (! $resource->isAdmin()) {
             $authId = (int) Auth::id();
-            $allowedIds = $ownership->allowedUserIds();
+            $allowedIds = $resource->allowedUserIds();
 
             // Non-admin must have created the site or be currently assigned to it.
             $hasAccess = $site->created_by === $authId

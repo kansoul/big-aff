@@ -4,11 +4,10 @@ namespace App\Actions\Post;
 
 use App\Http\Requests\Post\ListPostsRequest;
 use App\Models\Post;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\PostOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Auth;
 
 class ListPostsAction
 {
@@ -33,8 +32,6 @@ class ListPostsAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = Post::query()->with(['featureMedia', 'category', 'keywordSets', 'creator']);
 
         if (! empty($filters['deleted_at'])) {
@@ -45,14 +42,7 @@ class ListPostsAction
             };
         }
 
-        if (! $ownership->isAdmin()) {
-            $allowedIds = $ownership->allowedUserIds();
-            $authUserId = Auth::id();
-            $query->where(function ($q) use ($allowedIds, $authUserId): void {
-                $q->whereIn('created_by', $allowedIds)
-                    ->orWhereHas('assignedUsers', fn ($q2) => $q2->where('users.id', $authUserId));
-            });
-        }
+        (new PostOwnerResource)->applyTo($query);
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];

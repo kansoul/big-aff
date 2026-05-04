@@ -3,7 +3,7 @@
 namespace App\Actions\AnalyticsTracking;
 
 use App\Models\KeywordSet;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\KeywordSetResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -14,10 +14,8 @@ class ListKeywordTrackingAction
 
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = KeywordSet::query();
-        $ownership->applyTo($query);
+        (new KeywordSetResource)->applyTo($query);
 
         $query->when(
             ! empty($filters['keyword']),

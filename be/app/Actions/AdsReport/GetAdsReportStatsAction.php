@@ -10,7 +10,8 @@ use App\Models\RevenueReport;
 use App\Models\Style;
 use App\Models\TeamUser;
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountLinkedOwnerResource;
+use App\Support\OwnerResource\StyleOwnerResource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,8 +19,6 @@ class GetAdsReportStatsAction
 {
     public function execute(array $filters): array
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $dateFrom = $filters['date_from'] ?? null;
         $dateTo = $filters['date_to'] ?? null;
         $teamId = isset($filters['team_id']) ? (int) $filters['team_id'] : null;
@@ -31,7 +30,7 @@ class GetAdsReportStatsAction
 
         // Campaign stats
         $campaignQuery = Campaign::query();
-        $ownership->applyThroughAccount($campaignQuery, 'account_id');
+        (new AccountLinkedOwnerResource)->applyTo($campaignQuery);
 
         if ($accountIds !== null) {
             $campaignQuery->whereIn('account_id', $accountIds);
@@ -47,7 +46,7 @@ class GetAdsReportStatsAction
 
         // Insight stats (spend, reach)
         $insightQuery = InsightReport::query();
-        $ownership->applyThroughAccount($insightQuery);
+        (new AccountLinkedOwnerResource)->applyTo($insightQuery);
 
         if ($dateFrom) {
             $insightQuery->whereDate('date_start', '>=', $dateFrom);
@@ -87,7 +86,9 @@ class GetAdsReportStatsAction
 
         if ($showRevenueProfit) {
             $revenueQuery = RevenueReport::query();
-            $ownership->applyThrough($revenueQuery, 'style_code', fn (array $ids) => Style::whereIn('created_by', $ids)->select('code'));
+            $styleSubquery = Style::query()->select('code');
+            (new StyleOwnerResource)->applyTo($styleSubquery);
+            $revenueQuery->whereIn('style_code', $styleSubquery);
 
             if ($dateFrom) {
                 $revenueQuery->whereDate('date', '>=', $dateFrom);

@@ -4,6 +4,7 @@ export interface User {
   email: string
   permissions: string[]
   is_admin: boolean
+  roles: UserRole[]
 }
 
 /** User row from `GET/POST/PUT /api/users` (admin UI). */
@@ -46,4 +47,19 @@ export interface ApiResponse<T> {
   message: string
   data: T
   errors?: Record<string, string[]>
+}
+
+export const USER_ROLES = {
+  Manager: 'manager',
+  Leader: 'leader',
+  Member: 'member',
+} as const
+
+export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES]
+
+export type RBACRole = {
+  isAdmin: boolean
+  isManager: boolean
+  isLeader: boolean
+  isMember: boolean
 }

@@ -3,7 +3,7 @@
 namespace App\Actions\Style;
 
 use App\Models\Style;
-use App\Models\User;
+use App\Support\OwnerResource\StyleOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -15,9 +15,11 @@ class ListStylesAction
     /**
      * @param  array<string, mixed>  $filters
      */
-    public function execute(array $filters, User $user): LengthAwarePaginator
+    public function execute(array $filters): LengthAwarePaginator
     {
         $query = Style::query();
+
+        (new StyleOwnerResource)->applyTo($query);
 
         $query->when(! empty($filters['query']), function ($q) use ($filters): void {
             $search = $filters['query'];

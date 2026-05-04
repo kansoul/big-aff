@@ -4,7 +4,7 @@ namespace App\Actions\Post;
 
 use App\Models\Post;
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 
 class AssignUserPostsAction
@@ -19,11 +19,7 @@ class AssignUserPostsAction
      */
     public function execute(User $user, array $postIds): void
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
-        if (! $ownership->isAdmin() && ! in_array($user->id, $ownership->allowedUserIds(), true)) {
-            throw new AuthorizationException;
-        }
+        (new UserOwnerResource)->authorize($user);
 
         $existingPostIds = Post::whereIn('id', $postIds)->pluck('id')->all();
 

@@ -3,18 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Post\ListUsersWithPostsAction;
-use App\Enums\UserStatus;
 use App\Http\Requests\Post\AssignUserPostsRequest;
 use App\Http\Requests\Post\ListUsersWithPostsRequest;
 use App\Http\Requests\User\ListUsersRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Resources\ManagedUserResource;
-use App\Http\Resources\User\UserOptionResource;
 use App\Models\User;
 use App\Services\Team\TeamService;
 use App\Services\User\UserService;
-use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -82,23 +79,6 @@ class UserController extends BaseController
                 'data' => new ManagedUserResource($updated),
             ]
         );
-    }
-
-    /**
-     * User options for select inputs
-     */
-    public function options(): JsonResponse
-    {
-        $query = User::query()
-            ->select(['id', 'name', 'email'])
-            ->where('status', UserStatus::Active)
-            ->orderBy('id');
-
-        OwnershipFilter::forAuthUser()->applyTo($query, 'id');
-
-        return $this->sendResponse([
-            'data' => UserOptionResource::collection($query->get()),
-        ]);
     }
 
     /**

@@ -3,7 +3,7 @@
 namespace App\Actions\Category;
 
 use App\Models\Category;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\CategoryOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 
 class DeleteCategoryAction
@@ -13,7 +13,7 @@ class DeleteCategoryAction
      */
     public function execute(Category $category): void
     {
-        OwnershipFilter::forAuthUser()->authorize($category->created_by);
+        (new CategoryOwnerResource)->authorize($category);
 
         $category->delete();
     }

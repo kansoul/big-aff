@@ -32,6 +32,7 @@ import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { useTableUrlState } from '@/hooks/useTableUrlState'
 import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
+import { getUserRole } from '@/constants/role'
 
 const DEFAULT_FILTERS: AdsLinkFilterParams = {
   keyword: null,
@@ -101,6 +102,7 @@ const createDefaultValues: AdsLinkCreateFormValues = {
 export function AdsLinksPage() {
   const user = useAuthStore((s) => s.user)
   const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
+  const role = getUserRole(user?.roles ?? [], !!user?.is_admin)
 
   const canCreate = useMemo(() => hasPermission(perms, PermissionSlugs.AdsLinksCreate), [perms])
   const canUpdate = useMemo(() => hasPermission(perms, PermissionSlugs.AdsLinksUpdate), [perms])
@@ -346,6 +348,7 @@ export function AdsLinksPage() {
           setPagination({ pageIndex: page - 1, pageSize: perPage })
         }
         onSortingChange={onSortingChange}
+        role={role}
       />
       <CreateAdsLinkDialog
         open={createOpen}

@@ -3,7 +3,7 @@
 namespace App\Actions\CampaignRuleSetting;
 
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\UserOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -27,14 +27,14 @@ class ListCampaignRuleSettingsAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
+        $resource = new UserOwnerResource;
 
         $query = User::query()
             ->with(['campaignRuleSetting']);
 
         // Admin → no restriction; others → transitive subtree + manager team members.
-        if (! $ownership->isAdmin()) {
-            $query->whereIn('id', $ownership->allowedUserIds());
+        if (! $resource->isAdmin()) {
+            $query->whereIn('id', $resource->allowedUserIds());
         }
 
         SortInput::fromValidatedArray(

@@ -6,7 +6,7 @@ use App\Models\Account;
 use App\Models\Campaign;
 use App\Models\CampaignReport;
 use App\Services\Integrations\Ads\AdsStatusService;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountOwnerResource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -41,8 +41,8 @@ class ToggleCampaignReportStatusAction
             ];
         }
 
-        $ownership = OwnershipFilter::forAuthUser();
-        if (! $ownership->isAdmin()) {
+        $resource = new AccountOwnerResource;
+        if (! $resource->isAdmin()) {
             $account = Account::where('account_id', $accountId)->first();
 
             if ($account === null) {
@@ -53,7 +53,7 @@ class ToggleCampaignReportStatusAction
                 ];
             }
 
-            $ownership->authorizeAccount($account);
+            $resource->authorize($account);
         }
 
         try {

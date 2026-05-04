@@ -3,7 +3,7 @@
 namespace App\Actions\RevenueReport;
 
 use App\Models\RevenueReport;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\ChannelLinkedOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -36,11 +36,9 @@ class ListRevenueReportsAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = RevenueReport::query();
 
-        $ownership->applyThroughChannel($query);
+        (new ChannelLinkedOwnerResource)->applyTo($query);
 
         if (! empty($filters['date_from'])) {
             $query->whereDate('date', '>=', $filters['date_from']);

@@ -8,7 +8,7 @@ use App\Models\AdsInsightsReport;
 use App\Models\Campaign;
 use App\Models\CampaignApplyRule;
 use App\Models\CampaignRule;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\CampaignRuleOwnerResource;
 use Illuminate\Support\Facades\DB;
 
 class UpdateCampaignRuleAction
@@ -18,7 +18,7 @@ class UpdateCampaignRuleAction
      */
     public function execute(CampaignRule $rule, array $data): CampaignRule
     {
-        OwnershipFilter::forAuthUser()->authorize($rule->user_id);
+        (new CampaignRuleOwnerResource)->authorize($rule);
 
         return DB::transaction(function () use ($rule, $data) {
             $previousEntityType = $rule->entity_type;

@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Actions\Team;
+namespace App\Actions\Option;
 
 use App\Models\Team;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\TeamOwnerResource;
 use Illuminate\Support\Collection;
 
 class GetTeamOptionsAction
@@ -13,13 +13,9 @@ class GetTeamOptionsAction
      */
     public function execute(): Collection
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = Team::query()->select(['id', 'name'])->orderBy('name');
 
-        if (! $ownership->isAdmin()) {
-            $query->whereHas('teamUsers', fn ($q) => $ownership->applyTo($q, 'user_id'));
-        }
+        (new TeamOwnerResource)->applyTo($query);
 
         return $query->get();
     }

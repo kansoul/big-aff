@@ -6,15 +6,14 @@ use App\Actions\Post\CreatePostAction;
 use App\Actions\Post\DeletePostAction;
 use App\Actions\Post\GetLatestPostsAction;
 use App\Actions\Post\GetPostBySlugAction;
-use App\Actions\Post\GetPostOptionsAction;
 use App\Actions\Post\ListPostsAction;
 use App\Actions\Post\SearchPostsAction;
+use App\Actions\Post\ToggleHiddenPostAction;
 use App\Actions\Post\UpdatePostAction;
 use App\Models\Post;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Collection;
 
 class PostService
 {
@@ -23,10 +22,10 @@ class PostService
         private readonly CreatePostAction $createPostAction,
         private readonly UpdatePostAction $updatePostAction,
         private readonly DeletePostAction $deletePostAction,
-        private readonly GetPostOptionsAction $getPostOptionsAction,
         private readonly GetPostBySlugAction $getPostBySlugAction,
         private readonly SearchPostsAction $searchPostsAction,
         private readonly GetLatestPostsAction $getLatestPostsAction,
+        private readonly ToggleHiddenPostAction $toggleHiddenPostAction,
     ) {}
 
     /**
@@ -58,12 +57,9 @@ class PostService
         $this->deletePostAction->execute($post);
     }
 
-    /**
-     * @return Collection<int, array{id: int, title: string, slug: string, keyword_sets: array<int, array{id: int, name: string}>}>
-     */
-    public function options(): Collection
+    public function toggleHidden(Post $post, bool $isHidden): Post
     {
-        return $this->getPostOptionsAction->execute();
+        return $this->toggleHiddenPostAction->execute($post, $isHidden);
     }
 
     /**

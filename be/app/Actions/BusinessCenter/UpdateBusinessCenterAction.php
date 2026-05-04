@@ -3,7 +3,7 @@
 namespace App\Actions\BusinessCenter;
 
 use App\Models\BusinessCenter;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\BusinessCenterOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,8 +16,7 @@ class UpdateBusinessCenterAction
      */
     public function execute(BusinessCenter $businessCenter, array $data): BusinessCenter
     {
-        $ownership = OwnershipFilter::forAuthUser();
-        $ownership->authorizeBusinessCenter($businessCenter);
+        (new BusinessCenterOwnerResource)->authorize($businessCenter);
 
         $data['updated_by'] = Auth::id();
         $businessCenter->update($data);

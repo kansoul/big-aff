@@ -4,7 +4,7 @@ namespace App\Actions\Site;
 
 use App\Enums\SiteStatus;
 use App\Models\Site;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\SiteOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 
 class DeleteSiteAction
@@ -14,7 +14,7 @@ class DeleteSiteAction
      */
     public function execute(Site $site): void
     {
-        OwnershipFilter::forAuthUser()->authorize($site->created_by);
+        (new SiteOwnerResource)->authorize($site);
 
         $site->update(['status' => SiteStatus::SUSPENDED]);
     }

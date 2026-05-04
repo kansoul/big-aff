@@ -7,7 +7,6 @@ use App\Actions\Team\CreateTeamAction;
 use App\Actions\Team\DeleteTeamAction;
 use App\Actions\Team\GetTeamAccountOptionsAction;
 use App\Actions\Team\GetTeamLeadersAction;
-use App\Actions\Team\GetTeamOptionsAction;
 use App\Actions\Team\GetTeamUserOptionsAction;
 use App\Actions\Team\GetUserTeamOptionsAction;
 use App\Actions\Team\ListTeamsAction;
@@ -27,7 +26,6 @@ class TeamService
         private readonly AssignTeamAction $assignTeamAction,
         private readonly GetTeamUserOptionsAction $getTeamUserOptionsAction,
         private readonly GetTeamAccountOptionsAction $getTeamAccountOptionsAction,
-        private readonly GetTeamOptionsAction $getTeamOptionsAction,
         private readonly GetTeamLeadersAction $getTeamLeadersAction,
         private readonly GetUserTeamOptionsAction $getUserTeamOptionsAction,
     ) {}
@@ -76,14 +74,6 @@ class TeamService
     public function userOptions(Team $team): Collection
     {
         return $this->getTeamUserOptionsAction->execute($team);
-    }
-
-    /**
-     * @return Collection<int, array{id: int, name: string}>
-     */
-    public function options(): Collection
-    {
-        return $this->getTeamOptionsAction->execute();
     }
 
     /**

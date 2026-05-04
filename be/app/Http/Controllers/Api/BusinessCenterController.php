@@ -128,16 +128,4 @@ class BusinessCenterController extends BaseController
 
         return $this->sendResponse([], Response::HTTP_NO_CONTENT);
     }
-
-    /**
-     * Business center options
-     *
-     * Return a flat list of business centers for use in select/dropdown inputs.
-     *
-     * @response 200 {"data": [{"id": 1, "name": "My Business Center"}]}
-     */
-    public function options(): JsonResponse
-    {
-        return $this->sendResponse(['data' => $this->businessCenterService->options()]);
-    }
 }

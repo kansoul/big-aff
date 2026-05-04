@@ -459,7 +459,7 @@ export function DashboardPage() {
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Profit</span>
                           <span
-                            className={`text-xs text-xs md:text-sm font-semibold ${teams.reduce((s, r) => s + r.daily.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                            className={`text-xs md:text-sm font-semibold ${teams.reduce((s, r) => s + r.daily.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                           >
                             {formatCurrency(teams.reduce((s, r) => s + r.daily.profit, 0))}
                           </span>
@@ -472,7 +472,7 @@ export function DashboardPage() {
                             const roi = spend > 0 ? ((rev - spend) / spend) * 100 : 0
                             return (
                               <span
-                                className={`text-xs text-xs md:text-sm font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                className={`text-xs md:text-sm font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                               >
                                 {roi.toFixed(2)}%
                               </span>
@@ -523,7 +523,7 @@ export function DashboardPage() {
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Profit</span>
                           <span
-                            className={`text-xs text-xs md:text-sm font-semibold ${teams.reduce((s, r) => s + r.yesterday.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                            className={`text-xs md:text-sm font-semibold ${teams.reduce((s, r) => s + r.yesterday.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                           >
                             {formatCurrency(teams.reduce((s, r) => s + r.yesterday.profit, 0))}
                           </span>
@@ -536,7 +536,7 @@ export function DashboardPage() {
                             const roi = spend > 0 ? ((rev - spend) / spend) * 100 : 0
                             return (
                               <span
-                                className={`text-xs text-xs md:text-sm font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                className={`text-xs md:text-sm font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                               >
                                 {roi.toFixed(2)}%
                               </span>
@@ -588,7 +588,7 @@ export function DashboardPage() {
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground/70">Profit</span>
                           <span
-                            className={`text-xs text-xs md:text-sm font-semibold ${teams.reduce((s, r) => s + r.monthly.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                            className={`text-xs md:text-sm font-semibold ${teams.reduce((s, r) => s + r.monthly.profit, 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                           >
                             {formatCurrency(teams.reduce((s, r) => s + r.monthly.profit, 0))}
                           </span>
@@ -601,7 +601,7 @@ export function DashboardPage() {
                             const roi = spend > 0 ? ((rev - spend) / spend) * 100 : 0
                             return (
                               <span
-                                className={`text-xs text-xs md:text-sm font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                className={`text-xs md:text-sm font-semibold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                               >
                                 {roi.toFixed(2)}%
                               </span>
@@ -722,7 +722,7 @@ export function DashboardPage() {
                           <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
                             {formatCurrency(yday.revenue)}
                           </TableCell>
-                          <TableCell className="text-xs md:text-sm px-2 md:px-6 text-xs md:text-sm text-foreground font-medium">
+                          <TableCell className="px-2 md:px-6 text-xs md:text-sm text-foreground font-medium">
                             {formatCurrency(yday.spend)}
                           </TableCell>
                           <TableCell>
@@ -739,7 +739,7 @@ export function DashboardPage() {
                           <TableCell className="text-xs md:text-sm px-2 md:px-6 text-foreground font-medium border-l border-border/30">
                             {formatCurrency(row.monthly.revenue)}
                           </TableCell>
-                          <TableCell className="text-xs md:text-sm px-2 md:px-6 text-xs md:text-sm text-foreground font-medium">
+                          <TableCell className="px-2 md:px-6 text-xs md:text-sm text-foreground font-medium">
                             {formatCurrency(row.monthly.spend)}
                           </TableCell>
                           <TableCell>
@@ -916,7 +916,7 @@ export function DashboardPage() {
                                   Monthly
                                 </span>
                                 <span
-                                  className={`text-xs text-xs md:text-sm font-semibold ${user.monthly.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                  className={`text-xs md:text-sm font-semibold ${user.monthly.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                                 >
                                   {formatCurrency(user.monthly.profit)}
                                 </span>
@@ -924,7 +924,7 @@ export function DashboardPage() {
                               <div className="flex flex-col">
                                 <span className="text-[10px] text-muted-foreground/70">ROI</span>
                                 <span
-                                  className={`text-xs text-xs md:text-sm font-semibold ${user.monthly.roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                                  className={`text-xs md:text-sm font-semibold ${user.monthly.roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
                                 >
                                   {user.monthly.roi.toFixed(2)}%
                                 </span>

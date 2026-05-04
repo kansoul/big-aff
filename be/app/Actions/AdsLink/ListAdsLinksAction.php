@@ -3,7 +3,7 @@
 namespace App\Actions\AdsLink;
 
 use App\Models\AdsLink;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AdsLinkOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -26,12 +26,10 @@ class ListAdsLinksAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = AdsLink::query()
             ->with(['site', 'post', 'keywordSet', 'channel', 'style']);
 
-        $ownership->applyTo($query);
+        (new AdsLinkOwnerResource)->applyTo($query);
 
         $query
             ->when(! empty($filters['keyword']), function ($q) use ($filters): void {

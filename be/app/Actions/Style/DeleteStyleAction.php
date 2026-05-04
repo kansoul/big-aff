@@ -3,13 +3,13 @@
 namespace App\Actions\Style;
 
 use App\Models\Style;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\StyleOwnerResource;
 
 class DeleteStyleAction
 {
     public function execute(Style $style): void
     {
-        OwnershipFilter::forAuthUser()->authorize($style->created_by);
+        (new StyleOwnerResource)->authorize($style);
 
         $style->delete();
     }

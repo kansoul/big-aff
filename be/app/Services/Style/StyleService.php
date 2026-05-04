@@ -6,7 +6,6 @@ use App\Actions\Style\BulkCreateStylesAction;
 use App\Actions\Style\DeleteStyleAction;
 use App\Actions\Style\ListStylesAction;
 use App\Models\Style;
-use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class StyleService
@@ -20,9 +19,9 @@ class StyleService
     /**
      * @param  array<string, mixed>  $filters
      */
-    public function list(array $filters, User $user): LengthAwarePaginator
+    public function list(array $filters): LengthAwarePaginator
     {
-        return $this->listStylesAction->execute($filters, $user);
+        return $this->listStylesAction->execute($filters);
     }
 
     /**

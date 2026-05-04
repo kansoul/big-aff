@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\Site;
 use App\Models\Style;
 use App\Models\Team;
+use App\Models\TeamUser;
 use App\Models\User;
 use App\Models\UserCampaignRuleSetting;
 use App\Models\UserParentChild;
@@ -90,6 +91,7 @@ trait UserRelationship
     public function teams(): BelongsToMany
     {
         return $this->belongsToMany(Team::class, 'team_user')
+            ->using(TeamUser::class)
             ->withPivot(['joined_at', 'team_role'])
             ->withTimestamps();
     }

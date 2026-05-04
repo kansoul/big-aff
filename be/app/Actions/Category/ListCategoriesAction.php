@@ -2,9 +2,8 @@
 
 namespace App\Actions\Category;
 
-use App\Http\Requests\Category\ListCategoriesRequest;
 use App\Models\Category;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\CategoryOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -28,10 +27,8 @@ class ListCategoriesAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = Category::query();
-        $ownership->applyTo($query);
+        (new CategoryOwnerResource)->applyTo($query);
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];

@@ -3,7 +3,7 @@
 namespace App\Actions\Team;
 
 use App\Models\Team;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\TeamOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,8 +16,7 @@ class UpdateTeamAction
      */
     public function execute(Team $team, array $data): Team
     {
-        $ownership = OwnershipFilter::forAuthUser();
-        $ownership->authorizeTeamManagement($team);
+        (new TeamOwnerResource)->authorize($team);
 
         $data['updated_by'] = Auth::id();
         $team->update($data);

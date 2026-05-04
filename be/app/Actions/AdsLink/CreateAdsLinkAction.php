@@ -6,7 +6,8 @@ use App\Models\AdsLink;
 use App\Models\Post;
 use App\Models\Site;
 use App\Services\AdsLink\RACValidationService;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\PostOwnerResource;
+use App\Support\OwnerResource\SiteOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
@@ -26,13 +27,11 @@ class CreateAdsLinkAction
     {
         $user = Auth::user();
 
-        $ownership = OwnershipFilter::forAuthUser();
-
         $site = Site::query()->findOrFail($data['site_id']);
-        $ownership->authorizeSite($site);
+        (new SiteOwnerResource)->authorize($site);
 
         $post = Post::query()->findOrFail($data['post_id']);
-        $ownership->authorizePost($post);
+        (new PostOwnerResource)->authorize($post);
 
         $racValidation = $this->racValidationService->validateRAC($data['rac'] ?? '');
         if (! $racValidation['is_valid']) {
@@ -84,7 +83,7 @@ class CreateAdsLinkAction
 
         do {
             $suffix = str_pad((string) random_int(0, 99999), 5, '0', STR_PAD_LEFT);
-            $slug = $baseSlug.'-'.$suffix;
+            $slug = $baseSlug . '-' . $suffix;
             $exists = AdsLink::withTrashed()->where('slug', $slug)->exists();
             $attempts++;
         } while ($exists && $attempts < 20);

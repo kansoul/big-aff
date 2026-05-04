@@ -7,13 +7,13 @@ use App\Models\Campaign;
 use App\Models\EventAdLoad;
 use App\Models\InsightReport;
 use App\Models\LinkData;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountLinkedOwnerResource;
+use App\Support\OwnerResource\AdsLinkOwnerResource;
 
 class GetAnalyticsStatsAction
 {
     public function execute(array $filters): array
     {
-        $ownership = OwnershipFilter::forAuthUser();
 
         $dateFrom = $filters['date_from'] ?? null;
         $dateTo = $filters['date_to'] ?? null;
@@ -30,7 +30,7 @@ class GetAnalyticsStatsAction
 
         // ── InsightReport stats (views + clicks) ─────────────────────────────
         $insightQuery = InsightReport::query();
-        $ownership->applyThroughAccount($insightQuery);
+        (new AccountLinkedOwnerResource)->applyTo($insightQuery);
 
         $insightQuery
             ->when($dateFrom, fn ($q) => $q->whereDate('date_start', '>=', $dateFrom))
@@ -53,13 +53,16 @@ class GetAnalyticsStatsAction
         $loadQuery = EventAdLoad::query()
             ->whereIn('type', [EventAdLoadType::ErrorSearch, EventAdLoadType::ErrorArticle]);
 
-        $ownership->applyThrough(
-            $loadQuery,
-            'link_data_id',
-            fn (array $ids) => LinkData::join('ads_links', 'link_datas.ads_link_id', '=', 'ads_links.id')
-                ->whereIn('ads_links.created_by', $ids)
-                ->select('link_datas.id')
-        );
+        $adsLinkResource = new AdsLinkOwnerResource;
+        if (! $adsLinkResource->isAdmin()) {
+            $allowedIds = $adsLinkResource->allowedUserIds();
+            $loadQuery->whereIn(
+                'link_data_id',
+                LinkData::join('ads_links', 'link_datas.ads_link_id', '=', 'ads_links.id')
+                    ->whereIn('ads_links.created_by', $allowedIds)
+                    ->select('link_datas.id')
+            );
+        }
 
         $loadQuery
             ->when($dateFrom, fn ($q) => $q->where('created_at', '>=', $dateFrom))

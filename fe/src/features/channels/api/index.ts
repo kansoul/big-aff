@@ -40,7 +40,7 @@ export const channelsApi = {
   },
 
   async options(): Promise<{ data: ChannelOption[] }> {
-    const res = await axiosInstance.get<{ data: ChannelOption[] }>('/channels/options')
+    const res = await axiosInstance.get<{ data: ChannelOption[] }>('/options/channels')
     return res.data
   },
 

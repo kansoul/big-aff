@@ -28,7 +28,7 @@ export const stylesApi = {
   },
 
   async options(): Promise<{ data: StyleOption[] }> {
-    const res = await axiosInstance.get<{ data: StyleOption[] }>('/styles/options')
+    const res = await axiosInstance.get<{ data: StyleOption[] }>('/options/styles')
     return res.data
   },
 }

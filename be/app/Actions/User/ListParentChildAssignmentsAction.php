@@ -6,7 +6,7 @@ use App\Enums\TeamRole;
 use App\Models\TeamUser;
 use App\Models\User;
 use App\Models\UserParentChild;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\UserOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -23,9 +23,9 @@ class ListParentChildAssignmentsAction
      */
     public function execute(array $filters): array
     {
-        $ownership = OwnershipFilter::forAuthUser();
+        $resource = new UserOwnerResource;
 
-        $assignmentsQuery = $this->leaderUsersQuery($ownership);
+        $assignmentsQuery = $this->leaderUsersQuery($resource);
 
         SortInput::fromValidatedArray(
             $filters,
@@ -68,7 +68,7 @@ class ListParentChildAssignmentsAction
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        $optionsQuery = $this->teamMemberUsersQuery($ownership)
+        $optionsQuery = $this->teamMemberUsersQuery($resource)
             ->orderBy('name')
             ->orderBy('id');
 
@@ -93,7 +93,7 @@ class ListParentChildAssignmentsAction
      *
      * @return Builder<User>
      */
-    private function leaderUsersQuery(OwnershipFilter $ownership): Builder
+    private function leaderUsersQuery(UserOwnerResource $resource): Builder
     {
         $leaderUserIds = TeamUser::query()
             ->where('team_role', TeamRole::LEADER->value)
@@ -103,8 +103,8 @@ class ListParentChildAssignmentsAction
             ->with(['role', 'assignedParentLink.parentUser'])
             ->whereIn('id', $leaderUserIds);
 
-        if (! $ownership->isAdmin()) {
-            $query->whereIn('id', $ownership->allowedUserIds());
+        if (! $resource->isAdmin()) {
+            $query->whereIn('id', $resource->allowedUserIds());
         }
 
         return $query;
@@ -115,7 +115,7 @@ class ListParentChildAssignmentsAction
      *
      * @return Builder<User>
      */
-    private function teamMemberUsersQuery(OwnershipFilter $ownership): Builder
+    private function teamMemberUsersQuery(UserOwnerResource $resource): Builder
     {
         $memberUserIds = TeamUser::query()
             ->whereIn('team_role', [TeamRole::LEADER->value, TeamRole::MEMBER->value])
@@ -123,8 +123,8 @@ class ListParentChildAssignmentsAction
 
         $query = User::query()->whereIn('id', $memberUserIds);
 
-        if (! $ownership->isAdmin()) {
-            $query->whereIn('id', $ownership->allowedUserIds());
+        if (! $resource->isAdmin()) {
+            $query->whereIn('id', $resource->allowedUserIds());
         }
 
         return $query;

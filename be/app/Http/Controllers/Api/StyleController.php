@@ -24,7 +24,7 @@ class StyleController extends BaseController
      */
     public function index(ListStylesRequest $request): JsonResponse
     {
-        $paginator = $this->styleService->list($request->validated(), $request->user());
+        $paginator = $this->styleService->list($request->validated());
 
         return $this->sendResponse([
             'data' => StyleResource::collection($paginator->items()),
@@ -58,25 +58,5 @@ class StyleController extends BaseController
         $this->styleService->delete($style);
 
         return $this->sendResponse([], Response::HTTP_NO_CONTENT);
-    }
-
-    /**
-     * Style options for select inputs
-     */
-    public function options(): JsonResponse
-    {
-        $styles = Style::query()
-            ->select(['id', 'code', 'name'])
-            ->whereNull('deleted_at')
-            ->orderBy('name')
-            ->get();
-
-        return $this->sendResponse([
-            'data' => $styles->map(fn (Style $style) => [
-                'id' => $style->id,
-                'code' => $style->code,
-                'name' => $style->name,
-            ]),
-        ]);
     }
 }

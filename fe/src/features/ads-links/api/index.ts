@@ -47,28 +47,28 @@ export const adsLinksApi = {
 
 export const postOptionsApi = {
   async list(): Promise<PostOption[]> {
-    const res = await axiosInstance.get<{ data: PostOption[] }>('/posts/options')
+    const res = await axiosInstance.get<{ data: PostOption[] }>('/options/posts')
     return res.data.data
   },
 }
 
 export const channelOptionsApi = {
   async list(): Promise<ChannelOption[]> {
-    const res = await axiosInstance.get<{ data: ChannelOption[] }>('/channels/options')
+    const res = await axiosInstance.get<{ data: ChannelOption[] }>('/options/channels')
     return res.data.data
   },
 }
 
 export const siteOptionsApi = {
   async list(): Promise<SiteOption[]> {
-    const res = await axiosInstance.get<{ data: SiteOption[] }>('/sites/options')
+    const res = await axiosInstance.get<{ data: SiteOption[] }>('/options/sites')
     return res.data.data
   },
 }
 
 export const userOptionsApi = {
   async list(): Promise<UserOption[]> {
-    const res = await axiosInstance.get<{ data: UserOption[] }>('/users/options')
+    const res = await axiosInstance.get<{ data: UserOption[] }>('/options/users')
     return res.data.data
   },
 }

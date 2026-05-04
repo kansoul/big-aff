@@ -3,7 +3,7 @@
 namespace App\Actions\Account;
 
 use App\Models\Account;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,8 +17,7 @@ class UpdateAccountAction
      */
     public function execute(Account $account, array $data): Account
     {
-        $ownership = OwnershipFilter::forAuthUser();
-        $ownership->authorizeAccount($account);
+        (new AccountOwnerResource)->authorize($account);
 
         $userId = array_key_exists('user_id', $data) ? ($data['user_id'] !== null ? (int) $data['user_id'] : null) : false;
         unset($data['user_id']);

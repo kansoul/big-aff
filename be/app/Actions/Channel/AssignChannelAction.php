@@ -5,7 +5,7 @@ namespace App\Actions\Channel;
 use App\Models\Channel;
 use App\Models\ChannelUser;
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,11 +23,7 @@ class AssignChannelAction
      */
     public function execute(User $user, array $channelCodes): array
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
-        if (! $ownership->isAdmin() && ! \in_array($user->id, $ownership->allowedUserIds(), true)) {
-            throw new AuthorizationException;
-        }
+        (new UserOwnerResource)->authorize($user);
 
         $channels = Channel::whereIn('code', $channelCodes)
             ->get(['id', 'code'])

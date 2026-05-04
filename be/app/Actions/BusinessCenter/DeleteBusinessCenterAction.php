@@ -3,7 +3,7 @@
 namespace App\Actions\BusinessCenter;
 
 use App\Models\BusinessCenter;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\BusinessCenterOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 
 class DeleteBusinessCenterAction
@@ -13,7 +13,7 @@ class DeleteBusinessCenterAction
      */
     public function execute(BusinessCenter $businessCenter): void
     {
-        OwnershipFilter::forAuthUser()->authorizeBusinessCenter($businessCenter);
+        (new BusinessCenterOwnerResource)->authorize($businessCenter);
 
         $businessCenter->delete();
     }
