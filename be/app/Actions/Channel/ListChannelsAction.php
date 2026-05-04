@@ -3,8 +3,7 @@
 namespace App\Actions\Channel;
 
 use App\Models\Channel;
-use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\ChannelOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -16,17 +15,11 @@ class ListChannelsAction
     /**
      * @param  array<string, mixed>  $filters
      */
-    public function execute(array $filters, User $user): LengthAwarePaginator
+    public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = Channel::query();
 
-        $ownership->applyThroughChannel($query, 'code');
-
-        if (! $user->is_full_access) {
-            $query->where('is_active', true);
-        }
+        (new ChannelOwnerResource)->applyTo($query);
 
         $query
             ->when(! empty($filters['query']), function ($q) use ($filters): void {

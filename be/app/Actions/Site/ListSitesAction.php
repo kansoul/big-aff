@@ -4,11 +4,10 @@ namespace App\Actions\Site;
 
 use App\Http\Requests\Site\ListSitesRequest;
 use App\Models\Site;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\SiteOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 
 class ListSitesAction
 {
@@ -31,18 +30,9 @@ class ListSitesAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = Site::query()->with(['logo', 'favicon']);
 
-        if (! $ownership->isAdmin()) {
-            $query->where(function (Builder $q) use ($ownership) {
-                $q->whereIn('created_by', $ownership->allowedUserIds())
-                    ->orWhereHas('users', function (Builder $uq) use ($ownership) {
-                        $uq->whereIn('users.id', $ownership->allowedUserIds());
-                    });
-            });
-        }
+        (new SiteOwnerResource)->applyTo($query);
 
         if (! empty($filters['keyword'])) {
             $keyword = $filters['keyword'];

@@ -7,7 +7,7 @@ use App\Models\RevenueChartReport;
 use App\Models\RevenueReport;
 use App\Models\Style;
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\StyleOwnerResource;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,16 +21,13 @@ class GetStyleReportRangeAction
     {
         /** @var User $user */
         $user = Auth::user();
-        $ownership = OwnershipFilter::forAuthUser();
 
         $allowedChannelCodes = null;
-        if (! $user->isAdmin) {
-            $allowedStyleCodes = Style::query()
-                ->whereIn('created_by', $ownership->allowedUserIds())
-                ->pluck('code')
-                ->all();
+        if (! $user->is_admin) {
+            $styleSubquery = Style::query()->select('code');
+            (new StyleOwnerResource)->applyTo($styleSubquery);
 
-            $allowedChannelCodes = RevenueChartReport::whereIn('style_code', $allowedStyleCodes)
+            $allowedChannelCodes = RevenueChartReport::whereIn('style_code', $styleSubquery)
                 ->distinct()
                 ->pluck('channel_code')
                 ->all();

@@ -34,10 +34,12 @@ class RevenueReportController extends BaseController
      */
     public function index(ListRevenueReportsRequest $request): JsonResponse
     {
-        $paginator = $this->revenueReportService->list($request->validated());
+        $result = $this->revenueReportService->list($request->validated());
+        $paginator = $result['paginator'];
 
         return $this->sendResponse([
             'data' => RevenueReportResource::collection($paginator->items()),
+            'summary' => $result['summary'],
             'pagination' => $this->parsePagination($paginator),
         ]);
     }

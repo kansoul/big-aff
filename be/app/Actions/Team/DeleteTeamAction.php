@@ -6,7 +6,7 @@ use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Models\TeamUser;
 use App\Models\UserParentChild;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\TeamOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
@@ -17,8 +17,7 @@ class DeleteTeamAction
      */
     public function execute(Team $team): void
     {
-        $ownership = OwnershipFilter::forAuthUser();
-        $ownership->authorizeTeamManagement($team);
+        (new TeamOwnerResource)->authorize($team);
 
         DB::transaction(function () use ($team): void {
             $memberIds = TeamUser::query()

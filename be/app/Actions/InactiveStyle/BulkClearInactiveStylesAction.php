@@ -3,7 +3,7 @@
 namespace App\Actions\InactiveStyle;
 
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Support\Facades\DB;
 
 class BulkClearInactiveStylesAction
@@ -21,7 +21,6 @@ class BulkClearInactiveStylesAction
     public function execute(array $filters): int
     {
         $twoMonthsAgo = now()->subMonths(2);
-        $ownership = OwnershipFilter::forAuthUser();
 
         $query = User::query()
             ->join('styles', 'styles.id', '=', 'users.style_id')
@@ -41,7 +40,7 @@ class BulkClearInactiveStylesAction
                     ->orWhere(DB::raw('latest_revenue.last_revenue_date'), '<', $twoMonthsAgo);
             });
 
-        $ownership->applyTo($query, 'users.id');
+        (new UserOwnerResource)->applyTo($query);
 
         if (! empty($filters['manager_id'])) {
             $childUserIds = DB::table('user_parent_child')

@@ -5,7 +5,8 @@ namespace App\Actions\RevenueStats;
 use App\Enums\TeamRole;
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountLinkedOwnerResource;
+use App\Support\OwnerResource\ChannelLinkedOwnerResource;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -33,9 +34,8 @@ class BuildRevenueStatsUserRowsAction
      */
     public function execute(array $filters): Collection
     {
-        $ownership = OwnershipFilter::forAuthUser();
-        $spendByUser = $this->spendByUser($filters, $ownership);
-        $revenueByUser = $this->revenueByUser($filters, $ownership);
+        $spendByUser = $this->spendByUser($filters);
+        $revenueByUser = $this->revenueByUser($filters);
 
         $userIds = $spendByUser->keys()
             ->merge($revenueByUser->keys())
@@ -82,7 +82,7 @@ class BuildRevenueStatsUserRowsAction
      *     account_ids?: int[]|null
      * }  $filters
      */
-    private function spendByUser(array $filters, OwnershipFilter $ownership): Collection
+    private function spendByUser(array $filters): Collection
     {
         $perAccount = InsightReport::query()
             ->when(
@@ -106,7 +106,7 @@ class BuildRevenueStatsUserRowsAction
             ->selectRaw('account_id, COALESCE(SUM(spend), 0) as spend')
             ->groupBy('account_id');
 
-        $ownership->applyThroughAccount($perAccount);
+        (new AccountLinkedOwnerResource)->applyTo($perAccount);
 
         $latestAccountUserIds = DB::table('account_user')
             ->groupBy('account_id')
@@ -133,7 +133,7 @@ class BuildRevenueStatsUserRowsAction
      *     channel_codes?: string[]|null
      * }  $filters
      */
-    private function revenueByUser(array $filters, OwnershipFilter $ownership): Collection
+    private function revenueByUser(array $filters): Collection
     {
         $perChannel = RevenueReport::query()
             ->when(
@@ -151,7 +151,7 @@ class BuildRevenueStatsUserRowsAction
             ->selectRaw('channel_code, COALESCE(SUM(estimated_earnings), 0) as revenue')
             ->groupBy('channel_code');
 
-        $ownership->applyThroughChannel($perChannel);
+        (new ChannelLinkedOwnerResource)->applyTo($perChannel);
 
         $latestChannelUserIds = DB::table('channel_user')
             ->whereNull('deleted_at')

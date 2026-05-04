@@ -39,7 +39,7 @@ class SendTelegramWarningJob implements ShouldBeUnique, ShouldQueue
      */
     public function uniqueId(): string
     {
-        return $this->campaignId . '-' . $this->adsLinkId;
+        return $this->campaignId.'-'.$this->adsLinkId;
     }
 
     /**

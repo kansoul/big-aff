@@ -3,7 +3,7 @@
 namespace App\Actions\Account;
 
 use App\Models\Account;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountOwnerResource;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -14,12 +14,10 @@ class GetAccountOptionsAction
      */
     public function execute(?int $userId = null): Collection
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = Account::query()
             ->select(['id', 'account_id', 'account_name', 'team_id'])
             ->orderBy('account_name');
-        $ownership->applyThroughAccount($query);
+        (new AccountOwnerResource)->applyTo($query);
 
         if ($userId !== null) {
             $teamIds = DB::table('team_user')

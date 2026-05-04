@@ -3,13 +3,13 @@
 namespace App\Actions\Channel;
 
 use App\Models\Channel;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\ChannelOwnerResource;
 
 class DeleteChannelAction
 {
     public function execute(Channel $channel): void
     {
-        OwnershipFilter::forAuthUser()->authorize($channel->created_by);
+        (new ChannelOwnerResource)->authorize($channel);
 
         $channel->delete();
     }

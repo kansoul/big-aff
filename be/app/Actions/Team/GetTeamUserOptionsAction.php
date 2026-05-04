@@ -6,7 +6,7 @@ use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Models\TeamUser;
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Support\Collection;
 
 class GetTeamUserOptionsAction
@@ -16,7 +16,7 @@ class GetTeamUserOptionsAction
      */
     public function execute(Team $team): Collection
     {
-        $ownership = OwnershipFilter::forAuthUser();
+        $resource = new UserOwnerResource;
 
         $assignedUserIds = $team->users()->pluck('users.id');
 
@@ -32,7 +32,9 @@ class GetTeamUserOptionsAction
             ->whereNotIn('id', $occupiedUserIds)
             ->orderBy('name');
 
-        $ownership->applyTo($query);
+        if (! $resource->isAdmin()) {
+            $query->whereIn('created_by', $resource->allowedUserIds());
+        }
 
         return $query->get();
     }

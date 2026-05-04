@@ -3,7 +3,7 @@
 namespace App\Actions\RevenueChartReport;
 
 use App\Models\RevenueChartReport;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\ChannelLinkedOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Carbon\Carbon;
@@ -26,8 +26,6 @@ class ListRevenueChartReportsAction
             return RevenueChartReport::query()->whereRaw('1 = 0')->paginate(1);
         }
 
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = RevenueChartReport::query()
             ->addSelect([
                 DB::raw('revenue_chart_reports.*'),
@@ -41,7 +39,7 @@ class ListRevenueChartReportsAction
                 DB::raw('funnel_clicks - COALESCE(LAG(funnel_clicks) OVER (PARTITION BY channel_code, DATE(datetime) ORDER BY datetime), 0) as real_funnel_clicks'),
             ]);
 
-        $ownership->applyThroughChannel($query);
+        (new ChannelLinkedOwnerResource)->applyTo($query);
 
         if (! empty($filters['date_from'])) {
             $query->where('datetime', '>=', Carbon::parse($filters['date_from'])->startOfDay());

@@ -3,7 +3,7 @@
 namespace App\Actions\CampaignRule;
 
 use App\Models\CampaignRule;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\CampaignRuleOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -27,10 +27,8 @@ class ListCampaignRulesAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = CampaignRule::query()->with(['user', 'applyRules']);
-        $ownership->applyTo($query, 'user_id');
+        (new CampaignRuleOwnerResource)->applyTo($query);
 
         if (isset($filters['entity_type'])) {
             $query->where('entity_type', $filters['entity_type']);

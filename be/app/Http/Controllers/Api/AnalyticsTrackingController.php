@@ -18,17 +18,28 @@ class AnalyticsTrackingController extends BaseController
     ) {}
 
     /**
+     * Get analytics tracking filter options
+     *
+     * Returns available ads_links and campaign IDs for filter dropdowns.
+     *
+     * @response 200 {"data": {"ads_links": [...], "campaigns": [...]}}
+     */
+    public function filterOptions(): JsonResponse
+    {
+        return $this->sendResponse(['data' => $this->analyticsTrackingService->filterOptions()]);
+    }
+
+    /**
      * Get analytics tracking stats
      *
-     * Returns aggregated views and clicks from InsightReport.
-     * Maps: search_views, article_views, ad_clicks (search ad clicks), search_clicks (article related clicks).
+     * Returns aggregated views, clicks, and failed ad loads from event tables.
      *
      * @queryParam date_from string Start date (Y-m-d). Example: 2026-04-01
      * @queryParam date_to string End date (Y-m-d). Example: 2026-04-30
-     * @queryParam account_id string Filter by account ID. Example: act_123456
+     * @queryParam ads_link_id integer Filter by AdsLink ID.
      * @queryParam campaign_id string Filter by campaign ID.
      *
-     * @response 200 {"data": {"views": [...], "clicks": [...]}}
+     * @response 200 {"data": {"views": {...}, "clicks": {...}, "loads": {...}}}
      */
     public function stats(AnalyticsTrackingStatsRequest $request): JsonResponse
     {
@@ -38,19 +49,18 @@ class AnalyticsTrackingController extends BaseController
     }
 
     /**
-     * List keyword sets for tracking
+     * List keyword click tracking
      *
-     * Returns paginated keyword sets (name, keywords array).
-     * Replaces the old keyword click tracking — keyword performance is now managed via KeywordSet.
+     * Returns paginated keyword click data grouped by keyword.
      *
-     * @queryParam keyword string Search by keyword set name.
+     * @queryParam keyword string Search by keyword text.
      * @queryParam date_from string Start date (Y-m-d).
      * @queryParam date_to string End date (Y-m-d).
-     * @queryParam account_id string Filter by account ID.
+     * @queryParam ads_link_id integer Filter by AdsLink ID.
      * @queryParam campaign_id string Filter by campaign ID.
-     * @queryParam sort_by string Column to sort by. Example: name
+     * @queryParam sort_by string Column to sort by. Example: click_count
      * @queryParam sort_direction string asc or desc. Example: desc
-     * @queryParam per_page integer Items per page. Example: 15
+     * @queryParam per_page integer Items per page. Example: 30
      * @queryParam page integer Page number. Example: 1
      *
      * @response 200 {"data": [...], "pagination": {"current_page": 1, "total": 50}}

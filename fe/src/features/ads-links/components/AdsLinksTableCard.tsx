@@ -35,6 +35,7 @@ import { buildCopyLink } from '@/lib/ads-link'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { postViewPath } from '@/constants/paths'
 import { Link } from 'react-router-dom'
+import type { RBACRole } from '@/shared/types'
 
 async function copyToClipboard(text: string): Promise<void> {
   await navigator.clipboard.writeText(text)
@@ -103,10 +104,11 @@ type ActionMeta = {
   onEditRow: (row: AdsLink) => void
   onToggleHide: (row: AdsLink) => void
   onOpenCopyDialog: (state: Omit<CopyDialogState, 'open'>) => void
+  role: RBACRole
 }
 
 function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
-  const { canUpdate, users, onEditRow, onToggleHide, onOpenCopyDialog } = meta
+  const { canUpdate, users, onEditRow, onToggleHide, onOpenCopyDialog, role } = meta
 
   return [
     {
@@ -295,17 +297,21 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
         )
       },
     },
-    {
-      accessorKey: 'created_by',
-      header: 'Created by',
-      size: 130,
-      Cell: ({ row }) => {
-        const id = row.original.created_by
-        if (!id) return <span className="text-muted-foreground">—</span>
-        const user = users.find((u) => u.id === id)
-        return <span className="text-xs text-foreground">{user?.name ?? String(id)}</span>
-      },
-    },
+    ...(!role.isMember
+      ? [
+          {
+            accessorKey: 'created_by',
+            header: 'Created by',
+            size: 130,
+            Cell: ({ row }) => {
+              const id = row.original.created_by
+              if (!id) return <span className="text-muted-foreground">—</span>
+              const user = users.find((u) => u.id === id)
+              return <span className="text-xs text-foreground">{user?.name ?? String(id)}</span>
+            },
+          } satisfies MRT_ColumnDef<AdsLink>,
+        ]
+      : []),
     ...(canUpdate
       ? [
           {
@@ -393,6 +399,7 @@ type AdsLinksTableCardProps = {
   onToggleHide: (row: AdsLink) => void
   onPaginationChange: (page: number, perPage: number) => void
   onSortingChange: (orderBy: string | null, order: 'asc' | 'desc' | null) => void
+  role: RBACRole
 }
 
 function AdsLinksTableCardInner({
@@ -414,6 +421,7 @@ function AdsLinksTableCardInner({
   onToggleHide,
   onPaginationChange,
   onSortingChange,
+  role,
 }: AdsLinksTableCardProps) {
   const [copyDialog, setCopyDialog] = useState<CopyDialogState>(COPY_DIALOG_CLOSED)
   const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
@@ -428,8 +436,9 @@ function AdsLinksTableCardInner({
         onEditRow,
         onToggleHide,
         onOpenCopyDialog: (state) => setCopyDialog({ ...state, open: true }),
+        role,
       }),
-    [canUpdate, users, onEditRow, onToggleHide],
+    [canUpdate, users, onEditRow, onToggleHide, role],
   )
 
   // Build filter field definitions for FilterPanel
@@ -482,6 +491,7 @@ function AdsLinksTableCardInner({
         field: 'created_by',
         label: 'Created by',
         type: 'select',
+        hidden: role.isMember,
         value: filters.created_by ? String(filters.created_by) : null,
         options: users.map((u) => ({ label: u.name, value: String(u.id) })),
       },
@@ -500,7 +510,7 @@ function AdsLinksTableCardInner({
         placeholder: 'Search Google ID…',
       },
     ],
-    [filters, posts, sites, channels, users],
+    [filters, posts, sites, channels, users, role],
   )
 
   const activeChips = useMemo<ActiveFilterChip[]>(() => {
@@ -544,7 +554,7 @@ function AdsLinksTableCardInner({
         displayValue: `${filters.date_range?.from ?? '…'} -> ${filters.date_range?.to ?? '…'}`,
       })
     }
-    if (filters.created_by) {
+    if (filters.created_by && !role.isMember) {
       const opt = users.find((user) => user.id === filters.created_by)
       chips.push({
         key: 'created_by',
@@ -564,7 +574,7 @@ function AdsLinksTableCardInner({
     }
 
     return chips
-  }, [filters, posts, sites, channels, users])
+  }, [filters, posts, sites, channels, users, role])
 
   function handleRemoveChip(key: string) {
     if (key === 'date_range') {

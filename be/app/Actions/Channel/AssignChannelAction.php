@@ -5,7 +5,7 @@ namespace App\Actions\Channel;
 use App\Models\Channel;
 use App\Models\ChannelUser;
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,11 +23,7 @@ class AssignChannelAction
      */
     public function execute(User $user, array $channelCodes): array
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
-        if (! $ownership->isAdmin() && ! \in_array($user->id, $ownership->allowedUserIds(), true)) {
-            throw new AuthorizationException;
-        }
+        (new UserOwnerResource)->authorize($user);
 
         $channels = Channel::whereIn('code', $channelCodes)
             ->get(['id', 'code'])
@@ -77,10 +73,63 @@ class AssignChannelAction
 
             $allowedIds = array_values(array_diff($channelIds, $skippedIds));
 
+            // Capture channels being removed from target user so we can re-assign to requester.
+            $removedChannelIds = [];
+            if ((int) $requesterId !== $user->id) {
+                $removedChannelIds = ChannelUser::query()
+                    ->where('user_id', $user->id)
+                    ->when(! empty($allowedIds), fn ($q) => $q->whereNotIn('channel_id', $allowedIds))
+                    ->whereNull('deleted_at')
+                    ->pluck('channel_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+            }
+
             ChannelUser::query()
                 ->where('user_id', $user->id)
                 ->when(! empty($allowedIds), fn ($q) => $q->whereNotIn('channel_id', $allowedIds))
                 ->delete();
+
+            // Re-assign removed channels back to the requester (if they differ from target user).
+            if (! empty($removedChannelIds)) {
+                $alreadyTaken = ChannelUser::query()
+                    ->whereIn('channel_id', $removedChannelIds)
+                    ->whereNull('deleted_at')
+                    ->pluck('channel_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+
+                $toReassign = array_values(array_diff($removedChannelIds, $alreadyTaken));
+
+                if (! empty($toReassign)) {
+                    ChannelUser::withTrashed()
+                        ->where('user_id', $requesterId)
+                        ->whereIn('channel_id', $toReassign)
+                        ->whereNotNull('deleted_at')
+                        ->update(['deleted_at' => null, 'updated_at' => now()]);
+
+                    $existingRequester = ChannelUser::withTrashed()
+                        ->where('user_id', $requesterId)
+                        ->whereIn('channel_id', $toReassign)
+                        ->pluck('channel_id')
+                        ->map(fn ($id) => (int) $id)
+                        ->all();
+
+                    $toInsertForRequester = array_values(array_diff($toReassign, $existingRequester));
+
+                    if (! empty($toInsertForRequester)) {
+                        $now = now();
+                        ChannelUser::insert(
+                            array_map(fn (int $channelId) => [
+                                'user_id' => $requesterId,
+                                'channel_id' => $channelId,
+                                'created_at' => $now,
+                                'updated_at' => $now,
+                            ], $toInsertForRequester),
+                        );
+                    }
+                }
+            }
 
             if (empty($allowedIds)) {
                 return;

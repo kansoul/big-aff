@@ -15,7 +15,7 @@ class PostBySlugResource extends JsonResource
     public function toArray(Request $request): array
     {
         $domain = $request->header('x-internal-site');
-        $domain = 'https://' . preg_replace('/^https?:\/\//', '', rtrim($domain, '/'));
+        $domain = 'https://'.preg_replace('/^https?:\/\//', '', rtrim($domain, '/'));
 
         return [
             'id' => $this->id,
@@ -54,7 +54,7 @@ class PostBySlugResource extends JsonResource
         return preg_replace_callback('/src="([^"]*\/storage\/([^"]+))"/i', function ($matches) use ($domain) {
             $pathAfterStorage = $matches[2];
 
-            return 'src="' . $domain . '/' . ltrim($pathAfterStorage, '/') . '"';
+            return 'src="'.$domain.'/'.ltrim($pathAfterStorage, '/').'"';
         }, $this->content);
     }
 
@@ -67,6 +67,6 @@ class PostBySlugResource extends JsonResource
             return null;
         }
 
-        return $domain . '/' . ltrim($this->featureMedia->path, '/');
+        return $domain.'/'.ltrim($this->featureMedia->path, '/');
     }
 }

@@ -6,7 +6,6 @@ use App\Actions\Site\AssignSiteAction;
 use App\Actions\Site\ConfigSiteAction;
 use App\Actions\Site\CreateSiteAction;
 use App\Actions\Site\DeleteSiteAction;
-use App\Actions\Site\GetSiteOptionsAction;
 use App\Actions\Site\GetSiteUserOptionsAction;
 use App\Actions\Site\ListSitesAction;
 use App\Actions\Site\UpdateSiteAction;
@@ -22,18 +21,9 @@ class SiteService
         private readonly DeleteSiteAction $deleteSiteAction,
         private readonly ListSitesAction $listSitesAction,
         private readonly AssignSiteAction $assignSiteAction,
-        private readonly GetSiteOptionsAction $getSiteOptionsAction,
         private readonly GetSiteUserOptionsAction $getSiteUserOptionsAction,
         private readonly ConfigSiteAction $configSiteAction
     ) {}
-
-    /**
-     * @return Collection<int, array{id: int, name: string}>
-     */
-    public function options(): Collection
-    {
-        return $this->getSiteOptionsAction->execute();
-    }
 
     /**
      * @param  array<string, mixed>  $filters

@@ -26,199 +26,6 @@ import type { TablePaginationState } from '@/lib/utils'
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 
-function getColumns(): MRT_ColumnDef<RevenueReportRow>[] {
-  return [
-    {
-      accessorKey: 'id',
-      header: 'ID',
-      size: 65,
-      Cell: ({ row }) => (
-        <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
-      ),
-    },
-    {
-      accessorKey: 'date',
-      header: 'Date',
-      size: 150,
-      enableSorting: true,
-      Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.date}</span>,
-    },
-    {
-      accessorKey: 'channel_name',
-      id: 'channel_code',
-      header: 'Channel',
-      size: 160,
-      enableSorting: true,
-      Cell: ({ row }) => (
-        <div className="flex flex-col gap-0.5">
-          <span className="text-muted-foreground">{row.original.channel_name}</span>
-          <span className="inline-block w-fit rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 font-mono text-[11px]">
-            {row.original.channel_code}
-          </span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'page_views',
-      header: 'Page Views',
-      size: 110,
-      enableSorting: true,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <span className="tabular-nums text-muted-foreground/95">
-          {row.original.page_views.toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'clicks',
-      header: 'Clicks',
-      size: 90,
-      enableSorting: true,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <span className="tabular-nums text-muted-foreground/95">
-          {row.original.clicks.toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'estimated_earnings',
-      header: 'Earnings',
-      size: 110,
-      enableSorting: true,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <Badge variant="secondary">${row.original.estimated_earnings.toFixed(2)}</Badge>
-      ),
-    },
-    {
-      accessorKey: 'cost_per_click',
-      header: 'CPC',
-      size: 90,
-      enableSorting: true,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <span className="tabular-nums text-muted-foreground/95">
-          ${row.original.cost_per_click.toFixed(2)}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'ad_requests',
-      header: 'Ad Requests',
-      size: 110,
-      enableSorting: true,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <span className="tabular-nums text-muted-foreground/95">
-          {row.original.ad_requests.toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'impressions',
-      header: 'Impressions',
-      size: 110,
-      enableSorting: true,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <span className="tabular-nums text-muted-foreground/95">
-          {row.original.impressions.toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'ad_requests_rpm',
-      header: 'RPM (Req)',
-      size: 100,
-      enableSorting: false,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <span className="tabular-nums text-muted-foreground/95">
-          ${row.original.ad_requests_rpm.toFixed(2)}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'impressions_rpm',
-      header: 'RPM (Imp)',
-      size: 100,
-      enableSorting: false,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <span className="tabular-nums text-muted-foreground/95">
-          ${row.original.impressions_rpm.toFixed(2)}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'funnel_requests',
-      header: 'Funnel Req',
-      size: 110,
-      enableSorting: true,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <span className="tabular-nums text-muted-foreground/95">
-          {row.original.funnel_requests != null
-            ? row.original.funnel_requests.toLocaleString()
-            : '—'}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'funnel_impressions',
-      header: 'Funnel Imp',
-      size: 110,
-      enableSorting: true,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <span className="tabular-nums text-muted-foreground/95">
-          {row.original.funnel_impressions != null
-            ? row.original.funnel_impressions.toLocaleString()
-            : '—'}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'funnel_clicks',
-      header: 'Funnel Clicks',
-      size: 110,
-      enableSorting: true,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <span className="tabular-nums text-muted-foreground/95">
-          {row.original.funnel_clicks != null ? row.original.funnel_clicks.toLocaleString() : '—'}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'funnel_rpm',
-      header: 'Funnel RPM',
-      size: 110,
-      enableSorting: true,
-      mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-      mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-      Cell: ({ row }) => (
-        <span className="tabular-nums text-muted-foreground/95">
-          {row.original.funnel_rpm != null ? `$${row.original.funnel_rpm.toFixed(2)}` : '—'}
-        </span>
-      ),
-    },
-  ]
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const DEFAULT_FILTERS: RevenueReportFilterParams = {}
@@ -253,6 +60,7 @@ function buildParams(
 
 export function RevenueReportPage() {
   const [data, setData] = useState<RevenueReportRow[]>([])
+  const [summary, setSummary] = useState<Partial<RevenueReportRow>>({})
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([])
@@ -290,6 +98,7 @@ export function RevenueReportPage() {
           per_page: perPage,
         })
         setData(response.data)
+        setSummary(response.summary)
         setRowCount(response.pagination.total)
       } catch {
         toast.error('Failed to load revenue report')
@@ -339,22 +148,8 @@ export function RevenueReportPage() {
         value: filters.channel_codes ?? [],
         options: channelOptions.map((c) => ({ label: c.name, value: c.code })),
       },
-      {
-        field: 'style_codes',
-        label: 'Styles',
-        type: 'multiselect',
-        value: filters.style_codes ?? [],
-        options: styleOptions.map((s) => ({ label: `${s.name} (${s.code})`, value: s.code })),
-      },
     ],
-    [
-      filters.date_from,
-      filters.date_to,
-      filters.channel_codes,
-      filters.style_codes,
-      channelOptions,
-      styleOptions,
-    ],
+    [filters.date_from, filters.date_to, filters.channel_codes, channelOptions],
   )
 
   const activeChips = useMemo<ActiveFilterChip[]>(() => {
@@ -416,7 +211,272 @@ export function RevenueReportPage() {
     }
   }
 
-  const columns = useMemo(() => getColumns(), [])
+  const columns = useMemo<MRT_ColumnDef<RevenueReportRow>[]>(
+    () => [
+      {
+        accessorKey: 'id',
+        header: 'ID',
+        size: 65,
+        Cell: ({ row }) => (
+          <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+        ),
+        Footer: () => <span className="text-[11px] font-bold uppercase tracking-wider">Total</span>,
+      },
+      {
+        accessorKey: 'date',
+        header: 'Date',
+        size: 150,
+        enableSorting: true,
+        Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.date}</span>,
+      },
+      {
+        accessorKey: 'channel_name',
+        id: 'channel_code',
+        header: 'Channel',
+        size: 160,
+        enableSorting: true,
+        Cell: ({ row }) => (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-muted-foreground">{row.original.channel_name}</span>
+            <span className="inline-block w-fit rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 font-mono text-[11px]">
+              {row.original.channel_code}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'page_views',
+        header: 'Page Views',
+        size: 110,
+        enableSorting: true,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground/95">
+            {row.original.page_views.toLocaleString()}
+          </span>
+        ),
+        Footer: () => (
+          <span className="tabular-nums font-bold text-foreground">
+            {summary.page_views?.toLocaleString() ?? 0}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'clicks',
+        header: 'Clicks',
+        size: 90,
+        enableSorting: true,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground/95">
+            {row.original.clicks.toLocaleString()}
+          </span>
+        ),
+        Footer: () => (
+          <span className="tabular-nums font-bold text-foreground">
+            {summary.clicks?.toLocaleString() ?? 0}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'estimated_earnings',
+        header: 'Earnings',
+        size: 110,
+        enableSorting: true,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <Badge variant="secondary">${row.original.estimated_earnings.toFixed(2)}</Badge>
+        ),
+        Footer: () => (
+          <Badge variant="default" className="font-bold">
+            ${(summary.estimated_earnings ?? 0).toFixed(2)}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: 'cost_per_click',
+        header: 'CPC',
+        size: 90,
+        enableSorting: true,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground/95">
+            ${row.original.cost_per_click.toFixed(2)}
+          </span>
+        ),
+        Footer: () => (
+          <span className="tabular-nums font-bold text-foreground">
+            ${(summary.cost_per_click ?? 0).toFixed(2)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'ad_requests',
+        header: 'Ad Requests',
+        size: 110,
+        enableSorting: true,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground/95">
+            {row.original.ad_requests.toLocaleString()}
+          </span>
+        ),
+        Footer: () => (
+          <span className="tabular-nums font-bold text-foreground">
+            {summary.ad_requests?.toLocaleString() ?? 0}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'impressions',
+        header: 'Impressions',
+        size: 110,
+        enableSorting: true,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground/95">
+            {row.original.impressions.toLocaleString()}
+          </span>
+        ),
+        Footer: () => (
+          <span className="tabular-nums font-bold text-foreground">
+            {summary.impressions?.toLocaleString() ?? 0}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'ad_requests_rpm',
+        header: 'RPM (Req)',
+        size: 100,
+        enableSorting: false,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground/95">
+            ${row.original.ad_requests_rpm.toFixed(2)}
+          </span>
+        ),
+        Footer: () => (
+          <span className="tabular-nums font-bold text-foreground">
+            ${(summary.ad_requests_rpm ?? 0).toFixed(2)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'impressions_rpm',
+        header: 'RPM (Imp)',
+        size: 100,
+        enableSorting: false,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground/95">
+            ${row.original.impressions_rpm.toFixed(2)}
+          </span>
+        ),
+        Footer: () => (
+          <span className="tabular-nums font-bold text-foreground">
+            ${(summary.impressions_rpm ?? 0).toFixed(2)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'funnel_requests',
+        header: 'Funnel Req',
+        size: 110,
+        enableSorting: true,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground/95">
+            {row.original.funnel_requests != null
+              ? row.original.funnel_requests.toLocaleString()
+              : '—'}
+          </span>
+        ),
+        Footer: () => (
+          <span className="tabular-nums font-bold text-foreground">
+            {summary.funnel_requests?.toLocaleString() ?? 0}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'funnel_impressions',
+        header: 'Funnel Imp',
+        size: 110,
+        enableSorting: true,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground/95">
+            {row.original.funnel_impressions != null
+              ? row.original.funnel_impressions.toLocaleString()
+              : '—'}
+          </span>
+        ),
+        Footer: () => (
+          <span className="tabular-nums font-bold text-foreground">
+            {summary.funnel_impressions?.toLocaleString() ?? 0}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'funnel_clicks',
+        header: 'Funnel Clicks',
+        size: 110,
+        enableSorting: true,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground/95">
+            {row.original.funnel_clicks != null ? row.original.funnel_clicks.toLocaleString() : '—'}
+          </span>
+        ),
+        Footer: () => (
+          <span className="tabular-nums font-bold text-foreground">
+            {summary.funnel_clicks?.toLocaleString() ?? 0}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'funnel_rpm',
+        header: 'Funnel RPM',
+        size: 110,
+        enableSorting: true,
+        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
+        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
+        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
+        Cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground/95">
+            {row.original.funnel_rpm != null ? `$${row.original.funnel_rpm.toFixed(2)}` : '—'}
+          </span>
+        ),
+        Footer: () => (
+          <span className="tabular-nums font-bold text-foreground">
+            ${(summary.funnel_rpm ?? 0).toFixed(2)}
+          </span>
+        ),
+      },
+    ],
+    [summary],
+  )
   const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
     useLocation().pathname,
     {

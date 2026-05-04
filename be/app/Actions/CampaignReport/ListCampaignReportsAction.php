@@ -4,7 +4,7 @@ namespace App\Actions\CampaignReport;
 
 use App\Models\CampaignReport;
 use App\Models\RealtimeReport;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -125,11 +125,11 @@ class ListCampaignReportsAction
      */
     public function buildBaseQuery(array $filters): Builder
     {
-        $ownership = OwnershipFilter::forAuthUser();
+        $resource = new AccountLinkedOwnerResource;
 
         $query = CampaignReport::query();
 
-        $ownership->applyThroughAccount($query);
+        $resource->applyTo($query);
 
         if (! empty($filters['date_from'])) {
             $query->whereDate('date_start', '>=', $filters['date_from']);
@@ -140,9 +140,9 @@ class ListCampaignReportsAction
         }
 
         if (! empty($filters['user_ids'])) {
-            $userIds = $ownership->isAdmin()
+            $userIds = $resource->isAdmin()
                 ? $filters['user_ids']
-                : array_values(array_intersect($filters['user_ids'], $ownership->allowedUserIds()));
+                : array_values(array_intersect($filters['user_ids'], $resource->allowedUserIds()));
 
             $query->whereIn('campaign_reports.account_id', function ($sub) use ($userIds, $filters) {
                 $sub->select('accounts.account_id')

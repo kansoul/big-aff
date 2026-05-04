@@ -28,6 +28,7 @@ export type RevenueReportOrderBy =
 export type RevenueReportOrder = 'asc' | 'desc'
 export interface RevenueReportListResponse {
   data: RevenueReportRow[]
+  summary: Partial<RevenueReportRow>
   pagination: RevenueReportPagination
 }
 

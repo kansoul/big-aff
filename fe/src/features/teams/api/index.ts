@@ -37,7 +37,7 @@ export const teamsApi = {
       description: !isNil(payload.description) ? payload.description : null,
     }),
 
-  listOptions: () => axiosInstance.get<{ data: { id: number; name: string }[] }>('/teams/options'),
+  listOptions: () => axiosInstance.get<{ data: { id: number; name: string }[] }>('/options/teams'),
 
   accountOptions: () => axiosInstance.get<TeamAccountOptionsResponse>('/teams/account-options'),
 

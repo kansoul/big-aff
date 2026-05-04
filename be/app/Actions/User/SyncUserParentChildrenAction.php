@@ -6,7 +6,7 @@ use App\Enums\TeamRole;
 use App\Models\TeamUser;
 use App\Models\User;
 use App\Models\UserParentChild;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -26,9 +26,9 @@ class SyncUserParentChildrenAction
      */
     public function execute(User $parent, ?array $childIds): void
     {
-        $ownership = OwnershipFilter::forAuthUser();
+        $resource = new UserOwnerResource;
 
-        if (! $ownership->isAdmin() && ! \in_array($parent->id, $ownership->allowedUserIds(), true)) {
+        if (! $resource->isAdmin() && ! \in_array($parent->id, $resource->allowedUserIds(), true)) {
             throw ValidationException::withMessages([
                 'parent' => [__('You cannot change assignments for this user.')],
             ]);
@@ -45,7 +45,7 @@ class SyncUserParentChildrenAction
         }
 
         if ($childIds !== []) {
-            $this->validateParentIsLeaderAndChildrenInSameTeam($parent, $childIds, $ownership);
+            $this->validateParentIsLeaderAndChildrenInSameTeam($parent, $childIds, $resource);
         }
 
         DB::transaction(function () use ($parent, $childIds): void {
@@ -75,7 +75,7 @@ class SyncUserParentChildrenAction
     private function validateParentIsLeaderAndChildrenInSameTeam(
         User $parent,
         array $childIds,
-        OwnershipFilter $ownership,
+        UserOwnerResource $resource,
     ): void {
         $parentMembership = TeamUser::query()
             ->where('user_id', $parent->id)
@@ -89,7 +89,7 @@ class SyncUserParentChildrenAction
         }
 
         $teamId = (int) $parentMembership->team_id;
-        $allowedIds = $ownership->isAdmin() ? null : $ownership->allowedUserIds();
+        $allowedIds = $resource->isAdmin() ? null : $resource->allowedUserIds();
 
         $validChildIds = TeamUser::query()
             ->where('team_id', $teamId)

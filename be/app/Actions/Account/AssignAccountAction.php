@@ -4,7 +4,8 @@ namespace App\Actions\Account;
 
 use App\Models\Account;
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountLinkedOwnerResource;
+use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,17 +22,13 @@ class AssignAccountAction
      */
     public function execute(User $user, array $accountIds): void
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
-        if (! $ownership->isAdmin() && ! \in_array($user->id, $ownership->allowedUserIds(), true)) {
-            throw new AuthorizationException;
-        }
+        (new UserOwnerResource)->authorize($user);
 
         $authUserId = (int) Auth::id();
 
         // All accounts accessible to the auth user
         $accessibleQuery = Account::query()->select('id');
-        $ownership->applyThroughAccount($accessibleQuery);
+        (new AccountLinkedOwnerResource)->applyTo($accessibleQuery);
         $accessibleAccountIds = $accessibleQuery
             ->pluck('id')
             ->map(fn ($id) => (int) $id)

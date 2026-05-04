@@ -5,7 +5,7 @@ namespace App\Actions\AdsDeliveryEntities;
 use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
 use App\Support\AdsDelivery\DeliveryInsightsReportFilters;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use Illuminate\Support\Collection;
 
 class GetAdsDeliveryEntitiesAction
@@ -16,8 +16,6 @@ class GetAdsDeliveryEntitiesAction
      */
     public function execute(string $campaignId, array $filters): array
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $adsetsQuery = AdsetInsightsReport::query()
             ->addSelect([
                 'adset_insights_reports.*',
@@ -38,8 +36,8 @@ class GetAdsDeliveryEntitiesAction
             ->orderByDesc('date_start')
             ->orderBy('ad_name');
 
-        $ownership->applyThroughAccount($adsetsQuery);
-        $ownership->applyThroughAccount($adsQuery);
+        (new AccountLinkedOwnerResource)->applyTo($adsetsQuery);
+        (new AccountLinkedOwnerResource)->applyTo($adsQuery);
 
         DeliveryInsightsReportFilters::apply($adsetsQuery, $filters, 'adsets');
         DeliveryInsightsReportFilters::apply($adsQuery, $filters, 'ads');

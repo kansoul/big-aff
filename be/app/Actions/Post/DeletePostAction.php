@@ -4,7 +4,7 @@ namespace App\Actions\Post;
 
 use App\Enums\PostStatus;
 use App\Models\Post;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\PostOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 
 class DeletePostAction
@@ -14,7 +14,7 @@ class DeletePostAction
      */
     public function execute(Post $post): void
     {
-        OwnershipFilter::forAuthUser()->authorize($post->created_by);
+        (new PostOwnerResource)->authorize($post);
 
         $post->update(['status' => PostStatus::TRASH]);
     }

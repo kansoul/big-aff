@@ -3,8 +3,8 @@
 namespace App\Actions\File;
 
 use App\Models\File;
+use App\Support\OwnerResource\FileResource;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Auth;
 
 class OptionsFileAction
 {
@@ -13,13 +13,12 @@ class OptionsFileAction
      */
     public function execute(array $data): Collection
     {
-        $user = Auth::user();
+        $query = File::query();
 
-        return File::query()
-            ->visibleToUser($user)
-            ->when(isset($data['alt_text']), function ($query) use ($data) {
-                $query->where('alt_text', 'like', '%'.$data['alt_text'].'%');
-            })
-            ->get();
+        (new FileResource)->applyTo($query);
+
+        $query->when(isset($data['alt_text']), fn ($q) => $q->where('alt_text', 'like', '%'.$data['alt_text'].'%'));
+
+        return $query->get();
     }
 }

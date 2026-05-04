@@ -9,6 +9,7 @@ use App\Http\Requests\Post\ListPostsRequest;
 use App\Http\Requests\Post\PublishPostRequest;
 use App\Http\Requests\Post\SearchPostRequest;
 use App\Http\Requests\Post\StorePostRequest;
+use App\Http\Requests\Post\ToggleHiddenPostRequest;
 use App\Http\Requests\Post\UpdatePostRequest;
 use App\Http\Resources\Post\LatestPostResource;
 use App\Http\Resources\Post\PostBySlugResource;
@@ -209,17 +210,23 @@ class PostController extends BaseController
     }
 
     /**
-     * Post options for select inputs
+     * Toggle post hidden status
      *
-     * Return a flat list of posts with their keyword sets for use in select/dropdown inputs.
+     * @urlParam post integer required The post ID. Example: 1
      *
-     * @response 200 {"data": [{"id": 1, "title": "My Post", "slug": "my-post", "keyword_sets": [{"id": 1, "name": "Set A"}]}]}
+     * @bodyParam is_hidden boolean required Whether the post is hidden. Example: true
+     *
+     * @response 200 {"data": {"id": 1, "is_hidden": true}}
+     * @response 403 {"message": "This action is unauthorized."}
+     * @response 404 {"message": "No query results for model [App\\Models\\Post] 1"}
      */
-    public function options(): JsonResponse
+    public function toggleHidden(Post $post, ToggleHiddenPostRequest $request): JsonResponse
     {
-        return $this->sendResponse([
-            'data' => $this->postService->options(),
-        ]);
+        $data = $request->validated();
+
+        $updated = $this->postService->toggleHidden($post, $data['is_hidden']);
+
+        return $this->sendResponse(['data' => new PostResource($updated)]);
     }
 
     /**

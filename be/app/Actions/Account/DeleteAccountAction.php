@@ -3,7 +3,7 @@
 namespace App\Actions\Account;
 
 use App\Models\Account;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 
 class DeleteAccountAction
@@ -13,7 +13,7 @@ class DeleteAccountAction
      */
     public function execute(Account $account): void
     {
-        OwnershipFilter::forAuthUser()->authorizeAccount($account);
+        (new AccountOwnerResource)->authorize($account);
 
         $account->delete();
     }

@@ -22,6 +22,7 @@ type BaseField = {
   label: string
   placeholder?: string
   className?: string
+  hidden?: boolean
 }
 
 export type SelectFilterField = BaseField & {
@@ -368,15 +369,19 @@ function FilterPanelInner(props: FilterPanelProps) {
         {/* Fields grid */}
         <CollapsibleContent>
           <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
-            {displayFields.map((field) => (
-              <div
-                key={field.field}
-                className={cn('flex flex-col gap-1.5', field.type === 'toggle' && 'justify-end')}
-              >
-                <label className="text-xs font-medium text-muted-foreground">{field.label}</label>
-                {renderField(field, (value) => handleChange(field.field, value))}
-              </div>
-            ))}
+            {displayFields.map((field) => {
+              if (field.hidden) return null
+
+              return (
+                <div
+                  key={field.field}
+                  className={cn('flex flex-col gap-1.5', field.type === 'toggle' && 'justify-end')}
+                >
+                  <label className="text-xs font-medium text-muted-foreground">{field.label}</label>
+                  {renderField(field, (value) => handleChange(field.field, value))}
+                </div>
+              )
+            })}
           </div>
         </CollapsibleContent>
       </div>

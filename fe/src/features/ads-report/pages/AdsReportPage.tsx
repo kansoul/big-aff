@@ -6,6 +6,9 @@ import { adsReportApi } from '@/features/ads-report/api'
 import { AdsReportSummaryCards } from '@/features/ads-report/components'
 import type {
   AdsReportAdsType,
+  AdsReportOptionAccount,
+  AdsReportOptionCampaign,
+  AdsReportOptionTeam,
   AdsReportStatsData,
   AdsReportStatsFilterParams,
 } from '@/features/ads-report/types'
@@ -15,9 +18,6 @@ import {
   type SelectOption,
 } from '@/components/common/FilterPanel'
 import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
-import { campaignReportApi } from '@/features/campaign-report/api'
-import { teamsApi } from '@/features/teams/api'
-import type { TeamWithAccountOptions } from '@/features/teams/types'
 
 const DEFAULT_FILTERS: AdsReportStatsFilterParams = {
   date_from: dayjs().startOf('month').format('YYYY-MM-DD'),
@@ -33,26 +33,55 @@ function parseDateRange(value: unknown): DateRangeValue | null {
   return null
 }
 
-function accountsToOptions(accounts: TeamWithAccountOptions['accounts']): SelectOption[] {
+function accountsToOptions(accounts: AdsReportOptionAccount[]): SelectOption[] {
   return accounts.map((a) => ({
     value: a.account_id,
     label: a.account_name ? `${a.account_name}` : a.account_id,
   }))
 }
 
-function teamsToOptions(teams: TeamWithAccountOptions[]): SelectOption[] {
+function teamsToOptions(teams: AdsReportOptionTeam[]): SelectOption[] {
   return teams.map((t) => ({ value: String(t.id), label: t.name }))
 }
 
 function getAccountsForFilters(
-  teams: TeamWithAccountOptions[],
+  teams: AdsReportOptionTeam[],
   teamId?: number | null,
   adsType?: AdsReportAdsType | null,
 ) {
-  return teams
-    .filter((team) => teamId == null || team.id === teamId)
-    .flatMap((team) => team.accounts)
-    .filter((account) => !adsType || account.ads_type === adsType)
+  let accounts: AdsReportOptionAccount[] = []
+  if (teamId) {
+    const team = teams.find((t) => t.id === teamId)
+    accounts = team ? team.accounts : []
+  } else {
+    const accMap = new Map<string, AdsReportOptionAccount>()
+    teams.forEach((t) => {
+      t.accounts.forEach((a) => {
+        accMap.set(a.account_id, a)
+      })
+    })
+    accounts = Array.from(accMap.values())
+  }
+
+  if (adsType) {
+    accounts = accounts.filter((a) => a.ads_type === adsType)
+  }
+
+  return accounts
+}
+
+function getCampaignsForFilters(
+  campaigns: AdsReportOptionCampaign[],
+  accounts: AdsReportOptionAccount[],
+  accountId?: string | null,
+  adsType?: AdsReportAdsType | null,
+) {
+  const accountIds = new Set(accounts.map((a) => a.account_id))
+  return campaigns.filter((c) => {
+    const matchesAccount = !accountId ? accountIds.has(c.account_id!) : c.account_id === accountId
+    const matchesAdsType = !adsType || c.ads_type === adsType
+    return matchesAccount && matchesAdsType
+  })
 }
 
 export function AdsReportPage() {
@@ -60,23 +89,14 @@ export function AdsReportPage() {
   const [statsData, setStatsData] = useState<AdsReportStatsData | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const [teamsWithAccounts, setTeamsWithAccounts] = useState<TeamWithAccountOptions[]>([])
+  const [optionTeams, setOptionTeams] = useState<AdsReportOptionTeam[]>([])
   const [showTeamFilter, setShowTeamFilter] = useState(false)
-  const [allCampaigns, setAllCampaigns] = useState<
-    Array<{
-      campaign_id: string
-      campaign_name: string | null
-      account_id: string | null
-      ads_type: string | null
-    }>
-  >([])
+  const [allCampaigns, setAllCampaigns] = useState<AdsReportOptionCampaign[]>([])
 
   useEffect(() => {
-    void teamsApi.accountOptions().then((res) => {
-      setTeamsWithAccounts(res.data.data.teams)
+    void adsReportApi.options().then((res) => {
+      setOptionTeams(res.data.data.teams)
       setShowTeamFilter(res.data.data.show_team_filter)
-    })
-    void campaignReportApi.filters().then((res) => {
       setAllCampaigns(res.data.data.campaigns)
     })
   }, [])
@@ -124,26 +144,20 @@ export function AdsReportPage() {
           next.campaign_ids = value as string[]
         }
 
+        // Dependent filtering logic
         if (field === 'team_id' || field === 'ads_type') {
-          const nextAccountIds = new Set(
-            getAccountsForFilters(teamsWithAccounts, next.team_id, next.ads_type).map(
-              (account) => account.account_id,
-            ),
-          )
-
-          if (next.account_id && !nextAccountIds.has(next.account_id)) {
-            next.account_id = null
-          }
+          next.account_id = null
+          next.campaign_ids = []
         }
 
-        if (field === 'team_id' || field === 'ads_type' || field === 'account_id') {
+        if (field === 'account_id') {
           next.campaign_ids = []
         }
 
         return next
       })
     },
-    [teamsWithAccounts],
+    [optionTeams],
   )
 
   const onResetFilters = useCallback(() => {
@@ -151,29 +165,26 @@ export function AdsReportPage() {
   }, [])
 
   const accountOptions = useMemo(
-    () =>
-      accountsToOptions(
-        getAccountsForFilters(teamsWithAccounts, filters.team_id, filters.ads_type),
-      ),
-    [teamsWithAccounts, filters.team_id, filters.ads_type],
+    () => accountsToOptions(getAccountsForFilters(optionTeams, filters.team_id, filters.ads_type)),
+    [optionTeams, filters.team_id, filters.ads_type],
   )
 
-  const campaignOptions = useMemo<SelectOption[]>(
-    () =>
-      allCampaigns
-        .filter(
-          (c) =>
-            (!filters.account_id || c.account_id === filters.account_id) &&
-            (!filters.ads_type || c.ads_type === filters.ads_type),
-        )
-        .map((c) => ({
-          value: c.campaign_id,
-          label: c.campaign_name ?? c.campaign_id,
-        })),
-    [allCampaigns, filters.account_id, filters.ads_type],
-  )
+  const campaignOptions = useMemo<SelectOption[]>(() => {
+    const filteredAccounts = getAccountsForFilters(optionTeams, filters.team_id, filters.ads_type)
+    const filteredCampaigns = getCampaignsForFilters(
+      allCampaigns,
+      filteredAccounts,
+      filters.account_id,
+      filters.ads_type,
+    )
 
-  const teamOptions = useMemo(() => teamsToOptions(teamsWithAccounts), [teamsWithAccounts])
+    return filteredCampaigns.map((c) => ({
+      value: c.campaign_id,
+      label: c.campaign_name ?? c.campaign_id,
+    }))
+  }, [allCampaigns, optionTeams, filters.team_id, filters.account_id, filters.ads_type])
+
+  const teamOptions = useMemo(() => teamsToOptions(optionTeams), [optionTeams])
 
   const filterFields = useMemo<FilterFieldDef[]>(() => {
     const fields: FilterFieldDef[] = [

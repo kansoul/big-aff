@@ -3,7 +3,7 @@
 namespace App\Actions\GoogleConversion;
 
 use App\Models\Account;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountOwnerResource;
 
 class UpdateGoogleConversionAction
 {
@@ -12,7 +12,7 @@ class UpdateGoogleConversionAction
      */
     public function execute(Account $account, array $data): Account
     {
-        OwnershipFilter::forAuthUser()->authorize($account->created_by);
+        (new AccountOwnerResource)->authorize($account);
 
         $account->conversion()->updateOrCreate(
             ['account_id' => $account->id],

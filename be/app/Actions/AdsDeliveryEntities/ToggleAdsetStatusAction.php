@@ -5,7 +5,7 @@ namespace App\Actions\AdsDeliveryEntities;
 use App\Models\Account;
 use App\Models\AdsetInsightsReport;
 use App\Services\Integrations\Ads\AdsStatusService;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 
 class ToggleAdsetStatusAction
@@ -21,13 +21,9 @@ class ToggleAdsetStatusAction
     {
         $record = AdsetInsightsReport::findOrFail($adsetInsightId);
 
-        $ownership = OwnershipFilter::forAuthUser();
-
-        if (! $ownership->isAdmin()) {
-            $account = Account::where('account_id', $record->account_id)->first();
-            if ($account) {
-                $ownership->authorizeAccount($account);
-            }
+        $account = Account::where('account_id', $record->account_id)->first();
+        if ($account) {
+            (new AccountOwnerResource)->authorize($account);
         }
 
         if (! in_array($record->status, ['ACTIVE', 'PAUSED'])) {

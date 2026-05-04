@@ -6,7 +6,7 @@ use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\UserParentChild;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Support\Collection;
 
 class GetUserTeamMemberOptionsAction
@@ -18,8 +18,6 @@ class GetUserTeamMemberOptionsAction
      */
     public function execute(Team $team): Collection
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = User::query()
             ->select(['users.id', 'users.name', 'users.email', 'team_user.team_role'])
             ->join('team_user', function ($join) use ($team) {
@@ -30,9 +28,7 @@ class GetUserTeamMemberOptionsAction
             ->orderBy('users.name')
             ->orderBy('users.id');
 
-        if (! $ownership->isAdmin()) {
-            $query->whereIn('users.id', $ownership->allowedUserIds());
-        }
+        (new UserOwnerResource)->applyTo($query);
 
         $assignedChildIds = UserParentChild::query()
             ->pluck('child_user_id')

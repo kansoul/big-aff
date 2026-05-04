@@ -3,13 +3,13 @@
 namespace App\Actions\CampaignSchedule;
 
 use App\Models\CampaignSchedule;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\CampaignScheduleOwnerResource;
 
 class DeleteCampaignScheduleAction
 {
     public function execute(CampaignSchedule $schedule): void
     {
-        OwnershipFilter::forAuthUser()->authorize($schedule->created_by);
+        (new CampaignScheduleOwnerResource)->authorize($schedule);
 
         $schedule->delete();
     }

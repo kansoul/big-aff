@@ -141,18 +141,6 @@ class SiteController extends BaseController
     }
 
     /**
-     * Site options
-     *
-     * Return a flat list of active sites for use in select/dropdown inputs.
-     *
-     * @response 200 {"data": [{"id": 1, "name": "My Site"}]}
-     */
-    public function options(): JsonResponse
-    {
-        return $this->sendResponse(['data' => $this->siteService->options()]);
-    }
-
-    /**
      * Assign users to site
      *
      * Assign one or more users to a site.

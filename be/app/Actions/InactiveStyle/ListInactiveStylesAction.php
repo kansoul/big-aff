@@ -3,7 +3,7 @@
 namespace App\Actions\InactiveStyle;
 
 use App\Models\User;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\UserOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -29,7 +29,6 @@ class ListInactiveStylesAction
     public function execute(array $filters): LengthAwarePaginator
     {
         $twoMonthsAgo = now()->subMonths(2);
-        $ownership = OwnershipFilter::forAuthUser();
 
         $query = User::query()
             ->join('styles', 'styles.id', '=', 'users.style_id')
@@ -59,7 +58,7 @@ class ListInactiveStylesAction
             });
 
         // Restrict to users the authenticated user can access
-        $ownership->applyTo($query, 'users.id');
+        (new UserOwnerResource)->applyTo($query);
 
         if (! empty($filters['manager_id'])) {
             $childUserIds = DB::table('user_parent_child')

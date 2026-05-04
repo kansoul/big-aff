@@ -3,7 +3,7 @@
 namespace App\Actions\Account;
 
 use App\Models\Account;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -27,10 +27,9 @@ class ListAccountsAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = Account::query()->with(['businessCenter', 'team']);
-        $ownership->applyThroughAccount($query);
+
+        (new AccountOwnerResource)->applyTo($query);
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];

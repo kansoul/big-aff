@@ -14,6 +14,7 @@ import { PATHS, postEditPath, postViewPath } from '@/constants/paths'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { useTableUrlState } from '@/hooks/useTableUrlState'
 import { setPaginationInParams } from '@/lib/utils'
+import { getUserRole } from '@/constants/role'
 
 const DEFAULT_FILTERS: PostFilterParams = {
   query: null,
@@ -27,7 +28,7 @@ const DEFAULT_FILTERS: PostFilterParams = {
   created_at_to: null,
   created_by: null,
   deleted_at: null,
-  is_hidden: null,
+  is_hidden: 0,
 }
 
 function parseFiltersFromParams(params: URLSearchParams): PostFilterParams {
@@ -44,7 +45,11 @@ function parseFiltersFromParams(params: URLSearchParams): PostFilterParams {
     created_at_to: params.get('created_at_to'),
     created_by: params.get('created_by') ? Number(params.get('created_by')) : null,
     deleted_at: null,
-    is_hidden: params.get('is_hidden') !== null ? Number(params.get('is_hidden')) : null,
+    is_hidden: params.has('is_hidden')
+      ? params.get('is_hidden')
+        ? Number(params.get('is_hidden'))
+        : null
+      : 0,
   }
 }
 
@@ -73,6 +78,7 @@ export function PostsPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
+  const role = getUserRole(user?.roles ?? [], !!user?.is_admin)
 
   const canCreate = useMemo(() => hasPermission(perms, PermissionSlugs.PostsCreate), [perms])
   const canUpdate = useMemo(() => hasPermission(perms, PermissionSlugs.PostsUpdate), [perms])
@@ -180,21 +186,7 @@ export function PostsPage() {
     (row: Post) => {
       void (async () => {
         try {
-          await postsApi.update(row.id, {
-            title: row.title,
-            slug: row.slug,
-            lang: row.lang,
-            note: row.note,
-            description: row.description,
-            content: row.content,
-            feature_media_id: row.feature_media_id,
-            status: row.status,
-            type: row.type ?? 'normal',
-            category_id: row.category_id,
-            published_at: row.published_at,
-            keyword_set_ids: row.keyword_sets?.map((ks) => ks.id) ?? null,
-            is_hidden: !row.is_hidden,
-          })
+          await postsApi.toggleHidden(row.id, !row.is_hidden)
           toast.success(row.is_hidden ? 'Post unhidden successfully' : 'Post hidden successfully')
           loadData()
         } catch (err) {
@@ -280,6 +272,7 @@ export function PostsPage() {
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         onBulkDeleteClick={onBulkDeleteClick}
+        role={role}
       />
 
       <DeletePostDialog

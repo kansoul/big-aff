@@ -3,7 +3,7 @@
 namespace App\Actions\Campaign;
 
 use App\Models\AdsetInsightsReport;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -26,8 +26,6 @@ class ListAdsetSelectorAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = AdsetInsightsReport::query()
             ->select([
                 'id',
@@ -40,7 +38,7 @@ class ListAdsetSelectorAction
                 'cpa',
             ]);
 
-        $ownership->applyThroughAccount($query);
+        (new AccountLinkedOwnerResource)->applyTo($query);
 
         if (! empty($filters['campaign_id'])) {
             $query->where('campaign_id', $filters['campaign_id']);

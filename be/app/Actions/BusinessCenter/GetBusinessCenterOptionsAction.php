@@ -3,7 +3,7 @@
 namespace App\Actions\BusinessCenter;
 
 use App\Models\BusinessCenter;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\BusinessCenterOwnerResource;
 use Illuminate\Support\Collection;
 
 class GetBusinessCenterOptionsAction
@@ -13,10 +13,8 @@ class GetBusinessCenterOptionsAction
      */
     public function execute(): Collection
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = BusinessCenter::query()->select(['id', 'name'])->orderBy('name');
-        $ownership->applyThroughTeam($query);
+        (new BusinessCenterOwnerResource)->applyTo($query);
 
         return $query->get();
     }

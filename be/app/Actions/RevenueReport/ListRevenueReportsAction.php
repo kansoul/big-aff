@@ -3,7 +3,7 @@
 namespace App\Actions\RevenueReport;
 
 use App\Models\RevenueReport;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\ChannelLinkedOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -33,14 +33,13 @@ class ListRevenueReportsAction
 
     /**
      * @param  array{date_from?: string|null, date_to?: string|null, style_codes?: string[]|null, channel_codes?: string[]|null, per_page?: int|null, page?: int|null, order_by?: string|null, order?: string|null}  $filters
+     * @return array{paginator: LengthAwarePaginator, summary: array<string, mixed>}
      */
-    public function execute(array $filters): LengthAwarePaginator
+    public function execute(array $filters): array
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = RevenueReport::query();
 
-        $ownership->applyThroughChannel($query);
+        (new ChannelLinkedOwnerResource)->applyTo($query);
 
         if (! empty($filters['date_from'])) {
             $query->whereDate('date', '>=', $filters['date_from']);
@@ -58,6 +57,33 @@ class ListRevenueReportsAction
             $query->whereIn('channel_code', $filters['channel_codes']);
         }
 
+        $summaryRow = (clone $query)->selectRaw('
+            SUM(page_views) as page_views,
+            SUM(clicks) as clicks,
+            SUM(estimated_earnings) as estimated_earnings,
+            SUM(ad_requests) as ad_requests,
+            SUM(impressions) as impressions,
+            SUM(funnel_requests) as funnel_requests,
+            SUM(funnel_impressions) as funnel_impressions,
+            SUM(funnel_clicks) as funnel_clicks
+        ')->first();
+
+        $summary = $summaryRow ? $summaryRow->toArray() : [];
+        if ($summaryRow) {
+            $summary['ad_requests_rpm'] = $summaryRow->ad_requests > 0
+                ? round(($summaryRow->estimated_earnings / $summaryRow->ad_requests) * 1000, 2)
+                : 0;
+            $summary['impressions_rpm'] = $summaryRow->impressions > 0
+                ? round(($summaryRow->estimated_earnings / $summaryRow->impressions) * 1000, 2)
+                : 0;
+            $summary['cost_per_click'] = $summaryRow->clicks > 0
+                ? round($summaryRow->estimated_earnings / $summaryRow->clicks, 2)
+                : 0;
+            $summary['funnel_rpm'] = $summaryRow->funnel_impressions > 0
+                ? round(($summaryRow->estimated_earnings / $summaryRow->funnel_impressions) * 1000, 2)
+                : 0;
+        }
+
         SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
@@ -65,6 +91,11 @@ class ListRevenueReportsAction
             defaultDirection: 'desc',
         )->applyTo($query);
 
-        return PaginationInput::fromValidatedArray($filters)->paginateQuery($query);
+        $paginator = PaginationInput::fromValidatedArray($filters)->paginateQuery($query);
+
+        return [
+            'paginator' => $paginator,
+            'summary' => $summary,
+        ];
     }
 }

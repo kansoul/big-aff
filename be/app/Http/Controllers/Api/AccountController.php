@@ -26,23 +26,6 @@ class AccountController extends BaseController
     ) {}
 
     /**
-     * Account options
-     *
-     * Return a lightweight list of accounts for use in select/dropdown inputs.
-     * Optionally filter by a user's teams by passing `user_id`.
-     *
-     * @queryParam user_id integer optional Filter accounts by the given user's teams. Example: 1
-     *
-     * @response 200 {"data": [{"id": 1, "account_id": "123456", "account_name": "My Account", "team_id": 1}]}
-     */
-    public function options(Request $request): JsonResponse
-    {
-        $userId = $request->integer('user_id') ?: null;
-
-        return $this->sendResponse(['data' => $this->accountService->options($userId)]);
-    }
-
-    /**
      * List accounts
      *
      * Return paginated list of accounts.

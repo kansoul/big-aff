@@ -10,7 +10,6 @@ use App\Models\File;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 
 class FileService
 {
@@ -44,12 +43,6 @@ class FileService
 
     public function canViewFile(File $file): bool
     {
-        $user = Auth::user();
-
-        if ($user->is_full_access) {
-            return true;
-        }
-
         $path = ltrim($file->path, '/');
 
         return $path === config('filesystems.uploads.directories.posts') || str_starts_with($path, config('filesystems.uploads.directories.posts').'/');

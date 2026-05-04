@@ -73,5 +73,5 @@ export const usersApi = {
       },
     }),
 
-  listOptions: () => axiosInstance.get<{ data: { id: number; name: string }[] }>('/users/options'),
+  listOptions: () => axiosInstance.get<{ data: { id: number; name: string }[] }>('/options/users'),
 }

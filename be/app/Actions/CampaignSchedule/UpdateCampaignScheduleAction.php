@@ -4,7 +4,7 @@ namespace App\Actions\CampaignSchedule;
 
 use App\Models\CampaignSchedule;
 use App\Models\CampaignScheduleItem;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\CampaignScheduleOwnerResource;
 use Illuminate\Support\Facades\DB;
 
 class UpdateCampaignScheduleAction
@@ -14,7 +14,7 @@ class UpdateCampaignScheduleAction
      */
     public function execute(CampaignSchedule $schedule, array $data): CampaignSchedule
     {
-        OwnershipFilter::forAuthUser()->authorize($schedule->created_by);
+        (new CampaignScheduleOwnerResource)->authorize($schedule);
 
         return DB::transaction(function () use ($schedule, $data) {
             $syncItems = array_key_exists('campaign_ids', $data);

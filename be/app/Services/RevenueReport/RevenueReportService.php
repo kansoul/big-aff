@@ -13,8 +13,9 @@ class RevenueReportService
 
     /**
      * @param  array<string, mixed>  $filters
+     * @return array{paginator: LengthAwarePaginator, summary: array<string, mixed>}
      */
-    public function list(array $filters): LengthAwarePaginator
+    public function list(array $filters): array
     {
         return $this->listRevenueReportsAction->execute($filters);
     }

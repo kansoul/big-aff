@@ -3,7 +3,7 @@
 namespace App\Actions\KeywordSet;
 
 use App\Models\KeywordSet;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\KeywordSetResource;
 use Illuminate\Support\Facades\Auth;
 
 class UpdateKeywordSetAction
@@ -13,7 +13,7 @@ class UpdateKeywordSetAction
      */
     public function execute(KeywordSet $keywordSet, array $data): KeywordSet
     {
-        OwnershipFilter::forAuthUser()->authorize($keywordSet->created_by);
+        (new KeywordSetResource)->authorize($keywordSet);
 
         $keywordSet->update([
             'name' => $data['name'] ?? $keywordSet->name,

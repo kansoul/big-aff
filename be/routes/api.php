@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AdsDeliveryEntitiesController;
 use App\Http\Controllers\Api\AdsLinkController;
 use App\Http\Controllers\Api\AdsReportController;
 use App\Http\Controllers\Api\AnalyticsTrackingController;
+use App\Http\Controllers\Api\AssignController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\BusinessCenterController;
 use App\Http\Controllers\Api\CampaignController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Api\GoogleConversionController;
 use App\Http\Controllers\Api\InactiveStyleController;
 use App\Http\Controllers\Api\KeywordSetController;
 use App\Http\Controllers\Api\LogController;
+use App\Http\Controllers\Api\OptionController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\RevenueChartReportController;
 use App\Http\Controllers\Api\RevenueReportController;
@@ -64,15 +66,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
+    Route::prefix('options')->group(function () {
+        Route::get('users', [OptionController::class, 'users']);
+        Route::get('sites', [OptionController::class, 'sites']);
+        Route::get('posts', [OptionController::class, 'posts']);
+        Route::get('styles', [OptionController::class, 'styles']);
+        Route::get('channels', [OptionController::class, 'channels']);
+        Route::get('accounts', [OptionController::class, 'accounts']);
+        Route::get('teams', [OptionController::class, 'teams']);
+        Route::get('business-centers', [OptionController::class, 'businessCenters']);
+        Route::get('ads-report', [OptionController::class, 'adsReport']);
+    });
+
     Route::prefix('users')->group(function () {
-        Route::get('options', [UserController::class, 'options']);
         Route::get('/', [UserController::class, 'index'])
             ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
-        Route::get('channel-assignments', [ChannelController::class, 'listUsersWithChannels'])
+        Route::get('channel-assignments', [AssignController::class, 'usersWithChannels'])
             ->middleware('permission.scope:'.Permission::ChannelsAssign->value);
-        Route::get('post-assignments', [UserController::class, 'listUsersWithPosts'])
+        Route::get('post-assignments', [AssignController::class, 'usersWithPosts'])
             ->middleware('permission.scope:'.Permission::PostsAssign->value);
-        Route::get('account-assignments', [AccountController::class, 'listUsersWithAccounts'])
+        Route::get('account-assignments', [AssignController::class, 'usersWithAccounts'])
             ->middleware('permission.scope:'.Permission::AccountsAssign->value);
         Route::get('parent-child-assignments', [UserParentChildController::class, 'index'])
             ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
@@ -84,11 +97,11 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::SettingsUsersUpdate->value);
         Route::delete('{user}', [UserController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::SettingsUsersDelete->value);
-        Route::post('{user}/assign-accounts', [AccountController::class, 'assignToUser'])
+        Route::post('{user}/assign-accounts', [AssignController::class, 'assignAccountsToUser'])
             ->middleware('permission.scope:'.Permission::AccountsAssign->value);
-        Route::post('{user}/assign-channels', [ChannelController::class, 'assignToUser'])
+        Route::post('{user}/assign-channels', [AssignController::class, 'assignChannelsToUser'])
             ->middleware('permission.scope:'.Permission::ChannelsAssign->value);
-        Route::post('{user}/assign-posts', [UserController::class, 'assignPosts'])
+        Route::post('{user}/assign-posts', [AssignController::class, 'assignPostsToUser'])
             ->middleware('permission.scope:'.Permission::PostsAssign->value);
         Route::get('{user}/team-options', [UserController::class, 'teamOptions'])
             ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
@@ -107,7 +120,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('sites')->group(function () {
-        Route::get('options', [SiteController::class, 'options']);
         Route::get('/', [SiteController::class, 'index'])
             ->middleware('permission.scope:'.Permission::SettingsSitesView->value);
         Route::post('/', [SiteController::class, 'store'])
@@ -118,14 +130,13 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::SettingsSitesUpdate->value);
         Route::delete('{site}', [SiteController::class, 'destroy'])
             ->middleware('permission.scope:'.Permission::SettingsSitesDelete->value);
-        Route::post('{site}/assign-users', [SiteController::class, 'assignUsers'])
+        Route::post('{site}/assign-users', [AssignController::class, 'assignUsersToSite'])
             ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
-        Route::get('{site}/user-options', [SiteController::class, 'userOptions'])
+        Route::get('{site}/user-options', [AssignController::class, 'siteUserOptions'])
             ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
     });
 
     Route::prefix('posts')->group(function () {
-        Route::get('options', [PostController::class, 'options']);
         Route::get('/', [PostController::class, 'index'])
             ->middleware('permission.scope:'.Permission::PostsView->value);
         Route::post('/', [PostController::class, 'store'])
@@ -138,6 +149,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::PostsDelete->value);
         Route::post('{post}/publish', [PostController::class, 'publish'])
             ->middleware('permission.scope:'.Permission::PostsPublish->value);
+        Route::post('{post}/toggle-hidden', [PostController::class, 'toggleHidden'])
+            ->middleware('permission.scope:'.Permission::PostsUpdate->value);
     });
 
     Route::prefix('categories')->group(function () {
@@ -159,7 +172,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('channels')->group(function () {
-        Route::get('options', [ChannelController::class, 'options']);
         Route::get('/', [ChannelController::class, 'index'])
             ->middleware('permission.scope:'.Permission::ChannelsView->value);
         Route::post('/', [ChannelController::class, 'store'])
@@ -169,7 +181,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('styles')->group(function () {
-        Route::get('options', [StyleController::class, 'options']);
         Route::get('/', [StyleController::class, 'index'])
             ->middleware('permission.scope:'.Permission::StylesView->value);
         Route::post('/', [StyleController::class, 'store'])
@@ -223,7 +234,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('business-centers')->group(function () {
-        Route::get('options', [BusinessCenterController::class, 'options']);
         Route::get('/', [BusinessCenterController::class, 'index'])
             ->middleware('permission.scope:'.Permission::BusinessCentersView->value);
         Route::post('/', [BusinessCenterController::class, 'store'])
@@ -237,8 +247,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('accounts')->group(function () {
-        Route::get('options', [AccountController::class, 'options']);
-        Route::get('assign-options', [AccountController::class, 'assignOptions'])
+        Route::get('assign-options', [AssignController::class, 'accountAssignOptions'])
             ->middleware('permission.scope:'.Permission::AccountsAssign->value);
         Route::get('/', [AccountController::class, 'index'])
             ->middleware('permission.scope:'.Permission::AccountsView->value);
@@ -253,7 +262,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('teams')->group(function () {
-        Route::get('options', [TeamController::class, 'options']);
         Route::get('account-options', [TeamController::class, 'accountOptions']);
         Route::get('/', [TeamController::class, 'index'])
             ->middleware('permission.scope:'.Permission::TeamsView->value);
@@ -269,8 +277,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::TeamsView->value);
         Route::get('{team}/leaders', [TeamController::class, 'leaders'])
             ->middleware('permission.scope:'.Permission::TeamsView->value);
-        Route::get('{team}/user-options', [TeamController::class, 'userOptions']);
-        Route::post('{team}/assign-users', [TeamController::class, 'assignUsers'])
+        Route::get('{team}/user-options', [AssignController::class, 'teamUserOptions']);
+        Route::post('{team}/assign-users', [AssignController::class, 'assignUsersToTeam'])
             ->middleware('permission.scope:'.Permission::TeamsAssign->value);
         Route::get('{team}/parent-child-options', [UserParentChildController::class, 'teamMemberOptions']);
     });
@@ -376,6 +384,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('analytics-tracking')
         ->middleware('permission.scope:'.Permission::AnalyticsTrackingView->value)
         ->group(function () {
+            Route::get('filter-options', [AnalyticsTrackingController::class, 'filterOptions']);
             Route::get('stats', [AnalyticsTrackingController::class, 'stats']);
             Route::get('keywords', [AnalyticsTrackingController::class, 'keywords']);
         });

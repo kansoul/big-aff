@@ -3,13 +3,13 @@
 namespace App\Actions\CampaignRule;
 
 use App\Models\CampaignRule;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\CampaignRuleOwnerResource;
 
 class DeleteCampaignRuleAction
 {
     public function execute(CampaignRule $rule): void
     {
-        OwnershipFilter::forAuthUser()->authorize($rule->user_id);
+        (new CampaignRuleOwnerResource)->authorize($rule);
 
         $rule->delete();
     }

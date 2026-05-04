@@ -27,7 +27,7 @@ class UserResource extends JsonResource
         /** @var User $user */
         $user = $this->resource;
         $user->loadMissing(['role', 'teams']);
-        $roles = $user->teams->pluck('team_role')->toArray();
+        $roles = $user->teams->pluck('pivot.team_role')->unique()->values()->toArray();
         $permissions = $user->role?->getPermissionSlugs() ?? [];
 
         return [

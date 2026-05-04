@@ -3,7 +3,7 @@
 namespace App\Actions\GoogleConversion;
 
 use App\Models\Account;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -25,13 +25,11 @@ class ListGoogleConversionsAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = Account::query()
             ->with('conversion')
             ->where('ads_type', 'google');
 
-        $ownership->applyTo($query);
+        (new AccountOwnerResource)->applyTo($query);
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];

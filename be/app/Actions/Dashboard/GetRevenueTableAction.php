@@ -6,7 +6,8 @@ use App\Enums\Permission;
 use App\Enums\TeamRole;
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountLinkedOwnerResource;
+use App\Support\OwnerResource\ChannelLinkedOwnerResource;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -28,12 +29,11 @@ class GetRevenueTableAction
 {
     public function execute(array $filters): array
     {
-        $ownership = OwnershipFilter::forAuthUser();
         $now = Carbon::now();
         $limit = min((int) ($filters['top_limit'] ?? 10), 50);
 
-        $spendByUser = $this->spendByUser($ownership, $now);
-        $revenueByUser = $this->revenueByUser($ownership, $now);
+        $spendByUser = $this->spendByUser($now);
+        $revenueByUser = $this->revenueByUser($now);
 
         $userIds = $spendByUser->keys()
             ->merge($revenueByUser->keys())
@@ -60,7 +60,7 @@ class GetRevenueTableAction
      *   aggregate spend per account → attribute each account to its primary user
      *   (MIN user_id on account_user) → aggregate per user.
      */
-    private function spendByUser(OwnershipFilter $ownership, Carbon $now): Collection
+    private function spendByUser(Carbon $now): Collection
     {
         $from = $now->copy()->startOfMonth()->toDateString();
         $to = $now->copy()->endOfMonth()->toDateString();
@@ -79,7 +79,7 @@ class GetRevenueTableAction
             ', [$today, $yesterday])
             ->groupBy('account_id');
 
-        $ownership->applyThroughAccount($perAccount);
+        (new AccountLinkedOwnerResource)->applyTo($perAccount);
 
         // insight_reports.account_id stores the business string ID (e.g. act_xxx),
         // so we resolve each account's primary user via accounts.account_id (string).
@@ -109,7 +109,7 @@ class GetRevenueTableAction
     /**
      * Revenue per user for the current month. Mirrors spendByUser but over channels.
      */
-    private function revenueByUser(OwnershipFilter $ownership, Carbon $now): Collection
+    private function revenueByUser(Carbon $now): Collection
     {
         $from = $now->copy()->startOfMonth()->toDateString();
         $to = $now->copy()->endOfMonth()->toDateString();
@@ -128,7 +128,7 @@ class GetRevenueTableAction
             ', [$today, $yesterday])
             ->groupBy('channel_code');
 
-        $ownership->applyThroughChannel($perChannel);
+        (new ChannelLinkedOwnerResource)->applyTo($perChannel);
 
         $latestChannelUserIds = DB::table('channel_user')
             ->whereNull('deleted_at')

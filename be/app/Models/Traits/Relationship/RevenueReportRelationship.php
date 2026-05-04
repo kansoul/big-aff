@@ -2,4 +2,13 @@
 
 namespace App\Models\Traits\Relationship;
 
-trait RevenueReportRelationship {}
+use App\Models\Campaign;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+trait RevenueReportRelationship
+{
+    public function campaign(): BelongsTo
+    {
+        return $this->belongsTo(Campaign::class, 'campaign_id', 'campaign_id');
+    }
+}

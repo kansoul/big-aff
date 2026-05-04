@@ -39,5 +39,5 @@ export const businessCentersApi = {
   delete: (id: number) => axiosInstance.delete(`/business-centers/${id}`),
 
   listOptions: () =>
-    axiosInstance.get<{ data: { id: number; name: string }[] }>('/business-centers/options'),
+    axiosInstance.get<{ data: { id: number; name: string }[] }>('/options/business-centers'),
 }

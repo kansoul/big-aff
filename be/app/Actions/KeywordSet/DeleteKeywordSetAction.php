@@ -3,13 +3,13 @@
 namespace App\Actions\KeywordSet;
 
 use App\Models\KeywordSet;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\KeywordSetResource;
 
 class DeleteKeywordSetAction
 {
     public function execute(KeywordSet $keywordSet): void
     {
-        OwnershipFilter::forAuthUser()->authorize($keywordSet->created_by);
+        (new KeywordSetResource)->authorize($keywordSet);
 
         $keywordSet->delete();
     }

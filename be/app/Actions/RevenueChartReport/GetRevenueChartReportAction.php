@@ -3,7 +3,7 @@
 namespace App\Actions\RevenueChartReport;
 
 use App\Models\RevenueChartReport;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\ChannelLinkedOwnerResource;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -48,8 +48,6 @@ class GetRevenueChartReportAction
         $isRateMetric = in_array($metric, self::RATE_METRICS, true);
         $aggregateFn = $isRateMetric ? 'AVG' : 'SUM';
 
-        $ownership = OwnershipFilter::forAuthUser();
-
         // Group by datetime so multiple styles at the same timestamp are aggregated into one point.
         $query = RevenueChartReport::query()
             ->select([
@@ -60,7 +58,7 @@ class GetRevenueChartReportAction
             ->groupBy('datetime')
             ->orderBy('datetime');
 
-        $ownership->applyThroughChannel($query);
+        (new ChannelLinkedOwnerResource)->applyTo($query);
 
         if (! empty($filters['channel_codes'])) {
             $query->whereIn('channel_code', $filters['channel_codes']);

@@ -13,7 +13,7 @@ import type { UserWithAccounts } from '@/features/accounts/types/userAccountAssi
 export const accountsApi = {
   listUserAssignOptions: async (userId: number): Promise<AccountOptionForAssign[]> => {
     const response = await axiosInstance.get<{ data: AccountOptionForAssign[] }>(
-      '/accounts/options',
+      '/options/accounts',
       { params: { user_id: userId } },
     )
     return response.data.data

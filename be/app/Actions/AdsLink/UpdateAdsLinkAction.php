@@ -4,7 +4,7 @@ namespace App\Actions\AdsLink;
 
 use App\Models\AdsLink;
 use App\Services\AdsLink\RACValidationService;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AdsLinkOwnerResource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
@@ -17,10 +17,7 @@ class UpdateAdsLinkAction
      */
     public function execute(AdsLink $adsLink, array $data): AdsLink
     {
-        $ownership = OwnershipFilter::forAuthUser();
-        if (! $ownership->isAdmin()) {
-            $ownership->authorize($adsLink->created_by);
-        }
+        (new AdsLinkOwnerResource)->authorize($adsLink);
 
         if (array_key_exists('rac', $data) && $data['rac'] !== null) {
             $racValidation = $this->racValidationService->validateRAC($data['rac']);

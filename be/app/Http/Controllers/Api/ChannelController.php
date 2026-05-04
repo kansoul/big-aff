@@ -10,7 +10,6 @@ use App\Http\Resources\ChannelResource;
 use App\Models\Channel;
 use App\Models\User;
 use App\Services\Channel\ChannelService;
-use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -92,30 +91,5 @@ class ChannelController extends BaseController
         $result = $this->channelService->assignToUser($user, $request->validated('channel_codes', []));
 
         return $this->sendResponse(['skipped_codes' => $result['skipped_codes']]);
-    }
-
-    /**
-     * Channel options for select inputs
-     */
-    public function options(): JsonResponse
-    {
-        $ownership = OwnershipFilter::forAuthUser();
-
-        $query = Channel::query()
-            ->select(['id', 'code', 'name'])
-            ->where('is_active', true)
-            ->whereNull('deleted_at')
-            ->orderBy('id');
-
-        $ownership->applyThroughChannel($query, 'code');
-
-        $channels = $query->get();
-
-        return $this->sendResponse([
-            'data' => $channels->map(fn (Channel $channel) => [
-                'code' => $channel->code,
-                'name' => $channel->name,
-            ]),
-        ]);
     }
 }

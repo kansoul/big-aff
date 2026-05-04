@@ -6,7 +6,6 @@ use App\Actions\Account\AssignAccountAction;
 use App\Actions\Account\BulkCreateAccountAction;
 use App\Actions\Account\DeleteAccountAction;
 use App\Actions\Account\GetAccountAssignOptionsAction;
-use App\Actions\Account\GetAccountOptionsAction;
 use App\Actions\Account\ListAccountsAction;
 use App\Actions\Account\ListUsersWithAccountsAction;
 use App\Actions\Account\UpdateAccountAction;
@@ -22,19 +21,10 @@ class AccountService
         private readonly BulkCreateAccountAction $bulkCreateAccountAction,
         private readonly UpdateAccountAction $updateAccountAction,
         private readonly DeleteAccountAction $deleteAccountAction,
-        private readonly GetAccountOptionsAction $getAccountOptionsAction,
         private readonly GetAccountAssignOptionsAction $getAccountAssignOptionsAction,
         private readonly ListUsersWithAccountsAction $listUsersWithAccountsAction,
         private readonly AssignAccountAction $assignAccountAction,
     ) {}
-
-    /**
-     * @return Collection<int, array{id: int, account_id: string, account_name: string|null, team_id: int|null}>
-     */
-    public function options(?int $userId = null): Collection
-    {
-        return $this->getAccountOptionsAction->execute($userId);
-    }
 
     /**
      * @param  array<string, mixed>  $filters

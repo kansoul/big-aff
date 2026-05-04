@@ -3,7 +3,7 @@
 namespace App\Actions\Account;
 
 use App\Models\Account;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use Illuminate\Support\Collection;
 
 class GetAccountAssignOptionsAction
@@ -16,13 +16,11 @@ class GetAccountAssignOptionsAction
      */
     public function execute(?int $forUserId = null): Collection
     {
-        $ownership = OwnershipFilter::forAuthUser();
-
         $query = Account::query()
             ->select(['id', 'account_id', 'account_name', 'team_id'])
             ->orderBy('account_name');
 
-        $ownership->applyThroughAccount($query);
+        (new AccountLinkedOwnerResource)->applyTo($query);
 
         return $query->get();
     }

@@ -23,6 +23,7 @@ import type {
   DeliveryEntitiesFilterParams,
   DeliveryEntitiesListResponse,
   DeliveryEntityStatusOptionsResponse,
+  AnalyticsTrackingFilterOptionsResponse,
   KeywordTrackingFilterParams,
   KeywordTrackingListResponse,
   StyleReportRangeQueryPayload,
@@ -31,7 +32,7 @@ import type {
   ToggleAdStatusResponse,
   TrackingAnalyticsFilterParams,
   TrackingAnalyticsResponse,
-} from '@/features/campaign-report/types'
+} from '../types'
 
 function buildListParams(filters: CampaignReportFilterParams) {
   return {
@@ -68,10 +69,13 @@ export const campaignReportApi = {
   queryRange: (payload: StyleReportRangeQueryPayload) =>
     axiosInstance.post<StyleReportRangeQueryResponse>('/style-report-range/query', payload),
 
+  analyticsTrackingFilterOptions: () =>
+    axiosInstance.get<AnalyticsTrackingFilterOptionsResponse>('/analytics-tracking/filter-options'),
+
   trackingAnalyticsStats: (filters: TrackingAnalyticsFilterParams) =>
     axiosInstance.get<TrackingAnalyticsResponse>('/analytics-tracking/stats', {
       params: {
-        ...(filters.account_id ? { account_id: filters.account_id } : {}),
+        ...(filters.ads_link_id ? { ads_link_id: filters.ads_link_id } : {}),
         ...(filters.campaign_id ? { campaign_id: filters.campaign_id } : {}),
         ...(filters.date_from ? { date_from: filters.date_from } : {}),
         ...(filters.date_to ? { date_to: filters.date_to } : {}),
@@ -83,7 +87,7 @@ export const campaignReportApi = {
       params: {
         page: filters.page ?? 1,
         per_page: filters.per_page ?? 30,
-        ...(filters.account_id ? { account_id: filters.account_id } : {}),
+        ...(filters.ads_link_id ? { ads_link_id: filters.ads_link_id } : {}),
         ...(filters.campaign_id ? { campaign_id: filters.campaign_id } : {}),
         ...(filters.date_from ? { date_from: filters.date_from } : {}),
         ...(filters.date_to ? { date_to: filters.date_to } : {}),

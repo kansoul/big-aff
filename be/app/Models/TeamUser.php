@@ -5,9 +5,9 @@ namespace App\Models;
 use App\Enums\TeamRole;
 use App\Models\Traits\Relationship\TeamUserRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class TeamUser extends Model
+class TeamUser extends Pivot
 {
     use HasFactory, TeamUserRelationship;
 

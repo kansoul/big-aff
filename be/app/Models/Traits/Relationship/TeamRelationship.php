@@ -34,6 +34,7 @@ trait TeamRelationship
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'team_user')
+            ->using(TeamUser::class)
             ->withPivot(['joined_at', 'team_role'])
             ->withTimestamps();
     }
