@@ -29,9 +29,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Post::observe(RevalidateObserver::class);
-        // Site::observe(RevalidateObserver::class);
-        // AdsLink::observe(RevalidateObserver::class);
+        Post::observe(RevalidateObserver::class);
+        Site::observe(RevalidateObserver::class);
+        AdsLink::observe(RevalidateObserver::class);
 
         Model::preventLazyLoading(! app()->isProduction());
 
