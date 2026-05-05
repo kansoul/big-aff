@@ -102,7 +102,7 @@ class RulesSeeder extends Seeder
                 CampaignApplyRule::query()->firstOrCreate([
                     'campaign_rule_id' => $rule->id,
                     'sourceable_type' => Campaign::class,
-                    'sourceable_id' => $campaign->id,
+                    'sourceable_id' => (int) $campaign->campaign_id,
                 ]);
             }
         }

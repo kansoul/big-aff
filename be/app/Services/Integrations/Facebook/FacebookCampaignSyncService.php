@@ -7,8 +7,6 @@ use App\Jobs\EvaluateCampaignRuleJob;
 use App\Jobs\SyncFacebookCampaignBatchJob;
 use App\Models\Account;
 use App\Models\Campaign;
-use App\Models\CampaignReport;
-use App\Models\RealtimeReport;
 use App\Services\Integrations\CampaignReportSyncService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Bus;
@@ -147,44 +145,10 @@ class FacebookCampaignSyncService
                     ->where('is_active', true)
                     ->where(fn ($q2) => $q2->whereNull('expired_at')->orWhere('expired_at', '>=', now()))
             )
-            ->get()
-            ->keyBy('campaign_id');
+            ->get();
 
-        if ($campaigns->isEmpty()) {
-            return;
-        }
-
-        $campaignIdList = $campaigns->keys();
-
-        $realtimeClicksByCampaign = RealtimeReport::query()
-            ->join('link_datas', 'realtime_reports.link_data_id', '=', 'link_datas.id')
-            ->whereDate('realtime_reports.event_time', $date)
-            ->whereIn('link_datas.campaign_id', $campaignIdList)
-            ->selectRaw('link_datas.campaign_id, SUM(realtime_reports.click_ad_count) as total_clicks')
-            ->groupBy('link_datas.campaign_id')
-            ->pluck('total_clicks', 'campaign_id');
-
-        // unique index on (campaign_id, date_start) — one row per campaign per day
-        $reports = CampaignReport::query()
-            ->whereDate('date_start', $date)
-            ->whereIn('campaign_id', $campaignIdList)
-            ->get()
-            ->keyBy('campaign_id');
-
-        foreach ($campaigns as $campaignId => $campaign) {
-            $report = $reports->get($campaignId);
-
-            if (! $report) {
-                continue;
-            }
-
-            $spend = (float) $report->a_spend;
-            $realtimeClicks = (int) ($realtimeClicksByCampaign[$campaignId] ?? 0);
-            $revenue = $realtimeClicks * (float) $report->r_rpc;
-            $profit = $revenue - $spend;
-            $roi = $spend > 0 ? ($profit / $spend) * 100 : 0;
-
-            EvaluateCampaignRuleJob::dispatch($campaign, compact('spend', 'revenue', 'profit', 'roi'));
+        foreach ($campaigns as $campaign) {
+            EvaluateCampaignRuleJob::dispatch($campaign, $date);
         }
     }
 }

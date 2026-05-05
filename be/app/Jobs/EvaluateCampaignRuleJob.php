@@ -21,23 +21,20 @@ class EvaluateCampaignRuleJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 300;
 
-    /**
-     * @param  array<string, mixed>  $metrics  spend, revenue, profit, roi
-     */
     public function __construct(
         protected Campaign $campaign,
-        protected array $metrics,
+        protected string $date,
     ) {
         $this->onQueue('automation-off-campaign');
     }
 
     public function uniqueId(): string
     {
-        return (string) $this->campaign->id;
+        return $this->campaign->id.'_'.$this->date;
     }
 
     public function handle(EvaluateCampaignRuleAction $action): void
     {
-        $action->execute($this->campaign, $this->metrics);
+        $action->execute($this->campaign, $this->date);
     }
 }

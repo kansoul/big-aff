@@ -24,7 +24,7 @@ class CampaignApplyRuleFactory extends Factory
         return [
             'campaign_rule_id' => CampaignRule::factory(),
             'sourceable_type' => Campaign::class,
-            'sourceable_id' => Campaign::factory(),
+            'sourceable_id' => fn () => (int) Campaign::factory()->create()->campaign_id,
         ];
     }
 }

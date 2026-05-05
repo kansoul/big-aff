@@ -3,9 +3,12 @@
 namespace App\Services\Integrations\Google;
 
 use App\Enums\AdsType;
+use App\Jobs\ApplyCampaignNameToRuleJob;
+use App\Jobs\EvaluateCampaignRuleJob;
 use App\Models\Account;
 use App\Models\Campaign;
 use App\Models\InsightReport;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -143,11 +146,10 @@ class GoogleCampaignSyncService
                             ['campaign_name', 'daily_budget', 'lifetime_budget', 'status', 'start_time', 'stop_time', 'created_time', 'updated_time', 'created_at', 'updated_at']
                         );
 
-                        // TODO: Dispatch job to apply campaign name to rule
-                        // $campaignIds = array_column($campaigns, 'campaign_id');
-                        // if (!empty($campaignIds)) {
-                        //     ApplyCampaignNameToRuleJob::dispatch($campaignIds);
-                        // }
+                        $campaignIds = array_column($campaigns, 'campaign_id');
+                        if (! empty($campaignIds)) {
+                            ApplyCampaignNameToRuleJob::dispatch($campaignIds);
+                        }
                     }
 
                     $insightsData = array_map(function ($insight) {
@@ -185,6 +187,27 @@ class GoogleCampaignSyncService
 
                 continue;
             }
+        }
+
+        if (Carbon::parse($data['end_date'])->isToday()) {
+            self::dispatchCampaignRuleJobs($data['end_date']);
+        }
+    }
+
+    private static function dispatchCampaignRuleJobs(string $date): void
+    {
+        $campaigns = Campaign::query()
+            ->whereHas(
+                'applyRules.campaignRule',
+                fn ($q) => $q
+                    ->where('is_active', true)
+                    ->where(fn ($q2) => $q2->whereNull('expired_at')->orWhere('expired_at', '>=', now()))
+            )
+            ->where('ads_type', AdsType::GOOGLE->value)
+            ->get();
+
+        foreach ($campaigns as $campaign) {
+            EvaluateCampaignRuleJob::dispatch($campaign, $date);
         }
     }
 }
