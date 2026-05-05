@@ -3,6 +3,7 @@
 namespace App\Services\Integrations\Google;
 
 use App\Enums\AdsType;
+use App\Jobs\ApplyCampaignNameToRuleJob;
 use App\Models\Account;
 use App\Models\Campaign;
 use App\Models\InsightReport;
@@ -143,11 +144,10 @@ class GoogleCampaignSyncService
                             ['campaign_name', 'daily_budget', 'lifetime_budget', 'status', 'start_time', 'stop_time', 'created_time', 'updated_time', 'created_at', 'updated_at']
                         );
 
-                        // TODO: Dispatch job to apply campaign name to rule
-                        // $campaignIds = array_column($campaigns, 'campaign_id');
-                        // if (!empty($campaignIds)) {
-                        //     ApplyCampaignNameToRuleJob::dispatch($campaignIds);
-                        // }
+                        $campaignIds = array_column($campaigns, 'campaign_id');
+                        if (! empty($campaignIds)) {
+                            ApplyCampaignNameToRuleJob::dispatch($campaignIds);
+                        }
                     }
 
                     $insightsData = array_map(function ($insight) {

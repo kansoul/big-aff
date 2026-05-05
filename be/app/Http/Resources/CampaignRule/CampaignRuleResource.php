@@ -95,7 +95,7 @@ class CampaignRuleResource extends JsonResource
         }
 
         return match ($sourceableType) {
-            Campaign::class => Campaign::whereIn('id', $numericIds)->pluck($externalColumn)->values()->all(),
+            Campaign::class => Campaign::whereIn('campaign_id', $numericIds)->pluck($externalColumn)->values()->all(),
             default => [],
         };
     }

@@ -84,7 +84,10 @@ class UpdateCampaignRuleAction
             return [];
         }
 
-        return Campaign::whereIn('campaign_id', $externalCampaignIds)->pluck('id')->all();
+        return Campaign::whereIn('campaign_id', $externalCampaignIds)
+            ->pluck('campaign_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     /**

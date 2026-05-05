@@ -7,6 +7,8 @@ use App\Enums\RuleActionMode;
 use App\Jobs\SendTelegramWarningJob;
 use App\Models\Campaign;
 use App\Models\CampaignApplyRule;
+use App\Models\CampaignReport;
+use App\Services\Integrations\Ads\AdsStatusService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,15 +16,20 @@ use Throwable;
 
 class EvaluateCampaignRuleAction
 {
-    /**
-     * @param  array{spend: float, revenue: float, profit: float, roi: float}  $metrics
-     */
-    public function execute(Campaign $campaign, array $metrics): void
+    public function __construct(
+        private readonly AdsStatusService $adsStatusService,
+    ) {}
+
+    public function execute(Campaign $campaign, string $date): void
     {
+        $metrics = $this->loadMetrics($campaign, $date);
+
+        if ($metrics === null) {
+            return;
+        }
+
         $now = Carbon::now();
 
-        // Single JOIN query — mirrors tracking-afs CampaignRuleService pattern.
-        // Returns stdClass rows with rule fields + joined setting fields.
         $rules = DB::table('campaign_rules')
             ->select(
                 'campaign_rules.*',
@@ -33,7 +40,7 @@ class EvaluateCampaignRuleAction
             ->join('users', 'campaign_rules.user_id', '=', 'users.id')
             ->leftJoin('user_campaign_rule_settings', 'users.id', '=', 'user_campaign_rule_settings.user_id')
             ->where('campaign_apply_rules.sourceable_type', Campaign::class)
-            ->where('campaign_apply_rules.sourceable_id', $campaign->id)
+            ->where('campaign_apply_rules.sourceable_id', (int) $campaign->campaign_id)
             ->where('campaign_rules.entity_type', EntityTypeEnum::Campaign->value)
             ->where('campaign_rules.is_active', true)
             ->where(function ($q) {
@@ -50,10 +57,10 @@ class EvaluateCampaignRuleAction
             return;
         }
 
-        $spend = (float) ($metrics['spend'] ?? 0);
-        $revenue = (float) ($metrics['revenue'] ?? 0);
-        $profit = (float) ($metrics['profit'] ?? 0);
-        $roi = (float) ($metrics['roi'] ?? 0);
+        $spend = $metrics['spend'];
+        $revenue = $metrics['revenue'];
+        $profit = $metrics['profit'];
+        $roi = $metrics['roi'];
 
         foreach ($rules as $rule) {
             if ($spend < (float) ($rule->min_spend ?? 0)) {
@@ -88,14 +95,29 @@ class EvaluateCampaignRuleAction
                 continue;
             }
 
-            // PAUSE: update status, delete apply rule, notify
+            // PAUSE: call API first, then update DB
             try {
+                $success = $this->adsStatusService->updateCampaignStatus(
+                    (string) $campaign->campaign_id,
+                    'PAUSED',
+                    true,
+                );
+
+                if (! $success) {
+                    Log::channel('tracking_events')->warning('[EvaluateCampaignRuleAction] API pause failed', [
+                        'rule_id' => $rule->id,
+                        'campaign_id' => $campaign->campaign_id,
+                    ]);
+
+                    break;
+                }
+
                 DB::transaction(function () use ($campaign, $rule, $metrics, $telegramChatId) {
                     $campaign->update(['status' => 'PAUSED']);
 
                     CampaignApplyRule::query()
                         ->where('sourceable_type', Campaign::class)
-                        ->where('sourceable_id', $campaign->id)
+                        ->where('sourceable_id', (int) $campaign->campaign_id)
                         ->where('campaign_rule_id', $rule->id)
                         ->delete();
 
@@ -104,7 +126,7 @@ class EvaluateCampaignRuleAction
             } catch (Throwable $e) {
                 Log::channel('tracking_events')->error('[EvaluateCampaignRuleAction] Pause error', [
                     'rule_id' => $rule->id,
-                    'campaign_id' => $campaign->id,
+                    'campaign_id' => $campaign->campaign_id,
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -114,16 +136,51 @@ class EvaluateCampaignRuleAction
         }
     }
 
+    /**
+     * @return array{spend: float, revenue: float, profit: float, roi: float}|null
+     */
+    private function loadMetrics(Campaign $campaign, string $date): ?array
+    {
+        $report = CampaignReport::query()
+            ->with('realtimeReport')
+            ->where('campaign_id', $campaign->campaign_id)
+            ->whereDate('date_start', $date)
+            ->first();
+
+        if (! $report) {
+            return null;
+        }
+
+        $spend = (float) ($report->a_spend ?? 0);
+
+        $rpc = (float) ($report->r_rpc ?? 0);
+
+        $realtimeClicks = (int) ($report->realtimeReport?->click_ad_count ?? 0);
+        $revenue = $realtimeClicks * $rpc;
+        $profit = $revenue - $spend;
+        $roi = $spend > 0 ? ($profit / $spend) * 100 : 0.0;
+
+        return compact('spend', 'revenue', 'profit', 'roi');
+    }
+
     private function isWithinTimeWindow(object $rule, Carbon $now): bool
     {
         $start = $rule->start_hour ?? null;
         $end = $rule->end_hour ?? null;
 
-        if (! $start || ! $end) {
+        if (! $start && ! $end) {
             return true;
         }
 
         $currentTime = $now->format('H:i');
+
+        if ($start && ! $end) {
+            return $currentTime >= $start;
+        }
+
+        if (! $start && $end) {
+            return $currentTime <= $end;
+        }
 
         if ($start <= $end) {
             return $currentTime >= $start && $currentTime <= $end;
@@ -192,7 +249,7 @@ class EvaluateCampaignRuleAction
         } catch (Throwable $e) {
             Log::channel('tracking_events')->error('[EvaluateCampaignRuleAction] Notification error', [
                 'rule_id' => $rule->id,
-                'campaign_id' => $campaign->id,
+                'campaign_id' => $campaign->campaign_id,
                 'error' => $e->getMessage(),
             ]);
         }
