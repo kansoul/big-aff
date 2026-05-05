@@ -1,9 +1,8 @@
 import dayjs from '@/lib/dayjs'
-import { Activity, ArrowUpRight, Calendar, Medal, Network, Sparkles } from 'lucide-react'
+import { Activity, ArrowUpRight, Calendar, Network, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -72,30 +71,50 @@ function MainTeamLeaderBadge({
   stats?: RevenueStats
   loading: boolean
 }) {
+  const goldMedal = (
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-yellow-500/10 text-lg">
+      🥇
+    </div>
+  )
+
   if (loading) {
-    return <Skeleton className="h-8 w-56 rounded-full" />
+    return <Skeleton className="h-24 w-full rounded-xl sm:w-80" />
   }
 
   if (!row || !stats) {
     return (
-      <Badge variant="outline" className="h-8 gap-1.5 rounded-full px-3 text-muted-foreground">
-        <Medal className="h-3.5 w-3.5" />
-        {label}: No data
-      </Badge>
+      <div className="flex min-h-24 w-full items-center gap-4 rounded-xl border border-border/60 bg-zinc-950 px-5 py-4 text-white shadow-sm sm:w-80">
+        {goldMedal}
+        <div className="min-w-0">
+          <div className="text-xs font-black uppercase tracking-wide text-yellow-400">{label}</div>
+          <div className="mt-1 text-lg font-black text-white">No data</div>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Badge
-      variant="outline"
-      className="h-auto min-h-8 max-w-full gap-1.5 rounded-full border-amber-500/30 bg-amber-500/10 px-3 py-1 text-amber-700 dark:text-amber-300"
-    >
-      <Medal className="h-3.5 w-3.5 shrink-0" />
-      <span className="truncate">
-        {label}: {row.main_team_name}
-      </span>
-      <span className="shrink-0 font-bold">{formatCurrency(stats.profit)}</span>
-    </Badge>
+    <div className="flex min-h-24 w-full items-center gap-4 rounded-xl border border-zinc-900 bg-zinc-950 px-5 py-4 text-white shadow-sm sm:w-80">
+      {goldMedal}
+      <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-1">
+        <div className="col-span-2 text-xs font-black uppercase tracking-wide text-yellow-400">
+          {label}
+        </div>
+        <div className="col-span-2 truncate text-lg font-black text-white">
+          {row.main_team_name}
+        </div>
+        <div>
+          <div className="text-xs font-medium text-zinc-500">Profit</div>
+          <div className="text-base font-black text-emerald-500">
+            {formatCurrency(stats.profit)}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs font-medium text-zinc-500">ROI</div>
+          <div className="text-base font-black text-emerald-500">{stats.roi.toFixed(2)}%</div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -122,6 +141,19 @@ function MainTeamStatsCells({ stats }: { stats: RevenueStats }) {
   )
 }
 
+function getMainTeamTotalStats(row: RevenueMainTeamRow): RevenueStats {
+  const revenue = MAIN_TEAM_PERIODS.reduce((sum, period) => sum + row[period.key].revenue, 0)
+  const spend = MAIN_TEAM_PERIODS.reduce((sum, period) => sum + row[period.key].spend, 0)
+  const profit = revenue - spend
+
+  return {
+    revenue,
+    spend,
+    profit,
+    roi: spend > 0 ? (profit / spend) * 100 : 0,
+  }
+}
+
 function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loading: boolean }) {
   const topToday = topMainTeamByProfit(rows, 'today')
   const topMonth = topMainTeamByProfit(rows, 'this_month')
@@ -142,15 +174,15 @@ function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loadi
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+          <div className="grid w-full min-w-0 gap-3 sm:grid-cols-2 lg:w-auto">
             <MainTeamLeaderBadge
-              label="Main Team Top Day"
+              label="#1 Daily Profit"
               row={topToday}
               stats={topToday?.today}
               loading={loading}
             />
             <MainTeamLeaderBadge
-              label="Main Team Top Month"
+              label="#1 Monthly Profit"
               row={topMonth}
               stats={topMonth?.this_month}
               loading={loading}
@@ -184,9 +216,20 @@ function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loadi
                   </span>
                 </TableHead>
               ))}
+              <TableHead
+                colSpan={4}
+                className="border-l border-b border-border/30 py-2.5 text-center font-semibold text-foreground"
+              >
+                <span className="inline-flex items-center gap-2">
+                  Total
+                  <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-bold text-red-500">
+                    Total
+                  </span>
+                </span>
+              </TableHead>
             </TableRow>
             <TableRow className="border-b border-border/50 bg-muted/10 hover:bg-muted/10">
-              {MAIN_TEAM_PERIODS.flatMap((period) =>
+              {[...MAIN_TEAM_PERIODS, { key: 'total', label: 'Total' }].flatMap((period) =>
                 ['Revenue', 'Spend', 'Profit', 'ROI %'].map((label, index) => (
                   <TableHead
                     key={`${period.key}-${label}`}
@@ -205,7 +248,7 @@ function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loadi
                     <TableCell className="sticky left-0 z-10 border-r border-border/30 bg-card px-3 py-3 md:px-6">
                       <Skeleton className="h-4 w-32" />
                     </TableCell>
-                    {Array.from({ length: 16 }).map((__, cellIndex) => (
+                    {Array.from({ length: 20 }).map((__, cellIndex) => (
                       <TableCell key={cellIndex}>
                         <Skeleton className="h-4 w-20" />
                       </TableCell>
@@ -222,12 +265,13 @@ function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loadi
                     {MAIN_TEAM_PERIODS.map((period) => (
                       <MainTeamStatsCells key={period.key} stats={row[period.key]} />
                     ))}
+                    <MainTeamStatsCells stats={getMainTeamTotalStats(row)} />
                   </TableRow>
                 ))}
             {!loading && rows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={17}
+                  colSpan={21}
                   className="px-3 py-8 text-center text-xs text-muted-foreground"
                 >
                   No data

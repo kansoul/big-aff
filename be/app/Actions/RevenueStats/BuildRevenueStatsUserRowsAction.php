@@ -5,6 +5,7 @@ namespace App\Actions\RevenueStats;
 use App\Enums\TeamRole;
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
+use App\Support\MainTeam\MainTeamReportDataScope;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\OwnerResource\ChannelLinkedOwnerResource;
 use Carbon\Carbon;
@@ -115,6 +116,7 @@ class BuildRevenueStatsUserRowsAction
                     });
                 }
             )
+            ->when(config('main_system.is_main'), fn ($query) => MainTeamReportDataScope::excludeNonFetchableAccounts($query))
             ->selectRaw('account_id, COALESCE(SUM(spend), 0) as spend')
             ->groupBy('account_id');
 
@@ -171,6 +173,7 @@ class BuildRevenueStatsUserRowsAction
                     });
                 }
             )
+            ->when(config('main_system.is_main'), fn ($query) => MainTeamReportDataScope::excludeNonFetchableChannels($query))
             ->selectRaw('channel_code, COALESCE(SUM(estimated_earnings), 0) as revenue')
             ->groupBy('channel_code');
 

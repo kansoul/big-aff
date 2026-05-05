@@ -6,6 +6,7 @@ use App\Enums\Permission;
 use App\Enums\TeamRole;
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
+use App\Support\MainTeam\MainTeamReportDataScope;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\OwnerResource\ChannelLinkedOwnerResource;
 use Carbon\Carbon;
@@ -72,6 +73,7 @@ class GetRevenueTableAction
         $perAccount = InsightReport::query()
             ->whereDate('date_start', '>=', $from)
             ->whereDate('date_start', '<=', $to)
+            ->when(config('main_system.is_main'), fn ($query) => MainTeamReportDataScope::excludeNonFetchableAccounts($query))
             ->selectRaw('
                 account_id,
                 COALESCE(SUM(CASE WHEN date_start = ? THEN spend ELSE 0 END), 0) as daily_spend,
@@ -121,6 +123,7 @@ class GetRevenueTableAction
         $perChannel = RevenueReport::query()
             ->whereDate('date', '>=', $from)
             ->whereDate('date', '<=', $to)
+            ->when(config('main_system.is_main'), fn ($query) => MainTeamReportDataScope::excludeNonFetchableChannels($query))
             ->selectRaw('
                 channel_code,
                 COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as daily_revenue,
