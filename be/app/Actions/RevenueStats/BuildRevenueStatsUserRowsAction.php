@@ -34,10 +34,10 @@ class BuildRevenueStatsUserRowsAction
      *     profit: float
      * }>
      */
-    public function execute(array $filters): Collection
+    public function execute(array $filters, bool $skipMainTeamScope = false): Collection
     {
-        $spendByUser = $this->spendByUser($filters);
-        $revenueByUser = $this->revenueByUser($filters);
+        $spendByUser = $this->spendByUser($filters, $skipMainTeamScope);
+        $revenueByUser = $this->revenueByUser($filters, $skipMainTeamScope);
 
         $userIds = $spendByUser->keys()
             ->merge($revenueByUser->keys())
@@ -85,7 +85,7 @@ class BuildRevenueStatsUserRowsAction
      *     account_ids?: int[]|null
      * }  $filters
      */
-    private function spendByUser(array $filters): Collection
+    private function spendByUser(array $filters, bool $skipMainTeamScope = false): Collection
     {
         $perAccount = InsightReport::query()
             ->when(
@@ -116,7 +116,7 @@ class BuildRevenueStatsUserRowsAction
                     });
                 }
             )
-            ->when(config('main_system.is_main'), fn ($query) => MainTeamReportDataScope::excludeNonFetchableAccounts($query))
+            ->when(config('main_system.is_main') && ! $skipMainTeamScope, fn ($query) => MainTeamReportDataScope::excludeNonFetchableAccounts($query))
             ->selectRaw('account_id, COALESCE(SUM(spend), 0) as spend')
             ->groupBy('account_id');
 
@@ -148,7 +148,7 @@ class BuildRevenueStatsUserRowsAction
      *     channel_codes?: string[]|null
      * }  $filters
      */
-    private function revenueByUser(array $filters): Collection
+    private function revenueByUser(array $filters, bool $skipMainTeamScope = false): Collection
     {
         $perChannel = RevenueReport::query()
             ->when(
@@ -173,7 +173,7 @@ class BuildRevenueStatsUserRowsAction
                     });
                 }
             )
-            ->when(config('main_system.is_main'), fn ($query) => MainTeamReportDataScope::excludeNonFetchableChannels($query))
+            ->when(config('main_system.is_main') && ! $skipMainTeamScope, fn ($query) => MainTeamReportDataScope::excludeNonFetchableChannels($query))
             ->selectRaw('channel_code, COALESCE(SUM(estimated_earnings), 0) as revenue')
             ->groupBy('channel_code');
 

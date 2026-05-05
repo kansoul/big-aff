@@ -4,7 +4,6 @@ namespace App\Actions\Dashboard;
 
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
-use App\Support\MainTeam\MainTeamReportDataScope;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\OwnerResource\ChannelLinkedOwnerResource;
 use Carbon\Carbon;
@@ -45,10 +44,6 @@ class GetInsightChartAction
         $query = InsightReport::query();
         (new AccountLinkedOwnerResource)->applyTo($query);
 
-        if (config('main_system.is_main')) {
-            MainTeamReportDataScope::excludeNonFetchableAccounts($query);
-        }
-
         return $query;
     }
 
@@ -56,10 +51,6 @@ class GetInsightChartAction
     {
         $query = RevenueReport::query();
         (new ChannelLinkedOwnerResource)->applyTo($query);
-
-        if (config('main_system.is_main')) {
-            MainTeamReportDataScope::excludeNonFetchableChannels($query);
-        }
 
         return $query;
     }

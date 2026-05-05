@@ -22,7 +22,7 @@ class GetRevenueStatsOverviewAction
      */
     public function execute(array $filters): array
     {
-        $rows = $this->buildRevenueStatsUserRowsAction->execute($filters);
+        $rows = $this->buildRevenueStatsUserRowsAction->execute($filters, skipMainTeamScope: true);
         $revenue = (float) $rows->sum('revenue');
         $spend = (float) $rows->sum('spend');
         $profit = $revenue - $spend;
