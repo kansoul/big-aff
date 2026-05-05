@@ -4,6 +4,7 @@ namespace App\Actions\MainSystem;
 
 use App\Models\Channel;
 use App\Services\MainSystem\MainSystemHttpClient;
+use Illuminate\Support\Facades\Log;
 
 class SendMainSystemChannelsAction
 {
@@ -14,6 +15,10 @@ class SendMainSystemChannelsAction
     public function execute(): void
     {
         if (! $this->client->shouldPush()) {
+            Log::channel('sync_reports')->warning('[MainSystemSync] Channel send skipped in job: push disabled', [
+                'blockers' => $this->client->pushBlockers(),
+            ]);
+
             return;
         }
 
@@ -29,6 +34,8 @@ class SendMainSystemChannelsAction
             ->all();
 
         if ($channels === []) {
+            Log::channel('sync_reports')->info('[MainSystemSync] Channel send skipped in job: empty channels');
+
             return;
         }
 

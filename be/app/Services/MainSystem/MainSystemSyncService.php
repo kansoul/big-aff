@@ -6,6 +6,7 @@ use App\Actions\MainSystem\ReceiveMainSystemChannelsAction;
 use App\Actions\MainSystem\ReceiveMainSystemInsightReportsAction;
 use App\Jobs\SendMainSystemChannelsJob;
 use App\Jobs\SendMainSystemInsightReportsJob;
+use Illuminate\Support\Facades\Log;
 
 class MainSystemSyncService
 {
@@ -38,21 +39,52 @@ class MainSystemSyncService
      */
     public function dispatchInsightReports(array $accounts, array $campaigns, array $insights): void
     {
-        if (! $this->mainSystemHttpClient->shouldPush() || $insights === []) {
+        if (! $this->mainSystemHttpClient->shouldPush()) {
+            Log::channel('sync_reports')->warning('[MainSystemSync] Insight dispatch skipped: push disabled', [
+                'blockers' => $this->mainSystemHttpClient->pushBlockers(),
+                'accounts_count' => count($accounts),
+                'campaigns_count' => count($campaigns),
+                'insights_count' => count($insights),
+            ]);
+
+            return;
+        }
+
+        if ($insights === []) {
+            Log::channel('sync_reports')->info('[MainSystemSync] Insight dispatch skipped: empty insights', [
+                'accounts_count' => count($accounts),
+                'campaigns_count' => count($campaigns),
+            ]);
+
             return;
         }
 
         SendMainSystemInsightReportsJob::dispatch($accounts, $campaigns, $insights)
             ->onQueue(config('queue.queues.main-system-sync'));
+
+        Log::channel('sync_reports')->info('[MainSystemSync] Insight send job dispatched', [
+            'queue' => config('queue.queues.main-system-sync'),
+            'accounts_count' => count($accounts),
+            'campaigns_count' => count($campaigns),
+            'insights_count' => count($insights),
+        ]);
     }
 
     public function dispatchChannels(): void
     {
         if (! $this->mainSystemHttpClient->shouldPush()) {
+            Log::channel('sync_reports')->warning('[MainSystemSync] Channel dispatch skipped: push disabled', [
+                'blockers' => $this->mainSystemHttpClient->pushBlockers(),
+            ]);
+
             return;
         }
 
         SendMainSystemChannelsJob::dispatch()
             ->onQueue(config('queue.queues.main-system-sync'));
+
+        Log::channel('sync_reports')->info('[MainSystemSync] Channel send job dispatched', [
+            'queue' => config('queue.queues.main-system-sync'),
+        ]);
     }
 }
