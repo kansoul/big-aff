@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios'
 
 import { apiURL } from '@/config'
+import { useSessionStore } from '@/hooks/useSessionStore'
 
 export const axiosInstance = axios.create({
   baseURL: apiURL,
@@ -13,6 +14,14 @@ export const axiosInstance = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
+})
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = useSessionStore.getState().getActiveToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
 })
 
 axiosInstance.interceptors.response.use(

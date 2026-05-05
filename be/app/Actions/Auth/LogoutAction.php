@@ -2,24 +2,19 @@
 
 namespace App\Actions\Auth;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Sanctum\PersonalAccessToken;
 
 class LogoutAction
 {
     public function execute(): void
     {
-        /** @var User $user */
-        $user = Auth::guard('web')->user();
+        /** @var User|null $user */
+        $user = Auth::user();
 
-        if ($user !== null && method_exists($user, 'currentAccessToken')) {
-            $token = $user->currentAccessToken();
-            if ($token instanceof PersonalAccessToken) {
-                $token->delete();
-            }
+        if ($user !== null) {
+            $user->tokens()->delete();
         }
-
-        Auth::guard('web')->logout();
 
         if (request()->hasSession()) {
             request()->session()->invalidate();
