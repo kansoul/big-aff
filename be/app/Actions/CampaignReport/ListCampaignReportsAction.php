@@ -137,18 +137,16 @@ class ListCampaignReportsAction
                     $resource->allowedUserIds(),
                 ));
 
-            if (! $resource->isAdmin()) {
-                $query->whereIn('campaign_reports.account_id', function ($sub) use ($userIds, $filters) {
-                    $sub->select('accounts.account_id')
-                        ->from('account_user')
-                        ->join('accounts', 'accounts.id', '=', 'account_user.account_id')
-                        ->whereNull('accounts.deleted_at')
-                        ->when(! empty($filters['account_ids']), function ($sub) use ($filters) {
-                            $sub->whereIn('accounts.account_id', $filters['account_ids']);
-                        })
-                        ->whereIn('account_user.user_id', $userIds);
-                });
-            }
+            $query->whereIn('campaign_reports.account_id', function ($sub) use ($userIds, $filters) {
+                $sub->select('accounts.account_id')
+                    ->from('account_user')
+                    ->join('accounts', 'accounts.id', '=', 'account_user.account_id')
+                    ->whereNull('accounts.deleted_at')
+                    ->when(! empty($filters['account_ids']), function ($sub) use ($filters) {
+                        $sub->whereIn('accounts.account_id', $filters['account_ids']);
+                    })
+                    ->whereIn('account_user.user_id', $userIds);
+            });
         } else {
             $resource->applyTo($query);
         }

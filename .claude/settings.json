@@ -1,7 +1,46 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs ls *)"
+      "Bash(xargs ls *)",
+      "Bash(vendor/bin/pint app/Actions/Team/CreateTeamAction.php --format agent)",
+      "Bash(vendor/bin/pint app/Actions/Site/AssignSiteAction.php --format agent)",
+      "Bash(vendor/bin/pint app/Services/Integrations/CampaignReportSyncService.php --format agent)",
+      "Bash(vendor/bin/pint app/Actions/CampaignReport/ListCampaignReportsAction.php --format agent)",
+      "Bash(vendor/bin/pint app/Services/CampaignReport/CampaignReportService.php --format agent)",
+      "Bash(vendor/bin/pint app/Actions/CampaignReport/ListCampaignReportsAction.php app/Services/CampaignReport/CampaignReportService.php --format agent)",
+      "Bash(vendor/bin/pint app/Services/Integrations/CampaignReportSyncService.php app/Actions/CampaignReport/ListCampaignReportsAction.php --format agent)",
+      "Bash(vendor/bin/pint app/Actions/User/ListUsersAction.php --format agent)",
+      "Bash(vendor/bin/pint app/Actions/Team/AssignTeamAction.php --format agent)",
+      "Bash(vendor/bin/pint app/Actions/Channel/ListUsersWithChannelsAction.php --format agent)",
+      "Bash(node test-dayjs.cjs)",
+      "Bash(node test-dayjs.js)",
+      "Bash(vendor/bin/pint app/Actions/User/UpdateUserAction.php --format agent)",
+      "Bash(vendor/bin/pint app/Actions/CampaignReport/ToggleCampaignReportStatusAction.php --format agent)",
+      "Bash(vendor/bin/pint app/Actions/AdsDeliveryEntities/ToggleAdsetStatusAction.php app/Actions/AdsDeliveryEntities/ToggleAdStatusAction.php --format agent)",
+      "Bash(vendor/bin/pint --dirty --format agent app/Http/Resources/AdsDeliveryEntities/AdsetInsightsReportResource.php app/Http/Resources/AdsDeliveryEntities/AdsInsightsReportResource.php app/Models/Traits/Relationship/AdsetInsightsReportRelationship.php app/Models/Traits/Relationship/AdsInsightsReportRelationship.php)",
+      "Bash(grep -n 'protected $table\\\\|class AdsLink' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Models/AdsLink.php)",
+      "Bash(vendor/bin/pint app/Actions/Post/GetPostOptionsAction.php --format agent)",
+      "Bash(xargs cat *)",
+      "Bash(sed -n '170,200p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Actions/CampaignRule/EvaluateCampaignRuleAction.php)",
+      "Bash(sed -n '325,360p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Actions/CampaignRule/EvaluateAdAdsetRuleAction.php)",
+      "Bash(sed -n '110,130p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Services/Integrations/Facebook/FacebookAdsService.php)",
+      "Bash(vendor/bin/pint app/Jobs/SendTelegramWarningJob.php app/Services/Integrations/Telegram/TelegramService.php app/Actions/CampaignRule/EvaluateCampaignRuleAction.php app/Actions/CampaignRule/EvaluateAdAdsetRuleAction.php --format agent)",
+      "Bash(vendor/bin/pint app/Jobs/StoreAdsConversionJob.php --format agent)",
+      "Bash(npx prettier *)",
+      "Bash(grep -A 40 '$message')",
+      "Bash(grep -E \"\\\\.php$\")",
+      "Bash(vendor/bin/pint --dirty --format agent app/Actions/Option/ app/Services/Option/ app/Http/Controllers/Api/OptionController.php)",
+      "Bash(vendor/bin/pint --dirty --format agent app/Support/OwnerResource/ app/Actions/Option/ app/Actions/Site/GetSiteOptionsAction.php app/Actions/Post/GetPostOptionsAction.php)",
+      "Bash(vendor/bin/pint --dirty --format agent app/Support/OwnerResource/TeamOwnerResource.php app/Actions/Team/GetTeamOptionsAction.php app/Services/Option/OptionService.php app/Http/Controllers/Api/OptionController.php)",
+      "Bash(vendor/bin/pint --dirty --format agent app/Support/OwnerResource/UserOwnerResource.php)",
+      "Bash(sed -n '85,105p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Http/Controllers/Api/UserController.php)",
+      "Bash(sed -n '145,165p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Http/Controllers/Api/SiteController.php)",
+      "Bash(sed -n '234,255p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Http/Controllers/Api/PostController.php)",
+      "Bash(sed -n '95,125p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Http/Controllers/Api/ChannelController.php)",
+      "Bash(sed -n '60,90p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Http/Controllers/Api/StyleController.php)",
+      "Bash(sed -n '1,45p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Services/Team/TeamService.php)",
+      "Bash(sed -n '1,45p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Services/Account/AccountService.php)",
+      "Bash(sed -n '65,80p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Services/Post/PostService.php)"
     ]
   }
 }
