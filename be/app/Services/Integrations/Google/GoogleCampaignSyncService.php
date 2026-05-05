@@ -4,11 +4,9 @@ namespace App\Services\Integrations\Google;
 
 use App\Enums\AdsType;
 use App\Jobs\ApplyCampaignNameToRuleJob;
-use App\Jobs\EvaluateCampaignRuleJob;
 use App\Models\Account;
 use App\Models\Campaign;
 use App\Models\InsightReport;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -187,27 +185,6 @@ class GoogleCampaignSyncService
 
                 continue;
             }
-        }
-
-        if (Carbon::parse($data['end_date'])->isToday()) {
-            self::dispatchCampaignRuleJobs($data['end_date']);
-        }
-    }
-
-    private static function dispatchCampaignRuleJobs(string $date): void
-    {
-        $campaigns = Campaign::query()
-            ->whereHas(
-                'applyRules.campaignRule',
-                fn ($q) => $q
-                    ->where('is_active', true)
-                    ->where(fn ($q2) => $q2->whereNull('expired_at')->orWhere('expired_at', '>=', now()))
-            )
-            ->where('ads_type', AdsType::GOOGLE->value)
-            ->get();
-
-        foreach ($campaigns as $campaign) {
-            EvaluateCampaignRuleJob::dispatch($campaign, $date);
         }
     }
 }

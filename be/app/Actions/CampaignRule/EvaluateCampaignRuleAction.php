@@ -154,9 +154,6 @@ class EvaluateCampaignRuleAction
         $spend = (float) ($report->a_spend ?? 0);
 
         $rpc = (float) ($report->r_rpc ?? 0);
-        if ($rpc == 0.0 && (float) ($report->r_conversion ?? 0) > 0) {
-            $rpc = (float) ($report->r_revenue ?? 0) / (float) $report->r_conversion;
-        }
 
         $realtimeClicks = (int) ($report->realtimeReport?->click_ad_count ?? 0);
         $revenue = $realtimeClicks * $rpc;
