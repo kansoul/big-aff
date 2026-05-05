@@ -23,18 +23,28 @@ final class UserOwnerResource extends OwnerResource
 {
     protected function authorizeRecord(Model $model, array $allowedIds): void
     {
-        if (! in_array($model->id, $allowedIds, true)) {
-            throw new AuthorizationException;
+        if (in_array($model->id, $allowedIds, true)) {
+            return;
         }
+
+        if ($model->created_by === Auth::id()) {
+            return;
+        }
+
+        throw new AuthorizationException;
     }
 
     protected function scope(Builder $query, array $allowedIds): void
     {
         $authId = Auth::id();
 
-        $query->whereIn('users.id', $allowedIds)
+        $query->where(function (Builder $q) use ($allowedIds, $authId) {
+            $q->whereIn('users.id', $allowedIds)
+                ->orWhere('users.created_by', $authId);
+        })
             ->where(function (Builder $q) use ($authId): void {
                 $q->where('users.id', $authId)
+                    ->orWhere('users.created_by', $authId)
                     ->orWhereDoesntHave('teams', fn (Builder $tq) => $tq->where(
                         'team_user.team_role', TeamRole::MANAGER->value
                     ));

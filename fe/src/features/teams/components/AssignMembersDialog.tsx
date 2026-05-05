@@ -59,11 +59,10 @@ export function AssignMembersDialog({
   const memberPickerOptions = options.filter(
     (o) => !managerIds.includes(o.id) && !leaderIds.includes(o.id),
   )
-  const totalCount = managerIds.length + leaderIds.length + memberIds.length
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onOpenChange(false)}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{team ? `Manage Members · ${team.name}` : 'Manage Members'}</DialogTitle>
           <DialogDescription>
@@ -71,89 +70,91 @@ export function AssignMembersDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
-          <div className="rounded-lg border border-border border-l-2 border-l-blue-300 p-3 dark:border-l-blue-700">
-            <div className="mb-2 flex items-center gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">
-                Managers
-              </p>
-              {managerIds.length > 0 ? (
-                <span className="rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">
-                  {managerIds.length}
-                </span>
-              ) : null}
-            </div>
-            {optionsLoading ? (
-              <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" />
-                <span>Loading users…</span>
+        <div className="min-h-0 flex-1 overflow-y-auto py-1">
+          <div className="space-y-3">
+            <div className="rounded-lg border border-border border-l-2 border-l-blue-300 p-3 dark:border-l-blue-700">
+              <div className="mb-2 flex items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">
+                  Managers
+                </p>
+                {managerIds.length > 0 ? (
+                  <span className="rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">
+                    {managerIds.length}
+                  </span>
+                ) : null}
               </div>
-            ) : (
-              <AssignUsersChildrenPicker
-                disabled={!canAssign || saving}
-                value={managerIds}
-                onChange={onManagerIdsChange}
-                options={managerPickerOptions}
-                placeholder="Select managers…"
-                tagClassName="bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
-              />
-            )}
-          </div>
+              {optionsLoading ? (
+                <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">
+                  <Loader2 className="size-3.5 animate-spin" />
+                  <span>Loading users…</span>
+                </div>
+              ) : (
+                <AssignUsersChildrenPicker
+                  disabled={!canAssign || saving}
+                  value={managerIds}
+                  onChange={onManagerIdsChange}
+                  options={managerPickerOptions}
+                  placeholder="Select managers…"
+                  tagClassName="bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
+                />
+              )}
+            </div>
 
-          <div className="rounded-lg border border-border border-l-2 border-l-amber-300 p-3 dark:border-l-amber-700">
-            <div className="mb-2 flex items-center gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-                Leaders
-              </p>
-              {leaderIds.length > 0 ? (
-                <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
-                  {leaderIds.length}
-                </span>
-              ) : null}
-            </div>
-            {optionsLoading ? (
-              <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" />
-                <span>Loading users…</span>
+            <div className="rounded-lg border border-border border-l-2 border-l-amber-300 p-3 dark:border-l-amber-700">
+              <div className="mb-2 flex items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                  Leaders
+                </p>
+                {leaderIds.length > 0 ? (
+                  <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+                    {leaderIds.length}
+                  </span>
+                ) : null}
               </div>
-            ) : (
-              <AssignUsersChildrenPicker
-                disabled={!canAssign || saving}
-                value={leaderIds}
-                onChange={onLeaderIdsChange}
-                options={leaderPickerOptions}
-                placeholder="Select leaders…"
-                tagClassName="bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
-              />
-            )}
-          </div>
+              {optionsLoading ? (
+                <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">
+                  <Loader2 className="size-3.5 animate-spin" />
+                  <span>Loading users…</span>
+                </div>
+              ) : (
+                <AssignUsersChildrenPicker
+                  disabled={!canAssign || saving}
+                  value={leaderIds}
+                  onChange={onLeaderIdsChange}
+                  options={leaderPickerOptions}
+                  placeholder="Select leaders…"
+                  tagClassName="bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+                />
+              )}
+            </div>
 
-          <div className="rounded-lg border border-border border-l-2 border-l-border p-3">
-            <div className="mb-2 flex items-center gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Members
-              </p>
-              {memberIds.length > 0 ? (
-                <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
-                  {memberIds.length}
-                </span>
-              ) : null}
-            </div>
-            {optionsLoading ? (
-              <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" />
-                <span>Loading users…</span>
+            <div className="rounded-lg border border-border border-l-2 border-l-border p-3">
+              <div className="mb-2 flex items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Members
+                </p>
+                {memberIds.length > 0 ? (
+                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
+                    {memberIds.length}
+                  </span>
+                ) : null}
               </div>
-            ) : (
-              <AssignUsersChildrenPicker
-                disabled={!canAssign || saving}
-                value={memberIds}
-                onChange={onMemberIdsChange}
-                options={memberPickerOptions}
-                placeholder="Select members…"
-                tagClassName="bg-muted text-muted-foreground"
-              />
-            )}
+              {optionsLoading ? (
+                <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">
+                  <Loader2 className="size-3.5 animate-spin" />
+                  <span>Loading users…</span>
+                </div>
+              ) : (
+                <AssignUsersChildrenPicker
+                  disabled={!canAssign || saving}
+                  value={memberIds}
+                  onChange={onMemberIdsChange}
+                  options={memberPickerOptions}
+                  placeholder="Select members…"
+                  tagClassName="bg-muted text-muted-foreground"
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -176,7 +177,7 @@ export function AssignMembersDialog({
           <Button
             type="button"
             onClick={onSave}
-            disabled={!canAssign || saving || optionsLoading || totalCount === 0}
+            disabled={!canAssign || saving || optionsLoading}
             className="gap-1.5"
           >
             {saving ? <Loader2 className="size-3.5 animate-spin" /> : null}

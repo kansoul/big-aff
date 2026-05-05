@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AlertCircle, Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
@@ -37,48 +37,36 @@ import {
   accountUpdateSchema,
 } from '@/features/accounts/types'
 import { formatApiError } from '@/features/settings/components'
-import { teamsApi } from '@/features/teams/api'
+import { usersApi } from '@/features/users/api/users'
 
 const ADS_TYPE_OPTIONS = [
   { value: 'facebook', label: 'Facebook' },
   { value: 'google', label: 'Google' },
 ] as const
 
-type TeamMember = { id: number; name: string; email: string }
-
-function useTeamUsers(teamId: number | undefined | null): SearchableSelectOption[] {
-  const [loadedTeamId, setLoadedTeamId] = useState<number | null | undefined>(null)
-  const [users, setUsers] = useState<TeamMember[]>([])
+function useUsers(): SearchableSelectOption[] {
+  const [users, setUsers] = useState<{ id: number; name: string }[]>([])
 
   useEffect(() => {
-    if (!teamId) return
     let ignore = false
-    teamsApi
-      .members(teamId)
+    usersApi
+      .listOptions()
       .then((res) => {
         if (!ignore) {
           setUsers(res.data.data)
-          setLoadedTeamId(teamId)
         }
       })
       .catch(() => {
         if (!ignore) {
           setUsers([])
-          setLoadedTeamId(teamId)
         }
       })
     return () => {
       ignore = true
     }
-  }, [teamId])
+  }, [])
 
-  return useMemo(
-    () =>
-      loadedTeamId === teamId
-        ? users.map((u) => ({ value: String(u.id), label: `${u.name} (${u.email})` }))
-        : [],
-    [loadedTeamId, teamId, users],
-  )
+  return useMemo(() => users.map((u) => ({ value: String(u.id), label: u.name })), [users])
 }
 
 type CreateAccountDialogProps = {
@@ -86,7 +74,6 @@ type CreateAccountDialogProps = {
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
   businessCenterOptions: SearchableSelectOption[]
-  teamOptions: SearchableSelectOption[]
 }
 
 export function CreateAccountDialog({
@@ -94,17 +81,16 @@ export function CreateAccountDialog({
   onOpenChange,
   onSuccess,
   businessCenterOptions,
-  teamOptions,
 }: CreateAccountDialogProps) {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const userOptions = useUsers()
 
   const form = useForm<AccountCreateFormValues>({
     resolver: zodResolver(accountCreateSchema),
     defaultValues: {
       ads_type: 'facebook',
       business_center_id: null,
-      team_id: undefined,
       user_id: null,
       status: null,
       is_special: false,
@@ -113,16 +99,12 @@ export function CreateAccountDialog({
     },
   })
 
-  const selectedTeamId = useWatch({ control: form.control, name: 'team_id' })
-  const teamUserOptions = useTeamUsers(selectedTeamId)
-
   useEffect(() => {
     if (!open) return
     setFormError(null)
     form.reset({
       ads_type: 'facebook',
       business_center_id: null,
-      team_id: undefined,
       user_id: null,
       status: null,
       is_special: false,
@@ -130,10 +112,6 @@ export function CreateAccountDialog({
       lines: '',
     })
   }, [open, form])
-
-  useEffect(() => {
-    form.setValue('user_id', null)
-  }, [selectedTeamId, form])
 
   const onSubmit = async (
     values: AccountCreateFormValues,
@@ -145,7 +123,6 @@ export function CreateAccountDialog({
       await accountsApi.create({
         ads_type: values.ads_type,
         business_center_id: values.business_center_id,
-        team_id: values.team_id,
         user_id: values.user_id,
         status: values.status,
         is_special: values.is_special,
@@ -157,7 +134,6 @@ export function CreateAccountDialog({
         form.reset({
           ads_type: 'facebook',
           business_center_id: null,
-          team_id: undefined,
           user_id: null,
           status: null,
           is_special: false,
@@ -216,30 +192,6 @@ export function CreateAccountDialog({
 
             <FormField
               control={form.control}
-              name="team_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Team <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <SearchableSelect
-                      value={field.value != null ? String(field.value) : ''}
-                      onValueChange={(value) =>
-                        field.onChange(value !== '' ? Number(value) : undefined)
-                      }
-                      options={teamOptions}
-                      placeholder="Select team"
-                      disabled={submitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="user_id"
               render={({ field }) => (
                 <FormItem>
@@ -250,9 +202,9 @@ export function CreateAccountDialog({
                       onValueChange={(value) =>
                         field.onChange(value === '__none__' ? null : Number(value))
                       }
-                      options={[{ value: '__none__', label: 'None' }, ...teamUserOptions]}
-                      placeholder={selectedTeamId ? 'Select user' : 'Select a team first'}
-                      disabled={submitting || !selectedTeamId}
+                      options={[{ value: '__none__', label: 'None' }, ...userOptions]}
+                      placeholder="Select user"
+                      disabled={submitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -415,7 +367,6 @@ type EditAccountDialogProps = {
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
   businessCenterOptions: SearchableSelectOption[]
-  teamOptions: SearchableSelectOption[]
 }
 
 export function EditAccountDialog({
@@ -423,11 +374,11 @@ export function EditAccountDialog({
   onOpenChange,
   onSuccess,
   businessCenterOptions,
-  teamOptions,
 }: EditAccountDialogProps) {
   const open = account !== null
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const userOptions = useUsers()
 
   const form = useForm<AccountUpdateFormValues>({
     resolver: zodResolver(accountUpdateSchema),
@@ -436,16 +387,12 @@ export function EditAccountDialog({
       account_name: null,
       ads_type: 'facebook',
       business_center_id: null,
-      team_id: undefined,
       user_id: null,
       status: null,
       is_special: false,
       sync_to_mcc: false,
     },
   })
-
-  const selectedTeamId = useWatch({ control: form.control, name: 'team_id' })
-  const teamUserOptions = useTeamUsers(selectedTeamId)
 
   const defaults = useMemo(
     () => ({
@@ -455,8 +402,7 @@ export function EditAccountDialog({
         ? 'facebook'
         : (account?.ads_type ?? 'facebook')) as 'facebook' | 'google',
       business_center_id: account?.business_center_id ?? null,
-      team_id: account?.team_id ?? undefined,
-      user_id: null as number | null,
+      user_id: account?.user_id ?? null,
       status: account?.status ?? null,
       is_special: account?.is_special ?? false,
       sync_to_mcc: account?.sync_to_mcc ?? false,
@@ -481,7 +427,6 @@ export function EditAccountDialog({
         account_name: values.account_name,
         ads_type: values.ads_type,
         business_center_id: values.business_center_id,
-        team_id: values.team_id,
         user_id: values.user_id,
         status: values.status,
         is_special: values.is_special,
@@ -573,30 +518,6 @@ export function EditAccountDialog({
 
             <FormField
               control={form.control}
-              name="team_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Team <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <SearchableSelect
-                      value={field.value != null ? String(field.value) : ''}
-                      onValueChange={(value) =>
-                        field.onChange(value !== '' ? Number(value) : undefined)
-                      }
-                      options={teamOptions}
-                      placeholder="Select team"
-                      disabled={submitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="user_id"
               render={({ field }) => (
                 <FormItem>
@@ -607,9 +528,9 @@ export function EditAccountDialog({
                       onValueChange={(value) =>
                         field.onChange(value === '__none__' ? null : Number(value))
                       }
-                      options={[{ value: '__none__', label: 'None' }, ...teamUserOptions]}
-                      placeholder={selectedTeamId ? 'Select user' : 'Select a team first'}
-                      disabled={submitting || !selectedTeamId}
+                      options={[{ value: '__none__', label: 'None' }, ...userOptions]}
+                      placeholder="Select user"
+                      disabled={submitting}
                     />
                   </FormControl>
                   <FormMessage />

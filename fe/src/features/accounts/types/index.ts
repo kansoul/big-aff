@@ -23,7 +23,6 @@ export type AccountOptionForAssign = {
   id: number
   account_id: string
   account_name: string | null
-  team_id: number | null
 }
 
 export interface AccountBusinessCenter {
@@ -40,14 +39,13 @@ export interface Account {
   id: number
   business_center_id: number | null
   business_center: AccountBusinessCenter | null
-  team_id: number
-  team: AccountTeam | null
   account_id: string
   account_name: string | null
   ads_type: AccountAdsType
   status: string | null
   is_special: boolean
   sync_to_mcc: boolean
+  user_id: number | null
   created_by: number | null
   updated_by: number | null
   created_at: string | null
@@ -76,7 +74,6 @@ export interface AccountFilterParams {
   query?: string | null
   ads_type?: AdsTypeFilterValue | null
   business_center_id?: number | null
-  team_id?: number | null
   status?: string | null
   order_by?: AccountOrderBy | null
   order?: AccountOrder | null
@@ -89,7 +86,6 @@ export const accountCreateSchema = z.object({
     error: 'Ads type is required',
   }),
   business_center_id: z.number().int().nullable().optional(),
-  team_id: z.number({ error: 'Team is required' }).int(),
   user_id: z.number().int().nullable().optional(),
   status: z.string().max(50).nullable().optional(),
   is_special: z.boolean().nullable().optional(),
@@ -104,7 +100,6 @@ export const accountUpdateSchema = z.object({
     error: 'Ads type is required',
   }),
   business_center_id: z.number().int().nullable().optional(),
-  team_id: z.number({ error: 'Team is required' }).int(),
   user_id: z.number().int().nullable().optional(),
   status: z.string().max(50).nullable().optional(),
   is_special: z.boolean(),
@@ -117,7 +112,6 @@ export type AccountUpdateFormValues = z.infer<typeof accountUpdateSchema>
 export type AccountCreatePayload = {
   ads_type: AdsTypeFilterValue
   business_center_id?: number | null
-  team_id: number
   user_id?: number | null
   status?: string | null
   is_special?: boolean | null
@@ -130,7 +124,6 @@ export type AccountUpdatePayload = {
   account_name?: string | null
   ads_type: AdsTypeFilterValue
   business_center_id?: number | null
-  team_id: number
   user_id?: number | null
   status?: string | null
   is_special: boolean

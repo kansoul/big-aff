@@ -66,12 +66,6 @@ function parseIds(value: unknown): number[] {
   return value.map((v) => Number(v)).filter((n) => !Number.isNaN(n))
 }
 
-function parseOptionalId(value: unknown): number | null {
-  if (value === null || value === undefined || value === '') return null
-  const parsed = Number(value)
-  return Number.isNaN(parsed) ? null : parsed
-}
-
 function toSelectOptions(items: { id: number; name: string }[]): SelectOption[] {
   return items.map((item) => ({ value: String(item.id), label: item.name }))
 }
@@ -94,9 +88,8 @@ export function TeamReportPage() {
     setSearchParams(buildUrlParams(filters), { replace: true })
   }, [filters, setSearchParams])
 
-  const [selectedTeamIdForOptions, setSelectedTeamIdForOptions] = useState<number | null>(() => {
-    const [teamId] = parseFiltersFromUrl(searchParams).team_ids ?? []
-    return teamId ?? null
+  const [selectedTeamIdsForOptions, setSelectedTeamIdsForOptions] = useState<number[]>(() => {
+    return parseFiltersFromUrl(searchParams).team_ids ?? []
   })
 
   const [teamOptions, setTeamOptions] = useState<SelectOption[]>([])
@@ -118,23 +111,18 @@ export function TeamReportPage() {
       })
   }, [])
 
-  const selectedTeamId = useMemo(() => {
-    const [teamId] = filters.team_ids ?? []
-    return teamId ?? null
+  useEffect(() => {
+    setSelectedTeamIdsForOptions(filters.team_ids ?? [])
   }, [filters.team_ids])
 
   useEffect(() => {
-    setSelectedTeamIdForOptions(selectedTeamId)
-  }, [selectedTeamId])
-
-  useEffect(() => {
-    if (!selectedTeamIdForOptions) {
+    if (selectedTeamIdsForOptions.length === 0) {
       setUserOptions([])
       return
     }
 
     void teamReportApi
-      .userOptions(selectedTeamIdForOptions)
+      .userOptions(selectedTeamIdsForOptions)
       .then((response) => {
         setUserOptions(toSelectOptions(response.data.data))
       })
@@ -142,7 +130,7 @@ export function TeamReportPage() {
         setUserOptions([])
         toast.error('Failed to load user options.')
       })
-  }, [selectedTeamIdForOptions])
+  }, [selectedTeamIdsForOptions])
 
   const loadData = useCallback(async (activeFilters: TeamReportFilterParams) => {
     try {
@@ -168,28 +156,28 @@ export function TeamReportPage() {
 
   const onApplyFilters = useCallback((values: Record<string, unknown>) => {
     const range = parseDateRange(values.date_range)
-    const nextTeamId = parseOptionalId(values.team_id)
+    const nextTeamIds = parseIds(values.team_ids)
     const nextUserIds = parseIds(values.user_ids)
 
     setFilters({
       date_from: range?.from ?? null,
       date_to: range?.to ?? null,
-      team_ids: nextTeamId ? [nextTeamId] : [],
-      user_ids: nextTeamId ? nextUserIds : [],
+      team_ids: nextTeamIds,
+      user_ids: nextTeamIds.length > 0 ? nextUserIds : [],
     })
   }, [])
 
   const onResetFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS)
-    setSelectedTeamIdForOptions(null)
+    setSelectedTeamIdsForOptions([])
   }, [])
 
   const onDraftFieldChange = useCallback((field: string, value: unknown) => {
-    if (field !== 'team_id') {
+    if (field !== 'team_ids') {
       return
     }
 
-    setSelectedTeamIdForOptions(parseOptionalId(value))
+    setSelectedTeamIdsForOptions(parseIds(value))
   }, [])
 
   const filterFields = useMemo<FilterFieldDef[]>(
@@ -205,10 +193,10 @@ export function TeamReportPage() {
         placeholder: 'Select date range',
       },
       {
-        field: 'team_id',
-        label: 'Team',
-        type: 'select',
-        value: selectedTeamIdForOptions ? String(selectedTeamIdForOptions) : null,
+        field: 'team_ids',
+        label: 'Teams',
+        type: 'multiselect',
+        value: selectedTeamIdsForOptions.map(String),
         options: teamOptions,
         placeholder: 'All teams',
       },
@@ -218,13 +206,14 @@ export function TeamReportPage() {
         type: 'multiselect',
         value: filters.user_ids?.map(String) ?? [],
         options: userOptions,
-        disabled: !selectedTeamIdForOptions,
-        placeholder: selectedTeamIdForOptions
-          ? 'All users in selected team'
-          : 'Select a team first',
+        disabled: selectedTeamIdsForOptions.length === 0,
+        placeholder:
+          selectedTeamIdsForOptions.length > 0
+            ? 'All users in selected teams'
+            : 'Select teams first',
       },
     ],
-    [filters, selectedTeamIdForOptions, teamOptions, userOptions],
+    [filters, selectedTeamIdsForOptions, teamOptions, userOptions],
   )
 
   return (

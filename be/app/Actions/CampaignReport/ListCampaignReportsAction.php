@@ -129,7 +129,29 @@ class ListCampaignReportsAction
 
         $query = CampaignReport::query();
 
-        $resource->applyTo($query);
+        if (! empty($filters['user_ids'])) {
+            $userIds = $resource->isAdmin()
+                ? array_map('intval', (array) $filters['user_ids'])
+                : array_values(array_intersect(
+                    array_map('intval', (array) $filters['user_ids']),
+                    $resource->allowedUserIds(),
+                ));
+
+            if (! $resource->isAdmin()) {
+                $query->whereIn('campaign_reports.account_id', function ($sub) use ($userIds, $filters) {
+                    $sub->select('accounts.account_id')
+                        ->from('account_user')
+                        ->join('accounts', 'accounts.id', '=', 'account_user.account_id')
+                        ->whereNull('accounts.deleted_at')
+                        ->when(! empty($filters['account_ids']), function ($sub) use ($filters) {
+                            $sub->whereIn('accounts.account_id', $filters['account_ids']);
+                        })
+                        ->whereIn('account_user.user_id', $userIds);
+                });
+            }
+        } else {
+            $resource->applyTo($query);
+        }
 
         if (! empty($filters['date_from'])) {
             $query->whereDate('date_start', '>=', $filters['date_from']);
@@ -137,22 +159,6 @@ class ListCampaignReportsAction
 
         if (! empty($filters['date_to'])) {
             $query->whereDate('date_start', '<=', $filters['date_to']);
-        }
-
-        if (! empty($filters['user_ids'])) {
-            $userIds = $resource->isAdmin()
-                ? $filters['user_ids']
-                : array_values(array_intersect($filters['user_ids'], $resource->allowedUserIds()));
-
-            $query->whereIn('campaign_reports.account_id', function ($sub) use ($userIds, $filters) {
-                $sub->select('accounts.account_id')
-                    ->from('account_user')
-                    ->join('accounts', 'accounts.id', '=', 'account_user.account_id')
-                    ->when(! empty($filters['account_ids']), function ($sub) use ($filters) {
-                        $sub->whereIn('accounts.account_id', $filters['account_ids']);
-                    })
-                    ->whereIn('user_id', $userIds);
-            });
         }
 
         if (! empty($filters['account_ids'])) {

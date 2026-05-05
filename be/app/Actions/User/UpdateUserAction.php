@@ -3,6 +3,8 @@
 namespace App\Actions\User;
 
 use App\Actions\Auth\InvalidateUserRemoteSessionsAction;
+use App\Enums\TeamRole;
+use App\Models\TeamUser;
 use App\Models\User;
 use App\Models\UserParentChild;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -40,10 +42,18 @@ class UpdateUserAction
             $parentId = $data['parent_id'];
             unset($data['parent_id']);
 
-            UserParentChild::query()->where('child_user_id', $user->id)->delete();
+            // Only remove non-team-leader parent links so that team assignments are preserved.
+            $leaderIds = TeamUser::query()
+                ->where('team_role', TeamRole::LEADER->value)
+                ->pluck('user_id');
+
+            UserParentChild::query()
+                ->where('child_user_id', $user->id)
+                ->whereNotIn('parent_user_id', $leaderIds)
+                ->delete();
 
             if ($parentId !== null && $parentId !== '') {
-                UserParentChild::query()->create([
+                UserParentChild::query()->firstOrCreate([
                     'parent_user_id' => (int) $parentId,
                     'child_user_id' => $user->id,
                 ]);
@@ -51,7 +61,9 @@ class UpdateUserAction
         }
 
         if ($data !== []) {
-            $user->update($data);
+            $user->update(array_merge($data, [
+                'updated_by' => $auth->id,
+            ]));
         }
 
         if ($passwordChanging) {

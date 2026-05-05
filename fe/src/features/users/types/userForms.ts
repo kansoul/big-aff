@@ -6,6 +6,7 @@ export const userCreateSchema = z.object({
   password: z.string().min(8, 'At least 8 characters'),
   role_id: z.number().min(1, 'Select a role'),
   style_id: z.number().nullable().optional(),
+  team_id: z.number().nullable().optional(),
 })
 
 export type UserCreateFormValues = z.infer<typeof userCreateSchema>
@@ -16,6 +17,7 @@ export const userUpdateSchema = z.object({
   password: z.union([z.string().min(8, 'At least 8 characters'), z.literal('')]),
   role_id: z.number().min(1, 'Select a role'),
   style_id: z.number().nullable().optional(),
+  team_id: z.number().nullable().optional(),
 })
 
 export type UserUpdateFormValues = z.infer<typeof userUpdateSchema>
@@ -26,6 +28,7 @@ export type UserCreatePayload = {
   password: string
   role_id: number
   style_id?: number | null
+  team_id?: number | null
 }
 
 export type UserUpdatePayload = {
@@ -34,6 +37,7 @@ export type UserUpdatePayload = {
   password?: string
   role_id?: number
   style_id?: number | null
+  team_id?: number | null
 }
 
 export interface UserPagination {

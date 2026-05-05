@@ -364,7 +364,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('revenue-stats')->group(function () {
         Route::get('team-options', [RevenueStatsController::class, 'teamOptions'])->middleware('permission.scope:'.Permission::DashboardTeamView->value.'|'.Permission::DashboardUserView->value);
-        Route::get('teams/{team}/user-options', [RevenueStatsController::class, 'userOptions'])->middleware('permission.scope:'.Permission::DashboardTeamView->value.'|'.Permission::DashboardUserView->value);
+        Route::get('user-options', [RevenueStatsController::class, 'userOptions'])->middleware('permission.scope:'.Permission::DashboardTeamView->value.'|'.Permission::DashboardUserView->value);
         Route::get('overview', [RevenueStatsController::class, 'overview'])->middleware('permission.scope:'.Permission::DashboardStatView->value);
         Route::get('by-team', [RevenueStatsController::class, 'byTeam'])->middleware('permission.scope:'.Permission::DashboardTeamView->value);
         Route::get('by-user', [RevenueStatsController::class, 'byUser'])->middleware('permission.scope:'.Permission::DashboardUserView->value);

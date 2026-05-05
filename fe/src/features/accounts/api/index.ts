@@ -53,7 +53,6 @@ export const accountsApi = {
         ...(!isNil(filters.business_center_id)
           ? { business_center_id: filters.business_center_id }
           : {}),
-        ...(!isNil(filters.team_id) ? { team_id: filters.team_id } : {}),
         ...(filters.status ? { status: filters.status } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),
         ...(filters.order ? { order: filters.order } : {}),
@@ -64,7 +63,6 @@ export const accountsApi = {
     axiosInstance.post<{ data: Account }>('/accounts', {
       ads_type: payload.ads_type,
       business_center_id: payload.business_center_id ?? null,
-      team_id: payload.team_id ?? null,
       user_id: payload.user_id ?? null,
       status: payload.status ?? null,
       is_special: payload.is_special ?? false,
@@ -78,7 +76,6 @@ export const accountsApi = {
       account_name: payload.account_name ?? null,
       ads_type: payload.ads_type,
       business_center_id: payload.business_center_id ?? null,
-      team_id: payload.team_id ?? null,
       user_id: payload.user_id ?? null,
       status: payload.status ?? null,
       is_special: payload.is_special,

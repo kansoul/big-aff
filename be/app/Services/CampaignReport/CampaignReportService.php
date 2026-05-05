@@ -417,7 +417,6 @@ class CampaignReportService
 
         $accountIds = array_unique(array_map(fn (CampaignReport $r) => $r->account_id, $items));
         $accountUserMap = $this->resolveAccountPrimaryUser($accountIds);
-        info($accountUserMap);
         $userIds = array_unique(array_values($accountUserMap));
         $userNameMap = User::query()
             ->whereIn('id', $userIds)

@@ -8,6 +8,7 @@ use App\Http\Resources\RevenueStats\UserRevenueResource;
 use App\Models\Team;
 use App\Services\RevenueStats\RevenueStatsService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * @tags Revenue Stats
@@ -86,10 +87,15 @@ class RevenueStatsController extends BaseController
         ]);
     }
 
-    public function userOptions(Team $team): JsonResponse
+    public function userOptions(Request $request): JsonResponse
     {
+        $teamIds = $request->input('team_ids');
+        if (is_string($teamIds)) {
+            $teamIds = explode(',', $teamIds);
+        }
+
         return $this->sendResponse([
-            'data' => $this->revenueStatsService->userOptions($team),
+            'data' => $this->revenueStatsService->userOptions($teamIds),
         ]);
     }
 }

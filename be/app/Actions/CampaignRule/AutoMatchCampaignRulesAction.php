@@ -29,7 +29,7 @@ class AutoMatchCampaignRulesAction
             return;
         }
 
-        $codes = array_map('strtoupper', $matches[0]);
+        $codes = $matches[0];
 
         $rules = CampaignRule::whereIn('code_rule', $codes)
             ->where('is_active', true)

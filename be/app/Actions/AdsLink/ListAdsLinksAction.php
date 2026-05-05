@@ -3,6 +3,7 @@
 namespace App\Actions\AdsLink;
 
 use App\Models\AdsLink;
+use App\Models\Channel;
 use App\Support\OwnerResource\AdsLinkOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
@@ -52,12 +53,27 @@ class ListAdsLinksAction
             ->when(! empty($filters['date_range']['to']), fn ($q) => $q->whereDate('created_at', '<=', $filters['date_range']['to']))
             ->when(isset($filters['is_hidden']) && $filters['is_hidden'] !== null, fn ($q) => $q->where('is_hidden', $filters['is_hidden']));
 
-        SortInput::fromValidatedArray(
+        $sort = SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
             defaultColumn: 'id',
             defaultDirection: 'desc',
-        )->applyTo($query);
+        );
+
+        if ($sort->column === 'channel_code') {
+            $query->orderBy(
+                Channel::query()
+                    ->select('name')
+                    ->whereColumn('channels.code', 'ads_links.channel_code')
+                    ->limit(1),
+                $sort->direction
+            );
+            if ($sort->column !== 'id') {
+                $query->orderBy('id', $sort->direction);
+            }
+        } else {
+            $sort->applyTo($query);
+        }
 
         $pagination = PaginationInput::fromValidatedArray($filters);
 

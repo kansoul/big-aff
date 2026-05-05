@@ -109,28 +109,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
       },
     },
     {
-      accessorKey: 'team',
-      header: 'Team',
-      size: 150,
-      enableSorting: false,
-      Cell: ({ row }) => {
-        const team = row.original.team
-        if (!team) return <span className="text-muted-foreground/50">-</span>
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="truncate block text-muted-foreground max-w-full">{team.name}</span>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
-                {team.name}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )
-      },
-    },
-    {
       accessorKey: 'ads_type',
       header: 'Ads Type',
       size: 110,
@@ -262,7 +240,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
 type AccountsTableCardProps = {
   data: Account[]
   businessCenterOptions: SearchableSelectOption[]
-  teamOptions: SearchableSelectOption[]
   rowCount: number
   loading: boolean
   filters: AccountFilterParams
@@ -287,7 +264,6 @@ type AccountsTableCardProps = {
 function AccountsTableCardInner({
   data,
   businessCenterOptions,
-  teamOptions,
   rowCount,
   loading,
   filters,
@@ -312,7 +288,7 @@ function AccountsTableCardInner({
   const [assignOpen, setAssignOpen] = useState(false)
   const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
     useLocation().pathname,
-    { business_center: false, team: false },
+    { business_center: false },
   )
 
   const columns = useMemo(
@@ -360,16 +336,8 @@ function AccountsTableCardInner({
         options: businessCenterOptions,
         placeholder: 'All business centers',
       },
-      {
-        field: 'team_id',
-        label: 'Team',
-        type: 'select',
-        value: filters.team_id != null ? String(filters.team_id) : null,
-        options: teamOptions,
-        placeholder: 'All teams',
-      },
     ],
-    [filters, businessCenterOptions, teamOptions],
+    [filters, businessCenterOptions],
   )
 
   const sorting = useMemo(
@@ -405,7 +373,6 @@ function AccountsTableCardInner({
           ? (values.status as AccountFilterParams['status'])
           : undefined,
         business_center_id: parseNullableId(values.business_center_id),
-        team_id: parseNullableId(values.team_id),
       })
     },
     [onFilterChange],
@@ -443,23 +410,13 @@ function AccountsTableCardInner({
         displayValue: opt?.label ?? String(filters.business_center_id),
       })
     }
-    if (filters.team_id != null) {
-      const opt = teamOptions.find((option) => option.value === String(filters.team_id))
-      chips.push({
-        key: 'team_id',
-        label: 'Team',
-        displayValue: opt?.label ?? String(filters.team_id),
-      })
-    }
 
     return chips
-  }, [filters, businessCenterOptions, teamOptions])
+  }, [filters, businessCenterOptions])
 
   function handleRemoveChip(key: string) {
     if (key === 'business_center_id') {
       onFilterChange({ business_center_id: undefined })
-    } else if (key === 'team_id') {
-      onFilterChange({ team_id: undefined })
     } else {
       onFilterChange({ [key]: null } as Partial<AccountFilterParams>)
     }

@@ -90,7 +90,7 @@ function AssignUserAccountsPickerInner({
         )}
       >
         <div
-          className="flex min-w-0 flex-1 cursor-pointer flex-wrap content-center gap-1.5 px-2 py-1.5"
+          className="flex max-h-48 min-w-0 flex-1 cursor-pointer flex-wrap content-start gap-1.5 overflow-y-auto px-2 py-1.5"
           onClick={onFieldSurfaceClick}
         >
           {value.length === 0 ? (

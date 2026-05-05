@@ -13,40 +13,42 @@ use Illuminate\Support\Facades\Auth;
 class GetRevenueStatsUserOptionsAction
 {
     /**
+     * @param  int[]|null  $teamIds
      * @return Collection<int, array{id: int, name: string}>
      */
-    public function execute(Team $team): Collection
+    public function execute(?array $teamIds): Collection
     {
         /** @var User $authUser */
         $authUser = Auth::user();
 
-        $query = User::query()
-            ->select(['users.id', 'users.name'])
-            ->join('team_user', function ($join) use ($team) {
-                $join->on('team_user.user_id', '=', 'users.id')
-                    ->where('team_user.team_id', '=', $team->id);
-            })
-            ->orderBy('users.name')
-            ->distinct();
-
-        if ($authUser->is_admin) {
-            return $query->get();
-        }
-
-        $currentRole = TeamUser::query()
-            ->where('team_id', $team->id)
-            ->where('user_id', $authUser->id)
-            ->value('team_role');
-
-        if ($currentRole === TeamRole::MANAGER->value) {
-            return $query->get();
-        }
-
-        if ($currentRole !== TeamRole::LEADER->value) {
+        if (empty($teamIds) && ! $authUser->managesAllUsers()) {
             return collect();
         }
 
-        $query->whereIn('users.id', (new UserOwnerResource)->allowedUserIds());
+        $query = User::query()
+            ->select(['users.id', 'users.name'])
+            ->join('team_user', 'team_user.user_id', '=', 'users.id')
+            ->when(! empty($teamIds), fn ($q) => $q->whereIn('team_user.team_id', $teamIds))
+            ->orderBy('users.name')
+            ->distinct();
+
+        if ($authUser->managesAllUsers()) {
+            return $query->get();
+        }
+
+        // For non-managers, we need to check permissions per team or globally.
+        // If teamIds is provided, we check if they have a sufficient role in ANY of those teams.
+        $userRoles = TeamUser::query()
+            ->where('user_id', $authUser->id)
+            ->when(! empty($teamIds), fn ($q) => $q->whereIn('team_id', $teamIds))
+            ->pluck('team_role', 'team_id');
+
+        $canSeeAllInTeams = $userRoles->contains(fn ($role) => in_array($role, [TeamRole::MANAGER->value, TeamRole::LEADER->value], true));
+
+        if (! $canSeeAllInTeams) {
+            // If they are not a leader/manager in any of the requested teams, they can only see themselves or children.
+            $query->whereIn('users.id', (new UserOwnerResource)->allowedUserIds());
+        }
 
         return $query->get();
     }

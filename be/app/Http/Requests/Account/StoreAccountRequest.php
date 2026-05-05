@@ -22,7 +22,6 @@ class StoreAccountRequest extends FormRequest
         return [
             'ads_type' => ['required', 'string', Rule::in(AdsType::values())],
             'business_center_id' => ['nullable', 'integer', 'exists:business_centers,id'],
-            'team_id' => ['nullable', 'integer', 'exists:teams,id'],
             'status' => ['nullable', 'string', 'max:50'],
             'is_special' => ['nullable', 'boolean'],
             'sync_to_mcc' => ['nullable', 'boolean'],

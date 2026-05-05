@@ -11,7 +11,6 @@ use App\Models\EventView;
 use App\Models\LinkData;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Log;
 
 class GetAnalyticsStatsAction
 {
@@ -21,7 +20,6 @@ class GetAnalyticsStatsAction
         $dateTo = $filters['date_to'] ?? null;
         $adsLinkId = $filters['ads_link_id'] ?? null;
         $campaignId = $filters['campaign_id'] ?? null;
-        Log::info('analytics', [$dateFrom, $dateTo, $adsLinkId, $campaignId]);
 
         $ownership = OwnershipFilter::forAuthUser();
         $linkDataIds = $this->buildLinkDataSubquery($ownership, $adsLinkId);

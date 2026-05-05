@@ -52,8 +52,6 @@ class SyncUserParentChildrenAction
             UserParentChild::query()->where('parent_user_id', $parent->id)->delete();
 
             if ($childIds !== []) {
-                UserParentChild::query()->whereIn('child_user_id', $childIds)->delete();
-
                 $now = now();
                 UserParentChild::insert(
                     array_map(fn (int $childId) => [

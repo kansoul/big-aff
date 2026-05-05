@@ -19,10 +19,10 @@ export const teamReportApi = {
   teamOptions: () =>
     axiosInstance.get<{ data: { id: number; name: string }[] }>('/revenue-stats/team-options'),
 
-  userOptions: (teamId: number) =>
-    axiosInstance.get<{ data: { id: number; name: string }[] }>(
-      `/revenue-stats/teams/${teamId}/user-options`,
-    ),
+  userOptions: (teamIds: number[]) =>
+    axiosInstance.get<{ data: { id: number; name: string }[] }>('/revenue-stats/user-options', {
+      params: { 'team_ids[]': teamIds },
+    }),
 
   overview: (filters: TeamReportFilterParams) =>
     axiosInstance.get<TeamOverviewResponse>('/revenue-stats/overview', {

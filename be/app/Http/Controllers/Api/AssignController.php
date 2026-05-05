@@ -33,7 +33,6 @@ class AssignController extends BaseController
      */
     public function usersWithChannels(ListUsersWithChannelsRequest $request): JsonResponse
     {
-        info(123);
         $paginator = $this->assignService->usersWithChannels($request->validated());
 
         $data = collect($paginator->items())->map(fn (User $user) => [
@@ -62,7 +61,6 @@ class AssignController extends BaseController
      */
     public function assignChannelsToUser(AssignChannelRequest $request, User $user): JsonResponse
     {
-        info(456);
         $result = $this->assignService->assignChannelsToUser($user, $request->validated('channel_codes', []));
 
         return $this->sendResponse(['skipped_codes' => $result['skipped_codes']]);

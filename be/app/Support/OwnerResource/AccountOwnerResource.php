@@ -6,6 +6,7 @@ use App\Support\OwnerResource\Base\OwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Account is accessible when an allowed user is assigned via the `account_user` pivot.
@@ -14,7 +15,7 @@ final class AccountOwnerResource extends OwnerResource
 {
     protected function authorizeRecord(Model $model, array $allowedIds): void
     {
-        if (! $model->users()->whereIn('users.id', $allowedIds)->exists()) {
+        if (! $model->users()->whereIn('users.id', $allowedIds)->exists() && $model->created_by !== Auth::id()) {
             throw new AuthorizationException;
         }
     }

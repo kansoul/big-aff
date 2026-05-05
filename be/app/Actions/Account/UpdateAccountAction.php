@@ -19,7 +19,14 @@ class UpdateAccountAction
     {
         (new AccountOwnerResource)->authorize($account);
 
+        $user = Auth::user();
         $userId = array_key_exists('user_id', $data) ? ($data['user_id'] !== null ? (int) $data['user_id'] : null) : false;
+
+        // If user_id is explicitly set to null (or not provided in a way that maps to null)
+        // and current user is not admin, auto-assign to current user to prevent loss of visibility.
+        if ($userId === null && ! $user?->is_admin) {
+            $userId = $user?->id;
+        }
         unset($data['user_id']);
 
         $data['updated_by'] = Auth::id();
@@ -38,6 +45,6 @@ class UpdateAccountAction
             }
         }
 
-        return $account->fresh(['businessCenter', 'team']);
+        return $account->fresh(['businessCenter', 'users']);
     }
 }

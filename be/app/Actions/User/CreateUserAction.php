@@ -16,6 +16,7 @@ class CreateUserAction
      */
     public function execute(array $data): User
     {
+        $userId = Auth::id();
         $password = $data['password'];
         unset($data['password']);
 
@@ -25,10 +26,12 @@ class CreateUserAction
         $teamId = $data['team_id'] ?? null;
         unset($data['team_id']);
 
-        return DB::transaction(function () use ($data, $password, $parentId, $teamId): User {
+        return DB::transaction(function () use ($data, $password, $parentId, $teamId, $userId): User {
             $user = User::query()->create([
                 ...$data,
                 'password' => $password,
+                'created_by' => $userId,
+                'updated_by' => $userId,
             ]);
 
             if ($parentId !== null && $parentId !== '') {
@@ -68,11 +71,10 @@ class CreateUserAction
                 'team_role' => TeamRole::MEMBER,
             ]);
 
-            // Ensure parent link is set to the leader
-            UserParentChild::query()->updateOrCreate(
-                ['child_user_id' => $newUser->id],
-                ['parent_user_id' => $auth->id],
-            );
+            UserParentChild::query()->firstOrCreate([
+                'parent_user_id' => $auth->id,
+                'child_user_id' => $newUser->id,
+            ]);
 
             return;
         }

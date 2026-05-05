@@ -367,7 +367,7 @@ export function RevenueChartDialog({
     metric: DEFAULT_METRIC,
   }))
   const [chartData, setChartData] = useState<ChartApiData | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const fetchedChannelsRef = useRef(false)
 
   useEffect(() => {
@@ -404,22 +404,29 @@ export function RevenueChartDialog({
     [isControlled, makeInitialFilters, onOpenChange],
   )
 
-  const handleApply = useCallback((values: Record<string, unknown>) => {
-    const next: ChartFilters = {
-      channel_codes: (values.channel_codes as string[] | undefined) ?? [],
-      date_range: (values.date_range as DateRange | null | undefined) ?? null,
-      metric: (values.metric as RevenueChartMetric | null | undefined) ?? null,
+  useEffect(() => {
+    if (!open) return
+    if (!filters.metric) return
+
+    let ignore = false
+    fetchRevenueChart(filters)
+      .then((data) => {
+        if (!ignore) setChartData(data)
+      })
+      .catch(() => {
+        if (!ignore) toast.error('Failed to fetch chart data')
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false)
+      })
+
+    return () => {
+      ignore = true
     }
-    if (!next.metric) {
-      toast.error('Please select a metric before applying filters.')
-      return
-    }
-    setFilters(next)
-    setLoading(true)
-    fetchRevenueChart(next)
-      .then((data) => setChartData(data))
-      .catch(() => toast.error('Failed to fetch chart data'))
-      .finally(() => setLoading(false))
+  }, [open, filters])
+
+  const handleFieldChange = useCallback((field: string, value: unknown) => {
+    setFilters((prev) => ({ ...prev, [field]: value }))
   }, [])
 
   const handleReset = useCallback(() => {
@@ -501,8 +508,7 @@ export function RevenueChartDialog({
           <FilterPanel
             fields={filterFields}
             onReset={handleReset}
-            applyMode
-            onApply={handleApply}
+            onFieldChange={handleFieldChange}
             defaultOpen
           />
 
@@ -531,9 +537,7 @@ export function RevenueChartDialog({
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">No chart data yet</p>
                 <p className="text-xs text-muted-foreground">
-                  Select your filters above and click{' '}
-                  <span className="font-semibold text-foreground">Apply Filters</span> to load the
-                  chart.
+                  Select your filters above to load the chart data automatically.
                 </p>
               </div>
             </div>

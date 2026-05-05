@@ -44,53 +44,55 @@ export function AssignSiteUsersDialog({
 }: AssignSiteUsersDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onOpenChange(false)}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{site ? `Assign Users · ${site.name}` : 'Assign Users'}</DialogTitle>
           <DialogDescription>Select users to assign to this site.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
-          <div className="rounded-lg border border-border p-3">
-            <div className="mb-2 flex items-center gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Users
-              </p>
-              {userIds.length > 0 ? (
-                <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
-                  {userIds.length}
-                </span>
-              ) : null}
-              {!optionsLoading && options.length > 0 && (
-                <button
-                  type="button"
+        <div className="min-h-0 flex-1 overflow-y-auto py-1">
+          <div className="space-y-3">
+            <div className="rounded-lg border border-border p-3">
+              <div className="mb-2 flex items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Users
+                </p>
+                {userIds.length > 0 ? (
+                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
+                    {userIds.length}
+                  </span>
+                ) : null}
+                {!optionsLoading && options.length > 0 && (
+                  <button
+                    type="button"
+                    disabled={!canAssign || saving}
+                    onClick={() =>
+                      userIds.length === options.length
+                        ? onUserIdsChange([])
+                        : onUserIdsChange(options.map((o) => o.id))
+                    }
+                    className="ml-auto text-[11px] font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    {userIds.length === options.length ? 'Deselect all' : 'Select all'}
+                  </button>
+                )}
+              </div>
+              {optionsLoading ? (
+                <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">
+                  <Loader2 className="size-3.5 animate-spin" />
+                  <span>Loading users…</span>
+                </div>
+              ) : (
+                <AssignUsersChildrenPicker
                   disabled={!canAssign || saving}
-                  onClick={() =>
-                    userIds.length === options.length
-                      ? onUserIdsChange([])
-                      : onUserIdsChange(options.map((o) => o.id))
-                  }
-                  className="ml-auto text-[11px] font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:pointer-events-none disabled:opacity-50"
-                >
-                  {userIds.length === options.length ? 'Deselect all' : 'Select all'}
-                </button>
+                  value={userIds}
+                  onChange={onUserIdsChange}
+                  options={options}
+                  placeholder="Select users…"
+                  tagClassName="bg-muted text-muted-foreground"
+                />
               )}
             </div>
-            {optionsLoading ? (
-              <div className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" />
-                <span>Loading users…</span>
-              </div>
-            ) : (
-              <AssignUsersChildrenPicker
-                disabled={!canAssign || saving}
-                value={userIds}
-                onChange={onUserIdsChange}
-                options={options}
-                placeholder="Select users…"
-                tagClassName="bg-muted text-muted-foreground"
-              />
-            )}
           </div>
         </div>
 

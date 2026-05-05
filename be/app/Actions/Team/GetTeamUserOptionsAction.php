@@ -30,7 +30,7 @@ class GetTeamUserOptionsAction
             ->select(['id', 'name', 'email'])
             ->whereNotIn('id', $assignedUserIds)
             ->whereNotIn('id', $occupiedUserIds)
-            ->orderBy('name');
+            ->orderBy('id');
 
         if (! $resource->isAdmin()) {
             $query->whereIn('created_by', $resource->allowedUserIds());

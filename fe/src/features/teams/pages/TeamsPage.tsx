@@ -313,7 +313,7 @@ export function TeamsPage() {
         { role: 'leader' as TeamRole, ids: modalLeaderIds, saved: savedLeaderIds },
         { role: 'member' as TeamRole, ids: modalMemberIds, saved: savedMemberIds },
       ] as const
-    ).filter((t) => t.ids.length >= 1 && !setsEqual(t.ids, t.saved))
+    ).filter((t) => !setsEqual(t.ids, t.saved))
 
     if (tasks.length === 0) {
       setMembersFlashError('No changes detected.')
@@ -397,31 +397,12 @@ export function TeamsPage() {
     ? (parentChildOptionsLoading[leaderAssignTeam.id] ?? false)
     : false
 
-  const getPickerOptionsForLeader = useCallback(
-    (leader: TeamLeaderOption): AssignChildOption[] => {
-      if (!leaderAssignTeam) return []
-      const options = parentChildOptionsForTeam[leaderAssignTeam.id] ?? []
-      const selectedByOtherLeaders = new Set(
-        Object.entries(leaderModalChildIds)
-          .filter(([leaderId]) => Number(leaderId) !== leader.id)
-          .flatMap(([, ids]) => ids),
-      )
-      const managedByThisDialog = new Set(
-        (leadersForTeam[leaderAssignTeam.id] ?? []).flatMap((l) =>
-          (l.assigned_users ?? []).map((u) => u.id),
-        ),
-      )
-      return options
-        .filter(
-          (u) =>
-            u.team_role === 'member' &&
-            !selectedByOtherLeaders.has(u.id) &&
-            (!u.is_assigned_child || managedByThisDialog.has(u.id)),
-        )
-        .map((u) => ({ id: u.id, name: u.name, email: u.email }))
-    },
-    [leaderAssignTeam, parentChildOptionsForTeam, leaderModalChildIds, leadersForTeam],
-  )
+  const pickerOptionsForLeaders = useMemo((): AssignChildOption[] => {
+    if (!leaderAssignTeam) return []
+    return (parentChildOptionsForTeam[leaderAssignTeam.id] ?? [])
+      .filter((u) => u.team_role === 'member')
+      .map((u) => ({ id: u.id, name: u.name, email: u.email }))
+  }, [leaderAssignTeam, parentChildOptionsForTeam])
 
   const openLeaderAssignDialog = useCallback(
     async (team: Team) => {
@@ -628,7 +609,7 @@ export function TeamsPage() {
         canAssign={canAssign}
         leaderModalChildIds={leaderModalChildIds}
         onLeaderChildIdsChange={setLeaderChildIds}
-        getPickerOptionsForLeader={getPickerOptionsForLeader}
+        pickerOptions={pickerOptionsForLeaders}
         saving={savingLeaderAssign}
         flashError={leaderFlashError}
         onSave={() => void saveLeaderAssignAsync()}

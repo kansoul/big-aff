@@ -27,7 +27,7 @@ class ListAccountsAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $query = Account::query()->with(['businessCenter', 'team']);
+        $query = Account::query()->with(['businessCenter', 'users']);
 
         (new AccountOwnerResource)->applyTo($query);
 
@@ -45,10 +45,6 @@ class ListAccountsAction
 
         if (! empty($filters['business_center_id'])) {
             $query->where('business_center_id', $filters['business_center_id']);
-        }
-
-        if (! empty($filters['team_id'])) {
-            $query->where('team_id', $filters['team_id']);
         }
 
         if (! empty($filters['status'])) {

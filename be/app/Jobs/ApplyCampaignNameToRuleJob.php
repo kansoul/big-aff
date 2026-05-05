@@ -29,7 +29,7 @@ class ApplyCampaignNameToRuleJob implements ShouldQueue
 
     public function handle(AutoMatchCampaignRulesAction $action): void
     {
-        $campaigns = Campaign::whereIn('id', $this->campaignIds)->get();
+        $campaigns = Campaign::whereIn('campaign_id', $this->campaignIds)->get();
         $action->execute($campaigns);
     }
 }

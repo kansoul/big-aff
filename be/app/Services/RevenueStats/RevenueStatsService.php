@@ -7,7 +7,6 @@ use App\Actions\RevenueStats\GetRevenueStatsByUserAction;
 use App\Actions\RevenueStats\GetRevenueStatsOverviewAction;
 use App\Actions\RevenueStats\GetRevenueStatsTeamOptionsAction;
 use App\Actions\RevenueStats\GetRevenueStatsUserOptionsAction;
-use App\Models\Team;
 use Illuminate\Support\Collection;
 
 class RevenueStatsService
@@ -75,10 +74,11 @@ class RevenueStatsService
     }
 
     /**
+     * @param  int[]|null  $teamIds
      * @return Collection<int, array{id: int, name: string}>
      */
-    public function userOptions(Team $team): Collection
+    public function userOptions(?array $teamIds): Collection
     {
-        return $this->getRevenueStatsUserOptionsAction->execute($team);
+        return $this->getRevenueStatsUserOptionsAction->execute($teamIds);
     }
 }

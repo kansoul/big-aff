@@ -16,12 +16,17 @@ class BulkCreateAccountAction
      */
     public function execute(array $data): array
     {
+        $user = Auth::user();
         $userId = isset($data['user_id']) ? (int) $data['user_id'] : null;
+
+        // If not admin and user_id is null, auto-assign to current user
+        if ($userId === null && ! $user?->is_admin) {
+            $userId = $user?->id;
+        }
 
         $sharedFields = collect($data)->only([
             'ads_type',
             'business_center_id',
-            'team_id',
             'status',
             'is_special',
             'sync_to_mcc',

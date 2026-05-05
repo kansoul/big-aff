@@ -72,6 +72,8 @@ trait UserMethod
 
     /**
      * Whether $descendantId sits strictly under $ancestorId in the `user_parent_child` chain.
+     *
+     * Uses BFS over all parents to support multiple-parent relationships.
      */
     public static function isDescendantOf(int $descendantId, int $ancestorId): bool
     {
@@ -79,15 +81,33 @@ trait UserMethod
             return false;
         }
 
-        $current = UserParentChild::query()->where('child_user_id', $descendantId)->value('parent_user_id');
-        $guard = 0;
+        $visited = [];
+        $queue = [$descendantId];
 
-        while ($current !== null && $guard < 1000) {
-            if ((int) $current === $ancestorId) {
-                return true;
+        while ($queue !== []) {
+            $current = array_shift($queue);
+
+            if (isset($visited[$current])) {
+                continue;
             }
-            $current = UserParentChild::query()->where('child_user_id', $current)->value('parent_user_id');
-            $guard++;
+
+            $visited[$current] = true;
+
+            $parentIds = UserParentChild::query()
+                ->where('child_user_id', $current)
+                ->pluck('parent_user_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            foreach ($parentIds as $parentId) {
+                if ($parentId === $ancestorId) {
+                    return true;
+                }
+
+                if (! isset($visited[$parentId])) {
+                    $queue[] = $parentId;
+                }
+            }
         }
 
         return false;

@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { accountsApi } from '@/features/accounts/api'
 import { businessCentersApi } from '@/features/business-centers/api'
-import { teamsApi } from '@/features/teams/api'
 import {
   AccountsTableCard,
   CreateAccountDialog,
@@ -16,7 +15,6 @@ import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { formatApiError } from '@/features/settings/components'
 import type { SearchableSelectOption } from '@/components/common/SearchableSelect'
-import type { Team } from '@/features/teams/types'
 import { useTableUrlState } from '@/hooks/useTableUrlState'
 import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
 
@@ -24,7 +22,6 @@ const DEFAULT_FILTERS: AccountFilterParams = {
   query: null,
   ads_type: null,
   business_center_id: null,
-  team_id: null,
   status: null,
   order_by: null,
   order: null,
@@ -37,7 +34,6 @@ function parseFilters(params: URLSearchParams): AccountFilterParams {
     business_center_id: params.get('business_center_id')
       ? Number(params.get('business_center_id'))
       : null,
-    team_id: params.get('team_id') ? Number(params.get('team_id')) : null,
     status: params.get('status'),
     order_by: params.get('order_by') as AccountFilterParams['order_by'],
     order: params.get('order') as AccountFilterParams['order'],
@@ -53,7 +49,6 @@ function buildParams(
   if (filters.ads_type) params.set('ads_type', filters.ads_type)
   if (filters.business_center_id != null)
     params.set('business_center_id', String(filters.business_center_id))
-  if (filters.team_id != null) params.set('team_id', String(filters.team_id))
   if (filters.status) params.set('status', filters.status)
   if (filters.order_by) params.set('order_by', filters.order_by)
   if (filters.order) params.set('order', filters.order)
@@ -85,7 +80,6 @@ export function AccountsPage() {
 
   const [data, setData] = useState<Account[]>([])
   const [businessCenterOptions, setBusinessCenterOptions] = useState<SearchableSelectOption[]>([])
-  const [teamOptions, setTeamOptions] = useState<SearchableSelectOption[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
 
@@ -157,28 +151,9 @@ export function AccountsPage() {
     void loadBusinessCenterOptions()
   }, [loadBusinessCenterOptions])
 
-  const loadTeamOptions = useCallback(async () => {
-    try {
-      const { data } = await teamsApi.listOptions()
-      setTeamOptions(
-        data.data.map((team: Pick<Team, 'id' | 'name'>) => ({
-          value: String(team.id),
-          label: team.name,
-        })),
-      )
-    } catch (err) {
-      toast.error(formatApiError(err))
-    }
-  }, [])
-
-  useEffect(() => {
-    void loadTeamOptions()
-  }, [loadTeamOptions])
-
   const onFilterChange = useCallback(
     (patch: Partial<AccountFilterParams>) => {
       const hasBusinessCenterId = Object.prototype.hasOwnProperty.call(patch, 'business_center_id')
-      const hasTeamId = Object.prototype.hasOwnProperty.call(patch, 'team_id')
 
       setFilters((prev) => ({
         ...prev,
@@ -186,7 +161,6 @@ export function AccountsPage() {
         business_center_id: hasBusinessCenterId
           ? normalizeNumber(patch.business_center_id)
           : prev.business_center_id,
-        team_id: hasTeamId ? normalizeNumber(patch.team_id) : prev.team_id,
       }))
       setPagination((prev) => ({ ...prev, pageIndex: 0 }))
     },
@@ -233,7 +207,6 @@ export function AccountsPage() {
           account_name: row.account_name,
           ads_type: row.ads_type === 'unknown' ? 'facebook' : row.ads_type,
           business_center_id: row.business_center_id,
-          team_id: row.team_id,
           status: row.status,
           is_special: field === 'is_special' ? checked : row.is_special,
           sync_to_mcc: field === 'sync_to_mcc' ? checked : row.sync_to_mcc,
@@ -326,7 +299,6 @@ export function AccountsPage() {
       <AccountsTableCard
         data={data}
         businessCenterOptions={businessCenterOptions}
-        teamOptions={teamOptions}
         rowCount={rowCount}
         loading={loading}
         filters={apiFilters}
@@ -355,7 +327,6 @@ export function AccountsPage() {
         onOpenChange={setCreateOpen}
         onSuccess={onSuccess}
         businessCenterOptions={businessCenterOptions}
-        teamOptions={teamOptions}
       />
 
       <EditAccountDialog
@@ -363,7 +334,6 @@ export function AccountsPage() {
         onOpenChange={onEditOpenChange}
         onSuccess={onSuccess}
         businessCenterOptions={businessCenterOptions}
-        teamOptions={teamOptions}
       />
 
       <DeleteAccountDialog

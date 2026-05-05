@@ -26,7 +26,6 @@ class UpdateAccountRequest extends FormRequest
             'account_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'ads_type' => ['sometimes', 'string', Rule::in(AdsType::values())],
             'business_center_id' => ['sometimes', 'nullable', 'integer', 'exists:business_centers,id'],
-            'team_id' => ['sometimes', 'nullable', 'integer', 'exists:teams,id'],
             'status' => ['sometimes', 'nullable', 'string', 'max:50'],
             'is_special' => ['sometimes', 'boolean'],
             'sync_to_mcc' => ['sometimes', 'boolean'],

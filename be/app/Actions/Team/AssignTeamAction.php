@@ -27,39 +27,65 @@ class AssignTeamAction
 
         // Admins may assign any user; others are limited to their allowed subtree
         // plus any users they directly created (created_by = auth user).
-        $userIds = $resource->isAdmin()
-            ? $data['user_ids']
-            : array_values(array_intersect(
-                $data['user_ids'],
-                array_unique(array_merge(
-                    $resource->allowedUserIds(),
-                    User::query()->where('created_by', Auth::id())->pluck('id')->map(fn ($id) => (int) $id)->all(),
-                )),
+        $isAdmin = $resource->isAdmin();
+        $manageableUserIds = $isAdmin
+            ? []
+            : array_unique(array_merge(
+                $resource->allowedUserIds(),
+                User::query()->where('created_by', Auth::id())->pluck('id')->map(fn ($id) => (int) $id)->all(),
             ));
+
+        $userIds = $isAdmin
+            ? $data['user_ids']
+            : array_values(array_intersect($data['user_ids'], $manageableUserIds));
+
         $teamRole = $data['team_role'] ?? TeamRole::MEMBER->value;
 
-        return DB::transaction(function () use ($team, $userIds, $teamRole): array {
-            if ($teamRole === TeamRole::LEADER->value) {
-                $removedLeaderIds = TeamUser::query()
-                    ->where('team_id', $team->id)
-                    ->where('team_role', TeamRole::LEADER->value)
-                    ->whereNotIn('user_id', $userIds)
-                    ->pluck('user_id')
-                    ->map(fn ($id) => (int) $id)
-                    ->all();
+        return DB::transaction(function () use ($team, $userIds, $teamRole, $isAdmin, $manageableUserIds): array {
+            $removedUserQuery = TeamUser::query()
+                ->where('team_id', $team->id)
+                ->where('team_role', $teamRole)
+                ->whereNotIn('user_id', $userIds);
 
-                if (! empty($removedLeaderIds)) {
+            if (! $isAdmin) {
+                $removedUserQuery->whereIn('user_id', $manageableUserIds);
+            }
+
+            $removedUserIds = $removedUserQuery->pluck('user_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            if (! empty($removedUserIds)) {
+                if ($teamRole === TeamRole::LEADER->value) {
+                    // If leaders are removed, they can no longer be parents to anyone.
                     UserParentChild::query()
-                        ->whereIn('parent_user_id', $removedLeaderIds)
+                        ->whereIn('parent_user_id', $removedUserIds)
+                        ->delete();
+                } elseif ($teamRole === TeamRole::MEMBER->value) {
+                    // If members are removed, their link to leaders of THIS team should be broken.
+                    $leaderIdsInTeam = TeamUser::query()
+                        ->where('team_id', $team->id)
+                        ->where('team_role', TeamRole::LEADER->value)
+                        ->pluck('user_id')
+                        ->all();
+
+                    UserParentChild::query()
+                        ->whereIn('child_user_id', $removedUserIds)
+                        ->whereIn('parent_user_id', $leaderIdsInTeam)
                         ->delete();
                 }
             }
 
-            TeamUser::query()
+            $deleteQuery = TeamUser::query()
                 ->where('team_id', $team->id)
                 ->where('team_role', $teamRole)
-                ->whereNotIn('user_id', $userIds)
-                ->delete();
+                ->whereNotIn('user_id', $userIds);
+
+            if (! $isAdmin) {
+                $deleteQuery->whereIn('user_id', $manageableUserIds);
+            }
+
+            $deleteQuery->delete();
 
             $alreadyInThisTeam = TeamUser::query()
                 ->where('team_id', $team->id)

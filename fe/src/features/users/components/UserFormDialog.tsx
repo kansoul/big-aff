@@ -34,6 +34,7 @@ type UserFormDialogProps = {
   form: UseFormReturn<UserFormValues>
   roles: RoleOption[]
   styleOptions?: StyleOption[]
+  teamOptions?: { id: number; name: string }[]
   submitting: boolean
   onSubmit: (
     values: UserFormValues,
@@ -51,6 +52,7 @@ export function UserFormDialog({
   form,
   roles,
   styleOptions,
+  teamOptions,
   submitting,
   onSubmit,
 }: UserFormDialogProps) {
@@ -178,6 +180,34 @@ export function UserFormDialog({
                           })),
                         ]}
                         placeholder="Select style"
+                        disabled={submitting}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
+
+            {teamOptions && teamOptions.length > 1 ? (
+              <FormField
+                control={form.control}
+                name="team_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assign to Team</FormLabel>
+                    <FormControl>
+                      <SearchableSelect
+                        value={field.value ? String(field.value) : undefined}
+                        onValueChange={(value) => field.onChange(value ? Number(value) : null)}
+                        options={[
+                          { label: '— None —', value: '' },
+                          ...teamOptions.map((team) => ({
+                            label: team.name,
+                            value: String(team.id),
+                          })),
+                        ]}
+                        placeholder="Select team"
                         disabled={submitting}
                       />
                     </FormControl>

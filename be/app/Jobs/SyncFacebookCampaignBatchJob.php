@@ -91,13 +91,25 @@ class SyncFacebookCampaignBatchJob implements ShouldQueue
                     }
                 }
 
-                DB::transaction(function () use ($insights, $filteredCampaigns) {
+                DB::transaction(function () use ($insights, $filteredCampaigns, $isSyncToday) {
                     if (! empty($filteredCampaigns)) {
                         Campaign::upsert(
                             $filteredCampaigns,
                             ['campaign_id'],
                             ['campaign_name', 'daily_budget', 'lifetime_budget', 'status', 'start_time', 'stop_time', 'created_time', 'updated_time', 'created_at', 'updated_at']
                         );
+                        if ($isSyncToday) {
+                            $activeCampaignIds = [];
+                            foreach ($filteredCampaigns as $campaign) {
+                                if (($campaign['status'] ?? '') === 'ACTIVE') {
+                                    $activeCampaignIds[] = $campaign['campaign_id'];
+                                }
+                            }
+
+                            if (! empty($activeCampaignIds)) {
+                                ApplyCampaignNameToRuleJob::dispatch($activeCampaignIds);
+                            }
+                        }
                     }
 
                     $insightsData = array_map(function ($insight) {
