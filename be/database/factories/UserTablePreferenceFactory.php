@@ -26,7 +26,7 @@ class UserTablePreferenceFactory extends Factory
         ];
     }
 
-    public function forStyleReportRange(): static
+    public function forRevenueReportRange(): static
     {
         return $this->state([
             'table_name' => 'style-report-range',

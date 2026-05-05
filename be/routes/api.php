@@ -28,11 +28,11 @@ use App\Http\Controllers\Api\OptionController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\RevenueChartReportController;
 use App\Http\Controllers\Api\RevenueReportController;
+use App\Http\Controllers\Api\RevenueReportRangeController;
 use App\Http\Controllers\Api\RevenueStatsController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\StyleController;
-use App\Http\Controllers\Api\StyleReportRangeController;
 use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Api\UserController;
@@ -402,7 +402,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('style-report-range')
         ->middleware('permission.scope:'.Permission::RevenueReportRangeView->value)
         ->group(function () {
-            Route::post('query', [StyleReportRangeController::class, 'query']);
+            Route::post('query', [RevenueReportRangeController::class, 'query']);
         });
 
     Route::prefix('user-table-preferences')->group(function () {

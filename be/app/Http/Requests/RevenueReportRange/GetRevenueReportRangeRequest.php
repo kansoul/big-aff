@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\StyleReportRange;
+namespace App\Http\Requests\RevenueReportRange;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class GetStyleReportRangeRequest extends FormRequest
+class GetRevenueReportRangeRequest extends FormRequest
 {
     public function authorize(): bool
     {

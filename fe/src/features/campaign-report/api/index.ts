@@ -26,8 +26,8 @@ import type {
   AnalyticsTrackingFilterOptionsResponse,
   KeywordTrackingFilterParams,
   KeywordTrackingListResponse,
-  StyleReportRangeQueryPayload,
-  StyleReportRangeQueryResponse,
+  RevenueReportRangeQueryPayload,
+  RevenueReportRangeQueryResponse,
   ToggleAdsetStatusResponse,
   ToggleAdStatusResponse,
   TrackingAnalyticsFilterParams,
@@ -66,8 +66,8 @@ export const campaignReportApi = {
       { status },
     ),
 
-  queryRange: (payload: StyleReportRangeQueryPayload) =>
-    axiosInstance.post<StyleReportRangeQueryResponse>('/style-report-range/query', payload),
+  queryRange: (payload: RevenueReportRangeQueryPayload) =>
+    axiosInstance.post<RevenueReportRangeQueryResponse>('/style-report-range/query', payload),
 
   analyticsTrackingFilterOptions: () =>
     axiosInstance.get<AnalyticsTrackingFilterOptionsResponse>('/analytics-tracking/filter-options'),

@@ -13,7 +13,10 @@ import {
 import { toast } from 'sonner'
 
 import { campaignReportApi } from '@/features/campaign-report/api'
-import type { StyleReportRangeItem, StyleReportRangeRow } from '@/features/campaign-report/types'
+import type {
+  RevenueReportRangeItem,
+  RevenueReportRangeRow,
+} from '@/features/campaign-report/types'
 import { channelsApi } from '@/features/channels/api'
 import type { ChannelOption } from '@/features/channels/types'
 import { Button } from '@/components/ui/button'
@@ -338,7 +341,7 @@ function RangeRow({
 // ─── Result Table ─────────────────────────────────────────────────────────────
 
 const RESULT_COLUMNS: Array<{
-  key: keyof StyleReportRangeRow
+  key: keyof RevenueReportRangeRow
   label: string
   className?: string
 }> = [
@@ -400,7 +403,7 @@ function RangeCell({ value }: { value: string }) {
   )
 }
 
-function RangeResultTable({ data, loading }: { data: StyleReportRangeRow[]; loading: boolean }) {
+function RangeResultTable({ data, loading }: { data: RevenueReportRangeRow[]; loading: boolean }) {
   return (
     <div className=" rounded-xl border border-border/70 bg-card shadow-sm">
       <div className="overflow-auto">
@@ -500,7 +503,7 @@ function RangeResultTable({ data, loading }: { data: StyleReportRangeRow[]; load
 
 // ─── Dialog ───────────────────────────────────────────────────────────────────
 
-type RangeState = StyleReportRangeItem & { _id: string }
+type RangeState = RevenueReportRangeItem & { _id: string }
 
 function validateAll(ranges: RangeState[]): Record<string, RangeErrors> {
   const result: Record<string, RangeErrors> = {}
@@ -554,7 +557,7 @@ export function RevenueReportRangeDialog({
   const [fieldErrors, setFieldErrors] = useState<Record<string, RangeErrors>>({})
   const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const [results, setResults] = useState<StyleReportRangeRow[]>([])
+  const [results, setResults] = useState<RevenueReportRangeRow[]>([])
   const fetchedRef = useRef(false)
 
   useEffect(() => {
@@ -633,7 +636,7 @@ export function RevenueReportRangeDialog({
       const res = await campaignReportApi.queryRange({
         ranges: ranges.map(({ ...r }) => r),
       })
-      const data = (res.data as { data: StyleReportRangeRow[] }).data
+      const data = (res.data as { data: RevenueReportRangeRow[] }).data
       setResults(data)
     } catch {
       toast.error('Failed to submit query')
