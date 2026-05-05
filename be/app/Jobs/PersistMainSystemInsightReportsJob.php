@@ -125,13 +125,6 @@ class PersistMainSystemInsightReportsJob implements ShouldQueue
                 );
             }
         });
-
-        Log::channel('sync_reports')->info('[MainSystemSync] Persisted insight payload', [
-            'main_team_id' => $this->mainTeamId,
-            'accounts_count' => count($accounts),
-            'campaigns_count' => count($campaigns),
-            'insights_count' => count($insights),
-        ]);
     }
 
     public function failed(Throwable $exception): void

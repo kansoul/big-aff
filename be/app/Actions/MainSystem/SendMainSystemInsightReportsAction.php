@@ -3,7 +3,6 @@
 namespace App\Actions\MainSystem;
 
 use App\Services\MainSystem\MainSystemHttpClient;
-use Illuminate\Support\Facades\Log;
 
 class SendMainSystemInsightReportsAction
 {
@@ -18,23 +17,7 @@ class SendMainSystemInsightReportsAction
      */
     public function execute(array $accounts, array $campaigns, array $insights): void
     {
-        if (! $this->client->shouldPush()) {
-            Log::channel('sync_reports')->warning('[MainSystemSync] Insight send skipped in job: push disabled', [
-                'blockers' => $this->client->pushBlockers(),
-                'accounts_count' => count($accounts),
-                'campaigns_count' => count($campaigns),
-                'insights_count' => count($insights),
-            ]);
-
-            return;
-        }
-
-        if ($insights === []) {
-            Log::channel('sync_reports')->info('[MainSystemSync] Insight send skipped in job: empty insights', [
-                'accounts_count' => count($accounts),
-                'campaigns_count' => count($campaigns),
-            ]);
-
+        if (! $this->client->shouldPush() || $insights === []) {
             return;
         }
 

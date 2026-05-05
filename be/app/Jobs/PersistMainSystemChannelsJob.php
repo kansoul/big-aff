@@ -53,11 +53,6 @@ class PersistMainSystemChannelsJob implements ShouldQueue
             ['code'],
             ['name', 'is_active', 'main_team_id', 'deleted_at', 'updated_at'],
         );
-
-        Log::channel('sync_reports')->info('[MainSystemSync] Persisted channels', [
-            'main_team_id' => $this->mainTeamId,
-            'channels_count' => count($channels),
-        ]);
     }
 
     public function failed(Throwable $exception): void

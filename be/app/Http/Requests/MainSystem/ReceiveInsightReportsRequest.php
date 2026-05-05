@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests\MainSystem;
 
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Log;
 
 class ReceiveInsightReportsRequest extends FormRequest
 {
@@ -62,21 +60,5 @@ class ReceiveInsightReportsRequest extends FormRequest
             'insights.*.frequency' => ['nullable', 'numeric'],
             'insights.*.spend_type' => ['nullable', 'string', 'max:50'],
         ];
-    }
-
-    protected function failedValidation(Validator $validator): void
-    {
-        Log::channel('sync_reports')->warning('[MainSystemSync][Controller] Insight request validation failed before controller', [
-            'main_team_id' => $this->input('main_team_id'),
-            'has_bearer_token' => filled($this->bearerToken()),
-            'accounts_count' => is_array($this->input('accounts')) ? count($this->input('accounts')) : null,
-            'campaigns_count' => is_array($this->input('campaigns')) ? count($this->input('campaigns')) : null,
-            'insights_count' => is_array($this->input('insights')) ? count($this->input('insights')) : null,
-            'errors' => $validator->errors()->toArray(),
-            'ip' => $this->ip(),
-            'user_agent' => $this->userAgent(),
-        ]);
-
-        parent::failedValidation($validator);
     }
 }
