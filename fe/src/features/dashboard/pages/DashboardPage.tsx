@@ -141,17 +141,11 @@ function MainTeamStatsCells({ stats }: { stats: RevenueStats }) {
   )
 }
 
-function getMainTeamTotalStats(row: RevenueMainTeamRow): RevenueStats {
-  const revenue = MAIN_TEAM_PERIODS.reduce((sum, period) => sum + row[period.key].revenue, 0)
-  const spend = MAIN_TEAM_PERIODS.reduce((sum, period) => sum + row[period.key].spend, 0)
+function sumPeriodStats(rows: RevenueMainTeamRow[], period: MainTeamPeriodKey): RevenueStats {
+  const revenue = rows.reduce((s, r) => s + (r[period] as RevenueStats).revenue, 0)
+  const spend = rows.reduce((s, r) => s + (r[period] as RevenueStats).spend, 0)
   const profit = revenue - spend
-
-  return {
-    revenue,
-    spend,
-    profit,
-    roi: spend > 0 ? (profit / spend) * 100 : 0,
-  }
+  return { revenue, spend, profit, roi: spend > 0 ? (profit / spend) * 100 : 0 }
 }
 
 function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loading: boolean }) {
@@ -216,20 +210,9 @@ function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loadi
                   </span>
                 </TableHead>
               ))}
-              <TableHead
-                colSpan={4}
-                className="border-l border-b border-border/30 py-2.5 text-center font-semibold text-foreground"
-              >
-                <span className="inline-flex items-center gap-2">
-                  Total
-                  <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-bold text-red-500">
-                    Total
-                  </span>
-                </span>
-              </TableHead>
             </TableRow>
             <TableRow className="border-b border-border/50 bg-muted/10 hover:bg-muted/10">
-              {[...MAIN_TEAM_PERIODS, { key: 'total', label: 'Total' }].flatMap((period) =>
+              {MAIN_TEAM_PERIODS.flatMap((period) =>
                 ['Revenue', 'Spend', 'Profit', 'ROI %'].map((label, index) => (
                   <TableHead
                     key={`${period.key}-${label}`}
@@ -248,7 +231,7 @@ function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loadi
                     <TableCell className="sticky left-0 z-10 border-r border-border/30 bg-card px-3 py-3 md:px-6">
                       <Skeleton className="h-4 w-32" />
                     </TableCell>
-                    {Array.from({ length: 20 }).map((__, cellIndex) => (
+                    {Array.from({ length: 16 }).map((__, cellIndex) => (
                       <TableCell key={cellIndex}>
                         <Skeleton className="h-4 w-20" />
                       </TableCell>
@@ -265,19 +248,31 @@ function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loadi
                     {MAIN_TEAM_PERIODS.map((period) => (
                       <MainTeamStatsCells key={period.key} stats={row[period.key]} />
                     ))}
-                    <MainTeamStatsCells stats={getMainTeamTotalStats(row)} />
                   </TableRow>
                 ))}
             {!loading && rows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={21}
+                  colSpan={17}
                   className="px-3 py-8 text-center text-xs text-muted-foreground"
                 >
                   No data
                 </TableCell>
               </TableRow>
             ) : null}
+            {!loading && rows.length > 0 && (
+              <TableRow className="border-t-2 border-border bg-muted/10 font-bold">
+                <TableCell className="sticky left-0 z-10 border-r border-border/30 bg-card px-3 py-3 md:px-6">
+                  <span className="inline-flex items-center gap-2 text-xs font-bold text-foreground">
+                    <Activity className="h-4 w-4 text-muted-foreground" />
+                    Summary
+                  </span>
+                </TableCell>
+                {MAIN_TEAM_PERIODS.map((period) => (
+                  <MainTeamStatsCells key={period.key} stats={sumPeriodStats(rows, period.key)} />
+                ))}
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
