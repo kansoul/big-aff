@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Account;
 use App\Models\Campaign;
 use App\Models\InsightReport;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -60,10 +61,10 @@ class PersistMainSystemInsightReportsJob implements ShouldQueue
                 'daily_budget' => $campaign['daily_budget'] ?? null,
                 'lifetime_budget' => $campaign['lifetime_budget'] ?? null,
                 'status' => $campaign['status'] ?? null,
-                'start_time' => $campaign['start_time'] ?? null,
-                'stop_time' => $campaign['stop_time'] ?? null,
-                'created_time' => $campaign['created_time'] ?? null,
-                'updated_time' => $campaign['updated_time'] ?? null,
+                'start_time' => $this->normalizeDateTime($campaign['start_time'] ?? null),
+                'stop_time' => $this->normalizeDateTime($campaign['stop_time'] ?? null),
+                'created_time' => $this->normalizeDateTime($campaign['created_time'] ?? null),
+                'updated_time' => $this->normalizeDateTime($campaign['updated_time'] ?? null),
                 'deleted_at' => null,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -75,7 +76,7 @@ class PersistMainSystemInsightReportsJob implements ShouldQueue
             ->map(fn (array $insight) => [
                 'account_id' => $insight['account_id'],
                 'campaign_id' => $insight['campaign_id'],
-                'date_start' => $insight['date_start'],
+                'date_start' => $this->normalizeDate($insight['date_start']),
                 'impressions' => $insight['impressions'] ?? null,
                 'reach' => $insight['reach'] ?? null,
                 'clicks' => $insight['clicks'] ?? null,
@@ -139,5 +140,29 @@ class PersistMainSystemInsightReportsJob implements ShouldQueue
             'error' => $exception->getMessage(),
             'main_team_id' => $this->mainTeamId,
         ]);
+    }
+
+    private function normalizeDateTime(mixed $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->toDateTimeString();
+        } catch (Throwable $exception) {
+            Log::channel('sync_reports')->warning('[MainSystemSync] Invalid datetime received while persisting insight payload', [
+                'value' => $value,
+                'error' => $exception->getMessage(),
+                'main_team_id' => $this->mainTeamId,
+            ]);
+
+            return null;
+        }
+    }
+
+    private function normalizeDate(mixed $value): string
+    {
+        return Carbon::parse($value)->toDateString();
     }
 }
