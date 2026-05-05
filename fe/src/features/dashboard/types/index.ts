@@ -51,9 +51,19 @@ export interface RevenueTopUserRow {
   monthly: RevenueStats
 }
 
+export interface RevenueMainTeamRow {
+  main_team_id: number
+  main_team_name: string
+  today: RevenueStats
+  yesterday: RevenueStats
+  this_month: RevenueStats
+  last_month: RevenueStats
+}
+
 export interface RevenueTableData {
   by_team: RevenueTeamRow[]
   top_users: RevenueTopUserRow[]
+  top_main_teams?: RevenueMainTeamRow[]
 }
 
 export interface RevenueTableParams {

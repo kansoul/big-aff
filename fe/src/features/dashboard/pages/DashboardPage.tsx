@@ -1,8 +1,9 @@
 import dayjs from '@/lib/dayjs'
-import { Activity, ArrowUpRight, Calendar, Sparkles } from 'lucide-react'
+import { Activity, ArrowUpRight, Calendar, Medal, Network, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -16,7 +17,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { dashboardApi } from '@/features/dashboard/api'
-import type { InsightStatsData, RevenueTableData, RevenueTeamRow } from '@/features/dashboard/types'
+import type {
+  InsightStatsData,
+  RevenueMainTeamRow,
+  RevenueStats,
+  RevenueTableData,
+  RevenueTeamRow,
+} from '@/features/dashboard/types'
 import { useAuthStore } from '@/hooks/useAuthStore'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -37,6 +44,202 @@ const ProfitCell = ({ value }: { value: number }) => (
     {formatCurrency(value)}
   </span>
 )
+
+const MAIN_TEAM_PERIODS = [
+  { key: 'today', label: 'Today', badgeClass: 'bg-blue-500/10 text-blue-500' },
+  { key: 'yesterday', label: 'Yesterday', badgeClass: 'bg-orange-500/10 text-orange-500' },
+  { key: 'this_month', label: 'This Month', badgeClass: 'bg-emerald-500/10 text-emerald-500' },
+  { key: 'last_month', label: 'Last Month', badgeClass: 'bg-zinc-500/10 text-zinc-500' },
+] as const
+
+type MainTeamPeriodKey = (typeof MAIN_TEAM_PERIODS)[number]['key']
+
+function topMainTeamByProfit(rows: RevenueMainTeamRow[], period: MainTeamPeriodKey) {
+  return rows.reduce<RevenueMainTeamRow | null>((best, row) => {
+    if (!best) return row
+    return row[period].profit > best[period].profit ? row : best
+  }, null)
+}
+
+function MainTeamLeaderBadge({
+  label,
+  row,
+  stats,
+  loading,
+}: {
+  label: string
+  row: RevenueMainTeamRow | null
+  stats?: RevenueStats
+  loading: boolean
+}) {
+  if (loading) {
+    return <Skeleton className="h-8 w-56 rounded-full" />
+  }
+
+  if (!row || !stats) {
+    return (
+      <Badge variant="outline" className="h-8 gap-1.5 rounded-full px-3 text-muted-foreground">
+        <Medal className="h-3.5 w-3.5" />
+        {label}: No data
+      </Badge>
+    )
+  }
+
+  return (
+    <Badge
+      variant="outline"
+      className="h-auto min-h-8 max-w-full gap-1.5 rounded-full border-amber-500/30 bg-amber-500/10 px-3 py-1 text-amber-700 dark:text-amber-300"
+    >
+      <Medal className="h-3.5 w-3.5 shrink-0" />
+      <span className="truncate">
+        {label}: {row.main_team_name}
+      </span>
+      <span className="shrink-0 font-bold">{formatCurrency(stats.profit)}</span>
+    </Badge>
+  )
+}
+
+function MainTeamStatsCells({ stats }: { stats: RevenueStats }) {
+  return (
+    <>
+      <TableCell className="text-xs font-medium text-foreground">
+        {formatCurrency(stats.revenue)}
+      </TableCell>
+      <TableCell className="text-xs font-medium text-foreground">
+        {formatCurrency(stats.spend)}
+      </TableCell>
+      <TableCell>
+        <ProfitCell value={stats.profit} />
+      </TableCell>
+      <TableCell>
+        <span
+          className={`text-xs font-semibold ${stats.roi >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+        >
+          {stats.roi.toFixed(2)}%
+        </span>
+      </TableCell>
+    </>
+  )
+}
+
+function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loading: boolean }) {
+  const topToday = topMainTeamByProfit(rows, 'today')
+  const topMonth = topMainTeamByProfit(rows, 'this_month')
+
+  return (
+    <Card className="mt-0 flex flex-col overflow-hidden rounded-2xl border-border/50 bg-card shadow-sm">
+      <div className="flex flex-col gap-4 border-b border-border/50 bg-muted/20 px-2 py-5 md:px-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500">
+              <Network className="h-4 w-4" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-bold">Main Team Top</CardTitle>
+              <CardDescription className="mt-1 text-sm">
+                Revenue, spend, profit and ROI grouped by main team
+              </CardDescription>
+            </div>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+            <MainTeamLeaderBadge
+              label="Main Team Top Day"
+              row={topToday}
+              stats={topToday?.today}
+              loading={loading}
+            />
+            <MainTeamLeaderBadge
+              label="Main Team Top Month"
+              row={topMonth}
+              stats={topMonth?.this_month}
+              loading={loading}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <Table className="whitespace-nowrap">
+          <TableHeader>
+            <TableRow className="border-b-0 bg-muted/10 hover:bg-muted/10">
+              <TableHead
+                rowSpan={2}
+                className="sticky left-0 z-20 w-[180px] border-r border-border/30 bg-card px-3 py-3 align-middle text-xs font-semibold text-muted-foreground md:px-6"
+              >
+                Main Team
+              </TableHead>
+              {MAIN_TEAM_PERIODS.map((period) => (
+                <TableHead
+                  key={period.key}
+                  colSpan={4}
+                  className="border-l border-b border-border/30 py-2.5 text-center font-semibold text-foreground"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    {period.label}
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${period.badgeClass}`}
+                    >
+                      {period.label}
+                    </span>
+                  </span>
+                </TableHead>
+              ))}
+            </TableRow>
+            <TableRow className="border-b border-border/50 bg-muted/10 hover:bg-muted/10">
+              {MAIN_TEAM_PERIODS.flatMap((period) =>
+                ['Revenue', 'Spend', 'Profit', 'ROI %'].map((label, index) => (
+                  <TableHead
+                    key={`${period.key}-${label}`}
+                    className={`w-32 py-2.5 text-xs font-semibold text-muted-foreground ${index === 0 ? 'border-l border-border/30' : ''}`}
+                  >
+                    {label}
+                  </TableHead>
+                )),
+              )}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading
+              ? Array.from({ length: 4 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="sticky left-0 z-10 border-r border-border/30 bg-card px-3 py-3 md:px-6">
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    {Array.from({ length: 16 }).map((__, cellIndex) => (
+                      <TableCell key={cellIndex}>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              : rows.map((row) => (
+                  <TableRow key={row.main_team_id} className="border-b border-border/30">
+                    <TableCell className="sticky left-0 z-10 border-r border-border/30 bg-card px-3 py-3 text-xs font-semibold text-foreground md:px-6">
+                      <span className="block max-w-48 truncate" title={row.main_team_name}>
+                        {row.main_team_name}
+                      </span>
+                    </TableCell>
+                    {MAIN_TEAM_PERIODS.map((period) => (
+                      <MainTeamStatsCells key={period.key} stats={row[period.key]} />
+                    ))}
+                  </TableRow>
+                ))}
+            {!loading && rows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={17}
+                  className="px-3 py-8 text-center text-xs text-muted-foreground"
+                >
+                  No data
+                </TableCell>
+              </TableRow>
+            ) : null}
+          </TableBody>
+        </Table>
+      </div>
+    </Card>
+  )
+}
 
 // ── page ──────────────────────────────────────────────────────────────────────
 
@@ -145,7 +348,8 @@ function buildStatsCards(stats: InsightStatsData): StatsCardData[] {
 }
 
 export function DashboardPage() {
-  const permissions = useAuthStore((s) => s.user?.permissions ?? [])
+  const user = useAuthStore((s) => s.user)
+  const permissions = useMemo(() => user?.permissions ?? [], [user?.permissions])
   const canViewStats = useMemo(
     () => hasPermission(permissions, PermissionSlugs.DashboardStatView),
     [permissions],
@@ -158,8 +362,9 @@ export function DashboardPage() {
     () => hasPermission(permissions, PermissionSlugs.DashboardUserView),
     [permissions],
   )
+  const canViewMainTeamTable = Boolean(user?.is_admin && user?.is_main_system)
 
-  const canLoadRevenueTable = canViewTeamTable || canViewUserTable
+  const canLoadRevenueTable = canViewTeamTable || canViewUserTable || canViewMainTeamTable
 
   const [statsLoading, setStatsLoading] = useState(true)
   const [tableLoading, setTableLoading] = useState(true)
@@ -215,6 +420,10 @@ export function DashboardPage() {
 
   // ── derived insight cards ────────────────────────────────────────────────
   const teams = useMemo((): RevenueTeamRow[] => revenueTable?.by_team ?? [], [revenueTable])
+  const topMainTeams = useMemo(
+    (): RevenueMainTeamRow[] => revenueTable?.top_main_teams ?? [],
+    [revenueTable],
+  )
 
   const yesterdayTotals = useMemo(() => {
     const revenue = teams.reduce((s, r) => s + r.yesterday.revenue, 0)
@@ -226,47 +435,47 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-8 animate-in fade-in duration-500">
-      {/* Hero Banner */}
-      <div className="hidden relative overflow-hidden md:flex flex-col md:flex-row justify-between items-start md:items-center gap-8 p-8 sm:p-10 rounded-3xl border border-border/50 shadow-sm bg-zinc-950 text-white">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] bg-emerald-500/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none" />
+      {!user?.is_main_system && (
+        <div className="hidden relative overflow-hidden md:flex flex-col md:flex-row justify-between items-start md:items-center gap-8 p-8 sm:p-10 rounded-3xl border border-border/50 shadow-sm bg-zinc-950 text-white">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] bg-emerald-500/20 blur-[100px] rounded-full mix-blend-screen pointer-events-none" />
 
-        <div className="relative z-10 w-full lg:w-2/3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 mb-5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md">
-            <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="text-xs font-semibold tracking-wide uppercase text-zinc-100">
-              Live Dashboard
-            </span>
+          <div className="relative z-10 w-full lg:w-2/3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md">
+              <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="text-xs font-semibold tracking-wide uppercase text-zinc-100">
+                Live Dashboard
+              </span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
+              Welcome to the Workspace
+            </h1>
+            <p className="text-zinc-300 text-base sm:text-lg max-w-xl leading-relaxed">
+              {canViewStats ? (
+                <>
+                  Your campaigns are running. Monthly revenue this month:{' '}
+                  <span className="text-emerald-400 font-bold inline-flex items-center gap-1">
+                    <ArrowUpRight className="w-4 h-4" />
+                    {statsLoading ? '...' : statsCards[2]?.primaryValue}
+                  </span>
+                </>
+              ) : (
+                'Your dashboard sections are shown based on your permissions.'
+              )}
+            </p>
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
-            Welcome to the Workspace
-          </h1>
-          <p className="text-zinc-300 text-base sm:text-lg max-w-xl leading-relaxed">
-            {canViewStats ? (
-              <>
-                Your campaigns are running. Monthly revenue this month:{' '}
-                <span className="text-emerald-400 font-bold inline-flex items-center gap-1">
-                  <ArrowUpRight className="w-4 h-4" />
-                  {statsLoading ? '...' : statsCards[2]?.primaryValue}
-                </span>
-              </>
-            ) : (
-              'Your dashboard sections are shown based on your permissions.'
-            )}
-          </p>
-        </div>
 
-        <div className="relative z-10 flex flex-col sm:flex-row md:flex-col lg:flex-row items-center gap-3 w-full md:w-auto">
-          <Button
-            variant="outline"
-            className="w-full md:w-auto gap-2 rounded-xl h-12 px-6 border-white/20 hover:bg-white/10 bg-white/5 text-white backdrop-blur-md transition-all shadow-sm"
-          >
-            <Calendar className="h-4 w-4" />
-            <span className="font-semibold">{dayjs().format('MMM D, YYYY')}</span>
-          </Button>
+          <div className="relative z-10 flex flex-col sm:flex-row md:flex-col lg:flex-row items-center gap-3 w-full md:w-auto">
+            <Button
+              variant="outline"
+              className="w-full md:w-auto gap-2 rounded-xl h-12 px-6 border-white/20 hover:bg-white/10 bg-white/5 text-white backdrop-blur-md transition-all shadow-sm"
+            >
+              <Calendar className="h-4 w-4" />
+              <span className="font-semibold">{dayjs().format('MMM D, YYYY')}</span>
+            </Button>
+          </div>
         </div>
-      </div>
-
+      )}
       {/* Stats Summary Cards */}
       {canViewStats && (
         <div className="grid gap-4 lg:grid-cols-3">
@@ -406,6 +615,7 @@ export function DashboardPage() {
           })}
         </div>
       )}
+      {canViewMainTeamTable && <MainTeamTopTable rows={topMainTeams} loading={tableLoading} />}
 
       {/* Team Breakdown Table */}
       {canViewTeamTable && (
@@ -413,7 +623,7 @@ export function DashboardPage() {
           {/* Card Header: title + summary stat cards */}
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-border/50 px-2 md:px-6 py-5 bg-muted/20">
             <div className="shrink-0">
-              <CardTitle className="text-xl font-bold">Team Breakdown</CardTitle>
+              <CardTitle className="text-xl font-bold">Team Internal</CardTitle>
               <CardDescription className="mt-1 text-sm">
                 Revenue, spend, profit and ROI by team
               </CardDescription>
@@ -1102,7 +1312,7 @@ export function DashboardPage() {
         </Card>
       )}
 
-      {!canViewStats && !canViewTeamTable && !canViewUserTable && (
+      {!canViewStats && !canViewTeamTable && !canViewUserTable && !canViewMainTeamTable && (
         <Card className="rounded-2xl border-border/50 shadow-sm bg-card">
           <CardHeader>
             <CardTitle className="text-lg">No dashboard data permission</CardTitle>

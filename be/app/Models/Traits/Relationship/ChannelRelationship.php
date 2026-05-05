@@ -2,7 +2,9 @@
 
 namespace App\Models\Traits\Relationship;
 
+use App\Models\MainTeam;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 trait ChannelRelationship
@@ -17,5 +19,13 @@ trait ChannelRelationship
         return $this->belongsToMany(User::class, 'channel_user')
             ->withTimestamps()
             ->withPivot('deleted_at');
+    }
+
+    /**
+     * @return BelongsTo<MainTeam, $this>
+     */
+    public function mainTeam(): BelongsTo
+    {
+        return $this->belongsTo(MainTeam::class);
     }
 }

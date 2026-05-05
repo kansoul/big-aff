@@ -2,6 +2,7 @@ import { lazy, type ComponentType } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 import { RequirePermission } from '@/app/router/RequirePermission'
+import { RequireMainSystemAdmin } from '@/app/router/RequireMainSystemAdmin'
 import { ProtectedRoute } from '@/app/router/ProtectedRoute'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { NAV_SECTIONS, PATHS, routeSegment } from '@/constants/paths'
@@ -144,6 +145,22 @@ export const router = createBrowserRouter([
               }
             },
             handle: { title: 'Teams' },
+          },
+          {
+            path: routeSegment(PATHS.mainTeams),
+            lazy: async () => {
+              const { MainTeamsPage } = await import('@/features/main-teams/pages/MainTeamsPage')
+              return {
+                Component: function MainTeamsRoute() {
+                  return (
+                    <RequireMainSystemAdmin>
+                      <MainTeamsPage />
+                    </RequireMainSystemAdmin>
+                  )
+                },
+              }
+            },
+            handle: { title: 'Main Teams' },
           },
           {
             path: routeSegment(PATHS.channels),

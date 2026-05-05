@@ -8,6 +8,7 @@ use App\Models\GoogleOAuthToken;
 use App\Models\RevenueChartReport;
 use App\Models\RevenueReport;
 use App\Models\Style;
+use App\Services\MainSystem\MainSystemSyncService;
 use Carbon\Carbon;
 use Exception;
 use Google\Client as GoogleClient;
@@ -163,6 +164,14 @@ class RevenueReportSyncService
                     $errors[] = $e->getMessage();
                     $logger->error('[RevenueReportSync] Row error', ['error' => $e->getMessage(), 'row' => $r]);
                 }
+            }
+
+            try {
+                app(MainSystemSyncService::class)->dispatchChannels();
+            } catch (Throwable $e) {
+                $logger->error('[RevenueReportSync][MainSystemChannels] Dispatch failed', [
+                    'error' => $e->getMessage(),
+                ]);
             }
 
             return [

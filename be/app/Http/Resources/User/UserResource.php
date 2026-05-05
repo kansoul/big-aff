@@ -36,6 +36,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'permissions' => $permissions,
             'is_admin' => $this->is_admin,
+            'is_main_system' => (bool) config('main_system.is_main'),
             'roles' => $roles,
         ];
     }

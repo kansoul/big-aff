@@ -1,6 +1,7 @@
 export interface TeamReportFilterParams {
   date_from?: string | null
   date_to?: string | null
+  main_team_ids?: number[]
   team_ids?: number[]
   user_ids?: number[]
 }

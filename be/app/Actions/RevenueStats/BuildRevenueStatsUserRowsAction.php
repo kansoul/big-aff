@@ -19,6 +19,7 @@ class BuildRevenueStatsUserRowsAction
      *     date_to?: string|null,
      *     team_ids?: int[]|null,
      *     user_ids?: int[]|null,
+     *     main_team_ids?: int[]|null,
      *     account_ids?: int[]|null,
      *     channel_codes?: string[]|null
      * }  $filters
@@ -79,6 +80,7 @@ class BuildRevenueStatsUserRowsAction
      * @param  array{
      *     date_from?: string|null,
      *     date_to?: string|null,
+     *     main_team_ids?: int[]|null,
      *     account_ids?: int[]|null
      * }  $filters
      */
@@ -100,6 +102,16 @@ class BuildRevenueStatsUserRowsAction
                         $subquery->select('account_id')
                             ->from('accounts')
                             ->whereIn('id', $filters['account_ids']);
+                    });
+                }
+            )
+            ->when(
+                config('main_system.is_main') && ! empty($filters['main_team_ids']),
+                function ($query) use ($filters) {
+                    $query->whereIn('account_id', function ($subquery) use ($filters) {
+                        $subquery->select('account_id')
+                            ->from('accounts')
+                            ->whereIn('main_team_id', $filters['main_team_ids']);
                     });
                 }
             )
@@ -130,6 +142,7 @@ class BuildRevenueStatsUserRowsAction
      * @param  array{
      *     date_from?: string|null,
      *     date_to?: string|null,
+     *     main_team_ids?: int[]|null,
      *     channel_codes?: string[]|null
      * }  $filters
      */
@@ -147,6 +160,16 @@ class BuildRevenueStatsUserRowsAction
             ->when(
                 ! empty($filters['channel_codes']),
                 fn ($query) => $query->whereIn('channel_code', $filters['channel_codes'])
+            )
+            ->when(
+                config('main_system.is_main') && ! empty($filters['main_team_ids']),
+                function ($query) use ($filters) {
+                    $query->whereIn('channel_code', function ($subquery) use ($filters) {
+                        $subquery->select('code')
+                            ->from('channels')
+                            ->whereIn('main_team_id', $filters['main_team_ids']);
+                    });
+                }
             )
             ->selectRaw('channel_code, COALESCE(SUM(estimated_earnings), 0) as revenue')
             ->groupBy('channel_code');

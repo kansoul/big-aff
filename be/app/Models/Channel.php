@@ -12,6 +12,7 @@ class Channel extends Model
     use ChannelRelationship, HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'main_team_id',
         'code',
         'name',
         'is_active',
@@ -25,6 +26,7 @@ class Channel extends Model
     protected function casts(): array
     {
         return [
+            'main_team_id' => 'integer',
             'is_active' => 'boolean',
         ];
     }

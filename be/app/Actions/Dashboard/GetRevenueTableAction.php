@@ -51,6 +51,7 @@ class GetRevenueTableAction
         return [
             'by_team' => $user->hasPermissionFlag(Permission::DashboardTeamView) ? $this->byTeam($userRows) : [],
             'top_users' => $user->hasPermissionFlag(Permission::DashboardUserView) ? $this->topUsers($userRows, $limit) : [],
+            'top_main_teams' => $user->is_admin && config('main_system.is_main') ? $this->mainTeamRows($now, $limit) : [],
         ];
     }
 
@@ -339,5 +340,119 @@ class GetRevenueTableAction
             ->sortByDesc(fn ($row) => $row['monthly']['revenue'] - $row['monthly']['spend'])
             ->take($limit)
             ->values();
+    }
+
+    private function mainTeamRows(Carbon $now, int $limit): Collection
+    {
+        $spend = $this->mainTeamSpend($now);
+        $revenue = $this->mainTeamRevenue($now);
+
+        $teamIds = $spend->keys()
+            ->merge($revenue->keys())
+            ->unique()
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->values();
+
+        if ($teamIds->isEmpty()) {
+            return collect();
+        }
+
+        $names = DB::table('main_teams')
+            ->whereIn('id', $teamIds->all())
+            ->pluck('name', 'id');
+
+        return $teamIds->map(function (int $teamId) use ($spend, $revenue, $names) {
+            $spendRow = $spend->get($teamId);
+            $revenueRow = $revenue->get($teamId);
+
+            return [
+                'main_team_id' => $teamId,
+                'main_team_name' => $names[$teamId] ?? '(Unknown)',
+                'today' => $this->stats(
+                    (float) ($revenueRow?->today_revenue ?? 0),
+                    (float) ($spendRow?->today_spend ?? 0),
+                ),
+                'yesterday' => $this->stats(
+                    (float) ($revenueRow?->yesterday_revenue ?? 0),
+                    (float) ($spendRow?->yesterday_spend ?? 0),
+                ),
+                'this_month' => $this->stats(
+                    (float) ($revenueRow?->this_month_revenue ?? 0),
+                    (float) ($spendRow?->this_month_spend ?? 0),
+                ),
+                'last_month' => $this->stats(
+                    (float) ($revenueRow?->last_month_revenue ?? 0),
+                    (float) ($spendRow?->last_month_spend ?? 0),
+                ),
+            ];
+        })
+            ->sortByDesc(fn ($row) => $row['this_month']['profit'])
+            ->take($limit)
+            ->values();
+    }
+
+    private function mainTeamSpend(Carbon $now): Collection
+    {
+        $today = $now->toDateString();
+        $yesterday = $now->copy()->subDay()->toDateString();
+        $thisMonthFrom = $now->copy()->startOfMonth()->toDateString();
+        $thisMonthTo = $now->copy()->endOfMonth()->toDateString();
+        $lastMonthFrom = $now->copy()->subMonthNoOverflow()->startOfMonth()->toDateString();
+        $lastMonthTo = $now->copy()->subMonthNoOverflow()->endOfMonth()->toDateString();
+
+        return InsightReport::query()
+            ->join('accounts', 'accounts.account_id', '=', 'insight_reports.account_id')
+            ->whereNotNull('accounts.main_team_id')
+            ->whereDate('insight_reports.date_start', '>=', $lastMonthFrom)
+            ->whereDate('insight_reports.date_start', '<=', $thisMonthTo)
+            ->groupBy('accounts.main_team_id')
+            ->selectRaw('
+                accounts.main_team_id as main_team_id,
+                COALESCE(SUM(CASE WHEN insight_reports.date_start = ? THEN insight_reports.spend ELSE 0 END), 0) as today_spend,
+                COALESCE(SUM(CASE WHEN insight_reports.date_start = ? THEN insight_reports.spend ELSE 0 END), 0) as yesterday_spend,
+                COALESCE(SUM(CASE WHEN insight_reports.date_start >= ? AND insight_reports.date_start <= ? THEN insight_reports.spend ELSE 0 END), 0) as this_month_spend,
+                COALESCE(SUM(CASE WHEN insight_reports.date_start >= ? AND insight_reports.date_start <= ? THEN insight_reports.spend ELSE 0 END), 0) as last_month_spend
+            ', [$today, $yesterday, $thisMonthFrom, $thisMonthTo, $lastMonthFrom, $lastMonthTo])
+            ->get()
+            ->keyBy('main_team_id');
+    }
+
+    private function mainTeamRevenue(Carbon $now): Collection
+    {
+        $today = $now->toDateString();
+        $yesterday = $now->copy()->subDay()->toDateString();
+        $thisMonthFrom = $now->copy()->startOfMonth()->toDateString();
+        $thisMonthTo = $now->copy()->endOfMonth()->toDateString();
+        $lastMonthFrom = $now->copy()->subMonthNoOverflow()->startOfMonth()->toDateString();
+        $lastMonthTo = $now->copy()->subMonthNoOverflow()->endOfMonth()->toDateString();
+
+        return RevenueReport::query()
+            ->join('channels', 'channels.code', '=', 'revenue_reports.channel_code')
+            ->whereNotNull('channels.main_team_id')
+            ->whereDate('revenue_reports.date', '>=', $lastMonthFrom)
+            ->whereDate('revenue_reports.date', '<=', $thisMonthTo)
+            ->groupBy('channels.main_team_id')
+            ->selectRaw('
+                channels.main_team_id as main_team_id,
+                COALESCE(SUM(CASE WHEN revenue_reports.date = ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as today_revenue,
+                COALESCE(SUM(CASE WHEN revenue_reports.date = ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as yesterday_revenue,
+                COALESCE(SUM(CASE WHEN revenue_reports.date >= ? AND revenue_reports.date <= ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as this_month_revenue,
+                COALESCE(SUM(CASE WHEN revenue_reports.date >= ? AND revenue_reports.date <= ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as last_month_revenue
+            ', [$today, $yesterday, $thisMonthFrom, $thisMonthTo, $lastMonthFrom, $lastMonthTo])
+            ->get()
+            ->keyBy('main_team_id');
+    }
+
+    private function stats(float $revenue, float $spend): array
+    {
+        $profit = $revenue - $spend;
+
+        return [
+            'revenue' => round($revenue, 2),
+            'spend' => round($spend, 2),
+            'profit' => round($profit, 2),
+            'roi' => $spend > 0 ? round(($profit / $spend) * 100, 2) : 0.0,
+        ];
     }
 }

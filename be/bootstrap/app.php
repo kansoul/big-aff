@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Middleware\CheckWhitelist;
+use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureAppUser;
+use App\Http\Middleware\EnsureMainSystem;
 use App\Http\Middleware\EnsurePermissionScope;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Foundation\Application;
@@ -25,8 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'verified' => EnsureEmailIsVerified::class,
+            'ensure.admin' => EnsureAdmin::class,
             'permission.scope' => EnsurePermissionScope::class,
             'ensure.app.user' => EnsureAppUser::class,
+            'ensure.main-system' => EnsureMainSystem::class,
             'check.whitelist' => CheckWhitelist::class,
         ]);
     })

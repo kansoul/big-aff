@@ -14,6 +14,7 @@ class GetRevenueStatsOverviewAction
      *     date_to?: string|null,
      *     team_ids?: int[]|null,
      *     user_ids?: int[]|null,
+     *     main_team_ids?: int[]|null,
      *     account_ids?: int[]|null,
      *     channel_codes?: string[]|null
      * }  $filters

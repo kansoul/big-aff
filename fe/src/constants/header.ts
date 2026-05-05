@@ -24,6 +24,7 @@ import {
   UsersRound,
   Wallet,
   ReceiptEuroIcon,
+  Network,
 } from 'lucide-react'
 
 export type NavSubItem = {
@@ -32,6 +33,8 @@ export type NavSubItem = {
   icon: LucideIcon
   /** Permission slug (`PermissionSlugs.*`) required to show this link. */
   requiredPermission?: string
+  adminOnly?: boolean
+  mainSystemOnly?: boolean
 }
 
 export type NavItem = {
@@ -182,6 +185,13 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         href: PATHS.teams,
         icon: UsersRound,
         requiredPermission: PermissionSlugs.TeamsView,
+      },
+      {
+        name: 'Main Teams',
+        href: PATHS.mainTeams,
+        icon: Network,
+        adminOnly: true,
+        mainSystemOnly: true,
       },
       {
         name: 'Roles',

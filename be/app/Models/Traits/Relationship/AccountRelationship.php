@@ -5,6 +5,7 @@ namespace App\Models\Traits\Relationship;
 use App\Models\BusinessCenter;
 use App\Models\Campaign;
 use App\Models\Conversion;
+use App\Models\MainTeam;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -37,6 +38,14 @@ trait AccountRelationship
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+
+    /**
+     * @return BelongsTo<MainTeam, $this>
+     */
+    public function mainTeam(): BelongsTo
+    {
+        return $this->belongsTo(MainTeam::class);
     }
 
     /**

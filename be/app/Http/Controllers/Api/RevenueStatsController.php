@@ -87,6 +87,13 @@ class RevenueStatsController extends BaseController
         ]);
     }
 
+    public function mainTeamOptions(): JsonResponse
+    {
+        return $this->sendResponse([
+            'data' => $this->revenueStatsService->mainTeamOptions(),
+        ]);
+    }
+
     public function userOptions(Request $request): JsonResponse
     {
         $teamIds = $request->input('team_ids');

@@ -10,12 +10,16 @@ function buildParams(filters: TeamReportFilterParams) {
   return {
     ...(filters.date_from ? { date_from: filters.date_from } : {}),
     ...(filters.date_to ? { date_to: filters.date_to } : {}),
+    ...(filters.main_team_ids?.length ? { 'main_team_ids[]': filters.main_team_ids } : {}),
     ...(filters.team_ids?.length ? { 'team_ids[]': filters.team_ids } : {}),
     ...(filters.user_ids?.length ? { 'user_ids[]': filters.user_ids } : {}),
   }
 }
 
 export const teamReportApi = {
+  mainTeamOptions: () =>
+    axiosInstance.get<{ data: { id: number; name: string }[] }>('/revenue-stats/main-team-options'),
+
   teamOptions: () =>
     axiosInstance.get<{ data: { id: number; name: string }[] }>('/revenue-stats/team-options'),
 

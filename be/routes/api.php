@@ -24,6 +24,8 @@ use App\Http\Controllers\Api\GoogleConversionController;
 use App\Http\Controllers\Api\InactiveStyleController;
 use App\Http\Controllers\Api\KeywordSetController;
 use App\Http\Controllers\Api\LogController;
+use App\Http\Controllers\Api\MainSystemSyncController;
+use App\Http\Controllers\Api\MainTeamController;
 use App\Http\Controllers\Api\OptionController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\RevenueChartReportController;
@@ -55,7 +57,20 @@ Route::middleware('check.whitelist')->group(function () {
     Route::post('/tracking/ads-conversion', [TrackingController::class, 'storeAdsConversion']);
 });
 
+Route::prefix('main-system')->group(function () {
+    Route::post('insight-reports', [MainSystemSyncController::class, 'receiveInsightReports']);
+    Route::post('channels', [MainSystemSyncController::class, 'receiveChannels']);
+});
+
 Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('main-teams')->middleware(['ensure.admin', 'ensure.main-system'])->group(function () {
+        Route::get('/', [MainTeamController::class, 'index']);
+        Route::post('/', [MainTeamController::class, 'store']);
+        Route::get('{mainTeam}', [MainTeamController::class, 'show']);
+        Route::match(['put', 'patch'], '{mainTeam}', [MainTeamController::class, 'update']);
+        Route::delete('{mainTeam}', [MainTeamController::class, 'destroy']);
+    });
+
     Route::prefix('follows')->group(function () {
         Route::get('/', [FollowController::class, 'index'])
             ->middleware('permission.scope:'.Permission::FollowsView->value);
@@ -363,6 +378,7 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
     Route::prefix('revenue-stats')->group(function () {
+        Route::get('main-team-options', [RevenueStatsController::class, 'mainTeamOptions'])->middleware('permission.scope:'.Permission::DashboardTeamView->value.'|'.Permission::DashboardUserView->value);
         Route::get('team-options', [RevenueStatsController::class, 'teamOptions'])->middleware('permission.scope:'.Permission::DashboardTeamView->value.'|'.Permission::DashboardUserView->value);
         Route::get('user-options', [RevenueStatsController::class, 'userOptions'])->middleware('permission.scope:'.Permission::DashboardTeamView->value.'|'.Permission::DashboardUserView->value);
         Route::get('overview', [RevenueStatsController::class, 'overview'])->middleware('permission.scope:'.Permission::DashboardStatView->value);

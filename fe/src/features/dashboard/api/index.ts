@@ -17,6 +17,7 @@ export const dashboardApi = {
     return {
       ...u,
       permissions: Array.isArray(u.permissions) ? u.permissions : [],
+      is_main_system: Boolean(u.is_main_system),
     }
   },
 

@@ -18,6 +18,7 @@ import logoRed from '@/assets/logo-s-red.png'
 import logoWhite from '@/assets/logo-s-white.png'
 import logoNexaLight from '@/assets/logo-nexa.png'
 import logoNexaDark from '@/assets/dark-logo-nexa.png'
+import tripLogo from '@/assets/trip-logo.png'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { loginApi } from '@/features/auth/api'
 import { Button } from '@/components/ui/button'
@@ -43,11 +44,43 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
+function LoginLogo({ theme, showTripLogo }: { theme: string; showTripLogo: boolean }) {
+  const primaryLogo =
+    siteDomain === 'nexa'
+      ? theme === 'dark'
+        ? logoNexaDark
+        : logoNexaLight
+      : theme === 'dark'
+        ? logoWhite
+        : logoRed
+
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <img
+        src={primaryLogo}
+        alt={siteDomain === 'nexa' ? 'Nexa' : 'Ticollab'}
+        className="h-7 w-auto shrink-0 object-contain object-left md:h-10"
+      />
+      {showTripLogo ? (
+        <>
+          <span className="h-5 w-px shrink-0 bg-border/70" aria-hidden />
+          <img
+            src={tripLogo}
+            alt="Trip"
+            className="h-13 w-auto shrink-0 object-contain object-left md:h-18"
+          />
+        </>
+      ) : null}
+    </span>
+  )
+}
+
 export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
   const setUser = useAuthStore((s) => s.setUser)
+  const showTripLogo = Boolean(siteDomain === 'ticollab')
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -95,11 +128,7 @@ export function LoginPage() {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
 
         <div className="relative z-20 flex items-center gap-3 font-bold tracking-tight">
-          <img
-            src={siteDomain === 'nexa' ? logoNexaDark : logoWhite}
-            alt={siteName}
-            className="h-10 w-auto drop-shadow-xl"
-          />
+          <LoginLogo theme="dark" showTripLogo={showTripLogo} />
         </div>
 
         <div className="relative z-20 w-full max-w-md mb-36 animate-in slide-in-from-bottom-8 fade-in duration-1000 delay-150">
@@ -149,18 +178,7 @@ export function LoginPage() {
 
         <div className="mx-auto w-full max-w-[400px]">
           <div className="flex justify-center lg:hidden mb-12">
-            <img
-              src={siteDomain === 'nexa' ? logoNexaLight : logoRed}
-              alt={siteName}
-              className="h-14 w-auto dark:hidden"
-              loading="eager"
-            />
-            <img
-              src={siteDomain === 'nexa' ? logoNexaDark : logoWhite}
-              alt={siteName}
-              className="hidden h-14 w-auto dark:block"
-              loading="eager"
-            />
+            <LoginLogo theme="dark" showTripLogo={showTripLogo} />
           </div>
 
           <div className="mb-10 text-center lg:text-left">

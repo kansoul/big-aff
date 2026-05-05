@@ -31,6 +31,7 @@ import logoHeaderDark from '@/assets/logo-s-white.png'
 import logoHeaderLight from '@/assets/logo-s-red.png'
 import logoNexaDark from '@/assets/dark-logo-nexa.png'
 import logoNexaLight from '@/assets/logo-nexa.png'
+import tripLogo from '@/assets/trip-logo.png'
 
 import { cn } from '@/lib/utils'
 import { ChevronDown, LogOut, Menu } from 'lucide-react'
@@ -46,6 +47,37 @@ const navTabBase =
 const navSubActive = 'text-red-600 dark:text-red-400'
 
 type AppRouteHandle = { title: string; navSection?: NavSectionId }
+
+function HeaderLogo({ theme, showTripLogo }: { theme: string; showTripLogo: boolean }) {
+  const primaryLogo =
+    siteDomain === 'nexa'
+      ? theme === 'dark'
+        ? logoNexaDark
+        : logoNexaLight
+      : theme === 'dark'
+        ? logoHeaderDark
+        : logoHeaderLight
+
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <img
+        src={primaryLogo}
+        alt={siteDomain === 'nexa' ? 'Nexa' : 'Ticollab'}
+        className="h-3 w-auto shrink-0 object-contain object-left md:h-4"
+      />
+      {showTripLogo ? (
+        <>
+          <span className="h-5 w-px shrink-0 bg-border/70" aria-hidden />
+          <img
+            src={tripLogo}
+            alt="Trip"
+            className="h-5 w-auto shrink-0 object-contain object-left md:h-6"
+          />
+        </>
+      ) : null}
+    </span>
+  )
+}
 
 function useActiveNavSection(): NavSectionId | undefined {
   const matches = useMatches()
@@ -108,15 +140,25 @@ function hasNavigableParentHref(item: NavItem): item is NavItem & { href: string
   return Boolean(item.href)
 }
 
-function filterNavItemsForUser(items: NavItem[], userPermissions: string[] | undefined): NavItem[] {
+function filterNavItemsForUser(
+  items: NavItem[],
+  userPermissions: string[] | undefined,
+  user?: {
+    is_admin?: boolean
+    is_main_system?: boolean
+  } | null,
+): NavItem[] {
   return items
     .map((item) => {
       if (!item.items?.length) {
         return item
       }
-      const filteredItems = item.items.filter(
-        (sub) => !sub.requiredPermission || hasPermission(userPermissions, sub.requiredPermission),
-      )
+      const filteredItems = item.items.filter((sub) => {
+        if (sub.adminOnly && !user?.is_admin) return false
+        if (sub.mainSystemOnly && !user?.is_main_system) return false
+
+        return !sub.requiredPermission || hasPermission(userPermissions, sub.requiredPermission)
+      })
       return { ...item, items: filteredItems }
     })
     .filter((item) => {
@@ -249,10 +291,11 @@ export const Header = React.memo(function Header() {
   const { theme } = useTheme()
   const isMobile = useIsMobile()
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false)
+  const showTripLogo = Boolean(siteDomain === 'ticollab')
 
   const navItemsForUser = React.useMemo(
-    () => filterNavItemsForUser(NAVIGATION_ITEMS, user?.permissions),
-    [user?.permissions],
+    () => filterNavItemsForUser(NAVIGATION_ITEMS, user?.permissions, user),
+    [user],
   )
 
   React.useEffect(() => {
@@ -292,19 +335,7 @@ export const Header = React.memo(function Header() {
           </Button>
 
           <Link to={PATHS.dashboard}>
-            <img
-              src={
-                siteDomain === 'nexa'
-                  ? theme === 'dark'
-                    ? logoNexaDark
-                    : logoNexaLight
-                  : theme === 'dark'
-                    ? logoHeaderDark
-                    : logoHeaderLight
-              }
-              alt={siteDomain === 'nexa' ? 'Nexa' : 'Ticollab'}
-              className="h-5 w-auto object-contain object-left md:h-6"
-            />
+            <HeaderLogo theme={theme} showTripLogo={showTripLogo} />
           </Link>
 
           {!isMobile && (
@@ -380,19 +411,7 @@ export const Header = React.memo(function Header() {
           >
             <SheetHeader className="border-b border-border/60 px-4 py-4 text-left">
               <Link to={PATHS.dashboard}>
-                <img
-                  src={
-                    siteDomain === 'nexa'
-                      ? theme === 'dark'
-                        ? logoNexaDark
-                        : logoNexaLight
-                      : theme === 'dark'
-                        ? logoHeaderDark
-                        : logoHeaderLight
-                  }
-                  alt={siteDomain === 'nexa' ? 'Nexa' : 'Ticollab'}
-                  className="h-5 w-auto object-contain object-left md:h-6"
-                />
+                <HeaderLogo theme={theme} showTripLogo={showTripLogo} />
               </Link>
               <SheetDescription className="sr-only">
                 Main navigation links and submenus

@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Campaign;
 use App\Models\InsightReport;
 use App\Services\Integrations\Facebook\FacebookAdsService;
+use App\Services\MainSystem\MainSystemSyncService;
 use Carbon\Carbon;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
@@ -91,7 +92,7 @@ class SyncFacebookCampaignBatchJob implements ShouldQueue
                     }
                 }
 
-                DB::transaction(function () use ($insights, $filteredCampaigns, $isSyncToday) {
+                $insightsData = DB::transaction(function () use ($insights, $filteredCampaigns, $isSyncToday) {
                     if (! empty($filteredCampaigns)) {
                         Campaign::upsert(
                             $filteredCampaigns,
@@ -143,7 +144,39 @@ class SyncFacebookCampaignBatchJob implements ShouldQueue
                         ['account_id', 'campaign_id', 'date_start'],
                         ['impressions', 'clicks', 'reach', 'ad_clicks', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'article_views', 'search_views', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'updated_at']
                     );
+
+                    return $insightsData;
                 });
+
+                $campaignPayloads = Campaign::query()
+                    ->whereIn('campaign_id', array_unique(array_column($insightsData, 'campaign_id')))
+                    ->get([
+                        'account_id',
+                        'ads_type',
+                        'campaign_id',
+                        'campaign_name',
+                        'daily_budget',
+                        'lifetime_budget',
+                        'status',
+                        'start_time',
+                        'stop_time',
+                        'created_time',
+                        'updated_time',
+                    ])
+                    ->toArray();
+
+                app(MainSystemSyncService::class)->dispatchInsightReports(
+                    accounts: [[
+                        'account_id' => $account->account_id,
+                        'account_name' => $account->account_name ?? null,
+                        'ads_type' => $account->ads_type ?? 'facebook',
+                        'status' => $account->status ?? null,
+                        'is_special' => (bool) ($account->is_special ?? false),
+                        'sync_to_mcc' => (bool) ($account->sync_to_mcc ?? false),
+                    ]],
+                    campaigns: $campaignPayloads,
+                    insights: $insightsData,
+                );
             } catch (Throwable $th) {
                 Log::error('SyncFacebookCampaignBatchJob error for account '.$account->account_id.': '.$th->getMessage());
                 $failedAccounts[] = $accountData;

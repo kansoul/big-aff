@@ -14,6 +14,7 @@ class Account extends Model
     protected $fillable = [
         'business_center_id',
         'team_id',
+        'main_team_id',
         'account_id',
         'account_name',
         'ads_type',
@@ -27,6 +28,7 @@ class Account extends Model
     protected $casts = [
         'ads_type' => 'string',
         'status' => 'string',
+        'main_team_id' => 'integer',
         'sync_to_mcc' => 'boolean',
         'is_special' => 'boolean',
     ];

@@ -7,6 +7,7 @@ use App\Jobs\ApplyCampaignNameToRuleJob;
 use App\Models\Account;
 use App\Models\Campaign;
 use App\Models\InsightReport;
+use App\Services\MainSystem\MainSystemSyncService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -23,20 +24,24 @@ class GoogleCampaignSyncService
     {
         $accountFilters = null;
         if (isset($data['account_id']) && ! empty($data['account_id'])) {
-            $accountFilters = Account::whereIn('account_id', $data['account_id'])
+            $query = Account::whereIn('account_id', $data['account_id'])
                 ->where('ads_type', AdsType::GOOGLE->value)
-                ->where('status', 'ACTIVE')
-                ->get();
+                ->where('status', 'ACTIVE');
+
+            self::applyMainTeamCampaignSyncScope($query);
+
+            $accountFilters = $query->get();
         }
 
         $accounts = $accountFilters
             ? $accountFilters
             : ($accountRecord
                 ? [$accountRecord]
-                : Account::whereNotNull('account_id')
-                    ->where('status', 'ACTIVE')
-                    ->where('ads_type', AdsType::GOOGLE->value)
-                    ->get());
+                : self::campaignSyncAccountsQuery(AdsType::GOOGLE->value)->get());
+
+        $accounts = collect($accounts)
+            ->filter(fn ($account) => self::shouldFetchAccount($account))
+            ->values();
 
         $service = app(GoogleAdsService::class);
 
@@ -51,7 +56,7 @@ class GoogleCampaignSyncService
                 $insights = $response['insights'];
                 $campaigns = $response['campaigns'];
 
-                DB::transaction(function () use ($insights, $campaigns) {
+                $insightsData = DB::transaction(function () use ($insights, $campaigns) {
                     if (! empty($campaigns)) {
                         Campaign::upsert(
                             $campaigns,
@@ -90,7 +95,22 @@ class GoogleCampaignSyncService
                         ['account_id', 'campaign_id', 'date_start'],
                         ['impressions', 'clicks', 'reach', 'ad_clicks', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'article_views', 'search_views', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'updated_at']
                     );
+
+                    return $insightsData;
                 });
+
+                app(MainSystemSyncService::class)->dispatchInsightReports(
+                    accounts: [[
+                        'account_id' => $account->account_id,
+                        'account_name' => $account->account_name,
+                        'ads_type' => $account->ads_type,
+                        'status' => $account->status,
+                        'is_special' => (bool) $account->is_special,
+                        'sync_to_mcc' => (bool) $account->sync_to_mcc,
+                    ]],
+                    campaigns: $campaigns,
+                    insights: $insightsData,
+                );
             } catch (Throwable $th) {
                 Log::error('Error processing Google account '.$account->account_id.': '.$th->getMessage());
                 Log::error($th->getTraceAsString());
@@ -108,20 +128,24 @@ class GoogleCampaignSyncService
     {
         $accountFilters = null;
         if (isset($data['account_id']) && ! empty($data['account_id'])) {
-            $accountFilters = Account::whereIn('account_id', $data['account_id'])
+            $query = Account::whereIn('account_id', $data['account_id'])
                 ->where('ads_type', AdsType::GOOGLE->value)
-                ->where('status', 'ACTIVE')
-                ->get();
+                ->where('status', 'ACTIVE');
+
+            self::applyMainTeamCampaignSyncScope($query);
+
+            $accountFilters = $query->get();
         }
 
         $accounts = $accountFilters
             ? $accountFilters
             : ($accountRecord
                 ? [$accountRecord]
-                : Account::whereNotNull('account_id')
-                    ->where('status', 'ACTIVE')
-                    ->where('ads_type', AdsType::GOOGLE->value)
-                    ->get());
+                : self::campaignSyncAccountsQuery(AdsType::GOOGLE->value)->get());
+
+        $accounts = collect($accounts)
+            ->filter(fn ($account) => self::shouldFetchAccount($account))
+            ->values();
 
         $service = app(GoogleAdsService::class);
 
@@ -136,7 +160,7 @@ class GoogleCampaignSyncService
                 $insights = $response['insights'];
                 $campaigns = $response['campaigns'];
 
-                DB::transaction(function () use ($insights, $campaigns) {
+                $insightsData = DB::transaction(function () use ($insights, $campaigns) {
                     if (! empty($campaigns)) {
                         Campaign::upsert(
                             $campaigns,
@@ -178,7 +202,22 @@ class GoogleCampaignSyncService
                         ['account_id', 'campaign_id', 'date_start'],
                         ['impressions', 'clicks', 'reach', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'updated_at']
                     );
+
+                    return $insightsData;
                 });
+
+                app(MainSystemSyncService::class)->dispatchInsightReports(
+                    accounts: [[
+                        'account_id' => $account->account_id,
+                        'account_name' => $account->account_name,
+                        'ads_type' => $account->ads_type,
+                        'status' => $account->status,
+                        'is_special' => (bool) $account->is_special,
+                        'sync_to_mcc' => (bool) $account->sync_to_mcc,
+                    ]],
+                    campaigns: $campaigns,
+                    insights: $insightsData,
+                );
             } catch (Throwable $th) {
                 Log::error('Error processing Google account (without conversions) '.$account->account_id.': '.$th->getMessage());
                 Log::error($th->getTraceAsString());
@@ -186,5 +225,47 @@ class GoogleCampaignSyncService
                 continue;
             }
         }
+    }
+
+    private static function campaignSyncAccountsQuery(string $adsType)
+    {
+        $query = Account::whereNotNull('account_id')
+            ->where('status', 'ACTIVE')
+            ->where('ads_type', $adsType);
+
+        self::applyMainTeamCampaignSyncScope($query);
+
+        return $query;
+    }
+
+    private static function applyMainTeamCampaignSyncScope($query): void
+    {
+        if (! config('main_system.is_main')) {
+            return;
+        }
+
+        $query->where(function ($builder): void {
+            $builder->whereNull('main_team_id')
+                ->orWhereHas('mainTeam', fn ($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', true));
+        });
+    }
+
+    private static function shouldFetchAccount(mixed $account): bool
+    {
+        if (! config('main_system.is_main')) {
+            return true;
+        }
+
+        if ($account instanceof Account) {
+            if (empty($account->main_team_id)) {
+                return true;
+            }
+
+            $account->loadMissing('mainTeam');
+
+            return (bool) $account->mainTeam?->sync_campaign_reports;
+        }
+
+        return empty(data_get($account, 'main_team_id')) || (bool) data_get($account, 'main_team.sync_campaign_reports', false);
     }
 }

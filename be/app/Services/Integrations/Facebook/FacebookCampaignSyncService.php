@@ -24,20 +24,24 @@ class FacebookCampaignSyncService
     {
         $accountFilters = null;
         if (isset($data['account_id']) && ! empty($data['account_id'])) {
-            $accountFilters = Account::whereIn('account_id', $data['account_id'])
+            $query = Account::whereIn('account_id', $data['account_id'])
                 ->where('ads_type', AdsType::FACEBOOK->value)
-                ->where('status', 'ACTIVE')
-                ->get();
+                ->where('status', 'ACTIVE');
+
+            self::applyMainTeamCampaignSyncScope($query);
+
+            $accountFilters = $query->get();
         }
 
         $accounts = $accountFilters
             ? $accountFilters
             : ($accountRecord
                 ? [$accountRecord]
-                : Account::whereNotNull('account_id')
-                    ->where('status', 'ACTIVE')
-                    ->where('ads_type', AdsType::FACEBOOK->value)
-                    ->get());
+                : self::campaignSyncAccountsQuery(AdsType::FACEBOOK->value)->get());
+
+        $accounts = collect($accounts)
+            ->filter(fn ($account) => self::shouldFetchAccount($account))
+            ->values();
 
         $tokenConfigTemps = config('facebook.facebook_sync_tokens');
 
@@ -66,7 +70,7 @@ class FacebookCampaignSyncService
             return;
         }
 
-        $accountsArray = collect($accounts)->values()->toArray();
+        $accountsArray = $accounts->toArray();
         $batchSize = max(1, (int) ceil(count($accountsArray) / count($tokenConfigs)));
         $accountBatches = array_chunk($accountsArray, $batchSize);
 
@@ -150,5 +154,47 @@ class FacebookCampaignSyncService
         foreach ($campaigns as $campaign) {
             EvaluateCampaignRuleJob::dispatch($campaign, $date);
         }
+    }
+
+    private static function campaignSyncAccountsQuery(string $adsType)
+    {
+        $query = Account::whereNotNull('account_id')
+            ->where('status', 'ACTIVE')
+            ->where('ads_type', $adsType);
+
+        self::applyMainTeamCampaignSyncScope($query);
+
+        return $query;
+    }
+
+    private static function applyMainTeamCampaignSyncScope($query): void
+    {
+        if (! config('main_system.is_main')) {
+            return;
+        }
+
+        $query->where(function ($builder): void {
+            $builder->whereNull('main_team_id')
+                ->orWhereHas('mainTeam', fn ($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', true));
+        });
+    }
+
+    private static function shouldFetchAccount(mixed $account): bool
+    {
+        if (! config('main_system.is_main')) {
+            return true;
+        }
+
+        if ($account instanceof Account) {
+            if (empty($account->main_team_id)) {
+                return true;
+            }
+
+            $account->loadMissing('mainTeam');
+
+            return (bool) $account->mainTeam?->sync_campaign_reports;
+        }
+
+        return empty(data_get($account, 'main_team_id')) || (bool) data_get($account, 'main_team.sync_campaign_reports', false);
     }
 }

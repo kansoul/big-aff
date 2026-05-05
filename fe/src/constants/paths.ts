@@ -22,6 +22,7 @@ export const PATHS = {
   styles: '/styles',
   follows: '/follows',
   teams: '/teams',
+  mainTeams: '/main-teams',
   adsLinks: '/ads-links',
   businessCenters: '/business-centers',
   accounts: '/accounts',

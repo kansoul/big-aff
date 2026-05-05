@@ -4,6 +4,7 @@ export interface User {
   email: string
   permissions: string[]
   is_admin: boolean
+  is_main_system: boolean
   roles: UserRole[]
 }
 

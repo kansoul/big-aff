@@ -24,6 +24,8 @@ class RevenueStatsRequest extends FormRequest
             'team_ids.*' => ['integer', 'exists:teams,id'],
             'user_ids' => ['nullable', 'array'],
             'user_ids.*' => ['integer', 'exists:users,id'],
+            'main_team_ids' => ['nullable', 'array'],
+            'main_team_ids.*' => ['integer', 'exists:main_teams,id'],
             'account_ids' => ['nullable', 'array'],
             'account_ids.*' => ['integer', 'exists:accounts,id'],
             'channel_codes' => ['nullable', 'array'],

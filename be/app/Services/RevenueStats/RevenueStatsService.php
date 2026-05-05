@@ -4,6 +4,7 @@ namespace App\Services\RevenueStats;
 
 use App\Actions\RevenueStats\GetRevenueStatsByTeamAction;
 use App\Actions\RevenueStats\GetRevenueStatsByUserAction;
+use App\Actions\RevenueStats\GetRevenueStatsMainTeamOptionsAction;
 use App\Actions\RevenueStats\GetRevenueStatsOverviewAction;
 use App\Actions\RevenueStats\GetRevenueStatsTeamOptionsAction;
 use App\Actions\RevenueStats\GetRevenueStatsUserOptionsAction;
@@ -15,6 +16,7 @@ class RevenueStatsService
         private readonly GetRevenueStatsOverviewAction $getRevenueStatsOverviewAction,
         private readonly GetRevenueStatsByTeamAction $getRevenueStatsByTeamAction,
         private readonly GetRevenueStatsByUserAction $getRevenueStatsByUserAction,
+        private readonly GetRevenueStatsMainTeamOptionsAction $getRevenueStatsMainTeamOptionsAction,
         private readonly GetRevenueStatsTeamOptionsAction $getRevenueStatsTeamOptionsAction,
         private readonly GetRevenueStatsUserOptionsAction $getRevenueStatsUserOptionsAction,
     ) {}
@@ -25,6 +27,7 @@ class RevenueStatsService
      *     date_to?: string|null,
      *     team_ids?: int[]|null,
      *     user_ids?: int[]|null,
+     *     main_team_ids?: int[]|null,
      *     account_ids?: int[]|null,
      *     channel_codes?: string[]|null
      * }  $filters
@@ -41,6 +44,7 @@ class RevenueStatsService
      *     date_to?: string|null,
      *     team_ids?: int[]|null,
      *     user_ids?: int[]|null,
+     *     main_team_ids?: int[]|null,
      *     account_ids?: int[]|null,
      *     channel_codes?: string[]|null
      * }  $filters
@@ -56,6 +60,7 @@ class RevenueStatsService
      *     date_to?: string|null,
      *     team_ids?: int[]|null,
      *     user_ids?: int[]|null,
+     *     main_team_ids?: int[]|null,
      *     account_ids?: int[]|null,
      *     channel_codes?: string[]|null
      * }  $filters
@@ -71,6 +76,14 @@ class RevenueStatsService
     public function teamOptions(): Collection
     {
         return $this->getRevenueStatsTeamOptionsAction->execute();
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string}>
+     */
+    public function mainTeamOptions(): Collection
+    {
+        return $this->getRevenueStatsMainTeamOptionsAction->execute();
     }
 
     /**
