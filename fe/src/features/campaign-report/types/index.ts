@@ -256,7 +256,7 @@ export interface CampaignReportFilterParams {
 
 // ─── Revenue Report Range ─────────────────────────────────────────────────────
 
-export interface StyleReportRangeItem {
+export interface RevenueReportRangeItem {
   start_date: string
   start_time: string
   end_date: string
@@ -264,11 +264,11 @@ export interface StyleReportRangeItem {
   channel_codes: string[]
 }
 
-export interface StyleReportRangeQueryPayload {
-  ranges: StyleReportRangeItem[]
+export interface RevenueReportRangeQueryPayload {
+  ranges: RevenueReportRangeItem[]
 }
 
-export interface StyleReportRangeRow {
+export interface RevenueReportRangeRow {
   range_label: string
   channel_code: string
   channel_name: string
@@ -282,8 +282,8 @@ export interface StyleReportRangeRow {
   cpc: number | null
 }
 
-export interface StyleReportRangeQueryResponse {
-  data: StyleReportRangeRow[]
+export interface RevenueReportRangeQueryResponse {
+  data: RevenueReportRangeRow[]
 }
 
 // ─── Tracking Analytics ───────────────────────────────────────────────────────
