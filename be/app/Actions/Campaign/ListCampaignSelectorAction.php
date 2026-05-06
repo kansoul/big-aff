@@ -4,6 +4,7 @@ namespace App\Actions\Campaign;
 
 use App\Models\Campaign;
 use App\Models\CampaignReport;
+use App\Support\MainTeam\MainTeamReportDataScope;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
@@ -40,6 +41,15 @@ class ListCampaignSelectorAction
                 r_revenue - a_spend as profit
             ')
             ->whereDate('date_start', today());
+
+        if (config('main_system.is_main')) {
+            MainTeamReportDataScope::excludeNonFetchableAccounts(
+                $query,
+                'campaign_reports.account_id',
+                adsTypeColumn: 'campaign_reports.ads_type',
+            );
+            MainTeamReportDataScope::excludeNonFetchableChannels($query, 'campaign_reports.channel_code');
+        }
 
         if (! $resource->isAdmin()) {
             $query->whereIn(

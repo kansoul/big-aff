@@ -4,6 +4,7 @@ namespace App\Actions\CampaignReport;
 
 use App\Models\CampaignReport;
 use App\Models\RealtimeReport;
+use App\Support\MainTeam\MainTeamReportDataScope;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
@@ -129,6 +130,15 @@ class ListCampaignReportsAction
         $resource = new AccountLinkedOwnerResource;
 
         $query = CampaignReport::query();
+
+        if (config('main_system.is_main')) {
+            MainTeamReportDataScope::excludeNonFetchableAccounts(
+                $query,
+                'campaign_reports.account_id',
+                adsTypeColumn: 'campaign_reports.ads_type',
+            );
+            MainTeamReportDataScope::excludeNonFetchableChannels($query, 'campaign_reports.channel_code');
+        }
 
         if (! empty($filters['user_ids'])) {
             $userIds = $resource->isAdmin()

@@ -8,6 +8,7 @@ use App\Models\InsightReport;
 use App\Models\LinkData;
 use App\Models\RealtimeReport;
 use App\Models\RevenueReport;
+use App\Support\MainTeam\MainTeamReportDataScope;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -67,7 +68,7 @@ class CampaignReportSyncService
                 'success' => false,
                 'synced_count' => $syncedCount,
                 'error_count' => $errorCount + 1,
-                'message' => 'Sync failed: '.$e->getMessage(),
+                'message' => 'Sync failed: ' . $e->getMessage(),
             ];
         }
     }
@@ -78,13 +79,21 @@ class CampaignReportSyncService
 
         try {
             DB::transaction(function () use ($date, &$syncedCount, $failedAdClientIds) {
-                $insightReports = InsightReport::with(['campaign', 'campaign.account'])
-                    ->whereDate('date_start', $date)
-                    ->get();
+
+                $insightReportsQuery = InsightReport::with(['campaign', 'campaign.account'])
+                    ->whereDate('date_start', $date);
+
+                self::applyMainTeamInsightScope($insightReportsQuery);
+
+                $insightReports = $insightReportsQuery->get();
 
                 foreach ($insightReports as $insightReport) {
                     try {
                         $reportData = self::buildReportData($date, $insightReport, $failedAdClientIds);
+
+                        if ($reportData === null) {
+                            continue;
+                        }
 
                         CampaignReport::updateOrCreate(
                             [
@@ -123,9 +132,29 @@ class CampaignReportSyncService
         }
     }
 
-    private static function buildReportData(string $date, InsightReport $insightReport, bool $failedAdClientIds): array
+    private static function applyMainTeamInsightScope($query): void
+    {
+        if (! config('main_system.is_main')) {
+            return;
+        }
+
+        $query->whereHas('campaign', function ($campaignQuery): void {
+            MainTeamReportDataScope::excludeNonFetchableAccounts(
+                $campaignQuery,
+                'campaigns.account_id',
+                adsTypeColumn: 'campaigns.ads_type',
+            );
+        });
+    }
+
+    private static function buildReportData(string $date, InsightReport $insightReport, bool $failedAdClientIds): ?array
     {
         $linkData = LinkData::where('campaign_id', $insightReport->campaign_id)->first();
+
+        if (! self::shouldSyncChannel($linkData?->channel_code)) {
+            return null;
+        }
+
         $data = [];
         $spend = (float) ($insightReport->spend ?? 0);
         $campaign = $insightReport->campaign;
@@ -202,6 +231,18 @@ class CampaignReportSyncService
             'a_frequency' => (float) ($insightReport->frequency ?? 0),
             'a_clicks' => (int) ($insightReport->clicks ?? 0),
         ];
+    }
+
+    private static function shouldSyncChannel(?string $channelCode): bool
+    {
+        if (! config('main_system.is_main') || blank($channelCode)) {
+            return true;
+        }
+
+        return ! Channel::query()
+            ->where('code', $channelCode)
+            ->whereHas('mainTeam', fn($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', false))
+            ->exists();
     }
 
     /**
