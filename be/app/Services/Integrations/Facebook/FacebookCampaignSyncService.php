@@ -149,6 +149,7 @@ class FacebookCampaignSyncService
                     ->where('is_active', true)
                     ->where(fn ($q2) => $q2->whereNull('expired_at')->orWhere('expired_at', '>=', now()))
             )
+            ->where('status', 'ACTIVE')
             ->get();
 
         foreach ($campaigns as $campaign) {
