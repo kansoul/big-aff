@@ -489,23 +489,36 @@ function getColumns(
       if (isGroupRow(row.original)) return null
       const link = getRowAdsManagerLink(row.original)
       const name = row.original.campaign_name ?? '—'
+      const hasRule = row.original.has_rule
       if (link) {
         return (
-          <a
-            href={link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block whitespace-normal wrap-break-word text-[10px] font-medium text-primary hover:underline underline-offset-2 leading-tight"
-            onClick={(e) => e.stopPropagation()}
-            title={name}
-          >
-            {name}
-          </a>
+          <span className="whitespace-normal wrap-break-word text-[10px] font-medium leading-tight">
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline underline-offset-2"
+              onClick={(e) => e.stopPropagation()}
+              title={name}
+            >
+              {name}
+            </a>
+            {hasRule && (
+              <span className="inline-flex items-center rounded px-1 py-0.5 text-[9px] font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/60 dark:text-violet-300 leading-none ml-1 align-middle">
+                Rule
+              </span>
+            )}
+          </span>
         )
       }
       return (
-        <span className="block whitespace-normal wrap-break-word text-[10px] font-medium text-foreground leading-tight">
+        <span className="whitespace-normal wrap-break-word text-[10px] font-medium text-foreground leading-tight">
           {name}
+          {hasRule && (
+            <span className="inline-flex items-center rounded px-1 py-0.5 text-[9px] font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/60 dark:text-violet-300 leading-none ml-1 align-middle">
+              Rule
+            </span>
+          )}
         </span>
       )
     },

@@ -100,6 +100,7 @@ class ListCampaignReportsAction
                 DB::raw('IF(COALESCE(campaign_reports.r_funnel_requests, 0) > 0, COALESCE(rt.click_keyword_count, 0) / campaign_reports.r_funnel_requests * 100, NULL) as rt_ctr_keyword'),
                 DB::raw('IF(COALESCE(rt.view_search_count, 0) > 0, COALESCE(rt.click_ad_count, 0) / rt.view_search_count * 100, NULL) as rt_ctr_search'),
             )
+            ->withExists(['campaign as has_rule' => fn ($q) => $q->whereHas('campaignRules', fn ($q) => $q->where('is_active', true))])
             ->with([
                 'realtimeReport.linkData.adsLink.site',
             ]);

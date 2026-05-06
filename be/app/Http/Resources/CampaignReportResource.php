@@ -80,6 +80,7 @@ class CampaignReportResource extends JsonResource
             'campaign_id' => $this->campaign_id,
             'campaign_name' => $this->campaign_name,
             'campaign_status' => $this->campaign_status,
+            'has_rule' => (bool) ($this->has_rule ?? false),
             'ads_type' => $this->ads_type,
             'site_url' => $this->realtimeReport?->linkData?->adsLink?->site?->url,
             'slug' => $this->realtimeReport?->linkData?->adsLink?->slug,

@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 trait CampaignRelationship
 {
     /**
-     * @return BelongsTo<Account, string>
+     * @return BelongsTo<Account, $this>
      */
     public function account(): BelongsTo
     {
@@ -26,7 +26,7 @@ trait CampaignRelationship
     }
 
     /**
-     * @return HasOne<LinkData>
+     * @return HasOne<LinkData, $this>
      */
     public function linkData(): HasOne
     {
@@ -34,7 +34,7 @@ trait CampaignRelationship
     }
 
     /**
-     * @return HasMany<AdsetInsightsReport>
+     * @return HasMany<AdsetInsightsReport, $this>
      */
     public function adsetInsightsReports(): HasMany
     {
@@ -42,7 +42,7 @@ trait CampaignRelationship
     }
 
     /**
-     * @return HasMany<AdsInsightsReport>
+     * @return HasMany<AdsInsightsReport, $this>
      */
     public function adsInsightsReports(): HasMany
     {
@@ -50,7 +50,7 @@ trait CampaignRelationship
     }
 
     /**
-     * @return BelongsTo<User, int>
+     * @return BelongsTo<User, $this>
      */
     public function createdBy(): BelongsTo
     {
@@ -58,7 +58,7 @@ trait CampaignRelationship
     }
 
     /**
-     * @return BelongsTo<User, int>
+     * @return BelongsTo<User, $this>
      */
     public function updatedBy(): BelongsTo
     {
@@ -70,7 +70,13 @@ trait CampaignRelationship
      */
     public function applyRules(): MorphMany
     {
-        return $this->morphMany(CampaignApplyRule::class, 'sourceable');
+        return $this->morphMany(
+            CampaignApplyRule::class,
+            'sourceable',
+            'sourceable_type',
+            'sourceable_id',
+            'campaign_id'
+        );
     }
 
     /**
@@ -78,6 +84,6 @@ trait CampaignRelationship
      */
     public function campaignRules(): MorphToMany
     {
-        return $this->morphToMany(CampaignRule::class, 'sourceable', 'campaign_apply_rules');
+        return $this->morphToMany(CampaignRule::class, 'sourceable', 'campaign_apply_rules', parentKey: 'campaign_id');
     }
 }
