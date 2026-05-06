@@ -172,22 +172,13 @@ class EvaluateCampaignRuleAction
             return true;
         }
 
-        $currentTime = $now->format('H:i');
+        $current = $now->format('H:i');
+        $start ??= '00:00';
+        $end ??= '23:59';
 
-        if ($start && ! $end) {
-            return $currentTime >= $start;
-        }
-
-        if (! $start && $end) {
-            return $currentTime <= $end;
-        }
-
-        if ($start <= $end) {
-            return $currentTime >= $start && $currentTime <= $end;
-        }
-
-        // Overnight window (e.g. 22:00 → 06:00)
-        return $currentTime >= $start || $currentTime <= $end;
+        return $start <= $end
+            ? $current >= $start && $current <= $end
+            : $current >= $start || $current <= $end; // Overnight window
     }
 
     /**

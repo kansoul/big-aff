@@ -378,9 +378,6 @@ export interface CampaignRuleRow {
   min_profit: string | null
   min_revenue: string | null
   min_spend: string | null
-  max_cpa: string | null
-  min_conversion: number | null
-  min_spend_adset: string | null
   start_hour: string | null
   end_hour: string | null
   user: { id?: number; name?: string | null; email?: string | null } | null
@@ -400,9 +397,6 @@ export interface CampaignRuleCreatePayload {
   min_profit?: number | null
   min_revenue?: number | null
   min_spend?: number | null
-  max_cpa?: number | null
-  min_conversion?: number | null
-  min_spend_adset?: number | null
   start_hour?: string | null
   end_hour?: string | null
   entity_ids?: string[] | null
@@ -417,9 +411,6 @@ export interface CampaignRuleUpdatePayload {
   min_profit?: number | null
   min_revenue?: number | null
   min_spend?: number | null
-  max_cpa?: number | null
-  min_conversion?: number | null
-  min_spend_adset?: number | null
   start_hour?: string | null
   end_hour?: string | null
   entity_ids?: string[] | null

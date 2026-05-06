@@ -82,23 +82,25 @@ class UpdateCampaignRuleRequest extends FormRequest
             }
 
             $ids = array_values(array_filter(array_map(
-                static fn (mixed $item): string => is_string($item) ? trim($item) : (string) $item,
+                static fn(mixed $item): string => is_string($item) ? trim($item) : (string) $item,
                 $ids,
-            ), static fn (string $id): bool => $id !== ''));
+            ), static fn(string $id): bool => $id !== ''));
 
             foreach ($ids as $index => $id) {
                 if ($effectiveEntity === EntityTypeEnum::Campaign->value) {
                     if (! Campaign::query()->where('campaign_id', $id)->exists()) {
-                        $v->errors()->add("entity_ids.{$index}", 'Invalid campaign ID: '.$id);
+                        $v->errors()->add("entity_ids.{$index}", 'Invalid campaign ID: ' . $id);
                     }
 
                     continue;
                 }
 
                 if ($effectiveEntity === EntityTypeEnum::AdAdset->value) {
-                    if (! AdsInsightsReport::query()->where('ad_id', $id)->exists()
-                        && ! AdsetInsightsReport::query()->where('adset_id', $id)->exists()) {
-                        $v->errors()->add("entity_ids.{$index}", 'Invalid ad or adset ID: '.$id);
+                    if (
+                        ! AdsInsightsReport::query()->where('ad_id', $id)->exists()
+                        && ! AdsetInsightsReport::query()->where('adset_id', $id)->exists()
+                    ) {
+                        $v->errors()->add("entity_ids.{$index}", 'Invalid ad or adset ID: ' . $id);
                     }
                 }
             }
@@ -135,9 +137,9 @@ class UpdateCampaignRuleRequest extends FormRequest
         }
 
         $ids = array_values(array_filter(array_map(
-            static fn (string $s): string => trim($s),
+            static fn(string $s): string => trim($s),
             $parts,
-        ), static fn (string $s): bool => $s !== ''));
+        ), static fn(string $s): bool => $s !== ''));
 
         $this->merge(['entity_ids' => $ids]);
     }

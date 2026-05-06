@@ -9,6 +9,7 @@ use App\Jobs\SendTelegramWarningJob;
 use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
 use App\Models\CampaignApplyRule;
+use App\Models\CampaignReport;
 use App\Services\Integrations\Ads\AdsStatusService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -36,7 +37,6 @@ class EvaluateAdAdsetRuleAction
 
         $now = Carbon::now();
         $date = $date ?? $now->toDateString();
-
         $report = $this->loadReport($entityType, $entityId, $date);
 
         if (! $report) {
@@ -44,9 +44,11 @@ class EvaluateAdAdsetRuleAction
         }
 
         $spend = (float) ($report->spend ?? 0);
-        $conversionRealtime = (int) ($this->computeConversionRealtime($entityType, $entityId, $date));
-        $cpa = $conversionRealtime > 0 ? $spend / $conversionRealtime : 0.0;
-
+        $rpc = $this->loadRpc((string) $report->campaign_id, $date);
+        $realtimeClicks = $this->computeRealtimeClicks($entityType, $entityId, $date);
+        $revenue = $realtimeClicks * $rpc;
+        $profit = $revenue - $spend;
+        $roi = $spend > 0 ? ($profit / $spend) * 100 : 0.0;
         $fbSourceableId = $this->facebookNumericSourceableId($report, $entityType);
 
         $rules = $this->getActiveRules($entityType, $fbSourceableId, $now);
@@ -56,11 +58,11 @@ class EvaluateAdAdsetRuleAction
         }
 
         foreach ($rules as $rule) {
-            if ($rule->min_conversion !== null && $conversionRealtime < (int) $rule->min_conversion) {
+            if ($spend < (float) ($rule->min_spend ?? 0)) {
                 continue;
             }
 
-            if ($rule->min_spend_adset !== null && $spend < (float) $rule->min_spend_adset) {
+            if ($revenue < (float) ($rule->min_revenue ?? 0)) {
                 continue;
             }
 
@@ -68,13 +70,10 @@ class EvaluateAdAdsetRuleAction
                 continue;
             }
 
-            $triggeredConditions = [];
+            $profitTriggered = $rule->min_profit !== null && $profit < (float) $rule->min_profit;
+            $roiTriggered = $rule->min_roi !== null && $roi < (float) $rule->min_roi;
 
-            if ($rule->max_cpa !== null && $cpa >= (float) $rule->max_cpa) {
-                $triggeredConditions[] = "CPA >= \${$rule->max_cpa}";
-            }
-
-            if (empty($triggeredConditions)) {
+            if (! $profitTriggered && ! $roiTriggered) {
                 continue;
             }
 
@@ -84,15 +83,14 @@ class EvaluateAdAdsetRuleAction
 
             $telegramChatId = $rule->setting_telegram_chat_id ?? null;
 
+            $metrics = compact('spend', 'revenue', 'profit', 'roi');
+
             if ($actionMode === RuleActionMode::WARNING) {
                 $this->sendNotification(
                     $rule,
                     $report,
                     $entityType,
-                    $spend,
-                    $cpa,
-                    $conversionRealtime,
-                    $triggeredConditions,
+                    $metrics,
                     $telegramChatId,
                     isPaused: false,
                 );
@@ -105,10 +103,7 @@ class EvaluateAdAdsetRuleAction
                 $report,
                 $entityType,
                 $fbSourceableId,
-                $spend,
-                $cpa,
-                $conversionRealtime,
-                $triggeredConditions,
+                $metrics,
                 $telegramChatId,
             );
 
@@ -134,10 +129,20 @@ class EvaluateAdAdsetRuleAction
             ->first();
     }
 
+    private function loadRpc(string $campaignId, string $date): float
+    {
+        $report = CampaignReport::query()
+            ->where('campaign_id', $campaignId)
+            ->whereDate('date_start', $date)
+            ->first();
+
+        return (float) ($report?->r_rpc ?? 0);
+    }
+
     /**
      * @param  class-string<AdsInsightsReport|AdsetInsightsReport>  $entityType
      */
-    private function computeConversionRealtime(string $entityType, string $entityId, string $date): int
+    private function computeRealtimeClicks(string $entityType, string $entityId, string $date): int
     {
         $column = $entityType === AdsInsightsReport::class ? 'ad_id' : 'adset_id';
 
@@ -149,9 +154,6 @@ class EvaluateAdAdsetRuleAction
     }
 
     /**
-     * Fetch active ad/adset rules applied to the given report row, joined with the
-     * owner's per-user rule settings.
-     *
      * @param  class-string<AdsInsightsReport|AdsetInsightsReport>  $entityType
      */
     private function facebookNumericSourceableId(Model $report, string $entityType): int
@@ -197,33 +199,30 @@ class EvaluateAdAdsetRuleAction
         $start = $rule->start_hour ?? null;
         $end = $rule->end_hour ?? null;
 
-        if (! $start || ! $end) {
+        if (! $start && ! $end) {
             return true;
         }
 
-        $currentTime = $now->format('H:i');
+        $current = $now->format('H:i');
+        $start ??= '00:00';
+        $end ??= '23:59';
 
-        if ($start <= $end) {
-            return $currentTime >= $start && $currentTime <= $end;
-        }
-
-        return $currentTime >= $start || $currentTime <= $end;
+        return $start <= $end
+            ? $current >= $start && $current <= $end
+            : $current >= $start || $current <= $end; // Overnight window
     }
 
     /**
      * @param  AdsInsightsReport|AdsetInsightsReport  $report
      * @param  class-string<AdsInsightsReport|AdsetInsightsReport>  $entityType
-     * @param  array<int, string>  $triggeredConditions
+     * @param  array{spend: float, revenue: float, profit: float, roi: float}  $metrics
      */
     private function pauseAndNotify(
         object $rule,
         Model $report,
         string $entityType,
         int $fbSourceableId,
-        float $spend,
-        float $cpa,
-        int $conversionRealtime,
-        array $triggeredConditions,
+        array $metrics,
         ?string $telegramChatId,
     ): void {
         try {
@@ -237,7 +236,7 @@ class EvaluateAdAdsetRuleAction
                 return;
             }
 
-            DB::transaction(function () use ($report, $rule, $entityType, $fbSourceableId): void {
+            DB::transaction(function () use ($report, $rule, $entityType, $fbSourceableId, $metrics, $telegramChatId): void {
                 $report->update(['status' => 'PAUSED']);
 
                 CampaignApplyRule::query()
@@ -245,19 +244,9 @@ class EvaluateAdAdsetRuleAction
                     ->where('sourceable_id', $fbSourceableId)
                     ->where('campaign_rule_id', $rule->id)
                     ->delete();
-            });
 
-            $this->sendNotification(
-                $rule,
-                $report,
-                $entityType,
-                $spend,
-                $cpa,
-                $conversionRealtime,
-                $triggeredConditions,
-                $telegramChatId,
-                isPaused: true,
-            );
+                $this->sendNotification($rule, $report, $entityType, $metrics, $telegramChatId, isPaused: true);
+            });
         } catch (Throwable $e) {
             Log::channel('tracking_events')->error('[EvaluateAdAdsetRuleAction] Pause error', [
                 'rule_id' => $rule->id,
@@ -270,16 +259,13 @@ class EvaluateAdAdsetRuleAction
 
     /**
      * @param  class-string<AdsInsightsReport|AdsetInsightsReport>  $entityType
-     * @param  array<int, string>  $triggeredConditions
+     * @param  array{spend: float, revenue: float, profit: float, roi: float}  $metrics
      */
     private function sendNotification(
         object $rule,
         Model $report,
         string $entityType,
-        float $spend,
-        float $cpa,
-        int $conversionRealtime,
-        array $triggeredConditions,
+        array $metrics,
         ?string $telegramChatId,
         bool $isPaused,
     ): void {
@@ -293,9 +279,14 @@ class EvaluateAdAdsetRuleAction
                 ? "🐧 *{$prefix} lỏ đã tắt*"
                 : "🐧 *{$prefix} lỏ cần xem lại*";
 
-            $pad = 18;
+            $spend = number_format($metrics['spend'], 2);
+            $revenue = number_format($metrics['revenue'], 2);
+            $profit = number_format($metrics['profit'], 2);
+            $roi = number_format($metrics['roi'], 2);
+
+            $pad = 10;
             $message = "{$title}\n\n";
-            $message .= 'Time: '.now()->format('d/m/Y H:i:s')."\n";
+            $message .= 'Time: ' . now()->format('d/m/Y H:i:s') . "\n";
             $message .= "Rule: {$rule->title}\n";
             $message .= "{$prefix} ID: {$entityFbId}\n";
 
@@ -307,31 +298,27 @@ class EvaluateAdAdsetRuleAction
             $message .= "================\n\n";
             $message .= "*Metrics:*\n";
             $message .= "```\n";
-            $message .= str_pad('Metric', $pad).str_pad('Current', $pad)."Rule\n";
+            $message .= str_pad('Metric', $pad) . str_pad('Current', $pad) . "Rule\n";
 
-            $message .= str_pad('CPA', $pad)
-                .str_pad('$'.number_format($cpa, 2), $pad)
-                .($rule->max_cpa !== null ? "(Max: \${$rule->max_cpa})" : '-')
-                ."\n";
+            $getOp = fn($current, $ruleVal) => match (true) {
+                (float) str_replace(',', '', $current) > (float) $ruleVal => '>',
+                (float) str_replace(',', '', $current) < (float) $ruleVal => '<',
+                default => '=',
+            };
 
-            $message .= str_pad('Spend', $pad)
-                .str_pad('$'.number_format($spend, 2), $pad)
-                .($rule->min_spend_adset !== null ? "(Min: \${$rule->min_spend_adset})" : '-')
-                ."\n";
+            $ruleRoi = $rule->min_roi ? " {$getOp($roi,$rule->min_roi)} {$rule->min_roi}%" : '-';
+            $message .= str_pad('ROI', $pad) . str_pad($roi . '%', $pad) . $ruleRoi . "\n";
 
-            $message .= str_pad('Conversion RT', $pad)
-                .str_pad((string) $conversionRealtime, $pad)
-                .($rule->min_conversion !== null ? "(Min: {$rule->min_conversion})" : '-')
-                ."\n";
+            $ruleProfit = $rule->min_profit ? " {$getOp($profit,$rule->min_profit)} \${$rule->min_profit}" : '-';
+            $message .= str_pad('Profit', $pad) . str_pad('$' . $profit, $pad) . $ruleProfit . "\n";
+
+            $ruleSpend = $rule->min_spend ? " {$getOp($spend,$rule->min_spend)} \${$rule->min_spend}" : '-';
+            $message .= str_pad('Spend', $pad) . str_pad('$' . $spend, $pad) . $ruleSpend . "\n";
+
+            $ruleRev = $rule->min_revenue ? " {$getOp($revenue,$rule->min_revenue)} \${$rule->min_revenue}" : '-';
+            $message .= str_pad('Revenue', $pad) . str_pad('$' . $revenue, $pad) . $ruleRev . "\n";
 
             $message .= "```\n";
-
-            if (! empty($triggeredConditions)) {
-                $message .= "\n*Triggered Conditions:*\n";
-                foreach ($triggeredConditions as $condition) {
-                    $message .= "• {$condition}\n";
-                }
-            }
 
             SendTelegramWarningJob::dispatch(
                 $message,

@@ -68,7 +68,7 @@ class CampaignReportSyncService
                 'success' => false,
                 'synced_count' => $syncedCount,
                 'error_count' => $errorCount + 1,
-                'message' => 'Sync failed: ' . $e->getMessage(),
+                'message' => 'Sync failed: '.$e->getMessage(),
             ];
         }
     }
@@ -241,7 +241,7 @@ class CampaignReportSyncService
 
         return ! Channel::query()
             ->where('code', $channelCode)
-            ->whereHas('mainTeam', fn($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', false))
+            ->whereHas('mainTeam', fn ($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', false))
             ->exists();
     }
 

@@ -37,7 +37,7 @@ class StoreCampaignRuleRequest extends FormRequest
             'entity_ids' => ['required', 'array', 'min:1'],
             'entity_ids.*' => ['string'],
 
-            // Campaign-level conditions
+            // Campaign-level/ Ad/Adset-level conditions
             'min_roi' => ['nullable', 'numeric', 'min:0'],
             'min_profit' => ['nullable', 'numeric'],
             'min_revenue' => ['nullable', 'numeric', 'min:0'],
@@ -70,16 +70,18 @@ class StoreCampaignRuleRequest extends FormRequest
 
                 if ($entity === EntityTypeEnum::Campaign->value) {
                     if (! Campaign::query()->where('campaign_id', $id)->exists()) {
-                        $v->errors()->add("entity_ids.{$index}", 'Invalid campaign ID: '.$id);
+                        $v->errors()->add("entity_ids.{$index}", 'Invalid campaign ID: ' . $id);
                     }
 
                     continue;
                 }
 
                 if ($entity === EntityTypeEnum::AdAdset->value) {
-                    if (! AdsInsightsReport::query()->where('ad_id', $id)->exists()
-                        && ! AdsetInsightsReport::query()->where('adset_id', $id)->exists()) {
-                        $v->errors()->add("entity_ids.{$index}", 'Invalid ad or adset ID: '.$id);
+                    if (
+                        ! AdsInsightsReport::query()->where('ad_id', $id)->exists()
+                        && ! AdsetInsightsReport::query()->where('adset_id', $id)->exists()
+                    ) {
+                        $v->errors()->add("entity_ids.{$index}", 'Invalid ad or adset ID: ' . $id);
                     }
                 }
             }
@@ -112,9 +114,9 @@ class StoreCampaignRuleRequest extends FormRequest
         }
 
         $ids = array_values(array_filter(array_map(
-            static fn (string $s): string => trim($s),
+            static fn(string $s): string => trim($s),
             $parts,
-        ), static fn (string $s): bool => $s !== ''));
+        ), static fn(string $s): bool => $s !== ''));
 
         $this->merge(['entity_ids' => $ids]);
     }
