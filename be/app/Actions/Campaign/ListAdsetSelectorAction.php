@@ -2,7 +2,9 @@
 
 namespace App\Actions\Campaign;
 
+use App\Enums\AdsType;
 use App\Models\AdsetInsightsReport;
+use App\Support\MainTeam\MainTeamReportDataScope;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
@@ -39,6 +41,14 @@ class ListAdsetSelectorAction
             ]);
 
         (new AccountLinkedOwnerResource)->applyTo($query);
+
+        if (config('main_system.is_main')) {
+            MainTeamReportDataScope::excludeNonFetchableAccounts(
+                $query,
+                'adset_insights_reports.account_id',
+                AdsType::FACEBOOK->value,
+            );
+        }
 
         if (! empty($filters['campaign_id'])) {
             $query->where('campaign_id', $filters['campaign_id']);

@@ -2,9 +2,11 @@
 
 namespace App\Actions\AdsDeliveryEntities;
 
+use App\Enums\AdsType;
 use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
 use App\Support\AdsDelivery\DeliveryInsightsReportFilters;
+use App\Support\MainTeam\MainTeamReportDataScope;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use Illuminate\Support\Collection;
 
@@ -38,6 +40,19 @@ class GetAdsDeliveryEntitiesAction
 
         (new AccountLinkedOwnerResource)->applyTo($adsetsQuery);
         (new AccountLinkedOwnerResource)->applyTo($adsQuery);
+
+        if (config('main_system.is_main')) {
+            MainTeamReportDataScope::excludeNonFetchableAccounts(
+                $adsetsQuery,
+                'adset_insights_reports.account_id',
+                AdsType::FACEBOOK->value,
+            );
+            MainTeamReportDataScope::excludeNonFetchableAccounts(
+                $adsQuery,
+                'ads_insights_reports.account_id',
+                AdsType::FACEBOOK->value,
+            );
+        }
 
         DeliveryInsightsReportFilters::apply($adsetsQuery, $filters, 'adsets');
         DeliveryInsightsReportFilters::apply($adsQuery, $filters, 'ads');

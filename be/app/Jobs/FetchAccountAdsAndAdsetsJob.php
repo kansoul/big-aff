@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Enums\AdsType;
+use App\Models\Account;
 use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
 use App\Services\Integrations\Facebook\FacebookAdsAdsetService;
@@ -39,6 +41,10 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
             return;
         }
 
+        if (! $this->shouldFetchAccount()) {
+            return;
+        }
+
         $data = $facebookService->getAccountWithAdsAndAdsets($this->accountId, $this->campaignIds, $this->date);
 
         if (! $data) {
@@ -62,6 +68,25 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
         });
 
         $this->dispatchRuleEvaluationJobs($data);
+    }
+
+    private function shouldFetchAccount(): bool
+    {
+        if (! config('main_system.is_main')) {
+            return true;
+        }
+
+        $account = Account::query()
+            ->with('mainTeam')
+            ->where('account_id', $this->accountId)
+            ->where('ads_type', AdsType::FACEBOOK->value)
+            ->first();
+
+        if (! $account || empty($account->main_team_id)) {
+            return true;
+        }
+
+        return (bool) $account->mainTeam?->sync_campaign_reports;
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Enums\AdsType;
 use App\Jobs\FetchAccountAdsAndAdsetsJob;
 use App\Models\Campaign;
+use App\Support\MainTeam\MainTeamReportDataScope;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Console\Command;
@@ -83,6 +84,14 @@ class FetchAdsDeliveryEntitiesCommand extends Command
             ->whereDate('insight_reports.date_start', $date)
             ->where('insight_reports.spend', '>', 0)
             ->where('campaigns.ads_type', AdsType::FACEBOOK->value)
+            ->when(
+                config('main_system.is_main'),
+                fn ($query) => MainTeamReportDataScope::excludeNonFetchableAccounts(
+                    $query,
+                    'campaigns.account_id',
+                    AdsType::FACEBOOK->value,
+                ),
+            )
             ->distinct()
             ->get()
             ->groupBy('account_id')
