@@ -40,7 +40,7 @@ class GoogleCampaignSyncService
                 : self::campaignSyncAccountsQuery(AdsType::GOOGLE->value)->get());
 
         $accounts = collect($accounts)
-            ->filter(fn ($account) => self::shouldFetchAccount($account))
+            ->filter(fn($account) => self::shouldFetchAccount($account))
             ->values();
 
         $service = app(GoogleAdsService::class);
@@ -63,6 +63,11 @@ class GoogleCampaignSyncService
                             ['campaign_id'],
                             ['campaign_name', 'daily_budget', 'lifetime_budget', 'status', 'start_time', 'stop_time', 'created_time', 'updated_time', 'created_at', 'updated_at']
                         );
+
+                        $campaignIds = array_column($campaigns, 'campaign_id');
+                        if (! empty($campaignIds)) {
+                            ApplyCampaignNameToRuleJob::dispatch($campaignIds);
+                        }
                     }
 
                     $insightsData = array_map(function ($insight) {
@@ -112,7 +117,7 @@ class GoogleCampaignSyncService
                     insights: $insightsData,
                 );
             } catch (Throwable $th) {
-                Log::error('Error processing Google account '.$account->account_id.': '.$th->getMessage());
+                Log::error('Error processing Google account ' . $account->account_id . ': ' . $th->getMessage());
                 Log::error($th->getTraceAsString());
 
                 continue;
@@ -144,7 +149,7 @@ class GoogleCampaignSyncService
                 : self::campaignSyncAccountsQuery(AdsType::GOOGLE->value)->get());
 
         $accounts = collect($accounts)
-            ->filter(fn ($account) => self::shouldFetchAccount($account))
+            ->filter(fn($account) => self::shouldFetchAccount($account))
             ->values();
 
         $service = app(GoogleAdsService::class);
@@ -219,7 +224,7 @@ class GoogleCampaignSyncService
                     insights: $insightsData,
                 );
             } catch (Throwable $th) {
-                Log::error('Error processing Google account (without conversions) '.$account->account_id.': '.$th->getMessage());
+                Log::error('Error processing Google account (without conversions) ' . $account->account_id . ': ' . $th->getMessage());
                 Log::error($th->getTraceAsString());
 
                 continue;
@@ -246,7 +251,7 @@ class GoogleCampaignSyncService
 
         $query->where(function ($builder): void {
             $builder->whereNull('main_team_id')
-                ->orWhereHas('mainTeam', fn ($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', true));
+                ->orWhereHas('mainTeam', fn($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', true));
         });
     }
 
