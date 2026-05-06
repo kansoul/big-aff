@@ -29,7 +29,8 @@ class LoginAction
             request()->session()->regenerate();
         }
 
-        $token = $user->createToken('web-session')->plainTextToken;
+        $expiresAt = $remember ? now()->addYear() : now()->addDays(10);
+        $token = $user->createToken('web-session', ['*'], $expiresAt)->plainTextToken;
 
         return ['user' => $user, 'token' => $token];
     }

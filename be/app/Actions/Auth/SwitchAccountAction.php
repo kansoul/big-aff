@@ -20,6 +20,11 @@ class SwitchAccountAction
             throw new AuthenticationException('Invalid or expired token.');
         }
 
+        if ($accessToken->expires_at && $accessToken->expires_at->isPast()) {
+            $accessToken->delete();
+            throw new AuthenticationException('Invalid or expired token.');
+        }
+
         /** @var User $user */
         $user = $accessToken->tokenable;
         $user->load('role');

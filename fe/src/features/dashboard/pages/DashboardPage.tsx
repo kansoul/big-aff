@@ -494,6 +494,15 @@ export function DashboardPage() {
     return () => window.clearInterval(interval)
   }, [loadStats, loadRevenueTable])
 
+  useEffect(() => {
+    const handler = () => {
+      void loadStats()
+      void loadRevenueTable()
+    }
+    window.addEventListener('account-switched', handler)
+    return () => window.removeEventListener('account-switched', handler)
+  }, [loadStats, loadRevenueTable])
+
   // ── derived insight cards ────────────────────────────────────────────────
   const teams = useMemo((): RevenueTeamRow[] => revenueTable?.by_team ?? [], [revenueTable])
   const topMainTeams = useMemo(

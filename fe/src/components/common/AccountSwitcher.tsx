@@ -53,6 +53,7 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
         const user = await loginApi.switchAccount(session.token)
         switchTo(userId)
         setUser(user)
+        window.dispatchEvent(new Event('account-switched'))
         void navigate(PATHS.dashboard)
       } catch (err: unknown) {
         const status = (err as { response?: { status?: number } })?.response?.status
