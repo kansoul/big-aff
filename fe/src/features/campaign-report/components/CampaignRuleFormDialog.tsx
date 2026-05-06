@@ -49,11 +49,6 @@ function toNullableNumber(val: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-function toNullableInteger(val: string): number | null {
-  const n = toNullableNumber(val)
-  if (n == null) return null
-  return Number.isInteger(n) ? n : null
-}
 
 function isNullableNumberString(
   val: string | null | undefined,
@@ -102,21 +97,6 @@ const schema = z
       .string()
       .optional()
       .refine((value) => isNullableNumberString(value), 'Min Profit must be a valid number'),
-    // Ad/Adset auto-off conditions
-    min_conversion: z
-      .string()
-      .optional()
-      .refine(
-        (value) => isNullableNumberString(value, { min: 0, integer: true }),
-        'Min Conversion must be an integer greater than or equal to 0',
-      ),
-    min_spend_adset: z
-      .string()
-      .optional()
-      .refine(
-        (value) => isNullableNumberString(value, { min: 0 }),
-        'Min Spend must be greater than or equal to 0',
-      ),
     // Active rule conditions
     min_revenue: z
       .string()
@@ -132,13 +112,6 @@ const schema = z
         (value) => isNullableNumberString(value, { min: 0 }),
         'Min Spend must be greater than or equal to 0',
       ),
-    max_cpa: z
-      .string()
-      .optional()
-      .refine(
-        (value) => isNullableNumberString(value, { min: 0 }),
-        'Max CPA must be greater than or equal to 0',
-      ),
     expired_at: z.string().nullable().optional(),
     start_hour: z
       .string()
@@ -152,7 +125,7 @@ const schema = z
       .refine((value) => isNullableHHMMString(value), 'End Hour must match HH:mm'),
   })
   .superRefine((data, ctx) => {
-    if (data.entity_type === 'campaign') {
+    if (data.entity_type === 'campaign' || data.entity_type === 'ad_adset') {
       const hasRoi = data.min_roi != null && data.min_roi.trim() !== ''
       const hasProfit = data.min_profit != null && data.min_profit.trim() !== ''
 
@@ -188,11 +161,8 @@ const DEFAULT_VALUES: FormValues = {
   entity_ids_text: '',
   min_roi: '',
   min_profit: '',
-  min_conversion: '',
-  min_spend_adset: '',
   min_revenue: '',
   min_spend: '',
-  max_cpa: '',
   expired_at: null,
   start_hour: null,
   end_hour: null,
@@ -249,11 +219,8 @@ export function CampaignRuleFormDialog({
         entity_ids_text: editItem.entity_ids.join('\n'),
         min_roi: editItem.min_roi ?? '',
         min_profit: editItem.min_profit ?? '',
-        min_conversion: editItem.min_conversion != null ? String(editItem.min_conversion) : '',
-        min_spend_adset: editItem.min_spend_adset ?? '',
         min_revenue: editItem.min_revenue ?? '',
         min_spend: editItem.min_spend ?? '',
-        max_cpa: editItem.max_cpa ?? '',
         expired_at: editItem.expired_at ? editItem.expired_at.slice(0, 10) : null,
         start_hour: toHHMM(editItem.start_hour),
         end_hour: toHHMM(editItem.end_hour),
@@ -274,28 +241,12 @@ export function CampaignRuleFormDialog({
       entity_ids: entityIds,
     }
 
-    if (values.entity_type === 'campaign') {
-      return {
-        ...commonPayload,
-        min_roi: toNullableNumber(values.min_roi ?? ''),
-        min_profit: toNullableNumber(values.min_profit ?? ''),
-        min_revenue: toNullableNumber(values.min_revenue ?? ''),
-        min_spend: toNullableNumber(values.min_spend ?? ''),
-        max_cpa: null,
-        min_conversion: null,
-        min_spend_adset: null,
-      }
-    }
-
     return {
       ...commonPayload,
-      max_cpa: toNullableNumber(values.max_cpa ?? ''),
-      min_conversion: toNullableInteger(values.min_conversion ?? ''),
-      min_spend_adset: toNullableNumber(values.min_spend_adset ?? ''),
-      min_roi: null,
-      min_profit: null,
-      min_revenue: null,
-      min_spend: null,
+      min_roi: toNullableNumber(values.min_roi ?? ''),
+      min_profit: toNullableNumber(values.min_profit ?? ''),
+      min_revenue: toNullableNumber(values.min_revenue ?? ''),
+      min_spend: toNullableNumber(values.min_spend ?? ''),
     }
   }
 
@@ -496,25 +447,46 @@ export function CampaignRuleFormDialog({
 
             {entityType === 'ad_adset' && (
               <ConditionSection title="Conditions (Conditions for auto off)">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
-                    name="max_cpa"
+                    name="min_roi"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Max CPA</FormLabel>
+                        <FormLabel>Min ROI</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
-                            min={0}
                             step="any"
-                            placeholder="5.00"
+                            placeholder="10"
                             disabled={submitting}
                             {...field}
                           />
                         </FormControl>
                         <FormDescription>
-                          Example: 5.00, if CPA &gt;= 5.00$ will turn off entity
+                          Example: 10, if ROI &lt; 10% will turn off entity
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="min_profit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Min Profit</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="any"
+                            placeholder="-15"
+                            disabled={submitting}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Example: -15, if Profit &lt; -15$ will turn off entity
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -583,22 +555,22 @@ export function CampaignRuleFormDialog({
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
-                    name="min_conversion"
+                    name="min_revenue"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Min Conversion</FormLabel>
+                        <FormLabel>Min Revenue</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
                             min={0}
-                            step={1}
-                            placeholder="5"
+                            step="any"
+                            placeholder="100"
                             disabled={submitting}
                             {...field}
                           />
                         </FormControl>
                         <FormDescription>
-                          Example: 5, if Conversion &gt;= 5 will start apply rule.
+                          Example: 100, apply rule only when revenue &gt;= 100$.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -606,22 +578,24 @@ export function CampaignRuleFormDialog({
                   />
                   <FormField
                     control={form.control}
-                    name="min_spend_adset"
+                    name="min_spend"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Min Spend</FormLabel>
+                        <FormLabel>
+                          Min Spend <span className="text-destructive">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Input
                             type="number"
                             min={0}
                             step="any"
-                            placeholder="10.00"
+                            placeholder="50"
                             disabled={submitting}
                             {...field}
                           />
                         </FormControl>
                         <FormDescription>
-                          Example: 10, if Spend &gt;= 10$ will start apply rule.
+                          Example: 50, apply rule only when spend &gt;= 50$.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

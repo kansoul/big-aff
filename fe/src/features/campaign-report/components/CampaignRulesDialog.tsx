@@ -145,36 +145,6 @@ function buildColumns(actions: ActionCallbacks): ColDef[] {
       ),
     },
     {
-      key: 'max_cpa',
-      label: 'Max CPA',
-      className: 'min-w-[90px] text-right',
-      render: (row) => (
-        <span className="tabular-nums text-xs text-muted-foreground">
-          {fmtCurrency(row.max_cpa)}
-        </span>
-      ),
-    },
-    {
-      key: 'min_conversion',
-      label: 'Min Conversion',
-      className: 'min-w-[130px] text-right',
-      render: (row) => (
-        <span className="tabular-nums text-xs text-muted-foreground">
-          {row.min_conversion != null ? row.min_conversion : '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'min_spend_adset',
-      label: 'Min Spend (Adset)',
-      className: 'min-w-[150px] text-right',
-      render: (row) => (
-        <span className="tabular-nums text-xs text-muted-foreground">
-          {fmtCurrency(row.min_spend_adset)}
-        </span>
-      ),
-    },
-    {
       key: 'min_roi',
       label: 'Min ROI',
       className: 'min-w-[90px] text-right',
