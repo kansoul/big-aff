@@ -27,6 +27,8 @@ import { useAuthStore } from '@/hooks/useAuthStore'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
+const AUTO_REFETCH_INTERVAL_MS = 60_000
+
 const formatCurrency = (val: number) =>
   new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -45,18 +47,30 @@ const ProfitCell = ({ value }: { value: number }) => (
 )
 
 const MAIN_TEAM_PERIODS = [
-  { key: 'today', label: 'Today', badgeClass: 'bg-blue-500/10 text-blue-500' },
-  { key: 'yesterday', label: 'Yesterday', badgeClass: 'bg-orange-500/10 text-orange-500' },
-  { key: 'this_month', label: 'This Month', badgeClass: 'bg-emerald-500/10 text-emerald-500' },
-  { key: 'last_month', label: 'Last Month', badgeClass: 'bg-zinc-500/10 text-zinc-500' },
+  { key: 'today', label: 'Today', badgeClass: 'bg-blue-500/10 text-blue-700 dark:text-blue-400' },
+  {
+    key: 'yesterday',
+    label: 'Yesterday',
+    badgeClass: 'bg-orange-500/10 text-orange-700 dark:text-orange-400',
+  },
+  {
+    key: 'this_month',
+    label: 'This Month',
+    badgeClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  },
+  {
+    key: 'last_month',
+    label: 'Last Month',
+    badgeClass: 'bg-zinc-500/10 text-zinc-700 dark:text-zinc-300',
+  },
 ] as const
 
 type MainTeamPeriodKey = (typeof MAIN_TEAM_PERIODS)[number]['key']
 
-function topMainTeamByProfit(rows: RevenueMainTeamRow[], period: MainTeamPeriodKey) {
+function topMainTeamByRevenue(rows: RevenueMainTeamRow[], period: MainTeamPeriodKey) {
   return rows.reduce<RevenueMainTeamRow | null>((best, row) => {
     if (!best) return row
-    return row[period].profit > best[period].profit ? row : best
+    return row[period].revenue > best[period].revenue ? row : best
   }, null)
 }
 
@@ -83,35 +97,41 @@ function MainTeamLeaderBadge({
 
   if (!row || !stats) {
     return (
-      <div className="flex min-h-24 w-full items-center gap-4 rounded-xl border border-border/60 bg-zinc-950 px-5 py-4 text-white shadow-sm sm:w-80">
+      <div className="flex min-h-24 w-full items-center gap-4 rounded-xl border border-border/60 bg-card px-5 py-4 text-card-foreground shadow-sm dark:border-zinc-900 dark:bg-zinc-950 dark:text-white sm:w-80">
         {goldMedal}
         <div className="min-w-0">
-          <div className="text-xs font-black uppercase tracking-wide text-yellow-400">{label}</div>
-          <div className="mt-1 text-lg font-black text-white">No data</div>
+          <div className="text-xs font-black uppercase tracking-wide text-yellow-600 dark:text-yellow-400">
+            {label}
+          </div>
+          <div className="mt-1 text-lg font-black text-foreground dark:text-white">No data</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-24 w-full items-center gap-4 rounded-xl border border-zinc-900 bg-zinc-950 px-5 py-4 text-white shadow-sm sm:w-80">
+    <div className="flex min-h-24 w-full items-center gap-4 rounded-xl border border-border/60 bg-card px-5 py-4 text-card-foreground shadow-sm dark:border-zinc-900 dark:bg-zinc-950 dark:text-white sm:w-80">
       {goldMedal}
       <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-1">
-        <div className="col-span-2 text-xs font-black uppercase tracking-wide text-yellow-400">
+        <div className="col-span-2 text-xs font-black uppercase tracking-wide text-yellow-600 dark:text-yellow-400">
           {label}
         </div>
-        <div className="col-span-2 truncate text-lg font-black text-white">
+        <div className="col-span-2 truncate text-lg font-black text-foreground dark:text-white">
           {row.main_team_name}
         </div>
         <div>
-          <div className="text-xs font-medium text-zinc-500">Profit</div>
-          <div className="text-base font-black text-emerald-500">
-            {formatCurrency(stats.profit)}
+          <div className="text-xs font-medium text-muted-foreground dark:text-zinc-500">
+            Revenue
+          </div>
+          <div className="text-base font-black text-emerald-600 dark:text-emerald-400">
+            {formatCurrency(stats.revenue)}
           </div>
         </div>
         <div>
-          <div className="text-xs font-medium text-zinc-500">ROI</div>
-          <div className="text-base font-black text-emerald-500">{stats.roi.toFixed(2)}%</div>
+          <div className="text-xs font-medium text-muted-foreground dark:text-zinc-500">ROI</div>
+          <div className="text-base font-black text-emerald-600 dark:text-emerald-400">
+            {stats.roi.toFixed(2)}%
+          </div>
         </div>
       </div>
     </div>
@@ -142,15 +162,15 @@ function MainTeamStatsCells({ stats }: { stats: RevenueStats }) {
 }
 
 function sumPeriodStats(rows: RevenueMainTeamRow[], period: MainTeamPeriodKey): RevenueStats {
-  const revenue = rows.reduce((s, r) => s + (r[period] as RevenueStats).revenue, 0)
-  const spend = rows.reduce((s, r) => s + (r[period] as RevenueStats).spend, 0)
+  const revenue = rows.reduce((s, r) => s + r[period].revenue, 0)
+  const spend = rows.reduce((s, r) => s + r[period].spend, 0)
   const profit = revenue - spend
   return { revenue, spend, profit, roi: spend > 0 ? (profit / spend) * 100 : 0 }
 }
 
 function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loading: boolean }) {
-  const topToday = topMainTeamByProfit(rows, 'today')
-  const topMonth = topMainTeamByProfit(rows, 'this_month')
+  const topToday = topMainTeamByRevenue(rows, 'today')
+  const topMonth = topMainTeamByRevenue(rows, 'this_month')
 
   return (
     <Card className="mt-0 flex flex-col overflow-hidden rounded-2xl border-border/50 bg-card shadow-sm">
@@ -170,13 +190,13 @@ function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loadi
 
           <div className="grid w-full min-w-0 gap-3 sm:grid-cols-2 lg:w-auto">
             <MainTeamLeaderBadge
-              label="#1 Daily Profit"
+              label="#1 Daily Revenue"
               row={topToday}
               stats={topToday?.today}
               loading={loading}
             />
             <MainTeamLeaderBadge
-              label="#1 Monthly Profit"
+              label="#1 Monthly Revenue"
               row={topMonth}
               stats={topMonth?.this_month}
               loading={loading}
@@ -412,42 +432,52 @@ export function DashboardPage() {
   const [revenueTable, setRevenueTable] = useState<RevenueTableData | null>(null)
 
   // ── load 6 stats cards ───────────────────────────────────────────────────
-  const loadStats = useCallback(async () => {
-    if (!canViewStats) {
-      setStatsCards(INITIAL_STATS)
-      setStatsLoading(false)
-      return
-    }
+  const loadStats = useCallback(
+    async (options?: { showLoading?: boolean }) => {
+      const showLoading = options?.showLoading ?? true
 
-    try {
-      setStatsLoading(true)
-      const res = await dashboardApi.insightStats()
-      setStatsCards(buildStatsCards(res.data.data))
-      setRawStats(res.data.data)
-    } catch {
-      toast.error('Failed to load dashboard stats.')
-    } finally {
-      setStatsLoading(false)
-    }
-  }, [canViewStats])
+      if (!canViewStats) {
+        setStatsCards(INITIAL_STATS)
+        if (showLoading) setStatsLoading(false)
+        return
+      }
+
+      try {
+        if (showLoading) setStatsLoading(true)
+        const res = await dashboardApi.insightStats()
+        setStatsCards(buildStatsCards(res.data.data))
+        setRawStats(res.data.data)
+      } catch {
+        if (showLoading) toast.error('Failed to load dashboard stats.')
+      } finally {
+        if (showLoading) setStatsLoading(false)
+      }
+    },
+    [canViewStats],
+  )
 
   // ── load revenue table (teams/users permission) ──────────────────────────
-  const loadRevenueTable = useCallback(async () => {
-    if (!canLoadRevenueTable) {
-      setRevenueTable(null)
-      setTableLoading(false)
-      return
-    }
-    try {
-      setTableLoading(true)
-      const res = await dashboardApi.revenueTable({ top_limit: 10 })
-      setRevenueTable(res.data.data)
-    } catch {
-      toast.error('Failed to load team revenue data.')
-    } finally {
-      setTableLoading(false)
-    }
-  }, [canLoadRevenueTable])
+  const loadRevenueTable = useCallback(
+    async (options?: { showLoading?: boolean }) => {
+      const showLoading = options?.showLoading ?? true
+
+      if (!canLoadRevenueTable) {
+        setRevenueTable(null)
+        if (showLoading) setTableLoading(false)
+        return
+      }
+      try {
+        if (showLoading) setTableLoading(true)
+        const res = await dashboardApi.revenueTable({ top_limit: 10 })
+        setRevenueTable(res.data.data)
+      } catch {
+        if (showLoading) toast.error('Failed to load team revenue data.')
+      } finally {
+        if (showLoading) setTableLoading(false)
+      }
+    },
+    [canLoadRevenueTable],
+  )
 
   useEffect(() => {
     void loadStats()
@@ -456,6 +486,15 @@ export function DashboardPage() {
   useEffect(() => {
     void loadRevenueTable()
   }, [loadRevenueTable])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void loadStats({ showLoading: false })
+      void loadRevenueTable({ showLoading: false })
+    }, AUTO_REFETCH_INTERVAL_MS)
+
+    return () => window.clearInterval(interval)
+  }, [loadStats, loadRevenueTable])
 
   // ── derived insight cards ────────────────────────────────────────────────
   const teams = useMemo((): RevenueTeamRow[] => revenueTable?.by_team ?? [], [revenueTable])

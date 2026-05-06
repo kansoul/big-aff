@@ -113,19 +113,19 @@ class AssignController extends BaseController
     /**
      * Assign accounts to user
      *
-     * Sync account assignments for a user. Only accounts in the user's teams are valid.
+     * Sync account assignments for a user by account_id. Accounts already assigned to another user are skipped.
      *
      * @urlParam user integer required The user ID. Example: 1
      *
-     * @bodyParam account_ids integer[] required List of account IDs to assign. Example: [1, 2, 3]
+     * @bodyParam account_ids string[] required List of account IDs to assign. Example: ["1234567890", "9876543210"]
      *
-     * @response 200 {"data": []}
+     * @response 200 {"skipped_account_ids": []}
      */
     public function assignAccountsToUser(AssignAccountRequest $request, User $user): JsonResponse
     {
-        $this->assignService->assignAccountsToUser($user, $request->validated('account_ids', []));
+        $result = $this->assignService->assignAccountsToUser($user, $request->validated('account_ids', []));
 
-        return $this->sendResponse([]);
+        return $this->sendResponse(['skipped_account_ids' => $result['skipped_account_ids']]);
     }
 
     /**

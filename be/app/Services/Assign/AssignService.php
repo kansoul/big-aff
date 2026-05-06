@@ -57,9 +57,10 @@ class AssignService
         return $this->getAccountAssignOptionsAction->execute($forUserId);
     }
 
-    public function assignAccountsToUser(User $user, array $accountIds): void
+    /** @return array{skipped_account_ids: list<string>} */
+    public function assignAccountsToUser(User $user, array $accountIds): array
     {
-        $this->assignAccountAction->execute($user, $accountIds);
+        return $this->assignAccountAction->execute($user, $accountIds);
     }
 
     public function usersWithPosts(array $filters): LengthAwarePaginator

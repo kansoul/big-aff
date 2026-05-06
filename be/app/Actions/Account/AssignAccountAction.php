@@ -7,77 +7,110 @@ use App\Models\User;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AssignAccountAction
 {
     /**
-     * Sync a user's account assignments (1-n: each account belongs to at most one user).
-     * Only accounts belonging to the user's teams are affected.
+     * Sync a user's account assignments from account_id values.
+     * Accounts already assigned to another user are skipped and returned.
      *
-     * @param  array<int>  $accountIds
+     * @param  array<string>  $accountIds
+     * @return array{skipped_account_ids: list<string>}
      *
      * @throws AuthorizationException
      */
-    public function execute(User $user, array $accountIds): void
+    public function execute(User $user, array $accountIds): array
     {
         (new UserOwnerResource)->authorize($user);
 
-        $authUserId = (int) Auth::id();
+        $requestedAccountIds = collect($accountIds)
+            ->map(fn ($id) => trim((string) $id))
+            ->filter()
+            ->unique()
+            ->values();
 
-        // All accounts accessible to the auth user
-        $accessibleQuery = Account::query()->select('id');
+        /** @var Collection<int, Account> $accessibleAccounts */
+        $accessibleQuery = Account::query()->select(['id', 'account_id']);
         (new AccountLinkedOwnerResource)->applyTo($accessibleQuery);
-        $accessibleAccountIds = $accessibleQuery
+        $accessibleAccounts = $accessibleQuery->get();
+
+        $accessibleAccountDbIds = $accessibleAccounts
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        // Filter requested IDs to only accessible accounts
-        $allowedAccountIds = array_values(array_intersect(
-            array_map('intval', $accountIds),
-            $accessibleAccountIds,
-        ));
+        $requestedAccounts = $accessibleAccounts
+            ->whereIn('account_id', $requestedAccountIds)
+            ->keyBy('id');
 
-        DB::transaction(function () use ($user, $allowedAccountIds, $accessibleAccountIds, $authUserId): void {
-            // Accounts previously assigned to this user (within accessible scope)
-            $previouslyAssigned = DB::table('account_user')
-                ->where('user_id', $user->id)
-                ->whereIn('account_id', $accessibleAccountIds)
-                ->pluck('account_id')
-                ->map(fn ($id) => (int) $id)
-                ->all();
+        $requestedAccountDbIds = $requestedAccounts
+            ->keys()
+            ->map(fn ($id) => (int) $id)
+            ->all();
 
-            $removedAccountIds = array_values(array_diff($previouslyAssigned, $allowedAccountIds));
+        $requesterId = (int) Auth::id();
+        $skippedAccountIds = [];
 
-            // Remove all existing assignments for this user (within accessible scope)
-            DB::table('account_user')
-                ->where('user_id', $user->id)
-                ->whereIn('account_id', $accessibleAccountIds)
-                ->delete();
+        DB::transaction(function () use (
+            $user,
+            $requestedAccountDbIds,
+            $requestedAccounts,
+            $accessibleAccountDbIds,
+            $requesterId,
+            &$skippedAccountIds
+        ): void {
+            Account::whereIn('id', $requestedAccountDbIds)->lockForUpdate()->get(['id']);
 
-            if (! empty($allowedAccountIds)) {
-                // Enforce 1-n: remove any other user's assignment for these accounts
-                DB::table('account_user')
-                    ->whereIn('account_id', $allowedAccountIds)
-                    ->where('user_id', '!=', $user->id)
-                    ->delete();
+            $takenRows = DB::table('account_user')
+                ->whereIn('account_id', $requestedAccountDbIds)
+                ->where('user_id', '!=', $user->id)
+                ->get(['account_id', 'user_id']);
 
-                $now = now();
-                DB::table('account_user')->insert(
-                    array_map(fn (int $accountId) => [
-                        'user_id' => $user->id,
-                        'account_id' => $accountId,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ], $allowedAccountIds),
-                );
+            $requesterOwnedIds = [];
+            $skippedIds = [];
+
+            foreach ($takenRows as $row) {
+                $accountDbId = (int) $row->account_id;
+                if ((int) $row->user_id === $requesterId) {
+                    $requesterOwnedIds[] = $accountDbId;
+                } else {
+                    $skippedIds[] = $accountDbId;
+                    if ($requestedAccounts->has($accountDbId)) {
+                        $skippedAccountIds[] = $requestedAccounts->get($accountDbId)->account_id;
+                    }
+                }
             }
 
-            // Re-assign removed accounts back to the auth user (if they differ from target user)
-            if (! empty($removedAccountIds) && $authUserId !== $user->id) {
-                // Only accounts not already assigned to someone else
+            if (! empty($requesterOwnedIds)) {
+                DB::table('account_user')
+                    ->where('user_id', $requesterId)
+                    ->whereIn('account_id', $requesterOwnedIds)
+                    ->delete();
+            }
+
+            $allowedIds = array_values(array_diff($requestedAccountDbIds, $skippedIds));
+
+            $removedAccountIds = [];
+            if ($requesterId !== (int) $user->id) {
+                $removedAccountIds = DB::table('account_user')
+                    ->where('user_id', $user->id)
+                    ->whereIn('account_id', $accessibleAccountDbIds)
+                    ->when(! empty($allowedIds), fn ($q) => $q->whereNotIn('account_id', $allowedIds))
+                    ->pluck('account_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+            }
+
+            DB::table('account_user')
+                ->where('user_id', $user->id)
+                ->whereIn('account_id', $accessibleAccountDbIds)
+                ->when(! empty($allowedIds), fn ($q) => $q->whereNotIn('account_id', $allowedIds))
+                ->delete();
+
+            if (! empty($removedAccountIds)) {
                 $alreadyAssigned = DB::table('account_user')
                     ->whereIn('account_id', $removedAccountIds)
                     ->pluck('account_id')
@@ -89,15 +122,42 @@ class AssignAccountAction
                 if (! empty($toReassign)) {
                     $now = now();
                     DB::table('account_user')->insert(
-                        array_map(fn (int $accountId) => [
-                            'user_id' => $authUserId,
-                            'account_id' => $accountId,
+                        array_map(fn (int $accountDbId) => [
+                            'user_id' => $requesterId,
+                            'account_id' => $accountDbId,
                             'created_at' => $now,
                             'updated_at' => $now,
                         ], $toReassign),
                     );
                 }
             }
+
+            if (empty($allowedIds)) {
+                return;
+            }
+
+            $existing = DB::table('account_user')
+                ->where('user_id', $user->id)
+                ->whereIn('account_id', $allowedIds)
+                ->pluck('account_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $toInsert = array_values(array_diff($allowedIds, $existing));
+
+            if (! empty($toInsert)) {
+                $now = now();
+                DB::table('account_user')->insert(
+                    array_map(fn (int $accountDbId) => [
+                        'user_id' => $user->id,
+                        'account_id' => $accountDbId,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ], $toInsert),
+                );
+            }
         });
+
+        return ['skipped_account_ids' => array_values(array_unique($skippedAccountIds))];
     }
 }

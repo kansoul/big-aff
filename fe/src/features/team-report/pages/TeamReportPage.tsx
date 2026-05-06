@@ -18,8 +18,8 @@ import { TeamReportByTeamTableCard } from '../components/TeamByTeamTableCard'
 import { TeamReportByUserTableCard } from '../components/TeamByUserTableCard'
 
 const DEFAULT_FILTERS: TeamReportFilterParams = {
-  date_from: dayjs().startOf('month').format('YYYY-MM-DD'),
-  date_to: dayjs().endOf('month').format('YYYY-MM-DD'),
+  date_from: dayjs().format('YYYY-MM-DD'),
+  date_to: dayjs().format('YYYY-MM-DD'),
   main_team_ids: [],
   team_ids: [],
   user_ids: [],

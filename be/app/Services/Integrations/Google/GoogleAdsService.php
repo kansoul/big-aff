@@ -5,28 +5,21 @@ namespace App\Services\Integrations\Google;
 use App\Models\Account;
 use Carbon\Carbon;
 use Exception;
-use Google\Ads\GoogleAds\Lib\V21\GoogleAdsClient;
 use Google\Ads\GoogleAds\Lib\V21\GoogleAdsClientBuilder;
 use Google\Ads\GoogleAds\Util\FieldMasks;
 use Google\Ads\GoogleAds\V21\Enums\CampaignStatusEnum\CampaignStatus;
-use Google\Ads\GoogleAds\V21\Errors\ConversionUploadErrorEnum\ConversionUploadError;
-use Google\Ads\GoogleAds\V21\Errors\GoogleAdsFailure;
 use Google\Ads\GoogleAds\V21\Resources\Campaign;
 use Google\Ads\GoogleAds\V21\Services\CampaignOperation;
-use Google\Ads\GoogleAds\V21\Services\ClickConversion;
 use Google\Ads\GoogleAds\V21\Services\Client\GoogleAdsServiceClient;
 use Google\Ads\GoogleAds\V21\Services\MutateGoogleAdsRequest;
 use Google\Ads\GoogleAds\V21\Services\MutateOperation;
 use Google\Ads\GoogleAds\V21\Services\SearchGoogleAdsRequest;
-use Google\Ads\GoogleAds\V21\Services\UploadClickConversionsRequest;
 use Google\Auth\Credentials\UserRefreshCredentials;
 use Illuminate\Support\Facades\Log;
 
 class GoogleAdsService
 {
     protected GoogleAdsServiceClient $gaService;
-
-    protected GoogleAdsClient $googleAdsClient;
 
     public function __construct()
     {
@@ -45,7 +38,6 @@ class GoogleAdsService
             ))
             ->build();
 
-        $this->googleAdsClient = $client;
         $this->gaService = $client->getGoogleAdsServiceClient();
     }
 
@@ -594,125 +586,6 @@ class GoogleAdsService
             Log::error('Error updating Google Ads campaign status: '.$e->getMessage().' - Account: '.$accountId.' - Campaign: '.$campaignId);
 
             return false;
-        }
-    }
-
-    /**
-     * Sync ad revenue to Google Ads.
-     *
-     *
-     * @return array|null Returns array of failed indices, empty array if all success, null if critical error.
-     */
-    public function syncAdsConversion(string|int $customerId, array $AdRevenues): ?array
-    {
-        try {
-            if (empty($AdRevenues)) {
-                return [];
-            }
-
-            if (! $customerId) {
-                Log::error('Missing customer_id in Ad Revenue sync data');
-
-                return null;
-            }
-            $preAccountId = preg_replace('/-/', '', $customerId);
-
-            $conversionUploadService = $this->googleAdsClient->getConversionUploadServiceClient();
-            $conversions = [];
-            foreach ($AdRevenues as $AdRevenue) {
-                $conversion = new ClickConversion;
-                if (! empty($AdRevenue['gclid'])) {
-                    $conversion->setGclid($AdRevenue['gclid']);
-                } elseif (! empty($AdRevenue['wbraid'])) {
-                    $conversion->setWbraid($AdRevenue['wbraid']);
-                } elseif (! empty($AdRevenue['gbraid'])) {
-                    $conversion->setGbraid($AdRevenue['gbraid']);
-                }
-                $conversion->setConversionAction($AdRevenue['conversion_action_resource_name']);
-                if ($AdRevenue['conversion_value']) {
-                    // convert micro value to decimal
-                    $conversion->setConversionValue($AdRevenue['conversion_value'] / 1000000);
-                }
-                if ($AdRevenue['currency_code']) {
-                    $conversion->setCurrencyCode($AdRevenue['currency_code']);
-                }
-                $conversion->setConversionDateTime($AdRevenue['conversion_date_time']);
-                $conversions[] = $conversion;
-            }
-
-            $request = new UploadClickConversionsRequest([
-                'customer_id' => $preAccountId,
-                'conversions' => $conversions,
-                'partial_failure' => true,
-            ]);
-
-            $response = $conversionUploadService->uploadClickConversions($request);
-            $failedIndices = [];
-
-            if ($response->hasPartialFailureError()) {
-                $partialFailure = $response->getPartialFailureError();
-
-                foreach ($partialFailure->getDetails() as $detail) {
-
-                    if ($detail->getTypeUrl() === 'type.googleapis.com/google.ads.googleads.v21.errors.GoogleAdsFailure') {
-
-                        $googleAdsFailure = new GoogleAdsFailure;
-                        $googleAdsFailure->mergeFromString($detail->getValue());
-
-                        foreach ($googleAdsFailure->getErrors() as $error) {
-
-                            $index = null;
-                            if ($error->hasLocation()) {
-                                foreach ($error->getLocation()->getFieldPathElements() as $pathElement) {
-                                    if ($pathElement->getFieldName() === 'conversions' && $pathElement->hasIndex()) {
-                                        $index = $pathElement->getIndex();
-                                        break;
-                                    }
-                                }
-                            }
-
-                            $gclid = 'unknown';
-
-                            if (! is_null($index) && isset($conversions[$index])) {
-                                $failedRecord = $conversions[$index];
-                                $gclid = $failedRecord->getGclid();
-                            }
-
-                            $errorCode = $error->getErrorCode()->getConversionUploadError();
-                            $errorMessage = $error->getMessage();
-
-                            switch ($errorCode) {
-
-                                case ConversionUploadError::CLICK_CONVERSION_ALREADY_EXISTS:
-                                case ConversionUploadError::EXPIRED_EVENT:
-                                case ConversionUploadError::UNPARSEABLE_GCLID:
-                                    break;
-
-                                case ConversionUploadError::CONVERSION_PRECEDES_EVENT:
-                                case ConversionUploadError::EVENT_NOT_FOUND:
-                                case ConversionUploadError::TOO_RECENT_EVENT:
-                                    if (! is_null($index)) {
-                                        $failedIndices[] = $index;
-                                    }
-                                    break;
-
-                                default:
-                                    Log::error("Unhandled UploadError for account {$customerId} [Index: {$index}] GCLID {$gclid}: {$errorMessage}");
-                                    if (! is_null($index)) {
-                                        $failedIndices[] = $index;
-                                    }
-                                    break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            return array_unique($failedIndices);
-        } catch (Exception $e) {
-            Log::error('Error syncing Ad Revenue to Google Ads: '.$e->getMessage());
-
-            return null;
         }
     }
 }

@@ -75,6 +75,9 @@ export function TeamReportByUserTableCard({ data, loading, filters }: Props) {
             <TableRow className="hover:bg-transparent border-b border-border/50 bg-muted/10">
               <TableHead className="py-3 px-6 font-semibold text-muted-foreground w-8">#</TableHead>
               <TableHead className="font-semibold text-muted-foreground w-[220px]">User</TableHead>
+              <TableHead className="font-semibold text-muted-foreground w-[130px]">
+                Report
+              </TableHead>
               <TableHead className="font-semibold text-muted-foreground w-[140px]">Team</TableHead>
               <TableHead className="font-semibold text-muted-foreground">Revenue</TableHead>
               <TableHead className="font-semibold text-muted-foreground">Spend</TableHead>
@@ -96,6 +99,9 @@ export function TeamReportByUserTableCard({ data, loading, filters }: Props) {
                     <TableCell>
                       <Skeleton className="h-4 w-24" />
                     </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
                     {Array.from({ length: 4 }).map((__, j) => (
                       <TableCell key={j}>
                         <Skeleton className="h-4 w-24" />
@@ -111,18 +117,18 @@ export function TeamReportByUserTableCard({ data, loading, filters }: Props) {
                     <TableCell className="px-6 py-4 text-muted-foreground font-medium">
                       {idx + 1}
                     </TableCell>
-                    <TableCell className="font-semibold text-foreground">
-                      <div className="flex items-center gap-2">
-                        <span>{row.user_name}</span>
-                        <Link
-                          to={buildCampaignReportUrl(row.user_id, filters)}
-                          className="inline-flex items-center gap-1 text-[11px] mx-5 font-medium text-[#d25252] hover:text-[#d25252] hover:underline leading-none"
-                          title="View campaign report for this user"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          View Report
-                        </Link>
-                      </div>
+                    <TableCell className="font-semibold text-foreground">{row.user_name}</TableCell>
+                    <TableCell>
+                      <Link
+                        to={buildCampaignReportUrl(row.user_id, filters)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-medium leading-none text-[#d25252] hover:text-[#d25252] hover:underline"
+                        title="View campaign report for this user"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        View Report
+                      </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{row.team_name}</TableCell>
                     <TableCell className="text-foreground font-medium">
@@ -149,7 +155,7 @@ export function TeamReportByUserTableCard({ data, loading, filters }: Props) {
             <TableBody>
               <TableRow data-summary className="border-t-2 border-border">
                 <TableCell className="px-6 py-4" />
-                <TableCell className="font-bold text-foreground text-sm" colSpan={2}>
+                <TableCell className="font-bold text-foreground text-sm" colSpan={3}>
                   Summary
                 </TableCell>
                 <TableCell className="font-bold text-foreground">

@@ -73,10 +73,11 @@ class AccountService
     }
 
     /**
-     * @param  array<int>  $accountIds
+     * @param  array<string>  $accountIds
+     * @return array{skipped_account_ids: list<string>}
      */
-    public function assignToUser(User $user, array $accountIds): void
+    public function assignToUser(User $user, array $accountIds): array
     {
-        $this->assignAccountAction->execute($user, $accountIds);
+        return $this->assignAccountAction->execute($user, $accountIds);
     }
 }

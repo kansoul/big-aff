@@ -19,7 +19,7 @@ class AssignAccountRequest extends FormRequest
     {
         return [
             'account_ids' => ['present', 'array'],
-            'account_ids.*' => ['required', 'integer', 'exists:accounts,id'],
+            'account_ids.*' => ['required', 'string', 'max:255', 'distinct', 'exists:accounts,account_id'],
         ];
     }
 }

@@ -61,7 +61,7 @@ function HeaderLabel({
   return (
     <div className="flex min-h-[20px] items-center gap-1">
       {emoji && <span className="text-[5px] leading-none">{emoji}</span>}
-      <span className="leading-tight">{children}</span>
+      <span className="leading-tight font-bold">{children}</span>
     </div>
   )
 }
@@ -198,10 +198,10 @@ function makeUsdCol(
     enableSorting: SORTABLE_COLUMNS.has(key as string),
     Cell: ({ row }) => {
       if (isRevenueField && !isGroupRow(row.original))
-        return <span className="text-muted-foreground/30 text-[10px]">—</span>
+        return <span className="text-foreground/30 text-[10px]">—</span>
       const v = formatUsd(metric(row.original, key))
       return (
-        <span className="tabular-nums text-[10px] text-muted-foreground truncate" title={v}>
+        <span className="tabular-nums text-[10px] text-foreground truncate" title={v}>
           {v}
         </span>
       )
@@ -235,10 +235,10 @@ function makeRatioCol(
     enableSorting: SORTABLE_COLUMNS.has(key as string),
     Cell: ({ row }) => {
       if (isRevenueField && !isGroupRow(row.original))
-        return <span className="text-muted-foreground/30 text-[10px]">—</span>
+        return <span className="text-foreground/30 text-[10px]">—</span>
       const v = formatDecimal(metric(row.original, key), digits)
       return (
-        <span className="tabular-nums text-[10px] text-muted-foreground truncate" title={v}>
+        <span className="tabular-nums text-[10px] text-foreground truncate" title={v}>
           {v}
         </span>
       )
@@ -271,7 +271,7 @@ function makeCountCol(
     enableSorting: SORTABLE_COLUMNS.has(key as string),
     Cell: ({ row }) => {
       if (isRevenueField && !isGroupRow(row.original))
-        return <span className="text-muted-foreground/30 text-[10px]">—</span>
+        return <span className="text-foreground/30 text-[10px]">—</span>
       const v = String(metric(row.original, key))
       return (
         <span className="tabular-nums text-[10px] truncate" title={v}>
@@ -347,7 +347,7 @@ function CopyIdCell({ id }: { id: string }) {
   const [copied, setCopied] = useState(false)
   return (
     <button
-      className="block truncate text-[9px] font-mono text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-left w-full"
+      className="block truncate text-[9px] font-mono text-foreground hover:text-foreground transition-colors cursor-pointer text-left w-full"
       title={copied ? 'Copied!' : `Click to copy: ${id}`}
       onClick={(e) => {
         e.stopPropagation()
@@ -439,7 +439,7 @@ function getColumns(
               }
             />
           ) : (
-            <span className="pl-1 text-[10px] text-muted-foreground">
+            <span className="pl-1 text-[10px] text-foreground">
               {formatDate(row.original.date_start)}
             </span>
           ),
@@ -456,9 +456,7 @@ function getColumns(
     enableSorting: isSortable('date_start'),
     Cell: ({ row }) =>
       isGroupRow(row.original) ? null : (
-        <span className="text-[10px] text-muted-foreground">
-          {formatDate(row.original.date_start)}
-        </span>
+        <span className="text-[10px] text-foreground">{formatDate(row.original.date_start)}</span>
       ),
   }
 
@@ -472,7 +470,7 @@ function getColumns(
       if (isGroupRow(row.original)) return null
       const label = row.original.account_name ?? row.original.account_id ?? '—'
       return (
-        <span className="block truncate text-[10px] text-muted-foreground" title={String(label)}>
+        <span className="block truncate text-[10px] text-foreground" title={String(label)}>
           {label}
         </span>
       )
@@ -589,7 +587,7 @@ function getColumns(
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
       const link = getRowArticleLink(row.original)
-      if (!link) return <span className="text-muted-foreground/50">—</span>
+      if (!link) return <span className="text-foreground/50">—</span>
       return (
         <a
           className="block max-w-[110px] truncate font-mono text-[10px] text-primary underline-offset-4 hover:underline"
@@ -636,7 +634,7 @@ function getColumns(
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
-      if (!canViewDeliveryReports) return <span className="text-muted-foreground/50">—</span>
+      if (!canViewDeliveryReports) return <span className="text-foreground/50">—</span>
       const r = row.original
       return (
         <p
@@ -659,7 +657,7 @@ function getColumns(
     size: 85,
     enableSorting: isSortable('ads_type'),
     Cell: ({ row }) => {
-      if (isGroupRow(row.original)) return <span className="text-muted-foreground/50">—</span>
+      if (isGroupRow(row.original)) return <span className="text-foreground/50">—</span>
       const val = row.original.ads_type
       return (
         <StatusBadge
@@ -680,12 +678,9 @@ function getColumns(
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
       const email = row.original.user_email
-      if (!email) return <span className="text-muted-foreground/50 text-[10px]">—</span>
+      if (!email) return <span className="text-foreground/50 text-[10px]">—</span>
       return (
-        <span
-          className="block max-w-[150px] truncate text-[10px] text-muted-foreground"
-          title={email}
-        >
+        <span className="block max-w-[150px] truncate text-[10px] text-foreground" title={email}>
           {email}
         </span>
       )
@@ -704,7 +699,7 @@ function getColumns(
       return (
         <div className="flex flex-col">
           <span
-            className="max-w-[70px] truncate text-[10px] text-muted-foreground"
+            className="max-w-[70px] truncate text-[10px] text-foreground"
             title={String(r.channel_name ?? r.channel_code ?? '—')}
           >
             {r.channel_name ?? r.channel_code ?? '—'}
@@ -726,7 +721,7 @@ function getColumns(
       Cell: ({ row }) => {
         const v = formatUsd(metric(row.original, 'revenue_est'))
         return (
-          <span className="tabular-nums text-[10px] text-muted-foreground truncate" title={v}>
+          <span className="tabular-nums text-[10px] text-foreground truncate" title={v}>
             {v}
           </span>
         )
@@ -791,14 +786,10 @@ function getColumns(
       enableSorting: false,
       Cell: ({ row }) => {
         const v = isGroupRow(row.original) ? row.original.group_summary.rt_cpa : row.original.rt_cpa
-        if (v === null || v === 0)
-          return <span className="text-muted-foreground/50 text-[10px]">—</span>
+        if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
         const vFormatted = formatUsd(v)
         return (
-          <span
-            className="tabular-nums text-[10px] text-muted-foreground truncate"
-            title={vFormatted}
-          >
+          <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
             {vFormatted}
           </span>
         )
@@ -822,14 +813,10 @@ function getColumns(
       enableSorting: false,
       Cell: ({ row }) => {
         const v = isGroupRow(row.original) ? row.original.group_summary.rt_cvr : row.original.rt_cvr
-        if (v === null || v === 0)
-          return <span className="text-muted-foreground/50 text-[10px]">—</span>
+        if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
         const vFormatted = `${formatDecimal(v)}%`
         return (
-          <span
-            className="tabular-nums text-[10px] text-muted-foreground truncate"
-            title={vFormatted}
-          >
+          <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
             {vFormatted}
           </span>
         )
@@ -855,14 +842,10 @@ function getColumns(
         const v = isGroupRow(row.original)
           ? row.original.group_summary.rt_ctr_keyword
           : row.original.rt_ctr_keyword
-        if (v === null || v === 0)
-          return <span className="text-muted-foreground/50 text-[10px]">—</span>
+        if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
         const vFormatted = `${formatDecimal(v)}%`
         return (
-          <span
-            className="tabular-nums text-[10px] text-muted-foreground truncate"
-            title={vFormatted}
-          >
+          <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
             {vFormatted}
           </span>
         )
@@ -888,14 +871,10 @@ function getColumns(
         const v = isGroupRow(row.original)
           ? row.original.group_summary.rt_ctr_search
           : row.original.rt_ctr_search
-        if (v === null || v === 0)
-          return <span className="text-muted-foreground/50 text-[10px]">—</span>
+        if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
         const vFormatted = `${formatDecimal(v)}%`
         return (
-          <span
-            className="tabular-nums text-[10px] text-muted-foreground truncate"
-            title={vFormatted}
-          >
+          <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
             {vFormatted}
           </span>
         )
@@ -985,7 +964,7 @@ function getColumns(
 
   // ── Realtime (rt_*) columns — top-level fields from BE, display-only ──
   const colRtClickAdCount = count('rt_click_ad_count', 'R. Conv.', 65, 'green')
-  const colRtClickKeywordCount = count('rt_click_keyword_count', 'R. Click keyword', 100, 'green')
+  const colRtClickKeywordCount = count('rt_click_keyword_count', 'R. C.Kw', 100, 'green')
   const colRtViewSearchCount = count('rt_view_search_count', 'R. S.View', 78, 'green')
   const colRtViewArticleCount = count('rt_view_article_count', 'R. Article Views', 100, 'green')
 
@@ -1018,18 +997,18 @@ function getColumns(
 
     // ── Conversions ──
     colRtClickAdCount,
-    count('r_conversion', 'Rev Conv.', 88, 'yellow'),
-    count('a_conversion', 'ADS Conv.', 92, 'blue'),
-
-    // ── Search impressions & RPM ──
-    count('r_impressions', 'Impr', 65, 'yellow'),
-    ratio('r_ad_requests_rpm', 'S. RPM', 70, 2, 'yellow'),
+    count('r_conversion', 'Conv.', 70, 'yellow'),
+    count('a_conversion', 'A. Conv.', 85, 'blue'),
     ratio('r_rpc', 'RPC', 70, 2, 'yellow'),
 
     // ── CPA ──
     colRtCpa,
     ratio('r_cpa', 'CPA', 68, 2, 'yellow'),
-    ratio('a_cpa', 'ADS CPA', 85, 2, 'blue'),
+    ratio('a_cpa', 'A. CPA', 85, 2, 'blue'),
+
+    // ── Search impressions & RPM ──
+    ratio('r_ad_requests_rpm', 'S. RPM', 70, 2, 'yellow'),
+    count('r_impressions', 'Impr', 65, 'yellow'),
 
     // ── CVR ──
     colRtCvr,
@@ -1044,13 +1023,10 @@ function getColumns(
         Cell: ({ row }) => {
           const v = isGroupRow(row.original) ? row.original.group_summary.cvr : row.original.cvr
           if (v === null || v === 0)
-            return <span className="text-muted-foreground/50 text-[10px]">—</span>
+            return <span className="text-foreground/50 text-[10px]">—</span>
           const vFormatted = `${formatDecimal(v)}%`
           return (
-            <span
-              className="tabular-nums text-[10px] text-muted-foreground truncate"
-              title={vFormatted}
-            >
+            <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
               {vFormatted}
             </span>
           )
@@ -1067,44 +1043,44 @@ function getColumns(
     // ── Search views ──
     colRtViewSearchCount,
     count('r_search_views', 'S.Views', 80, 'yellow'),
-    count('a_search_views', 'ADS S.View', 98, 'blue'),
+    count('a_search_views', 'A. S.View', 98, 'blue'),
 
-    // ── Keyword / funnel ──
+    // ── Kw / funnel ──
     colRtClickKeywordCount,
-    count('a_clicks', 'Supply clicks', 105, 'blue'),
-    count('r_funnel_clicks', 'Click keyword', 105, 'yellow'),
-    count('r_funnel_requests', 'Keyword request', 120, 'yellow'),
+    count('r_funnel_clicks', 'C.Kw', 105, 'yellow'),
+    count('a_clicks', 'A. C.Kw', 105, 'blue'),
+    count('r_funnel_requests', 'Kw Request', 120, 'yellow'),
     colRtCtrKeyword,
-    count('r_funnel_impressions', 'Keyword impr', 105, 'yellow'),
-    ratio('r_funnel_rpm', 'Keyword RPM', 110, 2, 'yellow'),
+    count('r_funnel_impressions', 'Kw Impr', 105, 'yellow'),
+    ratio('r_funnel_rpm', 'Kw RPM', 110, 2, 'yellow'),
 
     // ── CTR Search ──
     colRtCtrSearch,
 
-    // ── ADS platform metrics ──
-    { ...ratio('a_ctr_link', 'ADS CTR', 92, 2, 'blue'), Footer: undefined },
+    // ── A. platform metrics ──
+    { ...ratio('a_ctr_link', 'A. CTR', 92, 2, 'blue'), Footer: undefined },
     {
-      ...count('a_article_views', 'ADS LP View', 100, 'blue'),
+      ...count('a_article_views', 'A. LP View', 100, 'blue'),
       Footer: undefined,
     },
     {
-      ...ratio('a_cpc_link', 'ADS CPC', 85, 2, 'blue'),
+      ...ratio('a_cpc_link', 'A. CPC', 85, 2, 'blue'),
       Footer: undefined,
     },
     { ...count('a_reach', 'Reach', 75, 'blue'), Footer: undefined },
     {
-      ...count('a_impressions', 'ADS Impr', 85, 'blue'),
+      ...count('a_impressions', 'A. Impr', 85, 'blue'),
       Footer: undefined,
     },
     { ...ratio('a_cpm', 'CPM', 70, 2, 'blue'), Footer: undefined },
     { ...ratio('a_frequency', 'FB Freq', 82, 2, 'blue'), Footer: undefined },
     { ...ratio('a_ctr', 'FB CTR', 92, 2, 'blue'), Footer: undefined },
     {
-      ...usd('daily_budget', 'ADS Budget (Daily)', 100, 'blue'),
+      ...usd('daily_budget', 'A. Budget (Daily)', 100, 'blue'),
       Footer: undefined,
     },
     {
-      ...usd('lifetime_budget', 'ADS Budget (Lifetime)', 105, 'blue'),
+      ...usd('lifetime_budget', 'A. Budget (Lifetime)', 105, 'blue'),
       Footer: undefined,
     },
 
@@ -1115,7 +1091,7 @@ function getColumns(
       ...count('a_ad_clicks', 'Ad Clicks', 88, 'blue'),
       Footer: undefined,
     },
-    { ...ratio('a_cpc', 'ADS CPC', 88, 2, 'blue'), Footer: undefined },
+    { ...ratio('a_cpc', 'A. CPC', 88, 2, 'blue'), Footer: undefined },
     colRtViewArticleCount,
   ]
 }
@@ -1479,7 +1455,7 @@ function CampaignReportTableCardInner({
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-3 py-2">
-        <h3 className="text-sm font-semibold text-muted-foreground">Daily Campaign Reports</h3>
+        <h3 className="text-sm font-semibold text-foreground">Daily Campaign Reports</h3>
         <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
           <CampaignSchedulesDialog
             trigger={
@@ -1538,8 +1514,8 @@ function CampaignReportTableCardInner({
     ),
     renderEmptyRowsFallback: () => (
       <div className="flex flex-col items-center gap-2 py-10 text-center">
-        <BarChart3 className="h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">No campaign report data found.</p>
+        <BarChart3 className="h-8 w-8 text-foreground/30" />
+        <p className="text-sm text-foreground">No campaign report data found.</p>
       </div>
     ),
   })

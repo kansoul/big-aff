@@ -2,8 +2,11 @@
 
 namespace App\Actions\Site;
 
+use App\Enums\Permission;
 use App\Models\Site;
+use App\Models\User;
 use App\Models\UserSite;
+use App\Support\OwnerResource\UserOwnerResource;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -22,11 +25,11 @@ class AssignSiteAction
 
         if (! $ownership->isAdmin()) {
             $ownership->authorizeSite($site);
-
-            $userIds = array_values(array_intersect($userIds, $ownership->allowedUserIds()));
         }
 
-        $assignedInScope = $this->getAssignedInScope($site, $ownership);
+        $assignableUserIds = $this->getAssignableUserIds();
+        $userIds = array_values(array_intersect($userIds, $assignableUserIds));
+        $assignedInScope = $this->getAssignedInScope($site, $assignableUserIds);
         $toRemove = array_values(array_diff($assignedInScope, $userIds));
         $toAdd = array_values(array_diff($userIds, $assignedUserIds));
 
@@ -42,15 +45,27 @@ class AssignSiteAction
     /**
      * @return array<int>
      */
-    private function getAssignedInScope(Site $site, OwnershipFilter $ownership): array
+    private function getAssignableUserIds(): array
+    {
+        $query = User::query()
+            ->select('id')
+            ->whereDoesntHave('role', fn ($q) => $q->where('permissions', Permission::FULL_ACCESS_SENTINEL));
+
+        (new UserOwnerResource)->applyTo($query);
+
+        return $query->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    /**
+     * @param  array<int>  $assignableUserIds
+     * @return array<int>
+     */
+    private function getAssignedInScope(Site $site, array $assignableUserIds): array
     {
         $query = UserSite::query()
             ->where('site_id', $site->id)
-            ->whereNull('deleted_at');
-
-        if (! $ownership->isAdmin()) {
-            $query->whereIn('user_id', $ownership->allowedUserIds());
-        }
+            ->whereNull('deleted_at')
+            ->whereIn('user_id', $assignableUserIds);
 
         return $query->pluck('user_id')->map(fn ($id) => (int) $id)->all();
     }

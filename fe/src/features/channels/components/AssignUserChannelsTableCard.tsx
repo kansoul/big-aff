@@ -2,9 +2,13 @@ import { memo } from 'react'
 import { Loader2, Save, Users } from 'lucide-react'
 
 import { AssignUserChannelsPicker } from './AssignUserChannelsPicker'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import type { UserChannelAssignmentRow } from '../types/userChannelAssignments'
+import type {
+  AssignedChannelSummary,
+  UserChannelAssignmentRow,
+} from '../types/userChannelAssignments'
 
 type AssignUserChannelsTableCardProps = {
   loading: boolean
@@ -22,6 +26,10 @@ type AssignUserChannelsTableCardProps = {
 function hasSelectionDiff(left: string[], right: string[]): boolean {
   if (left.length !== right.length) return true
   return left.some((c) => !right.includes(c)) || right.some((c) => !left.includes(c))
+}
+
+function channelLabel(channel: AssignedChannelSummary): string {
+  return channel.name ? `${channel.name} (${channel.code})` : channel.code
 }
 
 function AssignUserChannelsTableCardInner({
@@ -64,13 +72,45 @@ function AssignUserChannelsTableCardInner({
                 dirty ? 'border-primary/40' : 'border-border',
               )}
             >
-              <div className="grid gap-5 sm:grid-cols-[2fr_3fr] sm:gap-8">
+              <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(180px,1.1fr)_minmax(260px,1.8fr)_minmax(360px,2.2fr)] lg:gap-8">
                 <div className="min-w-0">
                   <p className="text-[11px] font-semibold text-muted-foreground">User</p>
                   <p className="mt-1.5 truncate text-sm font-semibold text-foreground">
                     {row.name}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{row.email}</p>
+                </div>
+
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <p className="text-[11px] font-semibold text-muted-foreground">
+                      Owned Channels
+                    </p>
+                    {row.channels.length > 0 ? (
+                      <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
+                        {row.channels.length}
+                      </span>
+                    ) : null}
+                  </div>
+                  {row.channels.length > 0 ? (
+                    <div className="mt-2 flex max-h-28 flex-wrap gap-1.5 overflow-y-auto pr-1">
+                      {row.channels.map((channel) => {
+                        const label = channelLabel(channel)
+                        return (
+                          <Badge
+                            key={channel.code}
+                            variant="outline"
+                            className="h-auto max-w-full justify-start rounded-md px-2 py-1 text-[11px] leading-tight"
+                            title={label}
+                          >
+                            <span className="max-w-[240px] truncate">{label}</span>
+                          </Badge>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted-foreground">No owned channels</p>
+                  )}
                 </div>
 
                 <div className="min-w-0">

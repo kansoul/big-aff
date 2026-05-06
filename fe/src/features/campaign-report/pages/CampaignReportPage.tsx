@@ -28,6 +28,8 @@ import { getUserRole } from '@/constants/role'
 
 type FilterOptions = CampaignReportFiltersResponse['data']
 
+const AUTO_REFETCH_INTERVAL_MS = 60_000
+
 const DEFAULT_FILTERS: CampaignReportFilterParams = {
   date_from: dayjs().format('YYYY-MM-DD'),
   date_to: dayjs().format('YYYY-MM-DD'),
@@ -194,23 +196,36 @@ export function CampaignReportPage() {
     }
   }, [])
 
-  const loadData = useCallback(async (activeFilters: CampaignReportFilterParams) => {
-    try {
-      setLoading(true)
-      const { data }: { data: CampaignReportListResponse } =
-        await campaignReportApi.list(activeFilters)
-      setRows(data.data)
-      setRowCount(data.pagination.total)
-      setGrandSummary(data.grand_summary)
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const loadData = useCallback(
+    async (activeFilters: CampaignReportFilterParams, options?: { showLoading?: boolean }) => {
+      const showLoading = options?.showLoading ?? true
+
+      try {
+        if (showLoading) setLoading(true)
+        const { data }: { data: CampaignReportListResponse } =
+          await campaignReportApi.list(activeFilters)
+        setRows(data.data)
+        setRowCount(data.pagination.total)
+        setGrandSummary(data.grand_summary)
+      } catch (err) {
+        if (showLoading) toast.error(formatApiError(err))
+      } finally {
+        if (showLoading) setLoading(false)
+      }
+    },
+    [],
+  )
 
   useEffect(() => {
     void loadData(filters)
+  }, [loadData, filters])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void loadData(filters, { showLoading: false })
+    }, AUTO_REFETCH_INTERVAL_MS)
+
+    return () => window.clearInterval(interval)
   }, [loadData, filters])
 
   const onToggleCampaignStatus = useCallback(async (campaignId: string, checked: boolean) => {

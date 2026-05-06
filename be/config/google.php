@@ -9,6 +9,13 @@ return [
         'clientSecret' => env('GOOGLE_ADS_CLIENT_SECRET'),
         'refreshToken' => env('GOOGLE_ADS_REFRESH_TOKEN'),
     ],
+    'oauth2_ads_conversion' => [
+        'clientId' => env('GOOGLE_ADS_CONVERSION_CLIENT_ID', env('GOOGLE_ADS_CLIENT_ID')),
+        'clientSecret' => env('GOOGLE_ADS_CONVERSION_CLIENT_SECRET', env('GOOGLE_ADS_CLIENT_SECRET')),
+        'refreshToken' => env('GOOGLE_ADS_CONVERSION_REFRESH_TOKEN', env('GOOGLE_ADS_REFRESH_TOKEN')),
+        'developerToken' => env('GOOGLE_ADS_CONVERSION_DEVELOPER_TOKEN', env('GOOGLE_ADS_DEVELOPER_TOKEN')),
+        'loginCustomerId' => env('GOOGLE_ADS_CONVERSION_LOGIN_CUSTOMER_ID', env('GOOGLE_ADS_LOGIN_CUSTOMER_ID')),
+    ],
     // Google Adsense
     'application_name' => env('GOOGLE_APPLICATION_NAME', 'Laravel Google API'),
     'oauth2_adsense' => [

@@ -177,12 +177,12 @@ export function AssignUserChannelsDialog({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] max-w-[95vw]! md:max-w-[70vw]! flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex max-h-[90vh] max-w-[96vw]! flex-col gap-0 overflow-hidden p-0 md:max-w-[90vw]! xl:max-w-[1280px]!">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>Assign Channels to Users</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 overflow-y-auto px-6 py-4">
+        <div className="flex flex-col gap-4 overflow-auto px-4 py-4 sm:px-6">
           <p className="text-sm text-muted-foreground">
             Assign channels to each user. Press{' '}
             <span className="font-medium text-foreground">Save</span> on a row to apply changes.

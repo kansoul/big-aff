@@ -51,8 +51,15 @@ export const usersApi = {
     return response.data.data
   },
 
-  async assignAccounts(userId: number, accountIds: number[]): Promise<void> {
-    await axiosInstance.post(`/users/${userId}/assign-accounts`, { account_ids: accountIds })
+  async assignAccounts(
+    userId: number,
+    accountIds: string[],
+  ): Promise<{ skipped_account_ids: string[] }> {
+    const response = await axiosInstance.post<{ skipped_account_ids: string[] }>(
+      `/users/${userId}/assign-accounts`,
+      { account_ids: accountIds },
+    )
+    return response.data
   },
 
   async assignPosts(userId: number, postIds: number[]): Promise<void> {

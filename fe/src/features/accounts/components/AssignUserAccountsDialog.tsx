@@ -3,7 +3,6 @@ import { AlertCircle, Search } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { accountsApi } from '@/features/accounts/api'
-import type { AccountOptionForAssign } from '@/features/accounts/types'
 import { AssignUserAccountsTableCard } from '@/features/accounts/components/AssignUserAccountsTableCard'
 
 import { formatApiError } from '@/features/settings/components'
@@ -16,8 +15,8 @@ import type { AssignedAccountSummary, UserWithAccounts } from '../types/userAcco
 
 const USERS_PAGE_SIZE = 100
 
-function toUniqueSortedIds(ids: number[]): number[] {
-  return Array.from(new Set(ids)).sort((a, b) => a - b)
+function toUniqueSortedAccountIds(accountIds: string[]): string[] {
+  return Array.from(new Set(accountIds.map((id) => id.trim()).filter(Boolean))).sort()
 }
 
 function normalizeAssignedAccounts(
@@ -46,38 +45,18 @@ function toUserRows(raw: UserWithAccounts[]): UserWithAccounts[] {
   }))
 }
 
-function assignedIdsFromRow(row: UserWithAccounts): number[] {
-  return toUniqueSortedIds(
-    row.accounts.map((a) => Number(a.id)).filter((id): id is number => Number.isInteger(id)),
-  )
+function assignedIdsFromRow(row: UserWithAccounts): string[] {
+  return toUniqueSortedAccountIds(row.accounts.map((a) => a.account_id).filter(Boolean))
 }
 
-function savedByUserFromRows(rows: UserWithAccounts[]): Record<number, number[]> {
+function savedByUserFromRows(rows: UserWithAccounts[]): Record<number, string[]> {
   return Object.fromEntries(rows.map((row) => [row.id, assignedIdsFromRow(row)]))
 }
 
-function draftsFromSaved(savedByUserId: Record<number, number[]>): Record<number, number[]> {
+function draftsFromSaved(savedByUserId: Record<number, string[]>): Record<number, string[]> {
   return Object.fromEntries(
     Object.entries(savedByUserId).map(([userId, ids]) => [Number(userId), [...ids]]),
   )
-}
-
-/**
- * Account IDs claimed by OTHER editable users in the current draft state.
- * excludeUserId: the user whose dropdown we're rendering (skip their own draft)
- * authUserId: the auth user's row is disabled, so their draft doesn't "block" anyone
- */
-function claimedByOthers(
-  drafts: Record<number, number[]>,
-  excludeUserId: number,
-  authUserId: number,
-): Set<number> {
-  const claimed = new Set<number>()
-  for (const [userIdStr, ids] of Object.entries(drafts)) {
-    const uid = Number(userIdStr)
-    if (uid !== excludeUserId && uid !== authUserId) ids.forEach((id) => claimed.add(id))
-  }
-  return claimed
 }
 
 type Props = {
@@ -92,10 +71,8 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
   const canAssign = hasPermission(perms, PermissionSlugs.AccountsAssign)
 
   const [users, setUsers] = useState<UserWithAccounts[]>([])
-  // Shared pool: unassigned or assigned to a specific user (fetched once, not per-user)
-  const [assignOptionPool, setAssignOptionPool] = useState<AccountOptionForAssign[]>([])
-  const [savedByUserId, setSavedByUserId] = useState<Record<number, number[]>>({})
-  const [drafts, setDrafts] = useState<Record<number, number[]>>({})
+  const [savedByUserId, setSavedByUserId] = useState<Record<number, string[]>>({})
+  const [drafts, setDrafts] = useState<Record<number, string[]>>({})
   const [loading, setLoading] = useState(false)
   const [savingRowId, setSavingRowId] = useState<number | null>(null)
   const [flashError, setFlashError] = useState<string | null>(null)
@@ -103,7 +80,6 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
   const [debouncedUserSearch, setDebouncedUserSearch] = useState('')
 
   const fetchAll = useCallback(async () => {
-    // Fetch all users (paginated) + shared assign pool in parallel
     const firstPage = await accountsApi.listUsersWithAccounts({
       page: 1,
       per_page: USERS_PAGE_SIZE,
@@ -138,11 +114,9 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
     const load = async () => {
       try {
         setLoading(true)
-        // 2 calls total regardless of user count
-        const [raw, pool] = await Promise.all([fetchAll(), accountsApi.assignOptions()])
+        const raw = await fetchAll()
         if (ignore) return
         applyUserRows(raw)
-        setAssignOptionPool(pool)
       } catch (err) {
         if (!ignore) toast.error(formatApiError(err))
       } finally {
@@ -161,16 +135,9 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
     return () => clearTimeout(timer)
   }, [userSearch])
 
-  const onDraftChange = useCallback(
-    (userId: number, accountIds: number[]) => {
-      setDrafts((current) => {
-        const claimed = claimedByOthers(current, userId, authUserId)
-        const safe = toUniqueSortedIds(accountIds.filter((id) => !claimed.has(id)))
-        return { ...current, [userId]: safe }
-      })
-    },
-    [authUserId],
-  )
+  const onDraftChange = useCallback((userId: number, accountIds: string[]) => {
+    setDrafts((current) => ({ ...current, [userId]: toUniqueSortedAccountIds(accountIds) }))
+  }, [])
 
   const saveRowAsync = useCallback(
     async (userId: number) => {
@@ -178,14 +145,20 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
       try {
         setFlashError(null)
         setSavingRowId(userId)
-        await accountsApi.assignToUser(userId, accountIds)
+        const result = await accountsApi.assignToUser(userId, accountIds)
 
-        // Refresh users + pool after save
-        const [raw, pool] = await Promise.all([fetchAll(), accountsApi.assignOptions()])
+        const raw = await fetchAll()
         applyUserRows(raw)
-        setAssignOptionPool(pool)
 
-        toast.success('Assigned accounts successfully')
+        const skipped: string[] = result.skipped_account_ids ?? []
+        if (skipped.length > 0) {
+          toast.warning(
+            `Skipped ${skipped.length} account(s) already assigned to another user: ${skipped.join(', ')}`,
+            { duration: 8000 },
+          )
+        } else {
+          toast.success('Assigned accounts successfully')
+        }
       } catch (err) {
         setFlashError(formatApiError(err))
       } finally {
@@ -212,30 +185,20 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
     )
   }, [searchQuery, users])
 
-  // Per-user options: pool accounts not claimed by other editable users in draft
-  const filteredOptionsByUser = useMemo(() => {
-    const result: Record<number, AccountOptionForAssign[]> = {}
-    for (const row of users) {
-      const claimed = claimedByOthers(drafts, row.id, authUserId)
-      result[row.id] = assignOptionPool.filter((opt) => !claimed.has(opt.id))
-    }
-    return result
-  }, [users, assignOptionPool, drafts, authUserId])
-
   const emptyMessage = searchQuery ? 'No users found' : 'No users to assign'
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] w-full max-w-fit! flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex max-h-[90vh] max-w-[96vw]! flex-col gap-0 overflow-hidden p-0 md:max-w-[90vw]! xl:max-w-[1280px]!">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>Assign Accounts to Users</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 overflow-y-auto px-6 py-4">
+        <div className="flex flex-col gap-4 overflow-auto px-4 py-4 sm:px-6">
           <p className="text-sm text-muted-foreground">
             Assign accounts to each user. Press{' '}
             <span className="font-medium text-foreground">Save</span> on a row to apply changes.
-            Each account can only be assigned to one user.
+            Enter account IDs one per line. Each account can only be assigned to one user.
           </p>
 
           <div className="relative max-w-md">
@@ -259,7 +222,6 @@ export function AssignUserAccountsDialog({ open, onOpenChange }: Props) {
           <AssignUserAccountsTableCard
             loading={loading}
             users={filteredUsers}
-            accountOptionsByUser={filteredOptionsByUser}
             drafts={drafts}
             savedByUserId={savedByUserId}
             onDraftChange={onDraftChange}

@@ -205,23 +205,21 @@ class AccountController extends BaseController
     /**
      * Assign accounts to user
      *
-     * Sync account assignments for a user. Only accounts in the user's teams are valid.
-     * Each account can only be assigned to one user (1-n). Existing assignments within
-     * the user's teams are replaced by the provided list.
+     * Sync account assignments for a user by account_id. Accounts already assigned to another user are skipped.
      *
      * @urlParam user integer required The user ID. Example: 1
      *
-     * @bodyParam account_ids integer[] required List of account IDs to assign (can be empty to clear). Example: [1, 2, 3]
+     * @bodyParam account_ids string[] required List of account IDs to assign (can be empty to clear). Example: ["1234567890", "9876543210"]
      *
-     * @response 200 {"data": []}
+     * @response 200 {"skipped_account_ids": []}
      * @response 403 {"message": "This action is unauthorized."}
      * @response 404 {"message": "No query results for model [App\\Models\\User] 1"}
      * @response 422 {"message": "The account_ids field must be present.", "errors": {"account_ids": ["The account_ids field must be present."]}}
      */
     public function assignToUser(AssignAccountRequest $request, User $user): JsonResponse
     {
-        $this->accountService->assignToUser($user, $request->validated('account_ids', []));
+        $result = $this->accountService->assignToUser($user, $request->validated('account_ids', []));
 
-        return $this->sendResponse([]);
+        return $this->sendResponse(['skipped_account_ids' => $result['skipped_account_ids']]);
     }
 }

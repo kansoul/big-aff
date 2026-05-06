@@ -9,7 +9,7 @@ import { formatApiError } from '@/features/settings/components'
 
 const DEFAULT_FILTERS: LogFilters = { file: null, level: null, keyword: null }
 const DEFAULT_PAGINATION: LogPagination = { total: 0, per_page: 50, current_page: 1, last_page: 1 }
-const AUTO_REFRESH_INTERVAL = 30_000
+const AUTO_REFRESH_INTERVAL = 60_000
 
 export function LogsPage() {
   const [searchParams, setSearchParams] = useSearchParams()

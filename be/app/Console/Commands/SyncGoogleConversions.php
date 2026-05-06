@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Account;
 use App\Models\AdsConversion;
-use App\Services\Integrations\Google\GoogleAdsService as GoogleGoogleAdsService;
+use App\Services\Integrations\Google\GoogleAdsConversionSyncService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -33,10 +33,10 @@ class SyncGoogleConversions extends Command
     public function handle(): void
     {
         $accountCache = [];
-        $googleAdsService = app(GoogleGoogleAdsService::class);
+        $googleAdsConversionSyncService = app(GoogleAdsConversionSyncService::class);
 
         AdsConversion::whereNull('synced_at')
-            ->chunkById(self::BATCH_SIZE, function ($chunk) use (&$accountCache, $googleAdsService) {
+            ->chunkById(self::BATCH_SIZE, function ($chunk) use (&$accountCache, $googleAdsConversionSyncService) {
                 $grouped = $chunk->groupBy('account_id');
 
                 foreach ($grouped as $accountId => $records) {
@@ -96,7 +96,7 @@ class SyncGoogleConversions extends Command
                             ? $account->businessCenter->bc_id
                             : $accountId;
 
-                        $failedIndices = $googleAdsService->syncAdsConversion($targetaccountId, $adRevenuesPayload);
+                        $failedIndices = $googleAdsConversionSyncService->syncAdsConversion($targetaccountId, $adRevenuesPayload);
 
                         if (is_array($failedIndices)) {
                             $idsToUpdate = [];
