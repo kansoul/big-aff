@@ -82,7 +82,9 @@ function toSelectOptions(items: { id: number; name: string }[]): SelectOption[] 
 
 export function TeamReportPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const isMainSystem = useAuthStore((state) => Boolean(state.user?.is_main_system))
+  const canUseMainTeams = useAuthStore((state) =>
+    Boolean(state.user?.is_main_system && state.user.is_admin),
+  )
 
   const [filters, setFilters] = useState<TeamReportFilterParams>(() =>
     parseFiltersFromUrl(searchParams),
@@ -94,8 +96,10 @@ export function TeamReportPage() {
       isMounted.current = true
       return
     }
-    setSearchParams(buildUrlParams(filters), { replace: true })
-  }, [filters, setSearchParams])
+    setSearchParams(buildUrlParams(canUseMainTeams ? filters : { ...filters, main_team_ids: [] }), {
+      replace: true,
+    })
+  }, [canUseMainTeams, filters, setSearchParams])
 
   const [selectedTeamIdsForOptions, setSelectedTeamIdsForOptions] = useState<number[]>(() => {
     return parseFiltersFromUrl(searchParams).team_ids ?? []
@@ -110,12 +114,13 @@ export function TeamReportPage() {
   const [byUser, setByUser] = useState<TeamReportByUserRow[]>([])
   const [loading, setLoading] = useState(false)
   const effectiveFilters = useMemo<TeamReportFilterParams>(
-    () => (isMainSystem ? filters : { ...filters, main_team_ids: [] }),
-    [filters, isMainSystem],
+    () => (canUseMainTeams ? filters : { ...filters, main_team_ids: [] }),
+    [canUseMainTeams, filters],
   )
 
   useEffect(() => {
-    if (!isMainSystem) {
+    if (!canUseMainTeams) {
+      setMainTeamOptions([])
       return
     }
 
@@ -127,7 +132,7 @@ export function TeamReportPage() {
       .catch(() => {
         toast.error('Failed to load main team options.')
       })
-  }, [isMainSystem])
+  }, [canUseMainTeams])
 
   useEffect(() => {
     void teamReportApi
@@ -183,20 +188,23 @@ export function TeamReportPage() {
     void loadData(effectiveFilters)
   }, [loadData, effectiveFilters])
 
-  const onApplyFilters = useCallback((values: Record<string, unknown>) => {
-    const range = parseDateRange(values.date_range)
-    const nextMainTeamIds = parseIds(values.main_team_ids)
-    const nextTeamIds = parseIds(values.team_ids)
-    const nextUserIds = parseIds(values.user_ids)
+  const onApplyFilters = useCallback(
+    (values: Record<string, unknown>) => {
+      const range = parseDateRange(values.date_range)
+      const nextMainTeamIds = canUseMainTeams ? parseIds(values.main_team_ids) : []
+      const nextTeamIds = parseIds(values.team_ids)
+      const nextUserIds = parseIds(values.user_ids)
 
-    setFilters({
-      date_from: range?.from ?? null,
-      date_to: range?.to ?? null,
-      main_team_ids: nextMainTeamIds,
-      team_ids: nextTeamIds,
-      user_ids: nextTeamIds.length > 0 ? nextUserIds : [],
-    })
-  }, [])
+      setFilters({
+        date_from: range?.from ?? null,
+        date_to: range?.to ?? null,
+        main_team_ids: nextMainTeamIds,
+        team_ids: nextTeamIds,
+        user_ids: nextTeamIds.length > 0 ? nextUserIds : [],
+      })
+    },
+    [canUseMainTeams],
+  )
 
   const onResetFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS)
@@ -225,7 +233,7 @@ export function TeamReportPage() {
       },
     ]
 
-    if (isMainSystem) {
+    if (canUseMainTeams) {
       fields.push({
         field: 'main_team_ids',
         label: 'Main Teams',
@@ -260,7 +268,14 @@ export function TeamReportPage() {
     )
 
     return fields
-  }, [filters, isMainSystem, mainTeamOptions, selectedTeamIdsForOptions, teamOptions, userOptions])
+  }, [
+    canUseMainTeams,
+    filters,
+    mainTeamOptions,
+    selectedTeamIdsForOptions,
+    teamOptions,
+    userOptions,
+  ])
 
   return (
     <div className="space-y-6">

@@ -89,6 +89,8 @@ class RevenueStatsController extends BaseController
 
     public function mainTeamOptions(): JsonResponse
     {
+        abort_unless($this->canUseMainTeams(), 403, 'Forbidden.');
+
         return $this->sendResponse([
             'data' => $this->revenueStatsService->mainTeamOptions(),
         ]);
@@ -104,5 +106,12 @@ class RevenueStatsController extends BaseController
         return $this->sendResponse([
             'data' => $this->revenueStatsService->userOptions($teamIds),
         ]);
+    }
+
+    private function canUseMainTeams(): bool
+    {
+        $user = request()->user();
+
+        return $user !== null && $user->is_admin;
     }
 }

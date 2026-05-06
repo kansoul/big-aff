@@ -12,6 +12,17 @@ class RevenueStatsRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->canUseMainTeamFilters()) {
+            return;
+        }
+
+        $this->merge([
+            'main_team_ids' => [],
+        ]);
+    }
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -31,5 +42,12 @@ class RevenueStatsRequest extends FormRequest
             'channel_codes' => ['nullable', 'array'],
             'channel_codes.*' => ['string', 'exists:channels,code'],
         ];
+    }
+
+    private function canUseMainTeamFilters(): bool
+    {
+        $user = $this->user();
+
+        return $user !== null && $user->is_admin;
     }
 }
