@@ -4,6 +4,7 @@ namespace App\Http\Resources\User;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Support\AdsReport\AdsReportAccess;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -37,6 +38,7 @@ class UserResource extends JsonResource
             'permissions' => $permissions,
             'is_admin' => $this->is_admin,
             'is_main_system' => (bool) config('main_system.is_main'),
+            'can_view_ads_report_unscoped' => AdsReportAccess::canViewUnscoped($user),
             'roles' => $roles,
         ];
     }

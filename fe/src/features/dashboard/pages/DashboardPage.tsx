@@ -67,10 +67,10 @@ const MAIN_TEAM_PERIODS = [
 
 type MainTeamPeriodKey = (typeof MAIN_TEAM_PERIODS)[number]['key']
 
-function topMainTeamByRevenue(rows: RevenueMainTeamRow[], period: MainTeamPeriodKey) {
+function topMainTeamByProfit(rows: RevenueMainTeamRow[], period: MainTeamPeriodKey) {
   return rows.reduce<RevenueMainTeamRow | null>((best, row) => {
     if (!best) return row
-    return row[period].revenue > best[period].revenue ? row : best
+    return row[period].profit > best[period].profit ? row : best
   }, null)
 }
 
@@ -120,11 +120,9 @@ function MainTeamLeaderBadge({
           {row.main_team_name}
         </div>
         <div>
-          <div className="text-xs font-medium text-muted-foreground dark:text-zinc-500">
-            Revenue
-          </div>
+          <div className="text-xs font-medium text-muted-foreground dark:text-zinc-500">Profit</div>
           <div className="text-base font-black text-emerald-600 dark:text-emerald-400">
-            {formatCurrency(stats.revenue)}
+            {formatCurrency(stats.profit)}
           </div>
         </div>
         <div>
@@ -169,8 +167,8 @@ function sumPeriodStats(rows: RevenueMainTeamRow[], period: MainTeamPeriodKey): 
 }
 
 function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loading: boolean }) {
-  const topToday = topMainTeamByRevenue(rows, 'today')
-  const topMonth = topMainTeamByRevenue(rows, 'this_month')
+  const topToday = topMainTeamByProfit(rows, 'today')
+  const topMonth = topMainTeamByProfit(rows, 'this_month')
 
   return (
     <Card className="mt-0 flex flex-col overflow-hidden rounded-2xl border-border/50 bg-card shadow-sm">
@@ -190,13 +188,13 @@ function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loadi
 
           <div className="grid w-full min-w-0 gap-3 sm:grid-cols-2 lg:w-auto">
             <MainTeamLeaderBadge
-              label="#1 Daily Revenue"
+              label="#1 Daily Profit"
               row={topToday}
               stats={topToday?.today}
               loading={loading}
             />
             <MainTeamLeaderBadge
-              label="#1 Monthly Revenue"
+              label="#1 Monthly Profit"
               row={topMonth}
               stats={topMonth?.this_month}
               loading={loading}

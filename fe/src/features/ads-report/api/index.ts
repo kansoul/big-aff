@@ -1,5 +1,4 @@
 import { axiosInstance } from '@/shared/api/axios'
-import { isNil } from '@/lib/utils'
 import type {
   AdsReportStatsFilterParams,
   AdsReportStatsResponse,
@@ -10,12 +9,13 @@ export const adsReportApi = {
   stats: (filters: AdsReportStatsFilterParams) =>
     axiosInstance.get<AdsReportStatsResponse>('/ads-report/stats', {
       params: {
-        ...(filters.account_id ? { account_id: filters.account_id } : {}),
-        ...(filters.ads_type ? { ads_type: filters.ads_type } : {}),
+        ...(filters.account_ids?.length ? { 'account_ids[]': filters.account_ids } : {}),
+        ...(filters.ads_types?.length ? { 'ads_types[]': filters.ads_types } : {}),
         ...(filters.campaign_ids?.length ? { 'campaign_ids[]': filters.campaign_ids } : {}),
         ...(filters.date_from ? { date_from: filters.date_from } : {}),
         ...(filters.date_to ? { date_to: filters.date_to } : {}),
-        ...(!isNil(filters.team_id) ? { team_id: filters.team_id } : {}),
+        ...(filters.main_team_ids?.length ? { 'main_team_ids[]': filters.main_team_ids } : {}),
+        ...(filters.team_ids?.length ? { 'team_ids[]': filters.team_ids } : {}),
       },
     }),
 

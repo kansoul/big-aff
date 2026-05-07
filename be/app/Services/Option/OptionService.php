@@ -75,7 +75,7 @@ class OptionService
         return $this->getBusinessCenterOptions->execute();
     }
 
-    /** @return array{show_team_filter: bool, teams: Collection, campaigns: Collection} */
+    /** @return array{can_view_unscoped: bool, show_team_filter: bool, main_teams: Collection, accounts: Collection, teams: Collection, campaigns: Collection} */
     public function adsReport(): array
     {
         return $this->getAdsReportOptions->execute();

@@ -5,8 +5,10 @@ namespace App\Actions\Option;
 use App\Enums\TeamRole;
 use App\Models\Account;
 use App\Models\Campaign;
+use App\Models\MainTeam;
 use App\Models\Team;
 use App\Models\TeamUser;
+use App\Support\AdsReport\AdsReportAccess;
 use App\Support\OwnerResource\TeamOwnerResource;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +21,8 @@ class GetAdsReportOptionsAction
     public function execute(): array
     {
         $teamResource = new TeamOwnerResource;
+        $user = Auth::user();
+        $canViewUnscoped = AdsReportAccess::canViewUnscoped($user);
 
         // 1. Resolve accessible teams
         $managerTeamIds = TeamUser::query()
@@ -28,18 +32,20 @@ class GetAdsReportOptionsAction
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        $showTeamFilter = $teamResource->isAdmin() || count($managerTeamIds) > 1;
+        $showTeamFilter = $canViewUnscoped || $teamResource->isAdmin() || count($managerTeamIds) > 1;
 
         $teamQuery = Team::query()
             ->select(['id', 'name'])
             ->orderBy('name');
 
-        $teamResource->applyTo($teamQuery);
+        if (! $canViewUnscoped) {
+            $teamResource->applyTo($teamQuery);
+        }
 
         $teams = $teamQuery->get();
 
         // 2. Fetch accounts scoped to the auth user's allowed user IDs within each team
-        $allowedUserIds = $teamResource->isAdmin() ? null : $teamResource->allowedUserIds();
+        $allowedUserIds = $canViewUnscoped || $teamResource->isAdmin() ? null : $teamResource->allowedUserIds();
 
         $teamUserIdsByTeam = TeamUser::query()
             ->whereIn('team_id', $teams->pluck('id'))
@@ -51,11 +57,22 @@ class GetAdsReportOptionsAction
         $allUserIds = $teamUserIdsByTeam->flatten()->unique()->all();
 
         $accounts = Account::query()
-            ->select(['id', 'account_id', 'account_name', 'ads_type'])
-            ->whereHas('users', fn ($q) => $q->whereIn('users.id', $allUserIds))
+            ->select(['id', 'account_id', 'account_name', 'ads_type', 'main_team_id'])
+            ->when(
+                ! $canViewUnscoped,
+                fn ($query) => $query->whereHas('users', fn ($q) => $q->whereIn('users.id', $allUserIds)),
+            )
             ->with(['users:id'])
             ->orderBy('account_name')
             ->get();
+
+        $accountsData = $accounts->map(fn ($account) => [
+            'id' => $account->id,
+            'account_id' => $account->account_id,
+            'account_name' => $account->account_name,
+            'ads_type' => $account->ads_type,
+            'main_team_id' => $account->main_team_id,
+        ])->values();
 
         // Group accounts by team
         $teamsData = $teams->map(fn (Team $team) => [
@@ -70,6 +87,7 @@ class GetAdsReportOptionsAction
                 'account_id' => $account->account_id,
                 'account_name' => $account->account_name,
                 'ads_type' => $account->ads_type,
+                'main_team_id' => $account->main_team_id,
             ])->values(),
         ]);
 
@@ -81,7 +99,12 @@ class GetAdsReportOptionsAction
             ->get();
 
         return [
+            'can_view_unscoped' => $canViewUnscoped,
             'show_team_filter' => $showTeamFilter,
+            'main_teams' => AdsReportAccess::canUseMainTeams($user)
+                ? MainTeam::query()->select(['id', 'name'])->orderBy('name')->get()
+                : collect(),
+            'accounts' => $accountsData,
             'teams' => $teamsData,
             'campaigns' => $campaigns,
         ];

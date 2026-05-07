@@ -26,12 +26,13 @@ export interface AdsReportStatsResponse {
 }
 
 export interface AdsReportStatsFilterParams {
-  account_id?: string | null
-  ads_type?: AdsReportAdsType | null
+  account_ids?: string[]
+  ads_types?: AdsReportAdsType[]
   campaign_ids?: string[]
   date_from?: string | null
   date_to?: string | null
-  team_id?: number | null
+  main_team_ids?: number[]
+  team_ids?: number[]
 }
 
 export interface AdsReportOptionAccount {
@@ -39,6 +40,12 @@ export interface AdsReportOptionAccount {
   account_id: string
   account_name: string | null
   ads_type: string
+  main_team_id: number | null
+}
+
+export interface AdsReportOptionMainTeam {
+  id: number
+  name: string
 }
 
 export interface AdsReportOptionTeam {
@@ -55,7 +62,10 @@ export interface AdsReportOptionCampaign {
 }
 
 export interface AdsReportOptionsData {
+  can_view_unscoped: boolean
   show_team_filter: boolean
+  main_teams: AdsReportOptionMainTeam[]
+  accounts: AdsReportOptionAccount[]
   teams: AdsReportOptionTeam[]
   campaigns: AdsReportOptionCampaign[]
 }

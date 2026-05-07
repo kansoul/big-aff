@@ -27,7 +27,11 @@ class ListGoogleConversionsAction
     {
         $query = Account::query()
             ->with('conversion')
-            ->where('ads_type', 'google');
+            ->where('ads_type', 'google')
+            ->when(config('main_system.is_main'), function ($query): void {
+                $query->whereNotNull('main_team_id')
+                    ->whereHas('mainTeam', fn ($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', true));
+            });
 
         (new AccountOwnerResource)->applyTo($query);
 

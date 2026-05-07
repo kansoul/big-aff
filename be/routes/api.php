@@ -90,7 +90,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('accounts', [OptionController::class, 'accounts']);
         Route::get('teams', [OptionController::class, 'teams']);
         Route::get('business-centers', [OptionController::class, 'businessCenters']);
-        Route::get('ads-report', [OptionController::class, 'adsReport']);
+        Route::get('ads-report', [OptionController::class, 'adsReport'])
+            ->middleware('permission.scope:'.Permission::AdsReportView->value);
     });
 
     Route::prefix('users')->group(function () {
