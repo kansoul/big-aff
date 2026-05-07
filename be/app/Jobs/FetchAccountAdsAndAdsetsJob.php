@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Actions\CampaignRule\AutoMatchAdAdsetRulesAction;
 use App\Enums\AdsType;
 use App\Models\Account;
 use App\Models\AdsetInsightsReport;
@@ -35,7 +36,7 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
         $this->onQueue(config('queue.queues.fetch-ads-adsets'));
     }
 
-    public function handle(FacebookAdsAdsetService $facebookService): void
+    public function handle(FacebookAdsAdsetService $facebookService, AutoMatchAdAdsetRulesAction $autoMatchAction): void
     {
         if ($this->batch()?->cancelled()) {
             return;
@@ -51,7 +52,7 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
             return;
         }
 
-        DB::transaction(function () use ($data): void {
+        DB::transaction(function () use ($data, $autoMatchAction): void {
             collect($data['adsets'])->chunk(500)->each(function ($chunk): void {
                 AdsetInsightsReport::upsert(
                     $chunk->values()->all(),
@@ -65,6 +66,8 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
                     ['ad_id', 'date_start'],
                 );
             });
+
+            $this->runAutoMatch($data, $autoMatchAction);
         });
 
         $this->dispatchRuleEvaluationJobs($data);
@@ -138,6 +141,34 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
                     });
             }
         }
+    }
+
+    /**
+     * @param  array{adsets: array<int, array<string, mixed>>, ads: array<int, array<string, mixed>>}  $data
+     */
+    private function runAutoMatch(array $data, AutoMatchAdAdsetRulesAction $action): void
+    {
+        $adIds = array_values(array_unique(array_filter(
+            array_column($data['ads'] ?? [], 'ad_id'),
+        )));
+
+        $adsetIds = array_values(array_unique(array_filter(
+            array_column($data['adsets'] ?? [], 'adset_id'),
+        )));
+
+        if (empty($adIds) && empty($adsetIds)) {
+            return;
+        }
+
+        $ads = ! empty($adIds)
+            ? AdsInsightsReport::whereIn('ad_id', $adIds)->get()
+            : collect();
+
+        $adsets = ! empty($adsetIds)
+            ? AdsetInsightsReport::whereIn('adset_id', $adsetIds)->get()
+            : collect();
+
+        $action->execute($ads, $adsets);
     }
 
     public function failed(Throwable $e): void
