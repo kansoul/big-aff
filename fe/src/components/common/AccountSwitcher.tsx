@@ -55,6 +55,7 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
         setUser(user)
         window.dispatchEvent(new Event('account-switched'))
         void navigate(PATHS.dashboard)
+        window.location.reload()
       } catch (err: unknown) {
         const status = (err as { response?: { status?: number } })?.response?.status
         if (status === 401 || status === 403) {

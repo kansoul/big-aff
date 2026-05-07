@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { Activity, Banknote, BarChart3, Landmark, Pause, Radio, Wallet } from 'lucide-react'
+import { Activity, BarChart3, Landmark, Pause, Radio, Wallet } from 'lucide-react'
 
 import { Card, CardContent } from '@/components/ui/card'
 import type { AdsReportStatsData } from '@/features/ads-report/types'
@@ -62,25 +62,6 @@ function buildItems(data: AdsReportStatsData): StatItem[] {
       tone: 'text-emerald-500',
     })
   })
-
-  if (data.show_revenue_profit) {
-    items.push({
-      label: 'Revenue',
-      value: data.revenue ?? '0',
-      hint: 'Total revenue',
-      icon: Banknote,
-      tone: 'text-emerald-500',
-    })
-
-    const profitNum = parseFloat((data.profit ?? '0').replace(/,/g, ''))
-    items.push({
-      label: 'Profit',
-      value: data.profit ?? '0',
-      hint: 'Revenue - Spend',
-      icon: BarChart3,
-      tone: profitNum >= 0 ? 'text-emerald-500' : 'text-rose-500',
-    })
-  }
 
   items.push({
     label: 'Total Reach',
