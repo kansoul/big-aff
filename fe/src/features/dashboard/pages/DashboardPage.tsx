@@ -621,13 +621,13 @@ export function DashboardPage() {
                 key={label}
                 className={`rounded-2xl border-border/50 shadow-sm bg-card px-2 md:px-4 py-4 flex items-start gap-3 ${lgOrder}`}
               >
-                <div className="min-w-0 flex-1 flex items-center gap-x-2">
+                <div className="min-w-0 flex-1 flex items-center gap-x-2 w-full">
                   <div
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg mt-0.5 ${iconClass}`}
                   >
                     <Calendar className="h-4 w-4" />
                   </div>
-                  <div>
+                  <div className="w-full min-w-0">
                     <div className="flex items-center gap-2 mb-2.5">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                         {label}
@@ -638,7 +638,7 @@ export function DashboardPage() {
                         {badge}
                       </span>
                     </div>
-                    <div className="grid grid-cols-4 gap-x-4">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 w-full min-w-0">
                       <div>
                         <p className="text-[10px] text-muted-foreground/70 mb-0.5">Revenue</p>
                         {statsLoading ? (
@@ -707,7 +707,7 @@ export function DashboardPage() {
 
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
               {/* TODAY SUMMARY */}
-              <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 min-w-0 flex-1">
+              <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-3 min-w-0 flex-1">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
                   <Calendar className="h-4 w-4" />
                 </div>
@@ -771,7 +771,7 @@ export function DashboardPage() {
                 </div>
               </div>
               {/* YESTERDAY SUMMARY */}
-              <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 min-w-0 flex-1">
+              <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-3 min-w-0 flex-1">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
                   <Calendar className="h-4 w-4" />
                 </div>
@@ -836,7 +836,7 @@ export function DashboardPage() {
               </div>
 
               {/* MONTH SUMMARY */}
-              <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 min-w-0 flex-1">
+              <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-3 min-w-0 flex-1">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
                   <Calendar className="h-4 w-4" />
                 </div>
@@ -845,7 +845,7 @@ export function DashboardPage() {
                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                       Month Summary
                     </span>
-                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
+                    <span className="rounded-full bg-emerald-500/10 px-1 py-0.5 text-[9px] font-semibold text-emerald-500">
                       Current month
                     </span>
                   </div>
@@ -1142,7 +1142,7 @@ export function DashboardPage() {
                 ? Array.from({ length: 3 }).map((_, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 min-w-0 flex-1"
+                      className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-3 min-w-0 flex-1"
                     >
                       <Skeleton className="h-9 w-9 rounded-lg shrink-0" />
                       <div className="flex-1 space-y-2">
@@ -1178,7 +1178,7 @@ export function DashboardPage() {
                       return (
                         <div
                           key={user.user_id}
-                          className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 min-w-0 flex-1"
+                          className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-3 min-w-0 flex-1"
                         >
                           <div
                             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg ${c.bg}`}
