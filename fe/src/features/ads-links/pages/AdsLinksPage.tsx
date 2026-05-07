@@ -43,7 +43,7 @@ const DEFAULT_FILTERS: AdsLinkFilterParams = {
   pixel_id: null,
   googleid: null,
   date_range: null,
-  is_hidden: undefined,
+  is_hidden: 0,
   order_by: null,
   order: null,
 }
@@ -60,8 +60,7 @@ function parseFilters(params: URLSearchParams): AdsLinkFilterParams {
     pixel_id: params.get('pixel_id'),
     googleid: params.get('googleid'),
     date_range: dateFrom || dateTo ? { from: dateFrom, to: dateTo } : null,
-    is_hidden:
-      params.get('is_hidden') !== null ? (Number(params.get('is_hidden')) as 0 | 1) : undefined,
+    is_hidden: params.get('is_hidden') !== null ? (Number(params.get('is_hidden')) as 0 | 1) : 0,
     order_by: params.get('order_by'),
     order: params.get('order') as 'asc' | 'desc' | null,
   }
