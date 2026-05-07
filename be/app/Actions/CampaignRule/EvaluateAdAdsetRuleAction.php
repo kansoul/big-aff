@@ -286,7 +286,7 @@ class EvaluateAdAdsetRuleAction
 
             $pad = 10;
             $message = "{$title}\n\n";
-            $message .= 'Time: ' . now()->format('d/m/Y H:i:s') . "\n";
+            $message .= 'Time: '.now()->format('d/m/Y H:i:s')."\n";
             $message .= "Rule: {$rule->title}\n";
             $message .= "{$prefix} ID: {$entityFbId}\n";
 
@@ -298,25 +298,25 @@ class EvaluateAdAdsetRuleAction
             $message .= "================\n\n";
             $message .= "*Metrics:*\n";
             $message .= "```\n";
-            $message .= str_pad('Metric', $pad) . str_pad('Current', $pad) . "Rule\n";
+            $message .= str_pad('Metric', $pad).str_pad('Current', $pad)."Rule\n";
 
-            $getOp = fn($current, $ruleVal) => match (true) {
+            $getOp = fn ($current, $ruleVal) => match (true) {
                 (float) str_replace(',', '', $current) > (float) $ruleVal => '>',
                 (float) str_replace(',', '', $current) < (float) $ruleVal => '<',
                 default => '=',
             };
 
-            $ruleRoi = $rule->min_roi ? " {$getOp($roi,$rule->min_roi)} {$rule->min_roi}%" : '-';
-            $message .= str_pad('ROI', $pad) . str_pad($roi . '%', $pad) . $ruleRoi . "\n";
+            $ruleRoi = $rule->min_roi ? " {$getOp($roi, $rule->min_roi)} {$rule->min_roi}%" : '-';
+            $message .= str_pad('ROI', $pad).str_pad($roi.'%', $pad).$ruleRoi."\n";
 
-            $ruleProfit = $rule->min_profit ? " {$getOp($profit,$rule->min_profit)} \${$rule->min_profit}" : '-';
-            $message .= str_pad('Profit', $pad) . str_pad('$' . $profit, $pad) . $ruleProfit . "\n";
+            $ruleProfit = $rule->min_profit ? " {$getOp($profit, $rule->min_profit)} \${$rule->min_profit}" : '-';
+            $message .= str_pad('Profit', $pad).str_pad('$'.$profit, $pad).$ruleProfit."\n";
 
-            $ruleSpend = $rule->min_spend ? " {$getOp($spend,$rule->min_spend)} \${$rule->min_spend}" : '-';
-            $message .= str_pad('Spend', $pad) . str_pad('$' . $spend, $pad) . $ruleSpend . "\n";
+            $ruleSpend = $rule->min_spend ? " {$getOp($spend, $rule->min_spend)} \${$rule->min_spend}" : '-';
+            $message .= str_pad('Spend', $pad).str_pad('$'.$spend, $pad).$ruleSpend."\n";
 
-            $ruleRev = $rule->min_revenue ? " {$getOp($revenue,$rule->min_revenue)} \${$rule->min_revenue}" : '-';
-            $message .= str_pad('Revenue', $pad) . str_pad('$' . $revenue, $pad) . $ruleRev . "\n";
+            $ruleRev = $rule->min_revenue ? " {$getOp($revenue, $rule->min_revenue)} \${$rule->min_revenue}" : '-';
+            $message .= str_pad('Revenue', $pad).str_pad('$'.$revenue, $pad).$ruleRev."\n";
 
             $message .= "```\n";
 
