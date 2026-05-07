@@ -32,8 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const user = await dashboardApi.getMe()
         setUser(user)
-      } catch {
-        logout()
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response?.status
+        if (status !== 401) {
+          logout()
+        }
       } finally {
         setLoading(false)
       }

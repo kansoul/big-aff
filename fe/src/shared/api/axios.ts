@@ -24,13 +24,22 @@ axiosInstance.interceptors.request.use((config) => {
   return config
 })
 
+let isHandlingUnauthorized = false
+
 axiosInstance.interceptors.response.use(
   (response) => {
     return response
   },
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    const url = error.config?.url ?? ''
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/sanctum/csrf-cookie')
+
+    if (error.response?.status === 401 && !isAuthEndpoint && !isHandlingUnauthorized) {
+      isHandlingUnauthorized = true
       window.dispatchEvent(new Event('unauthorized'))
+      setTimeout(() => {
+        isHandlingUnauthorized = false
+      }, 3000)
     }
     return Promise.reject(error)
   },
