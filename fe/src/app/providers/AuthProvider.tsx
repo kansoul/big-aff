@@ -21,10 +21,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         setLoading(true)
 
-        if (window.location.pathname === PATHS.login) {
-          return
-        }
-
         if (activeUserId === null || !sessions[activeUserId]) {
           logout()
           return
