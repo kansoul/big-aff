@@ -1,8 +1,8 @@
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, LogOut, Plus, UserRound } from 'lucide-react'
+import { Check, ImagePlus, LogOut, Plus, UserRound } from 'lucide-react'
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,8 @@ import type { User } from '@/shared/types'
 export const AccountSwitcher = React.memo(function AccountSwitcher() {
   const navigate = useNavigate()
   const [addOpen, setAddOpen] = React.useState(false)
+  const [avatarOpen, setAvatarOpen] = React.useState(false)
+  const [avatarUploading, setAvatarUploading] = React.useState(false)
 
   const user = useAuthStore((s) => s.user)
   const setUser = useAuthStore((s) => s.setUser)
@@ -85,6 +87,23 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
     }
   }, [activeUserId, removeSession, setUser, logout, navigate])
 
+  const handleAvatarChange = React.useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      setAvatarUploading(true)
+      try {
+        const updatedUser = await dashboardApi.uploadAvatar(file)
+        setUser(updatedUser)
+        setAvatarOpen(false)
+      } finally {
+        setAvatarUploading(false)
+        e.target.value = ''
+      }
+    },
+    [setUser],
+  )
+
   const handleAddSuccess = React.useCallback(
     (newUser: User, token: string) => {
       // Always upsert — if the account already existed, this refreshes its token.
@@ -101,6 +120,7 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Avatar className="h-8 w-8 cursor-pointer">
+            {user?.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
             <AvatarFallback>{user?.name?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
@@ -161,6 +181,14 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
             <span>Add account</span>
           </DropdownMenuItem>
 
+          <DropdownMenuItem
+            onClick={() => setAvatarOpen(true)}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <ImagePlus className="h-4 w-4" />
+            <span>Change avatar</span>
+          </DropdownMenuItem>
+
           <DropdownMenuSeparator />
 
           <DropdownMenuItem
@@ -183,6 +211,35 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
           </DialogHeader>
           <div className="pt-2">
             <LoginForm onSuccess={handleAddSuccess} submitLabel="Add account" />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={avatarOpen} onOpenChange={setAvatarOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Change avatar</DialogTitle>
+            <DialogDescription>
+              Upload a new profile picture. Supported formats: JPG, PNG, GIF, WebP (max 5 MB).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 pt-2">
+            <Avatar className="h-20 w-20">
+              {user?.avatar_url && <AvatarImage src={user.avatar_url} alt={user?.name} />}
+              <AvatarFallback className="text-2xl">
+                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <label className="flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground">
+              {avatarUploading ? 'Uploading…' : 'Choose image'}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={avatarUploading}
+                onChange={(e) => void handleAvatarChange(e)}
+              />
+            </label>
           </div>
         </DialogContent>
       </Dialog>

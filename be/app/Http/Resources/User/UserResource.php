@@ -36,6 +36,9 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'avatar_url' => $this->avatar
+                ? rtrim(config('app.url'), '/').'/storage/'.$this->avatar
+                : null,
             'permissions' => $permissions,
             'is_admin' => $this->is_admin,
             'is_main_system' => (bool) config('main_system.is_main'),

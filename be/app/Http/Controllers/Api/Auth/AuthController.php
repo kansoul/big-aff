@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Actions\User\UploadAvatarAction;
 use App\Enums\Auth\AuthStatus;
 use App\Http\Controllers\Api\BaseController;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\User\UserResource;
+use App\Models\User;
 use App\Services\Auth\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +19,8 @@ use Symfony\Component\HttpFoundation\Response;
 class AuthController extends BaseController
 {
     public function __construct(
-        private readonly AuthService $authService
+        private readonly AuthService $authService,
+        private readonly UploadAvatarAction $uploadAvatarAction,
     ) {}
 
     /**
@@ -107,6 +110,28 @@ class AuthController extends BaseController
                 code: Response::HTTP_INTERNAL_SERVER_ERROR
             ),
         };
+    }
+
+    /**
+     * Upload avatar
+     *
+     * Upload a new avatar image for the authenticated user.
+     *
+     * @response 200 {"data": {"avatar_url": "http://localhost/storage/avatar/uuid.jpg"}}
+     */
+    public function uploadAvatar(Request $request): JsonResponse
+    {
+        $request->validate([
+            'avatar' => ['required', 'image', 'max:5120'],
+        ]);
+
+        /** @var User $user */
+        $user = $request->user();
+        $user = $this->uploadAvatarAction->execute($user, $request->file('avatar'));
+
+        return $this->sendResponse([
+            'data' => new UserResource($user),
+        ]);
     }
 
     /**
