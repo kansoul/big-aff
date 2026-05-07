@@ -1,5 +1,6 @@
 export { PostsTableCard } from './PostsTableCard'
 export { PostFormSections } from './PostFormSections'
 export { DeletePostDialog } from './DeletePostDialog'
+export { AssignPostUsersDialog } from './AssignPostUsersDialog'
 export { AssignUserPostsTableCard } from './AssignUserPostsTableCard'
 export { AssignUserPostsPicker } from './AssignUserPostsPicker'

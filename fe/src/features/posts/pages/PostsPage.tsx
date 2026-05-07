@@ -5,10 +5,15 @@ import { toast } from 'sonner'
 
 import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { postsApi } from '@/features/posts/api'
-import { PostsTableCard, DeletePostDialog } from '@/features/posts/components'
+import {
+  PostsTableCard,
+  DeletePostDialog,
+  AssignPostUsersDialog,
+} from '@/features/posts/components'
 import { AssignPostsDialog } from '@/features/posts/components/AssignPostsDialog'
 import { formatApiError } from '@/features/settings/components'
 import type { Post, PostFilterParams, PostOrderBy } from '@/features/posts/types'
+import type { AssignChildOption } from '@/features/users/components/AssignUsersChildrenPicker'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { PATHS, postEditPath, postViewPath } from '@/constants/paths'
 import { useAuthStore } from '@/hooks/useAuthStore'
@@ -98,6 +103,12 @@ export function PostsPage() {
     })
 
   const [assignPostsOpen, setAssignPostsOpen] = useState(false)
+  const [assigningPost, setAssigningPost] = useState<Post | null>(null)
+  const [assignUserOptions, setAssignUserOptions] = useState<AssignChildOption[]>([])
+  const [assignUserIds, setAssignUserIds] = useState<number[]>([])
+  const [assignOptionsLoading, setAssignOptionsLoading] = useState(false)
+  const [assigningUsers, setAssigningUsers] = useState(false)
+  const [assignFlashError, setAssignFlashError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Post | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
@@ -166,8 +177,36 @@ export function PostsPage() {
     [navigate],
   )
 
+  const onAssignRow = useCallback((row: Post) => {
+    setAssigningPost(row)
+    setAssignUserOptions([])
+    setAssignUserIds([])
+    setAssignFlashError(null)
+
+    void (async () => {
+      try {
+        setAssignOptionsLoading(true)
+        const res = await postsApi.userOptions(row.id)
+        setAssignUserOptions(res.data.data as AssignChildOption[])
+        setAssignUserIds(res.data.assigned_user_ids)
+      } catch (err) {
+        setAssignFlashError(formatApiError(err))
+      } finally {
+        setAssignOptionsLoading(false)
+      }
+    })()
+  }, [])
+
   const onDeleteRow = useCallback((row: Post) => {
     setDeleteTarget(row)
+  }, [])
+
+  const onAssignPostsClick = useCallback(() => {
+    setAssignPostsOpen(true)
+  }, [])
+
+  const onAssignUsersOpenChange = useCallback((open: boolean) => {
+    if (!open) setAssigningPost(null)
   }, [])
 
   const onBulkDeleteClick = useCallback(() => {
@@ -211,6 +250,22 @@ export function PostsPage() {
     },
     [loadData],
   )
+
+  const onConfirmAssignUsers = useCallback(async () => {
+    if (!assigningPost) return
+
+    try {
+      setAssigningUsers(true)
+      setAssignFlashError(null)
+      await postsApi.assignUsers(assigningPost.id, assignUserIds)
+      toast.success(`Assigned ${assignUserIds.length} user(s) to "${assigningPost.title}".`)
+      setAssigningPost(null)
+    } catch (err) {
+      setAssignFlashError(formatApiError(err))
+    } finally {
+      setAssigningUsers(false)
+    }
+  }, [assigningPost, assignUserIds])
 
   const onConfirmBulkDelete = useCallback(async () => {
     const ids = Array.from(selectedIds)
@@ -263,9 +318,10 @@ export function PostsPage() {
         canPublish={canPublish}
         canAssignPosts={canAssignPosts}
         onAddClick={onAddClick}
-        onAssignPostsClick={() => setAssignPostsOpen(true)}
+        onAssignPostsClick={onAssignPostsClick}
         onViewRow={onViewRow}
         onEditRow={onEditRow}
+        onAssignRow={onAssignRow}
         onDeleteRow={onDeleteRow}
         onToggleHidden={onToggleHidden}
         onPublishRow={onPublishRow}
@@ -282,6 +338,20 @@ export function PostsPage() {
       />
 
       <AssignPostsDialog open={assignPostsOpen} onOpenChange={setAssignPostsOpen} />
+
+      <AssignPostUsersDialog
+        open={!!assigningPost}
+        onOpenChange={onAssignUsersOpenChange}
+        post={assigningPost}
+        options={assignUserOptions}
+        optionsLoading={assignOptionsLoading}
+        canAssign={canAssignPosts}
+        userIds={assignUserIds}
+        onUserIdsChange={setAssignUserIds}
+        saving={assigningUsers}
+        flashError={assignFlashError}
+        onSave={() => void onConfirmAssignUsers()}
+      />
 
       <BulkDeleteDialog
         open={bulkDeleteOpen}

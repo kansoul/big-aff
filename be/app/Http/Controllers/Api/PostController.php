@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\Permission;
+use App\Http\Requests\Post\AssignPostUsersRequest;
 use App\Http\Requests\Post\GetLatestPostsRequest;
 use App\Http\Requests\Post\GetPostBySlugRequest;
 use App\Http\Requests\Post\ListPostsRequest;
@@ -227,6 +228,48 @@ class PostController extends BaseController
         $updated = $this->postService->toggleHidden($post, $data['is_hidden']);
 
         return $this->sendResponse(['data' => new PostResource($updated)]);
+    }
+
+    /**
+     * Post user options
+     *
+     * Return users available to assign to a post, plus currently assigned user IDs in scope.
+     *
+     * @urlParam post integer required The post ID. Example: 1
+     *
+     * @response 200 {"data": [{"id": 1, "name": "John Doe", "email": "john@example.com"}], "assigned_user_ids": [1]}
+     * @response 403 {"message": "This action is unauthorized."}
+     * @response 404 {"message": "No query results for model [App\\Models\\Post] 1"}
+     */
+    public function userOptions(Post $post): JsonResponse
+    {
+        $result = $this->postService->userOptions($post);
+
+        return $this->sendResponse([
+            'data' => $result['options'],
+            'assigned_user_ids' => $result['assigned_user_ids'],
+        ]);
+    }
+
+    /**
+     * Assign users to post
+     *
+     * Sync users assigned to this post for view-only access.
+     *
+     * @urlParam post integer required The post ID. Example: 1
+     *
+     * @bodyParam user_ids integer[] required Array of user IDs to assign. Example: [1, 2, 3]
+     *
+     * @response 200 {"message": "Users assigned successfully."}
+     * @response 403 {"message": "This action is unauthorized."}
+     * @response 404 {"message": "No query results for model [App\\Models\\Post] 1"}
+     * @response 422 {"message": "The user_ids field is required.", "errors": {"user_ids": ["The user_ids field is required."]}}
+     */
+    public function assignUsers(AssignPostUsersRequest $request, Post $post): JsonResponse
+    {
+        $this->postService->assignUsers($post, $request->validated()['user_ids']);
+
+        return $this->sendResponse(['message' => 'Users assigned successfully.']);
     }
 
     /**

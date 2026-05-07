@@ -160,6 +160,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::PostsCreate->value);
         Route::get('{post}', [PostController::class, 'show'])
             ->middleware('permission.scope:'.Permission::PostsView->value);
+        Route::get('{post}/user-options', [PostController::class, 'userOptions'])
+            ->middleware('permission.scope:'.Permission::PostsAssign->value);
         Route::match(['put', 'patch'], '{post}', [PostController::class, 'update'])
             ->middleware('permission.scope:'.Permission::PostsUpdate->value);
         Route::delete('{post}', [PostController::class, 'destroy'])
@@ -168,6 +170,8 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::PostsPublish->value);
         Route::post('{post}/toggle-hidden', [PostController::class, 'toggleHidden'])
             ->middleware('permission.scope:'.Permission::PostsUpdate->value);
+        Route::post('{post}/assign-users', [PostController::class, 'assignUsers'])
+            ->middleware('permission.scope:'.Permission::PostsAssign->value);
     });
 
     Route::prefix('categories')->group(function () {

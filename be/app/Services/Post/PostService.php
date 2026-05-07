@@ -2,10 +2,12 @@
 
 namespace App\Services\Post;
 
+use App\Actions\Post\AssignPostUsersAction;
 use App\Actions\Post\CreatePostAction;
 use App\Actions\Post\DeletePostAction;
 use App\Actions\Post\GetLatestPostsAction;
 use App\Actions\Post\GetPostBySlugAction;
+use App\Actions\Post\GetPostUserOptionsAction;
 use App\Actions\Post\ListPostsAction;
 use App\Actions\Post\SearchPostsAction;
 use App\Actions\Post\ToggleHiddenPostAction;
@@ -14,6 +16,7 @@ use App\Models\Post;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Collection;
 
 class PostService
 {
@@ -22,6 +25,8 @@ class PostService
         private readonly CreatePostAction $createPostAction,
         private readonly UpdatePostAction $updatePostAction,
         private readonly DeletePostAction $deletePostAction,
+        private readonly AssignPostUsersAction $assignPostUsersAction,
+        private readonly GetPostUserOptionsAction $getPostUserOptionsAction,
         private readonly GetPostBySlugAction $getPostBySlugAction,
         private readonly SearchPostsAction $searchPostsAction,
         private readonly GetLatestPostsAction $getLatestPostsAction,
@@ -60,6 +65,22 @@ class PostService
     public function toggleHidden(Post $post, bool $isHidden): Post
     {
         return $this->toggleHiddenPostAction->execute($post, $isHidden);
+    }
+
+    /**
+     * @param  array<int>  $userIds
+     */
+    public function assignUsers(Post $post, array $userIds): void
+    {
+        $this->assignPostUsersAction->execute($post, $userIds);
+    }
+
+    /**
+     * @return array{options: Collection<int, array{id: int, name: string, email: string}>, assigned_user_ids: array<int>}
+     */
+    public function userOptions(Post $post): array
+    {
+        return $this->getPostUserOptionsAction->execute($post);
     }
 
     /**

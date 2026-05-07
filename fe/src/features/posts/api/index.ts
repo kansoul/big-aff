@@ -74,6 +74,15 @@ export const postsApi = {
 
   toggleHidden: (id: number, isHidden: boolean) =>
     axiosInstance.post<{ data: Post }>(`/posts/${id}/toggle-hidden`, { is_hidden: isHidden }),
+
+  userOptions: (id: number) =>
+    axiosInstance.get<{
+      data: { id: number; name: string; email: string }[]
+      assigned_user_ids: number[]
+    }>(`/posts/${id}/user-options`),
+
+  assignUsers: (id: number, userIds: number[]) =>
+    axiosInstance.post(`/posts/${id}/assign-users`, { user_ids: userIds }),
 }
 
 export const userOptionsApi = {

@@ -17,6 +17,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  UserPlus,
 } from 'lucide-react'
 import dayjs from '@/lib/dayjs'
 
@@ -54,7 +55,9 @@ type ActionMeta = {
   canUpdate: boolean
   canDelete: boolean
   canPublish: boolean
+  canAssignPosts: boolean
   onViewRow: (row: Post) => void
+  onAssignRow: (row: Post) => void
   onEditRow: (row: Post) => void
   onDeleteRow: (row: Post) => void
   onToggleHidden: (row: Post) => void
@@ -74,7 +77,9 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
     canUpdate,
     canDelete,
     canPublish,
+    canAssignPosts,
     onEditRow,
+    onAssignRow,
     onDeleteRow,
     onToggleHidden,
     onPublishRow,
@@ -235,25 +240,43 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
           <span className="text-muted-foreground/25 text-xs">—</span>
         ),
     },
-    ...(canUpdate || canDelete || canPublish
+    ...(canUpdate || canDelete || canPublish || canAssignPosts
       ? [
           {
             id: 'actions',
             header: 'Actions',
-            size: 148,
+            size: 184,
             enableSorting: false,
             enableGlobalFilter: false,
             enableHiding: false,
             mantineTableHeadCellProps: {
               sx: {
-                width: 148,
+                width: 184,
                 '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
               },
             },
-            mantineTableBodyCellProps: { style: { width: 148 } },
+            mantineTableBodyCellProps: { style: { width: 184 } },
             Cell: ({ row }: { row: { original: Post } }) => (
               <TooltipProvider>
                 <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  {canAssignPosts ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() => onAssignRow(row.original)}
+                        >
+                          <UserPlus className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Assign users
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
                   {canUpdate ? (
                     <>
                       <Tooltip>
@@ -377,6 +400,7 @@ type PostsTableCardProps = {
   onAssignPostsClick: () => void
   onViewRow: (row: Post) => void
   onEditRow: (row: Post) => void
+  onAssignRow: (row: Post) => void
   onDeleteRow: (row: Post) => void
   onToggleHidden: (row: Post) => void
   onPublishRow: (row: Post, publish: boolean) => void
@@ -405,6 +429,7 @@ function PostsTableCardInner({
   onAssignPostsClick,
   onViewRow,
   onEditRow,
+  onAssignRow,
   onDeleteRow,
   onToggleHidden,
   onPublishRow,
@@ -436,7 +461,9 @@ function PostsTableCardInner({
         canUpdate,
         canDelete,
         canPublish,
+        canAssignPosts: canAssignPosts && !role.isMember,
         onViewRow,
+        onAssignRow,
         onEditRow,
         onDeleteRow,
         onToggleHidden,
@@ -447,7 +474,9 @@ function PostsTableCardInner({
       canUpdate,
       canDelete,
       canPublish,
+      canAssignPosts,
       onViewRow,
+      onAssignRow,
       onEditRow,
       onDeleteRow,
       onToggleHidden,
