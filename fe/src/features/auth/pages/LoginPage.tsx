@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { LockKeyhole, Shield, Server } from 'lucide-react'
 
 import logoRed from '@/assets/logo-s-red.png'
@@ -50,6 +50,11 @@ export function LoginPage() {
   const setUser = useAuthStore((s) => s.setUser)
   const showTripLogo = Boolean(siteDomain === 'ticollab')
   const addSession = useSessionStore((s) => s.addSession)
+  const activeUserId = useSessionStore((s) => s.activeUserId)
+
+  if (activeUserId !== null) {
+    return <Navigate to={PATHS.dashboard} replace />
+  }
 
   const handleSuccess = (user: User, token: string) => {
     addSession(user, token)
