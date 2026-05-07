@@ -7,6 +7,7 @@ use App\Http\Resources\RevenueStats\TeamRevenueResource;
 use App\Http\Resources\RevenueStats\UserRevenueResource;
 use App\Models\Team;
 use App\Services\RevenueStats\RevenueStatsService;
+use App\Support\Accounts\AccountsAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -110,8 +111,6 @@ class RevenueStatsController extends BaseController
 
     private function canUseMainTeams(): bool
     {
-        $user = request()->user();
-
-        return $user !== null && $user->is_admin;
+        return AccountsAccess::canUseMainTeams(request()->user());
     }
 }

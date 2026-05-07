@@ -60,6 +60,7 @@ class AccountController extends BaseController
      *
      * @bodyParam ads_type string required Ads platform type. Enum: facebook, google. Example: facebook
      * @bodyParam business_center_id integer optional Business center ID. Example: 1
+     * @bodyParam main_team_id integer optional Main team ID, only on main system for admin. Example: 1
      * @bodyParam team_id integer optional Team ID. Example: 1
      * @bodyParam status string optional Account status (max 50). Example: active
      * @bodyParam is_special boolean optional Whether to fetch data. Example: false
@@ -73,7 +74,7 @@ class AccountController extends BaseController
     {
         $result = $this->accountService->bulkCreate($request->validated());
 
-        $accounts = Collection::make($result['created'])->load(['businessCenter', 'team']);
+        $accounts = Collection::make($result['created'])->load(['businessCenter', 'mainTeam', 'team', 'users']);
 
         return $this->sendResponse(
             [
@@ -96,7 +97,7 @@ class AccountController extends BaseController
      */
     public function show(Account $account): JsonResponse
     {
-        $account->load(['businessCenter', 'team']);
+        $account->load(['businessCenter', 'mainTeam', 'team', 'users']);
 
         return $this->sendResponse(
             ['data' => new AccountResource($account)]
@@ -114,6 +115,7 @@ class AccountController extends BaseController
      * @bodyParam account_name string optional Account display name (max 255). Example: Updated Account
      * @bodyParam ads_type string optional Ads platform type. Enum: facebook, google. Example: google
      * @bodyParam business_center_id integer optional Business center ID. Pass null to remove. Example: 1
+     * @bodyParam main_team_id integer optional Main team ID, only on main system for admin. Pass null to remove. Example: 1
      * @bodyParam team_id integer optional Team ID. Pass null to remove. Example: 1
      * @bodyParam status string optional Account status (max 50). Pass null to remove. Example: paused
      * @bodyParam is_special boolean optional Whether to fetch data. Example: true

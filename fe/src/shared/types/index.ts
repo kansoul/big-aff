@@ -5,6 +5,7 @@ export interface User {
   permissions: string[]
   is_admin: boolean
   is_main_system: boolean
+  can_view_accounts_unscoped: boolean
   can_view_ads_report_unscoped: boolean
   roles: UserRole[]
 }

@@ -3,6 +3,7 @@
 namespace App\Actions\Account;
 
 use App\Models\Account;
+use App\Support\Accounts\AccountsAccess;
 use App\Support\OwnerResource\AccountOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
@@ -17,14 +18,16 @@ class UpdateAccountAction
      */
     public function execute(Account $account, array $data): Account
     {
-        (new AccountOwnerResource)->authorize($account);
-
         $user = Auth::user();
+        if (! AccountsAccess::canViewUnscoped($user)) {
+            (new AccountOwnerResource)->authorize($account);
+        }
+
         $userId = array_key_exists('user_id', $data) ? ($data['user_id'] !== null ? (int) $data['user_id'] : null) : false;
 
         // If user_id is explicitly set to null (or not provided in a way that maps to null)
         // and current user is not admin, auto-assign to current user to prevent loss of visibility.
-        if ($userId === null && ! $user?->is_admin) {
+        if ($userId === null && ! AccountsAccess::canViewUnscoped($user)) {
             $userId = $user?->id;
         }
         unset($data['user_id']);
@@ -45,6 +48,6 @@ class UpdateAccountAction
             }
         }
 
-        return $account->fresh(['businessCenter', 'users']);
+        return $account->fresh(['businessCenter', 'mainTeam', 'users']);
     }
 }

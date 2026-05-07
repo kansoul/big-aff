@@ -3,8 +3,10 @@
 namespace App\Actions\Account;
 
 use App\Models\Account;
+use App\Support\Accounts\AccountsAccess;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class GetAccountAssignOptionsAction
 {
@@ -20,7 +22,9 @@ class GetAccountAssignOptionsAction
             ->select(['id', 'account_id', 'account_name', 'team_id'])
             ->orderBy('account_name');
 
-        (new AccountLinkedOwnerResource)->applyTo($query);
+        if (! AccountsAccess::canViewUnscoped(Auth::user())) {
+            (new AccountLinkedOwnerResource)->applyTo($query);
+        }
 
         return $query->get();
     }

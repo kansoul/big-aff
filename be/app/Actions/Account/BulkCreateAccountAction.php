@@ -3,6 +3,7 @@
 namespace App\Actions\Account;
 
 use App\Models\Account;
+use App\Support\Accounts\AccountsAccess;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -20,13 +21,14 @@ class BulkCreateAccountAction
         $userId = isset($data['user_id']) ? (int) $data['user_id'] : null;
 
         // If not admin and user_id is null, auto-assign to current user
-        if ($userId === null && ! $user?->is_admin) {
+        if ($userId === null && ! AccountsAccess::canViewUnscoped($user)) {
             $userId = $user?->id;
         }
 
         $sharedFields = collect($data)->only([
             'ads_type',
             'business_center_id',
+            'main_team_id',
             'status',
             'is_special',
             'sync_to_mcc',

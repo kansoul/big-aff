@@ -3,10 +3,12 @@
 namespace App\Actions\Account;
 
 use App\Models\Account;
+use App\Support\Accounts\AccountsAccess;
 use App\Support\OwnerResource\AccountOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class ListAccountsAction
 {
@@ -29,7 +31,9 @@ class ListAccountsAction
     {
         $query = Account::query()->with(['businessCenter', 'users']);
 
-        (new AccountOwnerResource)->applyTo($query);
+        if (! AccountsAccess::canViewUnscoped(Auth::user())) {
+            (new AccountOwnerResource)->applyTo($query);
+        }
 
         if (! empty($filters['query'])) {
             $queryString = $filters['query'];

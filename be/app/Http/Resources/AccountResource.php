@@ -23,6 +23,7 @@ class AccountResource extends JsonResource
                 'id' => $this->businessCenter?->id,
                 'name' => $this->businessCenter?->name,
             ]),
+            'main_team_id' => $this->main_team_id,
             'account_id' => $this->account_id,
             'account_name' => $this->account_name,
             'ads_type' => $this->ads_type,

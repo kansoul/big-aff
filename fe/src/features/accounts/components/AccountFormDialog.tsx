@@ -38,6 +38,7 @@ import {
 } from '@/features/accounts/types'
 import { formatApiError } from '@/features/settings/components'
 import { usersApi } from '@/features/users/api/users'
+import { useAuthStore } from '@/hooks/useAuthStore'
 
 const ADS_TYPE_OPTIONS = [
   { value: 'facebook', label: 'Facebook' },
@@ -69,6 +70,40 @@ function useUsers(): SearchableSelectOption[] {
   return useMemo(() => users.map((u) => ({ value: String(u.id), label: u.name })), [users])
 }
 
+function useMainTeams(enabled: boolean): SearchableSelectOption[] {
+  const [mainTeams, setMainTeams] = useState<{ id: number; name: string }[]>([])
+
+  useEffect(() => {
+    if (!enabled) {
+      return
+    }
+
+    let ignore = false
+    accountsApi
+      .mainTeamOptions()
+      .then((res) => {
+        if (!ignore) {
+          setMainTeams(res.data.data)
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setMainTeams([])
+        }
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [enabled])
+
+  return useMemo(() => {
+    if (!enabled) return []
+
+    return mainTeams.map((team) => ({ value: String(team.id), label: team.name }))
+  }, [enabled, mainTeams])
+}
+
 type CreateAccountDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -84,13 +119,18 @@ export function CreateAccountDialog({
 }: CreateAccountDialogProps) {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const canAssignMainTeam = useAuthStore((state) =>
+    Boolean(state.user?.is_main_system && state.user.can_view_accounts_unscoped),
+  )
   const userOptions = useUsers()
+  const mainTeamOptions = useMainTeams(open && canAssignMainTeam)
 
   const form = useForm<AccountCreateFormValues>({
     resolver: zodResolver(accountCreateSchema),
     defaultValues: {
       ads_type: 'facebook',
       business_center_id: null,
+      main_team_id: null,
       user_id: null,
       status: null,
       is_special: false,
@@ -105,6 +145,7 @@ export function CreateAccountDialog({
     form.reset({
       ads_type: 'facebook',
       business_center_id: null,
+      main_team_id: null,
       user_id: null,
       status: null,
       is_special: false,
@@ -123,6 +164,7 @@ export function CreateAccountDialog({
       await accountsApi.create({
         ads_type: values.ads_type,
         business_center_id: values.business_center_id,
+        ...(canAssignMainTeam ? { main_team_id: values.main_team_id } : {}),
         user_id: values.user_id,
         status: values.status,
         is_special: values.is_special,
@@ -134,6 +176,7 @@ export function CreateAccountDialog({
         form.reset({
           ads_type: 'facebook',
           business_center_id: null,
+          main_team_id: null,
           user_id: null,
           status: null,
           is_special: false,
@@ -233,6 +276,30 @@ export function CreateAccountDialog({
                 </FormItem>
               )}
             />
+
+            {canAssignMainTeam ? (
+              <FormField
+                control={form.control}
+                name="main_team_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Main Team</FormLabel>
+                    <FormControl>
+                      <SearchableSelect
+                        value={field.value != null ? String(field.value) : '__none__'}
+                        onValueChange={(value) =>
+                          field.onChange(value === '__none__' ? null : Number(value))
+                        }
+                        options={[{ value: '__none__', label: 'None' }, ...mainTeamOptions]}
+                        placeholder="Select main team"
+                        disabled={submitting}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
 
             <FormField
               control={form.control}
@@ -378,7 +445,11 @@ export function EditAccountDialog({
   const open = account !== null
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const canAssignMainTeam = useAuthStore((state) =>
+    Boolean(state.user?.is_main_system && state.user.can_view_accounts_unscoped),
+  )
   const userOptions = useUsers()
+  const mainTeamOptions = useMainTeams(open && canAssignMainTeam)
 
   const form = useForm<AccountUpdateFormValues>({
     resolver: zodResolver(accountUpdateSchema),
@@ -387,6 +458,7 @@ export function EditAccountDialog({
       account_name: null,
       ads_type: 'facebook',
       business_center_id: null,
+      main_team_id: null,
       user_id: null,
       status: null,
       is_special: false,
@@ -402,6 +474,7 @@ export function EditAccountDialog({
         ? 'facebook'
         : (account?.ads_type ?? 'facebook')) as 'facebook' | 'google',
       business_center_id: account?.business_center_id ?? null,
+      main_team_id: account?.main_team_id ?? null,
       user_id: account?.user_id ?? null,
       status: account?.status ?? null,
       is_special: account?.is_special ?? false,
@@ -427,6 +500,7 @@ export function EditAccountDialog({
         account_name: values.account_name,
         ads_type: values.ads_type,
         business_center_id: values.business_center_id,
+        ...(canAssignMainTeam ? { main_team_id: values.main_team_id } : {}),
         user_id: values.user_id,
         status: values.status,
         is_special: values.is_special,
@@ -559,6 +633,30 @@ export function EditAccountDialog({
                 </FormItem>
               )}
             />
+
+            {canAssignMainTeam ? (
+              <FormField
+                control={form.control}
+                name="main_team_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Main Team</FormLabel>
+                    <FormControl>
+                      <SearchableSelect
+                        value={field.value != null ? String(field.value) : '__none__'}
+                        onValueChange={(value) =>
+                          field.onChange(value === '__none__' ? null : Number(value))
+                        }
+                        options={[{ value: '__none__', label: 'None' }, ...mainTeamOptions]}
+                        placeholder="Select main team"
+                        disabled={submitting}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
 
             <FormField
               control={form.control}

@@ -3,8 +3,10 @@
 namespace App\Actions\Account;
 
 use App\Models\Account;
+use App\Support\Accounts\AccountsAccess;
 use App\Support\OwnerResource\AccountOwnerResource;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class GetAccountOptionsAction
@@ -17,7 +19,9 @@ class GetAccountOptionsAction
         $query = Account::query()
             ->select(['id', 'account_id', 'account_name', 'team_id'])
             ->orderBy('account_name');
-        (new AccountOwnerResource)->applyTo($query);
+        if (! AccountsAccess::canViewUnscoped(Auth::user())) {
+            (new AccountOwnerResource)->applyTo($query);
+        }
 
         if ($userId !== null) {
             $teamIds = DB::table('team_user')

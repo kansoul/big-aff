@@ -50,6 +50,9 @@ export const accountsApi = {
     return response.data
   },
 
+  mainTeamOptions: () =>
+    axiosInstance.get<{ data: { id: number; name: string }[] }>('/revenue-stats/main-team-options'),
+
   list: (filters: AccountFilterParams) =>
     axiosInstance.get<AccountListResponse>('/accounts', {
       params: {
@@ -70,6 +73,9 @@ export const accountsApi = {
     axiosInstance.post<{ data: Account }>('/accounts', {
       ads_type: payload.ads_type,
       business_center_id: payload.business_center_id ?? null,
+      ...(Object.prototype.hasOwnProperty.call(payload, 'main_team_id')
+        ? { main_team_id: payload.main_team_id ?? null }
+        : {}),
       user_id: payload.user_id ?? null,
       status: payload.status ?? null,
       is_special: payload.is_special ?? false,
@@ -83,6 +89,9 @@ export const accountsApi = {
       account_name: payload.account_name ?? null,
       ads_type: payload.ads_type,
       business_center_id: payload.business_center_id ?? null,
+      ...(Object.prototype.hasOwnProperty.call(payload, 'main_team_id')
+        ? { main_team_id: payload.main_team_id ?? null }
+        : {}),
       user_id: payload.user_id ?? null,
       status: payload.status ?? null,
       is_special: payload.is_special,

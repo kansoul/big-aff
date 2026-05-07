@@ -4,8 +4,10 @@ namespace App\Actions\Option;
 
 use App\Enums\UserStatus;
 use App\Models\User;
+use App\Support\Accounts\AccountsAccess;
 use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class GetUserOptionsAction
 {
@@ -19,7 +21,9 @@ class GetUserOptionsAction
             ->where('status', UserStatus::Active)
             ->orderBy('name');
 
-        (new UserOwnerResource)->applyTo($query);
+        if (! AccountsAccess::canViewUnscoped(Auth::user())) {
+            (new UserOwnerResource)->applyTo($query);
+        }
 
         return $query->get();
     }

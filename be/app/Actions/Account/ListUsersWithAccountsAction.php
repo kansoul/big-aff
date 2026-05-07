@@ -3,10 +3,12 @@
 namespace App\Actions\Account;
 
 use App\Models\User;
+use App\Support\Accounts\AccountsAccess;
 use App\Support\OwnerResource\UserOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class ListUsersWithAccountsAction
 {
@@ -20,7 +22,9 @@ class ListUsersWithAccountsAction
         $query = User::query()
             ->with(['accounts:id,account_id,account_name']);
 
-        (new UserOwnerResource)->applyTo($query);
+        if (! AccountsAccess::canViewUnscoped(Auth::user())) {
+            (new UserOwnerResource)->applyTo($query);
+        }
 
         $query->when(
             ! empty($filters['query']),

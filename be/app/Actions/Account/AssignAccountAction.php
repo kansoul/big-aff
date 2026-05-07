@@ -4,6 +4,7 @@ namespace App\Actions\Account;
 
 use App\Models\Account;
 use App\Models\User;
+use App\Support\Accounts\AccountsAccess;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\OwnerResource\UserOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -24,7 +25,11 @@ class AssignAccountAction
      */
     public function execute(User $user, array $accountIds): array
     {
-        (new UserOwnerResource)->authorize($user);
+        $canViewUnscoped = AccountsAccess::canViewUnscoped(Auth::user());
+
+        if (! $canViewUnscoped) {
+            (new UserOwnerResource)->authorize($user);
+        }
 
         $requestedAccountIds = collect($accountIds)
             ->map(fn ($id) => trim((string) $id))
@@ -34,7 +39,9 @@ class AssignAccountAction
 
         /** @var Collection<int, Account> $accessibleAccounts */
         $accessibleQuery = Account::query()->select(['id', 'account_id']);
-        (new AccountLinkedOwnerResource)->applyTo($accessibleQuery);
+        if (! $canViewUnscoped) {
+            (new AccountLinkedOwnerResource)->applyTo($accessibleQuery);
+        }
         $accessibleAccounts = $accessibleQuery->get();
 
         $accessibleAccountDbIds = $accessibleAccounts
