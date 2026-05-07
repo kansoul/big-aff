@@ -857,6 +857,36 @@ function getColumns(
     }
   })()
 
+  // ── CTR Keyword (yellow) — r_funnel_impressions / r_funnel_requests * 100 ──
+  const colCtrKeyword: MRT_ColumnDef<TableRow> = (() => {
+    const footerText = summary ? `${formatDecimal(summary.ctr_keyword)}%` : null
+    return {
+      accessorKey: 'ctr_keyword',
+      header: 'CTR Kw',
+      Header: <HeaderLabel icon="yellow">CTR Kw</HeaderLabel>,
+      size: autoSize(90, footerText),
+      enableSorting: false,
+      Cell: ({ row }) => {
+        const v = isGroupRow(row.original)
+          ? row.original.group_summary.ctr_keyword
+          : row.original.ctr_keyword
+        if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
+        const vFormatted = `${formatDecimal(v)}%`
+        return (
+          <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
+            {vFormatted}
+          </span>
+        )
+      },
+      Footer: () =>
+        footerText ? (
+          <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+            {footerText}
+          </span>
+        ) : null,
+    }
+  })()
+
   const colRtCtrKeyword: MRT_ColumnDef<TableRow> = (() => {
     const footerText = summary ? `${formatDecimal(summary.rt_ctr_keyword)}%` : null
     return {
@@ -1078,6 +1108,7 @@ function getColumns(
     count('a_clicks', 'A. C.Kw', 105, 'blue'),
     count('r_funnel_requests', 'Kw Request', 120, 'yellow'),
     colRtCtrKeyword,
+    colCtrKeyword,
     count('r_funnel_impressions', 'Kw Impr', 105, 'yellow'),
     ratio('r_funnel_rpm', 'Kw RPM', 110, 2, 'yellow'),
 

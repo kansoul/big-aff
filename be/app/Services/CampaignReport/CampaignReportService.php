@@ -500,6 +500,7 @@ class CampaignReportService
             'rt_view_search_count' => 0.0,
             'rt_view_article_count' => 0.0,
             'cvr' => 0.0,
+            'ctr_keyword' => 0.0,
             'rt_cpa' => 0.0,
             'rt_cvr' => 0.0,
             'rt_ctr_keyword' => 0.0,
@@ -582,7 +583,9 @@ class CampaignReportService
         $summary['rt_click_keyword_count'] = $rtClickKeywordCount;
         $summary['rt_view_search_count'] = $rtViewSearchCount;
         $summary['rt_view_article_count'] = (int) ($summary['rt_view_article_count'] ?? 0);
+        $rFunnelImpressions = (float) ($summary['r_funnel_impressions'] ?? 0);
         $summary['cvr'] = $rFunnelRequests > 0 ? round(((float) ($summary['r_conversion'] ?? 0) / $rFunnelRequests) * 100, 4) : 0.0;
+        $summary['ctr_keyword'] = $rFunnelRequests > 0 ? round(($rFunnelImpressions / $rFunnelRequests) * 100, 4) : 0.0;
         $summary['rt_cpa'] = $rtClickAdCount > 0 ? round($spend / $rtClickAdCount, 4) : 0.0;
         $summary['rt_cvr'] = $rFunnelRequests > 0 ? round(($rtClickAdCount / $rFunnelRequests) * 100, 4) : 0.0;
         $summary['rt_ctr_keyword'] = $rFunnelRequests > 0 ? round(($rtClickKeywordCount / $rFunnelRequests) * 100, 4) : 0.0;
