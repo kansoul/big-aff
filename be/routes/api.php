@@ -43,6 +43,7 @@ use App\Http\Controllers\Api\UserTablePreferenceController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/switch', [AuthController::class, 'switch']);
 
 Route::middleware('check.whitelist')->group(function () {
     Route::prefix('follow')->group(function (): void {

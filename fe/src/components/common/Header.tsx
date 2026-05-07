@@ -1,15 +1,7 @@
+import { AccountSwitcher } from '@/components/common/AccountSwitcher'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetDescription, SheetHeader } from '@/components/ui/sheet'
 import {
   NavigationMenu,
@@ -22,7 +14,6 @@ import {
 import { NAVIGATION_ITEMS, type NavItem, type NavSubItem } from '@/constants/header'
 import { PATHS, type NavSectionId } from '@/constants/paths'
 import { hasPermission } from '@/constants/permissions'
-import { dashboardApi } from '@/features/dashboard/api'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { useIsMobile } from '@/hooks/useMobile'
 import { useTheme } from '@/hooks/useTheme'
@@ -34,9 +25,9 @@ import logoNexaLight from '@/assets/logo-nexa.png'
 import tripLogo from '@/assets/trip-logo.png'
 
 import { cn } from '@/lib/utils'
-import { ChevronDown, LogOut, Menu } from 'lucide-react'
+import { ChevronDown, Menu } from 'lucide-react'
 import * as React from 'react'
-import { Link, NavLink, useLocation, useMatch, useMatches, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useLocation, useMatch, useMatches } from 'react-router-dom'
 import { siteDomain } from '@/config'
 
 const navTabActive = 'text-red-600 border-b-2 border-red-600 dark:text-red-400 dark:border-red-400'
@@ -285,9 +276,7 @@ const MobileNav = React.memo(function MobileNav({
 export const Header = React.memo(function Header() {
   const location = useLocation()
   const activeNavSection = useActiveNavSection()
-  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const logout = useAuthStore((s) => s.logout)
   const { theme } = useTheme()
   const isMobile = useIsMobile()
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false)
@@ -303,17 +292,6 @@ export const Header = React.memo(function Header() {
   }, [location.pathname])
 
   const closeMobileNav = React.useCallback(() => setMobileNavOpen(false), [])
-
-  const handleLogout = React.useCallback(async () => {
-    try {
-      await dashboardApi.logout()
-    } catch (err) {
-      console.error('Logout failed', err)
-    } finally {
-      logout()
-      void navigate(PATHS.login)
-    }
-  }, [logout, navigate])
 
   const openMobileNav = React.useCallback(() => setMobileNavOpen(true), [])
 
@@ -427,31 +405,7 @@ export const Header = React.memo(function Header() {
 
         <div className={cn('flex shrink-0 items-center gap-2', !isMobile && 'md:gap-4')}>
           <ThemeToggle />
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Avatar className="h-8 w-8 cursor-pointer">
-                <AvatarImage src="https://github.com/shadcn.png" alt="@user" />
-                <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col gap-2 p-2">
-                  <p className="text-sm font-medium leading-none">{user?.name}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => void handleLogout()}
-                className="text-destructive focus:text-destructive cursor-pointer"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <AccountSwitcher />
         </div>
       </div>
     </header>

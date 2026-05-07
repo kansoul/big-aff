@@ -38,6 +38,7 @@ class AuthController extends BaseController
             AuthStatus::SUCCESS => $this->sendResponse(
                 [
                     'data' => new UserResource($result['user']),
+                    'token' => $result['token'],
                 ]
             ),
             AuthStatus::INVALID_CREDENTIALS => $this->sendError(
@@ -73,6 +74,39 @@ class AuthController extends BaseController
                 'data' => new UserResource($user),
             ]
         );
+    }
+
+    /**
+     * Switch account
+     *
+     * Validate a stored PAT and update the server session to that user.
+     * The response sets a new laravel_session cookie so subsequent
+     * cookie-based requests are authenticated as the target user.
+     *
+     * @unauthenticated
+     *
+     * @response 200 {"data": {"id": 2, "name": "Leader", "email": "leader@example.com", "permissions": []}}
+     * @response 401 {"success": false, "message": "Invalid or expired token.", "data": null}
+     */
+    public function switch(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['token' => ['required', 'string']]);
+
+        $result = $this->authService->switchAccount($validated['token']);
+
+        return match ($result['status']) {
+            AuthStatus::SUCCESS => $this->sendResponse(
+                ['data' => new UserResource($result['user'])]
+            ),
+            AuthStatus::INVALID_CREDENTIALS => $this->sendError(
+                error: $result['message'],
+                code: Response::HTTP_UNAUTHORIZED
+            ),
+            default => $this->sendError(
+                error: $result['message'],
+                code: Response::HTTP_INTERNAL_SERVER_ERROR
+            ),
+        };
     }
 
     /**

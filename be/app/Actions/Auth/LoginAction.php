@@ -10,10 +10,11 @@ class LoginAction
 {
     /**
      * @param  array{email: string, password: string}  $credentials
+     * @return array{user: User, token: string}
      *
      * @throws AuthenticationException
      */
-    public function execute(array $credentials, bool $remember = false): User
+    public function execute(array $credentials, bool $remember = false): array
     {
         unset($credentials['remember']);
         if (! Auth::attempt($credentials, $remember)) {
@@ -28,6 +29,9 @@ class LoginAction
             request()->session()->regenerate();
         }
 
-        return $user;
+        $expiresAt = $remember ? now()->addYear() : now()->addDays(10);
+        $token = $user->createToken('web-session', ['*'], $expiresAt)->plainTextToken;
+
+        return ['user' => $user, 'token' => $token];
     }
 }
