@@ -89,10 +89,7 @@ const schema = z
     min_roi: z
       .string()
       .optional()
-      .refine(
-        (value) => isNullableNumberString(value, { min: 0 }),
-        'Min ROI must be greater than or equal to 0',
-      ),
+      .refine((value) => isNullableNumberString(value), 'Min ROI must be a valid number'),
     min_profit: z
       .string()
       .optional()
