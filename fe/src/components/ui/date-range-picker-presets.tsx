@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/hooks/useMobile'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
-import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from '@/components/ui/drawer'
+import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 export type DateRangeValue = { from: string | null; to: string | null }
@@ -192,11 +192,13 @@ export function DateRangePickerPresets({
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={handleOpenChange}>
-        <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>
-        <DrawerContent className="max-h-[92vh]">
-          {/* fix: flex-1 so children can use overflow correctly */}
-          <div className="flex flex-1 flex-col overflow-hidden">
+      <>
+        <div onClick={() => handleOpenChange(true)}>{triggerButton}</div>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+          <DialogContent
+            showCloseButton={false}
+            className="max-h-[90dvh] w-[calc(100vw-2rem)] max-w-sm p-0 gap-0 flex flex-col overflow-hidden min-h-0"
+          >
             {/* Presets — gradient fade indicates scrollability */}
             <div className="relative shrink-0 border-b">
               <div className="flex overflow-x-auto no-scrollbar px-3 py-2.5 gap-2">
@@ -240,19 +242,19 @@ export function DateRangePickerPresets({
                 {draftLabel || 'Select dates'}
               </span>
               <div className="flex gap-2 shrink-0">
-                <DrawerClose asChild>
+                <DialogClose asChild>
                   <Button type="button" variant="outline" size="sm" className="h-9 px-4 text-sm">
                     Cancel
                   </Button>
-                </DrawerClose>
+                </DialogClose>
                 <Button type="button" size="sm" className="h-9 px-4 text-sm" onClick={handleApply}>
                   Apply
                 </Button>
               </div>
             </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+          </DialogContent>
+        </Dialog>
+      </>
     )
   }
 
