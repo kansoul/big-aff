@@ -7,6 +7,13 @@ use App\Support\OwnerResource\AccountOwnerResource;
 
 class UpdateGoogleConversionAction
 {
+    private const CONVERSION_FIELDS = [
+        'article_view',
+        'rsu_click',
+        'search_view',
+        'search_click',
+    ];
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -14,16 +21,32 @@ class UpdateGoogleConversionAction
     {
         (new AccountOwnerResource)->authorize($account);
 
-        $account->conversion()->updateOrCreate(
-            ['account_id' => $account->id],
-            [
-                'article_view' => $data['article_view'] ?? null,
-                'rsu_click' => $data['rsu_click'] ?? null,
-                'search_view' => $data['search_view'] ?? null,
-                'search_click' => $data['search_click'] ?? null,
-            ]
-        );
+        $values = $this->conversionValues($data);
+
+        if ($values !== []) {
+            $account->conversion()->updateOrCreate(
+                ['account_id' => $account->account_id],
+                $values
+            );
+        }
 
         return $account->load('conversion');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function conversionValues(array $data): array
+    {
+        $values = [];
+
+        foreach (self::CONVERSION_FIELDS as $field) {
+            if (array_key_exists($field, $data)) {
+                $values[$field] = $data[$field];
+            }
+        }
+
+        return $values;
     }
 }

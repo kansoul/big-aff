@@ -3,6 +3,7 @@
 namespace App\Actions\GoogleConversion;
 
 use App\Models\Account;
+use App\Support\OwnerResource\AccountOwnerResource;
 use Illuminate\Support\Facades\DB;
 
 class ImportGoogleConversionsAction
@@ -27,6 +28,8 @@ class ImportGoogleConversionsAction
         $skipped = 0;
 
         DB::transaction(function () use ($lines, &$processed, &$skipped): void {
+            $ownerResource = new AccountOwnerResource;
+
             foreach ($lines as $line) {
                 $line = trim($line);
                 if (empty($line)) {
@@ -60,8 +63,10 @@ class ImportGoogleConversionsAction
                     continue;
                 }
 
+                $ownerResource->authorize($account);
+
                 $account->conversion()->updateOrCreate(
-                    ['account_id' => $account->id],
+                    ['account_id' => $account->account_id],
                     [$field => $convId]
                 );
                 $processed++;

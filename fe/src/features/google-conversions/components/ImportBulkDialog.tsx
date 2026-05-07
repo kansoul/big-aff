@@ -60,24 +60,26 @@ export function ImportBulkDialog({ open, onOpenChange, onSuccess }: ImportBulkDi
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-full max-w-lg sm:max-w-xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[calc(100vh-1rem)] w-full max-w-lg flex-col overflow-hidden sm:max-h-[90vh] sm:max-w-xl">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Import Bulk Conversions</DialogTitle>
           <DialogDescription>
             Bulk data <span className="text-destructive">*</span>
           </DialogDescription>
         </DialogHeader>
 
-        <Textarea
-          value={lines}
-          onChange={(e) => setLines(e.target.value)}
-          placeholder={PLACEHOLDER}
-          disabled={submitting}
-          rows={10}
-          className="resize-y font-mono text-xs"
-        />
+        <div className="min-h-0 flex-1">
+          <Textarea
+            value={lines}
+            onChange={(e) => setLines(e.target.value)}
+            placeholder={PLACEHOLDER}
+            disabled={submitting}
+            rows={10}
+            className="max-h-[50vh] resize-none overflow-y-auto font-mono text-xs [field-sizing:fixed] sm:min-h-60"
+          />
+        </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
+        <DialogFooter className="shrink-0 gap-2 sm:gap-2">
           <Button
             type="button"
             variant="outline"
