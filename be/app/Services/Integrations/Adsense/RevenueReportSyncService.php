@@ -352,10 +352,32 @@ class RevenueReportSyncService
             ],
         );
 
-        RevenueChartReport::create([
-            ...array_diff_key($rowData, ['date' => null]),
-            'datetime' => $now,
-        ]);
+        $this->saveChartSnapshot($rowData, $now);
+    }
+
+    /**
+     * Persist a timestamped snapshot into revenue_chart_reports.
+     * Only saves snapshots for today's data — historical syncs are skipped.
+     *
+     * @param  array<string, mixed>  $rowData
+     */
+    private function saveChartSnapshot(array $rowData, Carbon $now): void
+    {
+        try {
+            if (! Carbon::parse($rowData['date'])->isSameDay($now)) {
+                return;
+            }
+
+            RevenueChartReport::create([
+                ...array_diff_key($rowData, ['date' => null]),
+                'datetime' => $now,
+            ]);
+        } catch (Throwable $e) {
+            Log::channel('sync_reports')->error('[RevenueReportSync] Failed to save chart snapshot', [
+                'error' => $e->getMessage(),
+                'row_data' => $rowData,
+            ]);
+        }
     }
 
     /**
