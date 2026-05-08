@@ -77,21 +77,21 @@ class PersistMainSystemInsightReportsJob implements ShouldQueue
                 'account_id' => $insight['account_id'],
                 'campaign_id' => $insight['campaign_id'],
                 'date_start' => $this->normalizeDate($insight['date_start']),
-                'impressions' => $insight['impressions'] ?? null,
-                'reach' => $insight['reach'] ?? null,
-                'clicks' => $insight['clicks'] ?? null,
-                'ad_clicks' => $insight['ad_clicks'] ?? null,
-                'article_views' => $insight['article_views'] ?? null,
-                'search_views' => $insight['search_views'] ?? null,
-                'search_clicks' => $insight['search_clicks'] ?? null,
-                'cpa' => $insight['cpa'] ?? null,
-                'ctr_link' => $insight['ctr_link'] ?? null,
-                'cpc_link' => $insight['cpc_link'] ?? null,
-                'spend' => $insight['spend'] ?? null,
-                'cpc' => $insight['cpc'] ?? null,
-                'cpm' => $insight['cpm'] ?? null,
-                'ctr' => $insight['ctr'] ?? null,
-                'frequency' => $insight['frequency'] ?? null,
+                'impressions' => $this->nullableInt($insight['impressions'] ?? null),
+                'reach' => $this->nullableInt($insight['reach'] ?? null),
+                'clicks' => $this->nullableInt($insight['clicks'] ?? null),
+                'ad_clicks' => $this->nullableInt($insight['ad_clicks'] ?? null),
+                'article_views' => $this->nullableInt($insight['article_views'] ?? null),
+                'search_views' => $this->nullableInt($insight['search_views'] ?? null),
+                'search_clicks' => $this->nullableInt($insight['search_clicks'] ?? null),
+                'cpa' => $this->nullableFloat($insight['cpa'] ?? null),
+                'ctr_link' => $this->nullableFloat($insight['ctr_link'] ?? null),
+                'cpc_link' => $this->nullableFloat($insight['cpc_link'] ?? null),
+                'spend' => $this->nullableFloat($insight['spend'] ?? null),
+                'cpc' => $this->nullableFloat($insight['cpc'] ?? null),
+                'cpm' => $this->nullableFloat($insight['cpm'] ?? null),
+                'ctr' => $this->nullableFloat($insight['ctr'] ?? null),
+                'frequency' => $this->nullableFloat($insight['frequency'] ?? null),
                 'spend_type' => $insight['spend_type'] ?? null,
                 'deleted_at' => null,
                 'created_at' => $now,
@@ -157,5 +157,23 @@ class PersistMainSystemInsightReportsJob implements ShouldQueue
     private function normalizeDate(mixed $value): string
     {
         return Carbon::parse($value)->toDateString();
+    }
+
+    private function nullableInt(mixed $value): ?int
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        return is_numeric($value) ? (int) $value : null;
+    }
+
+    private function nullableFloat(mixed $value): ?float
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        return is_numeric($value) ? (float) $value : null;
     }
 }

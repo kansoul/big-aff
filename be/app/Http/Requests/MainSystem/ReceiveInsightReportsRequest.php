@@ -6,9 +6,54 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class ReceiveInsightReportsRequest extends FormRequest
 {
+    private const INTEGER_INSIGHT_FIELDS = [
+        'impressions',
+        'reach',
+        'clicks',
+        'ad_clicks',
+        'article_views',
+        'search_views',
+        'search_clicks',
+    ];
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $insights = $this->input('insights');
+
+        if (! is_array($insights)) {
+            return;
+        }
+
+        foreach ($insights as $index => $insight) {
+            if (! is_array($insight)) {
+                continue;
+            }
+
+            foreach (self::INTEGER_INSIGHT_FIELDS as $field) {
+                if (! array_key_exists($field, $insight)) {
+                    continue;
+                }
+
+                if (blank($insight[$field])) {
+                    $insight[$field] = null;
+
+                    continue;
+                }
+
+                if (is_numeric($insight[$field])) {
+                    $insight[$field] = (int) $insight[$field];
+                }
+            }
+
+            $insights[$index] = $insight;
+        }
+
+        $this->merge(['insights' => $insights]);
     }
 
     /**
