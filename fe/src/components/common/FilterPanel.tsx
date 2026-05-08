@@ -194,7 +194,11 @@ function MultiSelectFieldRenderer({ field, onChange }: FieldRendererProps<MultiS
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="max-h-52 overflow-y-auto py-1">
+        <div
+          className="max-h-52 overflow-y-auto py-1"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
           {filtered.length === 0 ? (
             <p className="py-4 text-center text-xs text-muted-foreground">No results</p>
           ) : (
