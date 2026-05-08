@@ -20,9 +20,8 @@ class ListRevenueChartReportsRequest extends FormRequest
             [
                 'date_from' => ['nullable', 'date_format:Y-m-d'],
                 'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
-                'interval' => ['nullable', 'in:5m,15m,30m,1,2,3,4,6,12,24'],
-                'channel_codes' => ['nullable', 'array'],
-                'channel_codes.*' => ['string'],
+                'hourly_interval' => ['nullable', 'in:5m,15m,30m,1,2,3,4,6,12,24'],
+                'channel_code' => ['nullable', 'string'],
             ],
         );
     }
