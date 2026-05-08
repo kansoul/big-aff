@@ -32,7 +32,7 @@ import {
   CampaignIdSelector,
   CampaignRulesDialog,
   CampaignSchedulesDialog,
-  InsightChartReportDialog,
+  RevenueChartReportInternalDialog,
   RevenueChartDialog,
   RevenueReportRangeDialog,
   TrackingAnalyticsDialog,
@@ -1613,7 +1613,7 @@ function CampaignReportTableCardInner({
       )}
 
       {insightChartTarget && (
-        <InsightChartReportDialog
+        <RevenueChartReportInternalDialog
           open={insightChartOpen}
           onOpenChange={onInsightChartOpenChange}
           channelCode={insightChartTarget.channelCode}

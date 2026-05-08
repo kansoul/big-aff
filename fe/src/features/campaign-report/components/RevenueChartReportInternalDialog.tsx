@@ -180,7 +180,7 @@ function formatTotalCell(key: string, t: Totals): string {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtUsd(n: number): string {
-  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`
+  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 function fmtInt(n: number): string {
@@ -299,7 +299,7 @@ function GroupHeader({ channelCode, channelName }: { channelCode: string; channe
 
 // ─── Main dialog ──────────────────────────────────────────────────────────────
 
-export type InsightChartReportDialogProps = {
+export type RevenueChartReportInternalDialogProps = {
   trigger?: React.ReactNode
   channelCode: string
   channelName?: string
@@ -309,7 +309,7 @@ export type InsightChartReportDialogProps = {
   onOpenChange?: (open: boolean) => void
 }
 
-export function InsightChartReportDialog({
+export function RevenueChartReportInternalDialog({
   trigger,
   channelCode,
   channelName,
@@ -317,7 +317,7 @@ export function InsightChartReportDialog({
   initialDateTo,
   open: controlledOpen,
   onOpenChange,
-}: InsightChartReportDialogProps) {
+}: RevenueChartReportInternalDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
   const isControlled = typeof controlledOpen === 'boolean'
   const open = isControlled ? controlledOpen : uncontrolledOpen
