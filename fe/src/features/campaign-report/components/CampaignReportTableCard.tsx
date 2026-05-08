@@ -32,6 +32,7 @@ import {
   CampaignIdSelector,
   CampaignRulesDialog,
   CampaignSchedulesDialog,
+  InsightChartReportDialog,
   RevenueChartDialog,
   RevenueReportRangeDialog,
   TrackingAnalyticsDialog,
@@ -45,6 +46,13 @@ type TableRow = CampaignReportDataRow
 
 type RevenueDialogTarget = {
   channelCode?: string
+  dateFrom?: string | null
+  dateTo?: string | null
+}
+
+type InsightChartDialogTarget = {
+  channelCode: string
+  channelName?: string
   dateFrom?: string | null
   dateTo?: string | null
 }
@@ -299,6 +307,7 @@ function GroupLabelCell({
   dateTo,
   onOpenRevenueRange,
   onOpenRevenueChart,
+  onOpenInsightChart,
 }: {
   row: CampaignReportGroupRow
   isChannelGroup: boolean
@@ -306,6 +315,7 @@ function GroupLabelCell({
   dateTo?: string | null
   onOpenRevenueRange: (target: RevenueDialogTarget) => void
   onOpenRevenueChart: (target: RevenueDialogTarget) => void
+  onOpenInsightChart?: (target: InsightChartDialogTarget) => void
 }) {
   const channelCode = typeof row.group_key === 'string' ? row.group_key : undefined
   const channelName = isChannelGroup ? (row.items[0]?.channel_name ?? null) : null
@@ -323,19 +333,34 @@ function GroupLabelCell({
           {groupLabel} ({row.record_count})
         </span>
         {isChannelGroup && (
-          <div className="flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1.5 mt-0.5" onClick={(e) => e.stopPropagation()}>
             <button
-              className="inline-flex cursor-pointer items-center text-[10px] font-medium text-amber-700 transition-colors"
+              className="rounded px-1 py-0.5 text-[9px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 transition-colors whitespace-nowrap"
               onClick={() => onOpenRevenueRange({ channelCode, dateFrom, dateTo })}
             >
-              Revenue Range
+              Rev Range
             </button>
             <button
-              className="inline-flex cursor-pointer items-center text-[10px] font-medium text-emerald-700 transition-colors"
+              className="rounded px-1 py-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 transition-colors whitespace-nowrap"
               onClick={() => onOpenRevenueChart({ channelCode, dateFrom, dateTo })}
             >
-              View Chart
+              Chart
             </button>
+            {onOpenInsightChart && channelCode && (
+              <button
+                className="rounded px-1 py-0.5 text-[9px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 transition-colors whitespace-nowrap"
+                onClick={() =>
+                  onOpenInsightChart({
+                    channelCode,
+                    channelName: channelName ?? undefined,
+                    dateFrom,
+                    dateTo,
+                  })
+                }
+              >
+                Detail
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -384,6 +409,7 @@ function getColumns(
   dateTo?: string | null,
   onOpenRevenueRange?: (target: RevenueDialogTarget) => void,
   onOpenRevenueChart?: (target: RevenueDialogTarget) => void,
+  onOpenInsightChart?: (target: InsightChartDialogTarget) => void,
 ): MRT_ColumnDef<TableRow>[] {
   // Shortcuts to avoid passing summary repeatedly
   const usd = (key: MetricKey, header: string, size: number, icon?: 'yellow' | 'blue' | 'green') =>
@@ -437,6 +463,7 @@ function getColumns(
                   /* empty */
                 })
               }
+              onOpenInsightChart={onOpenInsightChart}
             />
           ) : (
             <span className="pl-1 text-[10px] text-foreground">
@@ -1137,6 +1164,10 @@ function CampaignReportTableCardInner({
   const [revenueRangeTarget, setRevenueRangeTarget] = useState<RevenueDialogTarget | null>(null)
   const [revenueChartOpen, setRevenueChartOpen] = useState(false)
   const [revenueChartTarget, setRevenueChartTarget] = useState<RevenueDialogTarget | null>(null)
+  const [insightChartOpen, setInsightChartOpen] = useState(false)
+  const [insightChartTarget, setInsightChartTarget] = useState<InsightChartDialogTarget | null>(
+    null,
+  )
   const [summaryOnly, setSummaryOnly] = useState(false)
   const [prevPerPage, setPrevPerPage] = useState<number | null>(null)
   const effectiveSummaryOnly = grouped && summaryOnly
@@ -1225,6 +1256,16 @@ function CampaignReportTableCardInner({
     if (!next) setRevenueChartTarget(null)
   }, [])
 
+  const openInsightChart = useCallback((target: InsightChartDialogTarget) => {
+    setInsightChartTarget(target)
+    setInsightChartOpen(true)
+  }, [])
+
+  const onInsightChartOpenChange = useCallback((next: boolean) => {
+    setInsightChartOpen(next)
+    if (!next) setInsightChartTarget(null)
+  }, [])
+
   const canViewDeliveryReports = useMemo(
     () => hasPermission(userPermissions, PermissionSlugs.DeliveryEntitiesReportsView),
     [userPermissions],
@@ -1244,6 +1285,7 @@ function CampaignReportTableCardInner({
         filters.date_to,
         openRevenueRange,
         openRevenueChart,
+        openInsightChart,
       ),
     [
       filters.group_by,
@@ -1258,6 +1300,7 @@ function CampaignReportTableCardInner({
       toggling,
       openRevenueRange,
       openRevenueChart,
+      openInsightChart,
     ],
   )
 
@@ -1566,6 +1609,17 @@ function CampaignReportTableCardInner({
           }
           initialDateFrom={revenueChartTarget.dateFrom}
           initialDateTo={revenueChartTarget.dateTo}
+        />
+      )}
+
+      {insightChartTarget && (
+        <InsightChartReportDialog
+          open={insightChartOpen}
+          onOpenChange={onInsightChartOpenChange}
+          channelCode={insightChartTarget.channelCode}
+          channelName={insightChartTarget.channelName}
+          initialDateFrom={insightChartTarget.dateFrom}
+          initialDateTo={insightChartTarget.dateTo}
         />
       )}
     </>

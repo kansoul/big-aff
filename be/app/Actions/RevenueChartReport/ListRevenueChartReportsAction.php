@@ -16,42 +16,45 @@ class ListRevenueChartReportsAction
     public const ORDERABLE_COLUMNS = ['id', 'datetime', 'channel_code', 'channel_name', 'created_at'];
 
     /**
-     * @param  array{date_from?: string|null, date_to?: string|null, interval?: string|null, channel_codes?: string[]|null, per_page?: int|null, page?: int|null, order_by?: string|null, order?: string|null}  $filters
+     * @param  array{date_from?: string|null, date_to?: string|null, hourly_interval?: string|null, channel_code?: string|null, per_page?: int|null, page?: int|null, order_by?: string|null, order?: string|null}  $filters
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $channelCodes = $filters['channel_codes'] ?? [];
+        $channelCode = $filters['channel_code'] ?? null;
 
-        if (empty($channelCodes)) {
+        if (empty($channelCode)) {
             return RevenueChartReport::query()->whereRaw('1 = 0')->paginate(1);
         }
 
-        $query = RevenueChartReport::query()
-            ->addSelect([
-                DB::raw('revenue_chart_reports.*'),
-                DB::raw('estimated_earnings - COALESCE(LAG(estimated_earnings) OVER (PARTITION BY channel_code, DATE(datetime) ORDER BY datetime), 0) as real_earnings'),
-                DB::raw('clicks - COALESCE(LAG(clicks) OVER (PARTITION BY channel_code, DATE(datetime) ORDER BY datetime), 0) as real_clicks'),
-                DB::raw('page_views - COALESCE(LAG(page_views) OVER (PARTITION BY channel_code, DATE(datetime) ORDER BY datetime), 0) as real_page_views'),
-                DB::raw('ad_requests - COALESCE(LAG(ad_requests) OVER (PARTITION BY channel_code, DATE(datetime) ORDER BY datetime), 0) as real_ad_requests'),
-                DB::raw('impressions - COALESCE(LAG(impressions) OVER (PARTITION BY channel_code, DATE(datetime) ORDER BY datetime), 0) as real_impressions'),
-                DB::raw('funnel_requests - COALESCE(LAG(funnel_requests) OVER (PARTITION BY channel_code, DATE(datetime) ORDER BY datetime), 0) as real_funnel_requests'),
-                DB::raw('funnel_impressions - COALESCE(LAG(funnel_impressions) OVER (PARTITION BY channel_code, DATE(datetime) ORDER BY datetime), 0) as real_funnel_impressions'),
-                DB::raw('funnel_clicks - COALESCE(LAG(funnel_clicks) OVER (PARTITION BY channel_code, DATE(datetime) ORDER BY datetime), 0) as real_funnel_clicks'),
-            ]);
+        $baseQuery = RevenueChartReport::query();
 
-        (new ChannelLinkedOwnerResource)->applyTo($query);
+        (new ChannelLinkedOwnerResource)->applyTo($baseQuery);
+
+        $baseQuery->where('channel_code', $channelCode);
 
         if (! empty($filters['date_from'])) {
-            $query->where('datetime', '>=', Carbon::parse($filters['date_from'])->startOfDay());
+            $baseQuery->where('datetime', '>=', Carbon::parse($filters['date_from'])->startOfDay());
         }
 
         if (! empty($filters['date_to'])) {
-            $query->where('datetime', '<=', Carbon::parse($filters['date_to'])->endOfDay());
+            $baseQuery->where('datetime', '<=', Carbon::parse($filters['date_to'])->endOfDay());
         }
 
-        $query->whereIn('channel_code', $channelCodes);
+        $this->applyIntervalFilter($baseQuery, $filters['hourly_interval'] ?? '1');
 
-        $this->applyIntervalFilter($query, $filters['interval'] ?? '1');
+        $baseQuery->select([
+            DB::raw('*'),
+            DB::raw('estimated_earnings - COALESCE(LAG(estimated_earnings) OVER (PARTITION BY channel_code, DATE(datetime), HOUR(datetime) ORDER BY datetime), 0) as real_earnings'),
+            DB::raw('clicks - COALESCE(LAG(clicks) OVER (PARTITION BY channel_code, DATE(datetime), HOUR(datetime) ORDER BY datetime), 0) as real_clicks'),
+            DB::raw('page_views - COALESCE(LAG(page_views) OVER (PARTITION BY channel_code, DATE(datetime), HOUR(datetime) ORDER BY datetime), 0) as real_page_views'),
+            DB::raw('ad_requests - COALESCE(LAG(ad_requests) OVER (PARTITION BY channel_code, DATE(datetime), HOUR(datetime) ORDER BY datetime), 0) as real_ad_requests'),
+            DB::raw('impressions - COALESCE(LAG(impressions) OVER (PARTITION BY channel_code, DATE(datetime), HOUR(datetime) ORDER BY datetime), 0) as real_impressions'),
+            DB::raw('funnel_requests - COALESCE(LAG(funnel_requests) OVER (PARTITION BY channel_code, DATE(datetime), HOUR(datetime) ORDER BY datetime), 0) as real_funnel_requests'),
+            DB::raw('funnel_impressions - COALESCE(LAG(funnel_impressions) OVER (PARTITION BY channel_code, DATE(datetime), HOUR(datetime) ORDER BY datetime), 0) as real_funnel_impressions'),
+            DB::raw('funnel_clicks - COALESCE(LAG(funnel_clicks) OVER (PARTITION BY channel_code, DATE(datetime), HOUR(datetime) ORDER BY datetime), 0) as real_funnel_clicks'),
+        ]);
+
+        $query = RevenueChartReport::query()->fromSub($baseQuery, 'revenue_chart_reports');
 
         SortInput::fromValidatedArray(
             $filters,
