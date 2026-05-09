@@ -150,9 +150,8 @@ class CampaignReportService
             $revenueQuery->whereDate('date', '<=', $filters['date_to']);
         }
 
-        if (! empty($filters['channel_codes'])) {
-            $revenueQuery->whereIn('channel_code', $filters['channel_codes']);
-        } else {
+        $channelCodes = collect($filters['channel_codes'] ?? [])->filter()->unique()->values();
+        if ($channelCodes->isEmpty()) {
             $channelCodes = $this->listCampaignReportsAction->buildBaseQuery($filters)
                 ->select('campaign_reports.channel_code')
                 ->distinct()
@@ -163,9 +162,9 @@ class CampaignReportService
             if ($channelCodes->isEmpty()) {
                 return $this->emptyRevenueStats();
             }
-
-            $revenueQuery->whereIn('channel_code', $channelCodes);
         }
+
+        $revenueQuery->whereIn('channel_code', $channelCodes);
 
         $selectParts = ['COALESCE(SUM(estimated_earnings), 0) AS revenue'];
         foreach (self::REVENUE_REPORT_COLUMNS as $alias => $col) {
@@ -179,7 +178,72 @@ class CampaignReportService
             $stats[$alias] = (float) ($row->{$alias} ?? 0);
         }
 
+        $stats['r_conversion'] = $this->sumRevenueClicksWithRealtimeFallback($filters, $stats['r_conversion'] ?? 0.0);
+
         return $stats;
+    }
+
+    /**
+     * Google may suppress low daily click counts. For each filtered channel/date,
+     * use Google clicks when present; otherwise use that day's realtime clicks.
+     */
+    private function sumRevenueClicksWithRealtimeFallback(array $filters, float $defaultGoogleClicks): float
+    {
+        $pairsQuery = $this->listCampaignReportsAction->buildBaseQuery($filters)
+            ->selectRaw('campaign_reports.channel_code, DATE(campaign_reports.date_start) AS report_date')
+            ->whereNotNull('campaign_reports.channel_code')
+            ->distinct();
+
+        $googleClicksQuery = RevenueReport::query()
+            ->selectRaw('channel_code, date AS rev_date, COALESCE(SUM(clicks), 0) AS google_clicks')
+            ->groupBy('channel_code', 'date');
+
+        $realtimeClicksQuery = DB::table('realtime_reports')
+            ->join('link_datas', 'link_datas.id', '=', 'realtime_reports.link_data_id')
+            ->whereNull('link_datas.deleted_at')
+            ->selectRaw('link_datas.channel_code, realtime_reports.event_time AS rt_date, COALESCE(SUM(realtime_reports.click_ad_count), 0) AS realtime_clicks')
+            ->groupBy('link_datas.channel_code', 'realtime_reports.event_time');
+
+        if (! empty($filters['date_from'])) {
+            $googleClicksQuery->whereDate('date', '>=', $filters['date_from']);
+            $realtimeClicksQuery->whereDate('realtime_reports.event_time', '>=', $filters['date_from']);
+        }
+
+        if (! empty($filters['date_to'])) {
+            $googleClicksQuery->whereDate('date', '<=', $filters['date_to']);
+            $realtimeClicksQuery->whereDate('realtime_reports.event_time', '<=', $filters['date_to']);
+        }
+
+        if (! empty($filters['channel_codes'])) {
+            $googleClicksQuery->whereIn('channel_code', $filters['channel_codes']);
+            $realtimeClicksQuery->whereIn('link_datas.channel_code', $filters['channel_codes']);
+        }
+
+        $row = DB::query()
+            ->fromSub($pairsQuery, 'pairs')
+            ->leftJoinSub($googleClicksQuery, 'google_clicks', function ($join) {
+                $join->on('google_clicks.channel_code', '=', 'pairs.channel_code')
+                    ->on('google_clicks.rev_date', '=', 'pairs.report_date');
+            })
+            ->leftJoinSub($realtimeClicksQuery, 'realtime_clicks', function ($join) {
+                $join->on('realtime_clicks.channel_code', '=', 'pairs.channel_code')
+                    ->on('realtime_clicks.rt_date', '=', 'pairs.report_date');
+            })
+            ->selectRaw('
+                COUNT(*) AS pair_count,
+                COALESCE(SUM(
+                    CASE
+                        WHEN COALESCE(google_clicks.google_clicks, 0) > 0
+                            THEN google_clicks.google_clicks
+                        ELSE COALESCE(realtime_clicks.realtime_clicks, 0)
+                    END
+                ), 0) AS clicks
+            ')
+            ->first();
+
+        return (int) ($row->pair_count ?? 0) > 0
+            ? (float) ($row->clicks ?? 0)
+            : $defaultGoogleClicks;
     }
 
     /**

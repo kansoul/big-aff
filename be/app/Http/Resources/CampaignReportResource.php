@@ -68,7 +68,6 @@ class CampaignReportResource extends JsonResource
         $rtClickKeywordCount = (float) ($this->realtimeReport?->click_keyword_count ?? 0);
         $rtViewSearchCount = (float) ($this->realtimeReport?->view_search_count ?? 0);
         $funnelRequests = (float) ($this->r_funnel_requests ?? 0);
-        info([$this->r_funnel_impressions, $funnelRequests]);
 
         return [
             'id' => $this->id,
