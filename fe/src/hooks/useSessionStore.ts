@@ -14,6 +14,7 @@ interface SessionStore {
   addSession: (user: User, token: string) => void
   removeSession: (userId: number) => void
   switchTo: (userId: number) => void
+  updateSessionUser: (user: User) => void
   getActiveSession: () => Session | null
   getActiveToken: () => string | null
 }
@@ -40,6 +41,13 @@ export const useSessionStore = create<SessionStore>()(
         }),
 
       switchTo: (userId) => set({ activeUserId: userId }),
+
+      updateSessionUser: (user) =>
+        set((s) => {
+          const existing = s.sessions[user.id]
+          if (!existing) return s
+          return { sessions: { ...s.sessions, [user.id]: { ...existing, user } } }
+        }),
 
       getActiveSession: () => {
         const { sessions, activeUserId } = get()

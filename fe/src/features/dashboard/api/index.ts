@@ -11,6 +11,15 @@ export const dashboardApi = {
     await axiosInstance.post('/auth/logout')
   },
 
+  async uploadAvatar(file: File): Promise<User> {
+    const form = new FormData()
+    form.append('avatar', file)
+    const response = await axiosInstance.post<ApiResponse<User>>('/auth/avatar', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data.data
+  },
+
   async getMe(): Promise<User> {
     const response = await axiosInstance.get<ApiResponse<User>>('/auth/me')
     const u = response.data.data
