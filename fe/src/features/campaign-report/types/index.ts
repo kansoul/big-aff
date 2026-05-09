@@ -116,6 +116,7 @@ export interface CampaignReportRow {
   cvr: number | null
   rt_cpa: number | null
   rt_cvr: number | null
+  ctr_keyword: number | null
   rt_ctr_keyword: number | null
   rt_ctr_search: number | null
 
@@ -164,6 +165,7 @@ export interface CampaignReportSummary {
   rt_view_search_count: number
   rt_view_article_count: number
   cvr: number
+  ctr_keyword: number
   rt_cpa: number
   rt_cvr: number
   rt_ctr_keyword: number

@@ -138,6 +138,7 @@ class CampaignReportResource extends JsonResource
             'cvr' => $funnelRequests > 0 ? round(((float) ($this->a_clicks ?? 0) / $funnelRequests) * 100, 4) : null,
             'rt_cpa' => $rtClickAdCount > 0 ? round($spend / $rtClickAdCount, 4) : null,
             'rt_cvr' => $funnelRequests > 0 ? round(($rtClickAdCount / $funnelRequests) * 100, 4) : null,
+            'ctr_keyword' => $funnelRequests > 0 ? round(($this->r_funnel_impressions / $funnelRequests) * 100, 4) : null,
             'rt_ctr_keyword' => $funnelRequests > 0 ? round(($rtClickKeywordCount / $funnelRequests) * 100, 4) : null,
             'rt_ctr_search' => $rtViewSearchCount > 0 ? round(($rtClickAdCount / $rtViewSearchCount) * 100, 4) : null,
 
