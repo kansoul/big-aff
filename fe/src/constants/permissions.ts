@@ -137,6 +137,28 @@ export const PermissionSlugs = {
   DashboardStatView: 'dashboard.stats.view',
   DashboardTeamView: 'dashboard.teams.view',
   DashboardUserView: 'dashboard.users.view',
+
+  // AdX / GAM Tracking
+  AdxAccountsView: 'adx.accounts.view',
+  AdxAccountsCreate: 'adx.accounts.create',
+  AdxAccountsUpdate: 'adx.accounts.update',
+  AdxAccountsDelete: 'adx.accounts.delete',
+  AdxAccountsAssign: 'adx.accounts.assign',
+  AdxGamesView: 'adx.games.view',
+  AdxGamesCreate: 'adx.games.create',
+  AdxGamesUpdate: 'adx.games.update',
+  AdxGamesDelete: 'adx.games.delete',
+  AdxLinksView: 'adx.links.view',
+  AdxLinksCreate: 'adx.links.create',
+  AdxLinksUpdate: 'adx.links.update',
+  AdxLinksDelete: 'adx.links.delete',
+  AdxCampaignsView: 'adx.campaigns.view',
+  AdxAccountConversionsView: 'adx.account-conversions.view',
+  AdxAccountConversionsCreate: 'adx.account-conversions.create',
+  AdxAccountConversionsUpdate: 'adx.account-conversions.update',
+  AdxAccountConversionsDelete: 'adx.account-conversions.delete',
+  AdxReportsView: 'adx.reports.view',
+  AdxCampaignReportsView: 'adx.campaign-reports.view',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -684,6 +706,88 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
         id: 'logs',
         label: 'Logs',
         permissions: [{ key: 'LogsView', slug: PermissionSlugs.LogsView, label: 'View' }],
+      },
+    ],
+  },
+  {
+    id: 'adx',
+    label: 'AdX / GAM Tracking',
+    screens: [
+      {
+        id: 'adx-accounts',
+        label: 'AdX Accounts',
+        permissions: [
+          { key: 'AdxAccountsView', slug: PermissionSlugs.AdxAccountsView, label: 'View' },
+          { key: 'AdxAccountsCreate', slug: PermissionSlugs.AdxAccountsCreate, label: 'Create' },
+          { key: 'AdxAccountsUpdate', slug: PermissionSlugs.AdxAccountsUpdate, label: 'Update' },
+          { key: 'AdxAccountsDelete', slug: PermissionSlugs.AdxAccountsDelete, label: 'Delete' },
+          { key: 'AdxAccountsAssign', slug: PermissionSlugs.AdxAccountsAssign, label: 'Assign' },
+        ],
+      },
+      {
+        id: 'adx-games',
+        label: 'AdX Games',
+        permissions: [
+          { key: 'AdxGamesView', slug: PermissionSlugs.AdxGamesView, label: 'View' },
+          { key: 'AdxGamesCreate', slug: PermissionSlugs.AdxGamesCreate, label: 'Create' },
+          { key: 'AdxGamesUpdate', slug: PermissionSlugs.AdxGamesUpdate, label: 'Update' },
+          { key: 'AdxGamesDelete', slug: PermissionSlugs.AdxGamesDelete, label: 'Delete' },
+        ],
+      },
+      {
+        id: 'adx-links',
+        label: 'AdX Links',
+        permissions: [
+          { key: 'AdxLinksView', slug: PermissionSlugs.AdxLinksView, label: 'View' },
+          { key: 'AdxLinksCreate', slug: PermissionSlugs.AdxLinksCreate, label: 'Create' },
+          { key: 'AdxLinksUpdate', slug: PermissionSlugs.AdxLinksUpdate, label: 'Update' },
+          { key: 'AdxLinksDelete', slug: PermissionSlugs.AdxLinksDelete, label: 'Delete' },
+        ],
+      },
+      {
+        id: 'adx-campaigns',
+        label: 'AdX Campaigns',
+        permissions: [
+          { key: 'AdxCampaignsView', slug: PermissionSlugs.AdxCampaignsView, label: 'View' },
+        ],
+      },
+      {
+        id: 'adx-account-conversions',
+        label: 'AdX Account Conversions',
+        permissions: [
+          {
+            key: 'AdxAccountConversionsView',
+            slug: PermissionSlugs.AdxAccountConversionsView,
+            label: 'View',
+          },
+          {
+            key: 'AdxAccountConversionsCreate',
+            slug: PermissionSlugs.AdxAccountConversionsCreate,
+            label: 'Create',
+          },
+          {
+            key: 'AdxAccountConversionsUpdate',
+            slug: PermissionSlugs.AdxAccountConversionsUpdate,
+            label: 'Update',
+          },
+          {
+            key: 'AdxAccountConversionsDelete',
+            slug: PermissionSlugs.AdxAccountConversionsDelete,
+            label: 'Delete',
+          },
+        ],
+      },
+      {
+        id: 'adx-reports',
+        label: 'AdX Reports',
+        permissions: [
+          { key: 'AdxReportsView', slug: PermissionSlugs.AdxReportsView, label: 'View' },
+          {
+            key: 'AdxCampaignReportsView',
+            slug: PermissionSlugs.AdxCampaignReportsView,
+            label: 'Campaign Reports',
+          },
+        ],
       },
     ],
   },
