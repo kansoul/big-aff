@@ -110,6 +110,7 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
                     ->whereIn('adset_id', $adsetIds)
                     ->where('status', 'ACTIVE')
                     ->whereDate('date_start', $this->date)
+                    ->whereHas('campaign', fn ($q) => $q->where('status', 'ACTIVE'))
                     ->pluck('adset_id')
                     ->each(function (string $adsetId): void {
                         EvaluateAdAdsetRuleJob::dispatch(
@@ -131,6 +132,7 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
                     ->whereIn('ad_id', $adIds)
                     ->where('status', 'ACTIVE')
                     ->whereDate('date_start', $this->date)
+                    ->whereHas('campaign', fn ($q) => $q->where('status', 'ACTIVE'))
                     ->pluck('ad_id')
                     ->each(function (string $adId): void {
                         EvaluateAdAdsetRuleJob::dispatch(
