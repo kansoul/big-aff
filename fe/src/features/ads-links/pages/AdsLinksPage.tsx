@@ -192,6 +192,7 @@ export function AdsLinksPage() {
         keyword_set_id: editRow.keyword_set?.id ?? null,
         fbid: editRow.fbid?.join(',') ?? '',
         googleid: editRow.googleid?.join(',') ?? '',
+        note: editRow.note ?? '',
       })
     }
   }, [editRow, editForm])
@@ -255,6 +256,7 @@ export function AdsLinksPage() {
         keyword_set_id: values.keyword_set_id ?? null,
         fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
+        note: values.note ?? null,
       })
       setEditRow(null)
       loadData()
