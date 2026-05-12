@@ -65,7 +65,7 @@ class RevalidateObserver
         }
 
         if ($model instanceof AdsLink) {
-            $siteUrl = $model->site?->url;
+            $siteUrl = $model->loadMissing('site')->site?->url;
 
             if (! $siteUrl) {
                 return [];
