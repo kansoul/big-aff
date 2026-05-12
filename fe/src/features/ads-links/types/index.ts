@@ -86,6 +86,7 @@ export interface AdsLinkFilterParams {
   created_by?: number | null
   pixel_id?: string | null
   googleid?: string | null
+  note?: string | null
   date_range?: { from: string | null; to: string | null } | null
   is_hidden?: boolean | 1 | 0 | null
   page?: number

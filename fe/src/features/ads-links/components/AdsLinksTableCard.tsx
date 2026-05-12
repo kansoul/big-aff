@@ -249,6 +249,27 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
       },
     },
     {
+      accessorKey: 'note',
+      header: 'Note',
+      size: 180,
+      Cell: ({ row }) => {
+        const note = row.original.note
+        if (!note) return <span className="text-muted-foreground">—</span>
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-xs text-foreground line-clamp-2 cursor-default">{note}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
+                {note}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
+      },
+    },
+    {
       accessorKey: 'channel_code',
       header: 'Channel',
       size: 140,
@@ -509,6 +530,13 @@ function AdsLinksTableCardInner({
         value: filters.googleid ?? null,
         placeholder: 'Search Google ID…',
       },
+      {
+        field: 'note',
+        label: 'Note',
+        type: 'input',
+        value: filters.note ?? null,
+        placeholder: 'Search note…',
+      },
     ],
     [filters, posts, sites, channels, users, role],
   )
@@ -571,6 +599,9 @@ function AdsLinksTableCardInner({
     }
     if (filters.googleid) {
       chips.push({ key: 'googleid', label: 'Google ID', displayValue: filters.googleid })
+    }
+    if (filters.note) {
+      chips.push({ key: 'note', label: 'Note', displayValue: filters.note })
     }
 
     return chips
