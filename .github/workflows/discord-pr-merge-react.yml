@@ -1,0 +1,73 @@
+name: Discord PR Merge Reaction
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  react-on-merge:
+    name: Add Discord Reaction on Merge
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    permissions:
+      pull-requests: read
+
+    steps:
+      - name: Add reaction to Discord message
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PR_BODY="${{ github.event.pull_request.body }}"
+          REPO_NAME="${{ github.repository }}"
+
+          # Tim comment chua Discord message info
+          DISCORD_COMMENT=$(gh api \
+            "repos/${REPO_NAME}/issues/${PR_NUMBER}/comments" \
+            --jq '.[].body' \
+            | grep -o '<!-- discord-message:[^>]* -->' \
+            | head -1)
+
+          if [ -z "$DISCORD_COMMENT" ]; then
+            echo "Khong tim thay Discord message ID, bo qua."
+            exit 0
+          fi
+
+          CHANNEL_ID=$(echo "$DISCORD_COMMENT" | sed 's/<!-- discord-message:\([^:]*\):\([^ ]*\) -->/\1/')
+          MESSAGE_ID=$(echo "$DISCORD_COMMENT" | sed 's/<!-- discord-message:[^:]*:\([^ ]*\) -->/\1/')
+
+          echo "Channel: $CHANNEL_ID | Message: $MESSAGE_ID"
+
+          # Doc emoji tu PR body, tim dong co dang: emoji: <emoji>
+          # Vi du trong PR body: emoji: 🎉
+          EMOJI=$(echo "$PR_BODY" | grep -oP '(?i)emoji:\s*\K\S+' | head -1)
+
+          if [ -z "$EMOJI" ]; then
+            EMOJI="✅"
+          fi
+
+          echo "Emoji se that: $EMOJI"
+
+          # URL-encode emoji cho Discord API
+          EMOJI_ENCODED=$(python3 -c "
+          import urllib.parse, sys
+          emoji = sys.argv[1]
+          print(urllib.parse.quote(emoji, safe=''))
+          " "$EMOJI")
+
+          # Them reaction vao Discord message qua Bot API
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X PUT \
+            -H "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
+            "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages/${MESSAGE_ID}/reactions/${EMOJI_ENCODED}/@me")
+
+          echo "Discord API response: $HTTP_STATUS"
+
+          if [ "$HTTP_STATUS" = "204" ]; then
+            echo "That reaction thanh cong!"
+          else
+            echo "That reaction that bai (HTTP $HTTP_STATUS)"
+            exit 1
+          fi
