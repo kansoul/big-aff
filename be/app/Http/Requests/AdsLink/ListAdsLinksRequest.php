@@ -31,6 +31,7 @@ class ListAdsLinksRequest extends FormRequest
             'created_by' => ['nullable', 'integer'],
             'pixel_id' => ['nullable', 'string', 'max:255'],
             'googleid' => ['nullable', 'string', 'max:255'],
+            'note' => ['nullable', 'string'],
             'date_range.from' => ['nullable', 'date'],
             'date_range.to' => ['nullable', 'date'],
             'is_hidden' => ['nullable', 'boolean'],

@@ -63,6 +63,10 @@ class UpdateAdsLinkAction
             $payload['channel_code'] = $data['channel_code'];
         }
 
+        if (array_key_exists('note', $data)) {
+            $payload['note'] = $data['note'];
+        }
+
         $adsLink->update($payload);
 
         return $adsLink->fresh();

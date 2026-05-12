@@ -18,6 +18,7 @@ class ListAdsLinksAction
         'post_id',
         'channel_code',
         'is_hidden',
+        'note',
         'created_by',
         'created_at',
     ];
@@ -49,6 +50,7 @@ class ListAdsLinksAction
             ->when(! empty($filters['googleid']), function ($q) use ($filters) {
                 return $q->where('tracking_ids->googleid', 'LIKE', '%'.$filters['googleid'].'%');
             })
+            ->when(! empty($filters['note']), fn ($q) => $q->where('note', 'LIKE', '%'.$filters['note'].'%'))
             ->when(! empty($filters['date_range']['from']), fn ($q) => $q->whereDate('created_at', '>=', $filters['date_range']['from']))
             ->when(! empty($filters['date_range']['to']), fn ($q) => $q->whereDate('created_at', '<=', $filters['date_range']['to']))
             ->when(isset($filters['is_hidden']) && $filters['is_hidden'] !== null, fn ($q) => $q->where('is_hidden', $filters['is_hidden']));

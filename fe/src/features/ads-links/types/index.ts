@@ -71,6 +71,7 @@ export interface AdsLinkUpdatePayload {
   keyword_set_id?: number | null
   fbid?: string | null
   googleid?: string | null
+  note?: string | null
 }
 
 export interface UserOption {
@@ -86,6 +87,7 @@ export interface AdsLinkFilterParams {
   created_by?: number | null
   pixel_id?: string | null
   googleid?: string | null
+  note?: string | null
   date_range?: { from: string | null; to: string | null } | null
   is_hidden?: boolean | 1 | 0 | null
   page?: number
@@ -133,6 +135,7 @@ export const adsLinkUpdateSchema = z
     keyword_set_id: z.number().nullable().optional(),
     fbid: z.string().nullable().optional(),
     googleid: z.string().nullable().optional(),
+    note: z.string().nullable().optional(),
   })
   .refine((v) => (v.fbid?.trim() ?? '') !== '' || (v.googleid?.trim() ?? '') !== '', {
     error: 'At least one of Facebook Pixel ID or Google Account ID is required',
