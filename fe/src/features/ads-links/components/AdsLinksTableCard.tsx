@@ -445,6 +445,7 @@ function AdsLinksTableCardInner({
   role,
 }: AdsLinksTableCardProps) {
   const [copyDialog, setCopyDialog] = useState<CopyDialogState>(COPY_DIALOG_CLOSED)
+
   const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
     useLocation().pathname,
   )
@@ -537,6 +538,13 @@ function AdsLinksTableCardInner({
         value: filters.note ?? null,
         placeholder: 'Search note…',
       },
+      {
+        field: 'url',
+        label: 'URL / Slug',
+        type: 'input',
+        value: filters.url ?? null,
+        placeholder: 'Paste URL or type slug…',
+      },
     ],
     [filters, posts, sites, channels, users, role],
   )
@@ -602,6 +610,9 @@ function AdsLinksTableCardInner({
     }
     if (filters.note) {
       chips.push({ key: 'note', label: 'Note', displayValue: filters.note })
+    }
+    if (filters.url) {
+      chips.push({ key: 'url', label: 'URL / Slug', displayValue: filters.url })
     }
 
     return chips
