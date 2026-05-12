@@ -1,0 +1,6 @@
+export { AdxAccountsPage } from './AdxAccountsPage'
+export { AdxGamesPage } from './AdxGamesPage'
+export { AdxLinksPage } from './AdxLinksPage'
+export { AdxCampaignsPage } from './AdxCampaignsPage'
+export { AdxCampaignReportsPage } from './AdxCampaignReportsPage'
+export { AdxAccountConversionsPage } from './AdxAccountConversionsPage'

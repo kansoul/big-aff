@@ -171,6 +171,28 @@ enum Permission: string
 
     case PostsAssign = 'posts.assign';                           // bit 88 →  309237645312422682265739264
 
+    // —— AdX / GAM Tracking ——
+    case AdxGamesView = 'adx.games.view';
+    case AdxGamesCreate = 'adx.games.create';
+    case AdxGamesUpdate = 'adx.games.update';
+    case AdxGamesDelete = 'adx.games.delete';
+    case AdxLinksView = 'adx.links.view';
+    case AdxLinksCreate = 'adx.links.create';
+    case AdxLinksUpdate = 'adx.links.update';
+    case AdxLinksDelete = 'adx.links.delete';
+    case AdxCampaignsView = 'adx.campaigns.view';
+    case AdxAccountConversionsView = 'adx.account-conversions.view';
+    case AdxAccountConversionsCreate = 'adx.account-conversions.create';
+    case AdxAccountConversionsUpdate = 'adx.account-conversions.update';
+    case AdxAccountConversionsDelete = 'adx.account-conversions.delete';
+    case AdxReportsView = 'adx.reports.view';
+    case AdxAccountsView = 'adx.accounts.view';
+    case AdxAccountsCreate = 'adx.accounts.create';
+    case AdxAccountsUpdate = 'adx.accounts.update';
+    case AdxAccountsDelete = 'adx.accounts.delete';
+    case AdxAccountsAssign = 'adx.accounts.assign';
+    case AdxCampaignReportsView = 'adx.campaign-reports.view';
+
     // —— Revenue Report Range ——
     /**
      * Bit value for this permission as a decimal string (2^index).

@@ -20,6 +20,12 @@ Schedule::command('tracking:flush-daily')
     ->onOneServer()
     ->runInBackground();
 
+Schedule::command('adx:flush-realtime')
+    ->everyThirtySeconds()
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->runInBackground();
+
 // Nightly reconciliation at 02:00 AM — re-aggregates yesterday's raw event data
 // and overwrites tracking_daily to fix any drift from Redis drops or queue errors.
 Schedule::command('tracking:reconcile')
@@ -30,6 +36,11 @@ Schedule::command('tracking:reconcile')
 Schedule::command('reports:sync-all')
     ->everyFiveMinutes()
     ->name('sync-all-reports')
+    ->withoutOverlapping(15);
+
+Schedule::command('adx:sync-reports')
+    ->everyFiveMinutes()
+    ->name('sync-adx-reports')
     ->withoutOverlapping(15);
 
 Schedule::command('reports:fetch-ads-adsets-by-facebook')
@@ -45,4 +56,9 @@ Schedule::command('campaigns:run-schedules')
 Schedule::command('google-ads:sync-conversions')
     ->hourly()
     ->name('sync-google-conversions')
+    ->withoutOverlapping(30);
+
+Schedule::command('adx:sync-conversions')
+    ->hourly()
+    ->name('sync-adx-conversions')
     ->withoutOverlapping(30);
