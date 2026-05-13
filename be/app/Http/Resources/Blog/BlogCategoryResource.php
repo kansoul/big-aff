@@ -14,6 +14,7 @@ class BlogCategoryResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'slug' => str($this->name)->slug()->toString(),
             'description' => $this->description,
             'created_at' => $this->created_at?->toISOString(),
         ];

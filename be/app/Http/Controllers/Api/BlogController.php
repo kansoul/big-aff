@@ -6,6 +6,7 @@ use App\Http\Requests\Blog\ListBlogCategoriesRequest;
 use App\Http\Requests\Blog\ListBlogPostsRequest;
 use App\Http\Resources\Blog\BlogCategoryResource;
 use App\Http\Resources\Blog\BlogPostDetailResource;
+use App\Http\Resources\Blog\BlogPostIndexResource;
 use App\Http\Resources\Blog\BlogPostResource;
 use App\Services\Blog\BlogService;
 use Illuminate\Http\JsonResponse;
@@ -19,11 +20,12 @@ class BlogController extends BaseController
     public function listPosts(ListBlogPostsRequest $request): JsonResponse
     {
         $limit = $request->validated('limit', 10);
-        $categoryId = $request->validated('category_id');
-        $posts = $this->service->listPosts($limit, $categoryId);
+        $categorySlug = $request->validated('category_slug');
+        $paginator = $this->service->listPosts($limit, $categorySlug);
 
         return $this->sendResponse([
-            'data' => BlogPostResource::collection($posts),
+            'data' => BlogPostResource::collection($paginator),
+            'pagination' => $this->parsePagination($paginator),
         ]);
     }
 
@@ -34,6 +36,15 @@ class BlogController extends BaseController
 
         return $this->sendResponse([
             'data' => BlogCategoryResource::collection($categories),
+        ]);
+    }
+
+    public function indexPosts(): JsonResponse
+    {
+        $posts = $this->service->indexPosts();
+
+        return $this->sendResponse([
+            'data' => BlogPostIndexResource::collection($posts),
         ]);
     }
 

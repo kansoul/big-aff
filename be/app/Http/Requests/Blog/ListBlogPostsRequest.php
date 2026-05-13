@@ -15,7 +15,8 @@ class ListBlogPostsRequest extends FormRequest
     {
         return [
             'limit' => ['nullable', 'integer', 'min:1', 'max:20'],
-            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'category_slug' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

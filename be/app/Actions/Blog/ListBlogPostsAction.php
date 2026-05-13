@@ -3,13 +3,23 @@
 namespace App\Actions\Blog;
 
 use App\Enums\PostStatus;
+use App\Models\Category;
 use App\Models\Post;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 
 class ListBlogPostsAction
 {
-    public function execute(int $limit, ?int $categoryId = null): Collection
+    public function execute(int $limit, ?string $categorySlug = null): LengthAwarePaginator
     {
+        $categoryId = null;
+
+        if ($categorySlug !== null) {
+            $categoryId = Category::all()
+                ->first(fn (Category $cat) => Str::slug($cat->name) === $categorySlug)
+                ?->id;
+        }
+
         return Post::query()
             ->select('posts.*')
             ->selectRaw('SUM(realtime_reports.click_ad_count) as total_click_ad_count')
@@ -27,8 +37,7 @@ class ListBlogPostsAction
             ->whereNull('link_datas.deleted_at')
             ->groupBy('posts.id')
             ->orderByDesc('total_click_ad_count')
-            ->limit($limit)
             ->with(['featureMedia', 'category'])
-            ->get();
+            ->paginate($limit);
     }
 }

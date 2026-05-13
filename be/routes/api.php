@@ -68,6 +68,7 @@ Route::middleware('check.whitelist')->group(function () {
 
     Route::prefix('blog')->group(function (): void {
         Route::get('/posts', [BlogController::class, 'listPosts']);
+        Route::get('/posts/index', [BlogController::class, 'indexPosts']);
         Route::get('/posts/{id}', [BlogController::class, 'showPost'])->whereNumber('id');
         Route::get('/categories', [BlogController::class, 'listCategories']);
     });
