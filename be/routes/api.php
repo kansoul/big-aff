@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\AdxTrackingController;
 use App\Http\Controllers\Api\AnalyticsTrackingController;
 use App\Http\Controllers\Api\AssignController;
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\BlogController;
 use App\Http\Controllers\Api\BusinessCenterController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\CampaignReportController;
@@ -64,6 +65,13 @@ Route::middleware('check.whitelist')->group(function () {
     Route::post('/tracking/log', [TrackingController::class, 'storeLog']);
     Route::post('/tracking/ads-conversion', [TrackingController::class, 'storeAdsConversion']);
     Route::post('/adx/tracking/events', [AdxTrackingController::class, 'storeEvent']);
+
+    Route::prefix('blog')->group(function (): void {
+        Route::get('/posts', [BlogController::class, 'listPosts']);
+        Route::get('/posts/index', [BlogController::class, 'indexPosts']);
+        Route::get('/posts/{id}', [BlogController::class, 'showPost'])->whereNumber('id');
+        Route::get('/categories', [BlogController::class, 'listCategories']);
+    });
 });
 
 Route::prefix('main-system')->group(function () {
