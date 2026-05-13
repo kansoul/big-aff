@@ -8,7 +8,9 @@ use App\Models\AdsLink;
 use App\Models\Post;
 use App\Models\Site;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class RevalidateObserver
 {
@@ -37,7 +39,25 @@ class RevalidateObserver
         $urls = $this->resolveUrls($model);
 
         foreach ($urls as $url) {
-            Http::withHeaders(['X-Internal-Secret' => $secret])->get($url);
+            $this->revalidateUrl($url, $secret, $model);
+        }
+    }
+
+    protected function revalidateUrl(string $url, string $secret, Model $model): void
+    {
+        try {
+            Http::retry(3, 250)
+                ->connectTimeout(5)
+                ->timeout(10)
+                ->withHeaders(['X-Internal-Secret' => $secret])
+                ->get($url);
+        } catch (ConnectionException $exception) {
+            Log::warning('Failed to revalidate site URL.', [
+                'url' => $url,
+                'model' => $model::class,
+                'model_id' => $model->getKey(),
+                'error' => $exception->getMessage(),
+            ]);
         }
     }
 
