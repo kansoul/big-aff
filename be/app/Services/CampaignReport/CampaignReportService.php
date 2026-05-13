@@ -70,7 +70,10 @@ class CampaignReportService
 
         $groupBy = ! empty($filters['group_by']) ? $filters['group_by'] : null;
         $groups = $groupBy !== null
-            ? $this->buildGroups($paginator->items(), $groupBy, $this->computeGroupSummaries($filters, $groupBy))
+            ? $this->sortGroups(
+                $this->buildGroups($paginator->items(), $groupBy, $this->computeGroupSummaries($filters, $groupBy)),
+                $filters,
+            )
             : [];
 
         return [
@@ -462,6 +465,33 @@ class CampaignReportService
         }
 
         return array_values($buckets);
+    }
+
+    /**
+     * Sort the assembled groups by their group_summary value for the requested sort column.
+     * This is needed because groups are built from individually-sorted rows, but the displayed
+     * summary values (especially r_conversion from revenue_reports, r_rpc as a derived ratio)
+     * may differ from the per-row DB values used in the SQL ORDER BY.
+     *
+     * @param  array<int, array<string, mixed>>  $groups
+     * @param  array<string, mixed>  $filters
+     * @return array<int, array<string, mixed>>
+     */
+    private const GROUP_SORT_COLUMNS = ['r_conversion', 'a_conversion', 'r_rpc', 'r_revenue', 'r_cpa'];
+
+    private function sortGroups(array $groups, array $filters): array
+    {
+        $orderBy = $filters['order_by'] ?? null;
+
+        if ($orderBy === null || ! in_array($orderBy, self::GROUP_SORT_COLUMNS, true) || count($groups) <= 1) {
+            return $groups;
+        }
+
+        $direction = strtolower((string) ($filters['order'] ?? 'desc')) === 'asc' ? 1 : -1;
+
+        usort($groups, fn (array $a, array $b) => (((float) ($a['group_summary'][$orderBy] ?? 0)) <=> ((float) ($b['group_summary'][$orderBy] ?? 0))) * $direction);
+
+        return $groups;
     }
 
     // ─── User / account resolution ────────────────────────────────────────────

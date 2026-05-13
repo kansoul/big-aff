@@ -106,14 +106,14 @@ class ListCampaignReportsAction
                 'realtimeReport.linkData.adsLink.site',
             ]);
 
+        $query->orderBy('campaign_reports.channel_name');
+
         SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
             defaultColumn: 'date_start',
             defaultDirection: 'desc',
         )->applyTo($query);
-
-        $query->orderBy('campaign_reports.channel_code');
 
         return PaginationInput::fromValidatedArray($filters)->paginateQuery($query);
     }
