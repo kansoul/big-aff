@@ -23,7 +23,7 @@ class ListBlogCategoriesAction
             ->whereNull('ads_links.deleted_at')
             ->whereNull('link_datas.deleted_at')
             ->where('realtime_reports.event_time', '>=', now()->subDays(30)->toDateString())
-            ->groupBy('categories.id')
+            ->groupBy('categories.id', 'categories.name', 'categories.description', 'categories.created_by', 'categories.updated_by', 'categories.deleted_at', 'categories.created_at', 'categories.updated_at')
             ->orderByDesc('total_click_ad_count')
             ->limit($limit)
             ->get();
