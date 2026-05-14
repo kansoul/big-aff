@@ -35,6 +35,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
+  FileCode,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -153,6 +154,8 @@ export const TextEditor = memo(function TextEditor({
   const [linkOpen, setLinkOpen] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
   const [mediaOpen, setMediaOpen] = useState(false)
+  const [htmlMode, setHtmlMode] = useState(false)
+  const [htmlDraft, setHtmlDraft] = useState('')
 
   // NOTE: useEditor does not re-create when extensions change.
   // `placeholder` must be static for the lifetime of this component instance.
@@ -253,6 +256,17 @@ export const TextEditor = memo(function TextEditor({
     },
     [editor],
   )
+
+  const handleToggleHtmlMode = useCallback(() => {
+    if (!editor) return
+    if (!htmlMode) {
+      setHtmlDraft(editor.getHTML())
+      setHtmlMode(true)
+    } else {
+      editor.commands.setContent(htmlDraft, { emitUpdate: true })
+      setHtmlMode(false)
+    }
+  }, [editor, htmlMode, htmlDraft])
 
   // Stable toolbar handlers — editor instance is referentially stable across renders,
   // so these callbacks won't change and memo'd ToolbarTooltipButtons can skip re-render.
@@ -522,10 +536,30 @@ export const TextEditor = memo(function TextEditor({
               </ToolbarTooltipButton>
             </>
           )}
+
+          <div className="ml-auto">
+            <ToolbarTooltipButton onClick={handleToggleHtmlMode} active={htmlMode} title="Edit HTML">
+              <FileCode className="size-3.5" />
+            </ToolbarTooltipButton>
+          </div>
         </div>
 
+        {/* ── HTML source editor ── */}
+        {htmlMode ? (
+          <textarea
+            value={htmlDraft}
+            onChange={(e) => {
+              setHtmlDraft(e.target.value)
+              onChange?.(e.target.value)
+            }}
+            style={{ minHeight }}
+            className="w-full resize-y bg-background px-4 py-3 font-mono text-xs text-foreground outline-none"
+            spellCheck={false}
+          />
+        ) : null}
+
         {/* ── Editor content ── */}
-        <div className="prose prose-sm dark:prose-invert max-w-none">
+        <div className={cn('prose prose-sm dark:prose-invert max-w-none', htmlMode && 'hidden')}>
           <EditorContent
             editor={editor}
             style={{ '--editor-min-height': minHeight } as React.CSSProperties}
