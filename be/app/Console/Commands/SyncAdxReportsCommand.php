@@ -26,6 +26,7 @@ class SyncAdxReportsCommand extends Command
         AdxCampaignReportSyncService $campaignReportSync,
     ): int {
         $this->call('adx:flush-realtime');
+        $this->call('adx:sync-campaigns');
 
         $startDate = $this->argument('start_date')
             ? Carbon::parse($this->argument('start_date'))->toDateString()

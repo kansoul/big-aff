@@ -21,7 +21,8 @@ Schedule::command('tracking:flush-daily')
     ->runInBackground();
 
 Schedule::command('adx:flush-realtime')
-    ->everyThirtySeconds()
+    ->everyMinute()
+    ->when(fn () => now()->minute % 5 !== 0)
     ->withoutOverlapping()
     ->onOneServer()
     ->runInBackground();

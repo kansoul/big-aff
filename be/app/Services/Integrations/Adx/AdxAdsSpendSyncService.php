@@ -56,7 +56,7 @@ class AdxAdsSpendSyncService
 
         DB::transaction(function () use ($account, $response, $campaignsById, $now, &$count): void {
             foreach ($response['campaigns'] ?? [] as $campaign) {
-                $adxCampaign = AdxCampaign::query()->updateOrCreate(
+                AdxCampaign::query()->updateOrCreate(
                     [
                         'source' => $account->source,
                         'campaign_id' => (string) $campaign['campaign_id'],
@@ -75,8 +75,6 @@ class AdxAdsSpendSyncService
                         'last_seen_at' => $now,
                     ],
                 );
-
-                $this->ensureGamTargeting($adxCampaign, (string) $campaign['campaign_id']);
             }
 
             foreach ($response['insights'] ?? [] as $insight) {
@@ -128,26 +126,5 @@ class AdxAdsSpendSyncService
         });
 
         return $count;
-    }
-
-    /**
-     * Ensure GAM custom targeting key/value exists for a campaign if not already set.
-     */
-    private function ensureGamTargeting(AdxCampaign $adxCampaign, string $campaignId): void
-    {
-        if ($adxCampaign->gam_custom_key_id && $adxCampaign->gam_custom_value_id) {
-            return;
-        }
-
-        $targeting = app(AdxGamCustomTargetingService::class)->ensureCampaignTargeting($campaignId);
-
-        if ($targeting !== null) {
-            $adxCampaign->update([
-                'gam_custom_key' => $targeting['key_name'],
-                'gam_custom_key_id' => $targeting['key_id'],
-                'gam_custom_value' => $targeting['value_name'],
-                'gam_custom_value_id' => $targeting['value_id'],
-            ]);
-        }
     }
 }

@@ -188,6 +188,65 @@ class AdxGoogleAdsService
         }
     }
 
+    /**
+     * Get all campaigns for an account regardless of activity (no date filter).
+     *
+     * @return list<array<string, mixed>>|null
+     */
+    public function getCampaigns(string $accountId): ?array
+    {
+        $preAccountId = preg_replace('/-/', '', $accountId);
+
+        try {
+            $gaql = "
+                SELECT
+                    campaign.id,
+                    campaign.name,
+                    campaign.status,
+                    campaign.start_date,
+                    campaign.end_date,
+                    campaign_budget.period,
+                    campaign_budget.amount_micros
+                FROM campaign
+                WHERE campaign.status IN ('ENABLED', 'PAUSED', 'REMOVED')
+            ";
+
+            $response = $this->gaService->search(new SearchGoogleAdsRequest([
+                'customer_id' => $preAccountId,
+                'query' => $gaql,
+            ]));
+
+            $campaigns = [];
+
+            foreach ($response->iterateAllElements() as $row) {
+                $campaign = $row->getCampaign();
+                $budget = $row->getCampaignBudget();
+
+                $campaigns[] = [
+                    'account_id' => $accountId,
+                    'campaign_id' => (string) $campaign->getId(),
+                    'campaign_name' => $campaign->getName(),
+                    'daily_budget' => $budget->getPeriod() === 'DAILY' ? ($budget->getAmountMicros() / 1000000) : 0,
+                    'lifetime_budget' => $budget->getPeriod() !== 'DAILY' ? ($budget->getAmountMicros() / 1000000) : 0,
+                    'status' => $this->mapCampaignStatus($campaign->getStatus()),
+                    'start_time' => Carbon::parse($campaign->getStartDate()),
+                    'stop_time' => Carbon::parse($campaign->getEndDate()),
+                    'created_time' => Carbon::parse($campaign->getStartDate()),
+                    'updated_time' => Carbon::now(),
+                ];
+            }
+
+            return $campaigns;
+        } catch (Exception $e) {
+            Log::channel('sync_reports')->error('[AdxGoogleAds] getCampaigns failed', [
+                'account_id' => $accountId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
     private function mapCampaignStatus(int $googleAdsStatus): string
     {
         return match ($googleAdsStatus) {
