@@ -19,6 +19,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Throwable;
 
@@ -180,6 +181,7 @@ class SaveAdxTrackingEventJob implements ShouldQueue
         };
 
         AdxConversion::query()->create([
+            'event_id' => Str::uuid()->toString(),
             'adx_link_data_id' => $linkData->id,
             'source' => $this->eventData['source'],
             'account_id' => $accountId,

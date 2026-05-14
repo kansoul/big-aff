@@ -10,6 +10,8 @@ class AdxLinkData extends Model
 {
     use AdxLinkDataRelationship, HasFactory;
 
+    protected $table = 'adx_link_datas';
+
     protected $fillable = [
         'source',
         'account_id',
