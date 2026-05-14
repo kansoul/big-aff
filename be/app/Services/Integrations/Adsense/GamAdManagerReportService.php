@@ -140,7 +140,7 @@ class GamAdManagerReportService
             return null;
         }
 
-        $pattern = '/(?:^|[,;\\s])'.preg_quote($key, '/').'(?:=\\*|~\\*|=|~)([^,;\\s]+)/';
+        $pattern = '/(?:^|[,;\\s])'.preg_quote($key, '/').'\\s*(?:=\\*|~\\*|=|~)\\s*([^,;\\s]+)/';
         if (! preg_match($pattern, $criteria, $matches)) {
             return null;
         }

@@ -3,6 +3,7 @@
 namespace App\Services\Adx;
 
 use App\Actions\Adx\AccountConversion\DeleteAdxAccountConversionAction;
+use App\Actions\Adx\AccountConversion\ImportAdxAccountConversionsAction;
 use App\Actions\Adx\AccountConversion\ListAdxAccountConversionsAction;
 use App\Actions\Adx\AccountConversion\UpdateAdxAccountConversionAction;
 use App\Actions\Adx\AccountConversion\UpsertAdxAccountConversionAction;
@@ -16,6 +17,7 @@ class AdxAccountConversionService
         private readonly UpsertAdxAccountConversionAction $upsertAction,
         private readonly UpdateAdxAccountConversionAction $updateAction,
         private readonly DeleteAdxAccountConversionAction $deleteAction,
+        private readonly ImportAdxAccountConversionsAction $importAction,
     ) {}
 
     public function list(array $filters): LengthAwarePaginator
@@ -36,5 +38,13 @@ class AdxAccountConversionService
     public function delete(AdxAccountConversion $conversion): void
     {
         $this->deleteAction->execute($conversion);
+    }
+
+    /**
+     * @return array{processed: int, skipped: int}
+     */
+    public function import(string $lines): array
+    {
+        return $this->importAction->execute($lines);
     }
 }

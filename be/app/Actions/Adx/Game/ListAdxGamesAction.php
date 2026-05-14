@@ -3,7 +3,7 @@
 namespace App\Actions\Adx\Game;
 
 use App\Models\AdxGame;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\AdxGameOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -23,7 +23,7 @@ class ListAdxGamesAction
                 ->orWhere('slug', 'like', '%'.$filters['keyword'].'%')))
             ->when(! empty($filters['status']), fn ($q) => $q->where('status', $filters['status']));
 
-        OwnershipFilter::forAuthUser()->applyTo($query);
+        (new AdxGameOwnerResource)->applyTo($query);
 
         SortInput::fromValidatedArray($filters, self::ORDERABLE_COLUMNS, 'sort_order', 'asc')->applyTo($query);
 

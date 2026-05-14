@@ -18,6 +18,7 @@ class AdxLinkResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'source_id' => $this->id,
             'adx_game_id' => $this->adx_game_id,
             'game' => $this->whenLoaded('game', fn () => [
                 'id' => $this->game?->id,
@@ -25,10 +26,7 @@ class AdxLinkResource extends JsonResource
                 'slug' => $this->game?->slug,
             ]),
             'name' => $this->name,
-            'slug' => $this->slug,
-            'source' => $this->source,
             'landing_url' => $this->landing_url,
-            'url_template' => $this->url_template,
             'status' => $this->status,
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,

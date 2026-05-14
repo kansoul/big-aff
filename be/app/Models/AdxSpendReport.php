@@ -20,7 +20,10 @@ class AdxSpendReport extends Model
         'clicks',
         'cost',
         'currency',
-        'platform_conversions',
+        'landing_view',
+        'get_game_link_click',
+        'detail_view',
+        'get_bonus_click',
         'fetched_at',
     ];
 
@@ -31,7 +34,10 @@ class AdxSpendReport extends Model
             'impressions' => 'integer',
             'clicks' => 'integer',
             'cost' => 'decimal:4',
-            'platform_conversions' => 'decimal:4',
+            'landing_view' => 'decimal:4',
+            'get_game_link_click' => 'decimal:4',
+            'detail_view' => 'decimal:4',
+            'get_bonus_click' => 'decimal:4',
             'fetched_at' => 'datetime',
         ];
     }

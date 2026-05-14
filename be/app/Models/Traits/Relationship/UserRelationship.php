@@ -4,6 +4,7 @@ namespace App\Models\Traits\Relationship;
 
 use App\Models\Account;
 use App\Models\AdxAccount;
+use App\Models\AdxGame;
 use App\Models\Channel;
 use App\Models\File;
 use App\Models\Post;
@@ -134,6 +135,17 @@ trait UserRelationship
     public function adxAccounts(): BelongsToMany
     {
         return $this->belongsToMany(AdxAccount::class, 'adx_account_user')
+            ->withTimestamps();
+    }
+
+    /**
+     * AdX/GAM games assigned to this user.
+     *
+     * @return BelongsToMany<AdxGame, $this>
+     */
+    public function adxGames(): BelongsToMany
+    {
+        return $this->belongsToMany(AdxGame::class, 'adx_game_user')
             ->withTimestamps();
     }
 

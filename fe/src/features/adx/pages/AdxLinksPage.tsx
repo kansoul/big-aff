@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { adxApi } from '@/features/adx/api'
 import { AdxLinkDialog, AdxDeleteDialog } from '@/features/adx/components'
@@ -9,7 +11,6 @@ import {
   MonoText,
   PaginationBar,
   RowActions,
-  SOURCE_OPTIONS,
   SortButton,
   StatusPill,
   TableBody,
@@ -39,13 +40,33 @@ const DEFAULT_FILTERS: AdxLinkFilterParams = {
   per_page: DEFAULT_PAGE_SIZE,
   keyword: null,
   adx_game_id: null,
-  source: null,
   status: null,
   order_by: 'id',
   order: 'desc',
 }
 
-const SOURCE_OPTIONS_SELECT = SOURCE_OPTIONS.map((s) => ({ value: s, label: s }))
+type AdxCopyPlatform = 'facebook' | 'google'
+
+function withQueryParams(url: string, params: Record<string, string | number>): string {
+  const [beforeHash, hash = ''] = url.split('#')
+  const separator = beforeHash.includes('?') ? '&' : '?'
+  const query = Object.entries(params)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${String(value)}`)
+    .join('&')
+
+  return `${beforeHash}${separator}${query}${hash ? `#${hash}` : ''}`
+}
+
+function buildAdxCopyLink(link: AdxLink, platform: AdxCopyPlatform): string {
+  return withQueryParams(link.landing_url, {
+    campaign_id: platform === 'google' ? '{campaignid}' : '{{campaign.id}}',
+    source_id: link.source_id ?? link.id,
+  })
+}
+
+async function copyText(text: string): Promise<void> {
+  await navigator.clipboard.writeText(text)
+}
 
 export function AdxLinksPage() {
   const user = useAuthStore((s) => s.user)
@@ -75,9 +96,13 @@ export function AdxLinksPage() {
     let ignore = false
     adxApi
       .listGames({ page: 1, per_page: 100, status: 'active', order_by: 'sort_order', order: 'asc' })
-      .then(({ data }) => { if (!ignore) setGames(data.data) })
-      .catch(() => {})
-    return () => { ignore = true }
+      .then(({ data }) => {
+        if (!ignore) setGames(data.data)
+      })
+      .catch(() => undefined)
+    return () => {
+      ignore = true
+    }
   }, [])
 
   useEffect(() => {
@@ -97,7 +122,9 @@ export function AdxLinksPage() {
       }
     }
     void run()
-    return () => { ignore = true }
+    return () => {
+      ignore = true
+    }
   }, [filters, refresh])
 
   const sort = useMemo<SortState<AdxLinkOrderBy>>(
@@ -142,7 +169,7 @@ export function AdxLinksPage() {
         typeof values.adx_game_id === 'string' && values.adx_game_id
           ? Number(values.adx_game_id)
           : null,
-      source: typeof values.source === 'string' ? values.source : null,
+      status: typeof values.status === 'string' ? values.status : null,
     }))
   }, [])
 
@@ -168,24 +195,41 @@ export function AdxLinksPage() {
         placeholder: 'All games',
       },
       {
-        field: 'source',
-        label: 'Source',
+        field: 'status',
+        label: 'Status',
         type: 'select',
-        value: filters.source ?? null,
-        options: SOURCE_OPTIONS_SELECT,
-        placeholder: 'All sources',
+        value: filters.status ?? null,
+        options: [
+          { value: 'active', label: 'active' },
+          { value: 'inactive', label: 'inactive' },
+          { value: 'paused', label: 'paused' },
+          { value: 'archived', label: 'archived' },
+        ],
+        placeholder: 'All statuses',
       },
     ],
     [filters, gameOptions],
   )
 
+  const onCopyLink = useCallback((link: AdxLink, platform: AdxCopyPlatform) => {
+    const url = buildAdxCopyLink(link, platform)
+    void copyText(url).then(() => {
+      toast.success(`Copied ${platform === 'google' ? 'Google' : 'Facebook'} link`)
+    })
+  }, [])
+
   return (
     <div className="flex flex-col gap-6">
-      <FilterPanel fields={filterFields} onReset={onResetFilters} applyMode onApply={onApplyFilters} />
+      <FilterPanel
+        fields={filterFields}
+        onReset={onResetFilters}
+        applyMode
+        onApply={onApplyFilters}
+      />
       <section className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
         <Toolbar
           title="Links"
-          subtitle="Landing URL templates copied into Google Ads, Facebook Ads, or other traffic sources."
+          subtitle="Reusable landing links with campaign_id and source_id filled for ad platforms."
           canCreate={access.createLink}
           createLabel="Create link"
           onCreate={() => setDialogOpen(true)}
@@ -193,35 +237,73 @@ export function AdxLinksPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Copy</TableHead>
+              <TableHead>Source ID</TableHead>
               <TableHead>
-                <SortButton column="name" sort={sort} onSort={onSort}>Name</SortButton>
+                <SortButton column="name" sort={sort} onSort={onSort}>
+                  Name
+                </SortButton>
               </TableHead>
               <TableHead>Game</TableHead>
-              <TableHead>Source</TableHead>
-              <TableHead>Slug</TableHead>
+              <TableHead>Landing URL</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <EmptyRow colSpan={6}>Loading links...</EmptyRow>
+              <EmptyRow colSpan={7}>Loading links...</EmptyRow>
             ) : items.length === 0 ? (
-              <EmptyRow colSpan={6}>No links found.</EmptyRow>
+              <EmptyRow colSpan={7}>No links found.</EmptyRow>
             ) : (
               items.map((link) => (
                 <TableRow key={link.id}>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 gap-1 px-2 text-xs"
+                        onClick={() => onCopyLink(link, 'google')}
+                      >
+                        <Copy className="size-3" />
+                        GG
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 gap-1 px-2 text-xs"
+                        onClick={() => onCopyLink(link, 'facebook')}
+                      >
+                        <Copy className="size-3" />
+                        FB
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <MonoText value={String(link.source_id ?? link.id)} />
+                  </TableCell>
                   <TableCell className="font-medium">{link.name}</TableCell>
                   <TableCell>{link.game?.name ?? '-'}</TableCell>
-                  <TableCell><StatusPill value={link.source} /></TableCell>
-                  <TableCell><MonoText value={link.slug} /></TableCell>
-                  <TableCell><StatusPill value={link.status} /></TableCell>
+                  <TableCell className="max-w-md">
+                    <span className="line-clamp-2 break-all font-mono text-xs text-muted-foreground">
+                      {link.landing_url}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <StatusPill value={link.status} />
+                  </TableCell>
                   <TableCell>
                     <RowActions
                       row={link}
                       canUpdate={access.updateLink}
                       canDelete={access.deleteLink}
-                      onEdit={(row) => { setEditing(row); setDialogOpen(true) }}
+                      onEdit={(row) => {
+                        setEditing(row)
+                        setDialogOpen(true)
+                      }}
                       onDelete={setDeleting}
                     />
                   </TableCell>
@@ -233,20 +315,27 @@ export function AdxLinksPage() {
         <PaginationBar
           pagination={pagination}
           onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
-          onPageSizeChange={(perPage) => setFilters((prev) => ({ ...prev, page: 1, per_page: perPage }))}
+          onPageSizeChange={(perPage) =>
+            setFilters((prev) => ({ ...prev, page: 1, per_page: perPage }))
+          }
         />
       </section>
       <AdxLinkDialog
         open={dialogOpen}
         link={editing}
         games={games}
-        onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditing(null) }}
+        onOpenChange={(open) => {
+          setDialogOpen(open)
+          if (!open) setEditing(null)
+        }}
         onSuccess={reload}
       />
       <AdxDeleteDialog
         open={Boolean(deleting)}
         deleting={deleteBusy}
-        onOpenChange={(open) => { if (!open) setDeleting(null) }}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(null)
+        }}
         title="Delete AdX Link"
         description={
           <>

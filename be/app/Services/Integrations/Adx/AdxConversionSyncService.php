@@ -2,9 +2,6 @@
 
 namespace App\Services\Integrations\Adx;
 
-use App\Models\AdxAccountConversion;
-use App\Models\AdxConversion;
-use App\Models\AdxConversionUpload;
 use Exception;
 use Google\Ads\GoogleAds\Lib\V21\GoogleAdsClient;
 use Google\Ads\GoogleAds\Lib\V21\GoogleAdsClientBuilder;
@@ -13,182 +10,77 @@ use Google\Ads\GoogleAds\V21\Errors\GoogleAdsFailure;
 use Google\Ads\GoogleAds\V21\Services\ClickConversion;
 use Google\Ads\GoogleAds\V21\Services\UploadClickConversionsRequest;
 use Google\Auth\Credentials\UserRefreshCredentials;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AdxConversionSyncService
 {
-    private const BATCH_SIZE = 100;
+    protected GoogleAdsClient $googleAdsClient;
 
-    public function sync(): int
+    public function __construct()
     {
-        $synced = 0;
-
-        $pending = AdxConversion::query()
-            ->where('sync_status', 'pending')
-            ->where('source', 'google')
-            ->whereNotNull('account_id')
-            ->whereNotNull('conversion_action_id')
-            ->where(fn ($q) => $q->whereNotNull('gclid')->orWhereNotNull('gbraid')->orWhereNotNull('wbraid'))
-            ->orderBy('occurred_at')
-            ->get();
-
-        if ($pending->isEmpty()) {
-            return 0;
-        }
-
-        $byAccount = $pending->groupBy('account_id');
-
-        foreach ($byAccount as $accountId => $conversions) {
-            try {
-                $synced += $this->syncAccountConversions((string) $accountId, $conversions);
-            } catch (Exception $e) {
-                Log::channel('sync_reports')->error('[AdxConversionSync] Account batch failed', [
-                    'account_id' => $accountId,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
-        return $synced;
+        $this->googleAdsClient = $this->buildGoogleAdsClient();
     }
 
     /**
-     * @param  Collection<int, AdxConversion>  $conversions
+     * @param  array<int, array<string, mixed>>  $conversionsPayload
+     * @return array<int>|null Returns failed indices, empty array if all success, null if critical error.
      */
-    private function syncAccountConversions(string $accountId, Collection $conversions): int
+    public function syncAdxConversion(string|int $customerId, array $conversionsPayload): ?array
     {
-        $accountConversions = AdxAccountConversion::query()
-            ->where('source', 'google')
-            ->where('account_id', $accountId)
-            ->where('status', 'active')
-            ->get()
-            ->keyBy('conversion_type');
+        try {
+            if (empty($conversionsPayload)) {
+                return [];
+            }
 
-        $client = $this->buildGoogleAdsClient();
-        $uploadService = $client->getConversionUploadServiceClient();
-        $preAccountId = preg_replace('/-/', '', $accountId);
-        $synced = 0;
+            if (! $customerId) {
+                Log::channel('sync_reports')->error('[AdxConversionSync] Missing customer_id');
 
-        foreach ($conversions->chunk(self::BATCH_SIZE) as $chunk) {
-            $indexed = $chunk->values();
+                return null;
+            }
+
+            $preAccountId = preg_replace('/-/', '', (string) $customerId);
+            $uploadService = $this->googleAdsClient->getConversionUploadServiceClient();
             $clickConversions = [];
 
-            foreach ($indexed as $conversion) {
-                $accountConversion = $accountConversions->get($conversion->conversion_type);
+            foreach ($conversionsPayload as $payload) {
+                $conversion = new ClickConversion;
 
-                $conversionActionId = $conversion->conversion_action_id
-                    ?? $accountConversion?->conversion_action_id;
-
-                if (! $conversionActionId) {
-                    $this->markFailed($conversion, 'no_action', 'No conversion_action_id resolved.');
-
-                    continue;
+                if (! empty($payload['gclid'])) {
+                    $conversion->setGclid($payload['gclid']);
+                } elseif (! empty($payload['wbraid'])) {
+                    $conversion->setWbraid($payload['wbraid']);
+                } elseif (! empty($payload['gbraid'])) {
+                    $conversion->setGbraid($payload['gbraid']);
                 }
 
-                $resourceName = "customers/{$preAccountId}/conversionActions/{$conversionActionId}";
+                $conversion->setConversionAction($payload['conversion_action_resource_name']);
 
-                $click = new ClickConversion;
-                if (! empty($conversion->gclid)) {
-                    $click->setGclid($conversion->gclid);
-                } elseif (! empty($conversion->wbraid)) {
-                    $click->setWbraid($conversion->wbraid);
-                } elseif (! empty($conversion->gbraid)) {
-                    $click->setGbraid($conversion->gbraid);
+                if (! empty($payload['conversion_value'])) {
+                    $conversion->setConversionValue((float) $payload['conversion_value']);
                 }
 
-                $click->setConversionAction($resourceName);
-                $click->setConversionDateTime($conversion->occurred_at->format('Y-m-d H:i:sP'));
-
-                if ($conversion->conversion_value > 0) {
-                    $click->setConversionValue((float) $conversion->conversion_value);
-                }
-                if ($conversion->currency) {
-                    $click->setCurrencyCode($conversion->currency);
+                if (! empty($payload['currency_code'])) {
+                    $conversion->setCurrencyCode($payload['currency_code']);
                 }
 
-                $clickConversions[] = [
-                    'conversion' => $click,
-                    'model' => $conversion,
-                    'action_id' => $conversionActionId,
-                    'resource_name' => $resourceName,
-                ];
+                $conversion->setConversionDateTime($payload['conversion_date_time']);
+                $clickConversions[] = $conversion;
             }
 
-            if (empty($clickConversions)) {
-                continue;
-            }
+            $request = new UploadClickConversionsRequest([
+                'customer_id' => $preAccountId,
+                'conversions' => $clickConversions,
+                'partial_failure' => true,
+            ]);
 
-            try {
-                $request = new UploadClickConversionsRequest([
-                    'customer_id' => $preAccountId,
-                    'conversions' => array_column($clickConversions, 'conversion'),
-                    'partial_failure' => true,
-                ]);
+            $response = $uploadService->uploadClickConversions($request);
 
-                $response = $uploadService->uploadClickConversions($request);
-                $failedIndices = $this->resolveFailedIndices($response, $accountId);
+            return $this->resolveFailedIndices($response, (string) $customerId);
+        } catch (Exception $e) {
+            Log::channel('sync_reports')->error('[AdxConversionSync] Upload failed: '.$e->getMessage());
 
-                DB::transaction(function () use ($clickConversions, $failedIndices, &$synced): void {
-                    $now = now();
-
-                    foreach ($clickConversions as $i => $item) {
-                        /** @var AdxConversion $model */
-                        $model = $item['model'];
-
-                        if (in_array($i, $failedIndices, true)) {
-                            continue;
-                        }
-
-                        $model->update([
-                            'sync_status' => 'synced',
-                            'synced_at' => $now,
-                            'error_message' => null,
-                        ]);
-
-                        AdxConversionUpload::create([
-                            'adx_conversion_id' => $model->id,
-                            'upload_status' => 'success',
-                            'external_conversion_action' => $item['resource_name'],
-                            'uploaded_at' => $now,
-                        ]);
-
-                        $synced++;
-                    }
-
-                    foreach ($failedIndices as $i) {
-                        if (! isset($clickConversions[$i])) {
-                            continue;
-                        }
-                        $model = $clickConversions[$i]['model'];
-                        $model->update([
-                            'sync_status' => 'failed',
-                            'error_message' => 'Partial failure from Google Ads API.',
-                        ]);
-
-                        AdxConversionUpload::create([
-                            'adx_conversion_id' => $model->id,
-                            'upload_status' => 'failed',
-                            'external_conversion_action' => $clickConversions[$i]['resource_name'],
-                            'error_message' => 'Partial failure from Google Ads API.',
-                            'uploaded_at' => now(),
-                        ]);
-                    }
-                });
-            } catch (Exception $e) {
-                Log::channel('sync_reports')->error('[AdxConversionSync] Upload batch failed', [
-                    'account_id' => $accountId,
-                    'error' => $e->getMessage(),
-                ]);
-
-                foreach ($clickConversions as $item) {
-                    $this->markFailed($item['model'], 'exception', $e->getMessage());
-                }
-            }
+            return null;
         }
-
-        return $synced;
     }
 
     private function resolveFailedIndices(mixed $response, string $accountId): array
@@ -211,10 +103,12 @@ class AdxConversionSyncService
 
             foreach ($failure->getErrors() as $error) {
                 $index = null;
-                foreach ($error->getLocation()->getFieldPathElements() as $element) {
-                    if ($element->getFieldName() === 'conversions' && $element->hasIndex()) {
-                        $index = $element->getIndex();
-                        break;
+                if ($error->hasLocation()) {
+                    foreach ($error->getLocation()->getFieldPathElements() as $element) {
+                        if ($element->getFieldName() === 'conversions' && $element->hasIndex()) {
+                            $index = $element->getIndex();
+                            break;
+                        }
                     }
                 }
 
@@ -242,14 +136,6 @@ class AdxConversionSyncService
         }
 
         return array_unique($failedIndices);
-    }
-
-    private function markFailed(AdxConversion $conversion, string $code, string $message): void
-    {
-        $conversion->update([
-            'sync_status' => 'failed',
-            'error_message' => "[{$code}] {$message}",
-        ]);
     }
 
     private function buildGoogleAdsClient(): GoogleAdsClient

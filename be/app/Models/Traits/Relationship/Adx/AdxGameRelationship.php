@@ -8,6 +8,7 @@ use App\Models\AdxLinkData;
 use App\Models\AdxRevenueReport;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 trait AdxGameRelationship
@@ -42,6 +43,17 @@ trait AdxGameRelationship
     public function campaignReports(): HasMany
     {
         return $this->hasMany(AdxCampaignReport::class);
+    }
+
+    /**
+     * Users assigned to this game (view/link creation access).
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function assignedUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'adx_game_user')
+            ->withTimestamps();
     }
 
     /**

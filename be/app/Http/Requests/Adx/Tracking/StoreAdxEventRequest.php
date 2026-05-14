@@ -18,7 +18,6 @@ class StoreAdxEventRequest extends FormRequest
     {
         $this->merge([
             'occurred_at' => now(),
-            'source' => $this->input('source') ?: 'google',
         ]);
     }
 
@@ -28,7 +27,6 @@ class StoreAdxEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'source' => ['required', 'string', 'max:50'],
             'campaign_id' => ['required', 'string', 'max:191'],
             'source_id' => ['nullable', 'integer', 'exists:adx_links,id'],
             'page_key' => ['nullable', 'string', 'max:50'],

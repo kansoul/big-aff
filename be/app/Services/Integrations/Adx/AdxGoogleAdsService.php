@@ -13,6 +13,13 @@ use Illuminate\Support\Facades\Log;
 
 class AdxGoogleAdsService
 {
+    private const CONVERSION_ACTION_FIELD_MAP = [
+        'LandingViewU' => 'landing_view',
+        'GetGameLinkClickU' => 'get_game_link_click',
+        'DetailViewU' => 'detail_view',
+        'GetBonusClickU' => 'get_bonus_click',
+    ];
+
     protected GoogleAdsServiceClient $gaService;
 
     public function __construct()
@@ -158,9 +165,9 @@ class AdxGoogleAdsService
             $finalInsights = [];
             foreach ($aggregatedInsights as $insight) {
                 $conversions = $insight['conversions'];
-                $insight['article_views'] = ($conversions['ArticleView'] ?? 0) + ($conversions['ArticleViewU'] ?? 0);
-                $insight['search_views'] = ($conversions['SearchView'] ?? 0) + ($conversions['SearchViewU'] ?? 0);
-                $insight['fb_clicks'] = ($conversions['OutboundClick'] ?? 0) + ($conversions['OutboundClickU'] ?? 0);
+                foreach (self::CONVERSION_ACTION_FIELD_MAP as $actionName => $field) {
+                    $insight[$field] = (float) ($conversions[$actionName] ?? 0);
+                }
                 $insight['spend_type'] = 'USD';
 
                 unset($insight['conversions']);

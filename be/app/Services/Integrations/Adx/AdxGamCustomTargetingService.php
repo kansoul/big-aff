@@ -31,22 +31,29 @@ class AdxGamCustomTargetingService
 
     /**
      * Ensure that the GAM custom targeting key "campid" and a value for the given
-     * campaign ID both exist. Returns true on success, false on failure.
+     * campaign ID both exist.
+     *
+     * @return array{key_id: int, key_name: string, value_id: int, value_name: string}|null
      */
-    public function ensureCampaignTargeting(string $campaignId): bool
+    public function ensureCampaignTargeting(string $campaignId): ?array
     {
         try {
             $keyId = $this->getOrCreateKey();
-            $this->getOrCreateValue($keyId, $campaignId);
+            $valueId = $this->getOrCreateValue($keyId, $campaignId);
 
-            return true;
+            return [
+                'key_id' => $keyId,
+                'key_name' => self::KEY_NAME,
+                'value_id' => $valueId,
+                'value_name' => $campaignId,
+            ];
         } catch (Throwable $e) {
             Log::channel('sync_reports')->error('[AdxGamCustomTargeting] Failed to ensure targeting', [
                 'campaign_id' => $campaignId,
                 'error' => $e->getMessage(),
             ]);
 
-            return false;
+            return null;
         }
     }
 
@@ -63,9 +70,10 @@ class AdxGamCustomTargetingService
     private function findKey(string $name): ?int
     {
         try {
+            $escapedName = $this->escapeStatementString($name);
             $response = $this->client->__soapCall('getCustomTargetingKeysByStatement', [[
                 'filterStatement' => [
-                    'query' => "WHERE name = '{$name}' LIMIT 1",
+                    'query' => "WHERE name = '{$escapedName}' LIMIT 1",
                 ],
             ]]);
 
@@ -121,9 +129,10 @@ class AdxGamCustomTargetingService
     private function findValue(int $keyId, string $campaignId): ?int
     {
         try {
+            $escapedCampaignId = $this->escapeStatementString($campaignId);
             $response = $this->client->__soapCall('getCustomTargetingValuesByStatement', [[
                 'filterStatement' => [
-                    'query' => "WHERE customTargetingKeyId = {$keyId} AND name = '{$campaignId}' LIMIT 1",
+                    'query' => "WHERE customTargetingKeyId = {$keyId} AND name = '{$escapedCampaignId}' LIMIT 1",
                 ],
             ]]);
 
@@ -165,5 +174,10 @@ class AdxGamCustomTargetingService
         } catch (SoapFault $fault) {
             throw new RuntimeException('GAM createCustomTargetingValues failed: '.$fault->getMessage(), previous: $fault);
         }
+    }
+
+    private function escapeStatementString(string $value): string
+    {
+        return str_replace("'", "\\'", $value);
     }
 }

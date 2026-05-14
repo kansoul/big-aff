@@ -27,7 +27,7 @@ class ListAdxCampaignsRequest extends FormRequest
             ...$this->sortRules(ListAdxCampaignsAction::ORDERABLE_COLUMNS),
             'keyword' => ['nullable', 'string', 'max:255'],
             'source' => ['nullable', 'string', 'max:50'],
-            'adx_account_id' => ['nullable', 'integer', 'exists:adx_accounts,id'],
+            'adx_account_id' => ['nullable', 'string', 'max:191', 'exists:adx_accounts,account_id'],
             'account_id' => ['nullable', 'string', 'max:191'],
             'campaign_id' => ['nullable', 'string', 'max:191'],
             'status' => ['nullable', 'string', 'max:50'],

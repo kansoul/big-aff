@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { Users } from 'lucide-react'
 
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { adxApi } from '@/features/adx/api'
-import { AdxGameDialog, AdxDeleteDialog } from '@/features/adx/components'
+import { AdxGameDialog, AdxDeleteDialog, AssignUserAdxGamesDialog } from '@/features/adx/components'
+import { Button } from '@/components/ui/button'
 import {
   DateText,
   EmptyRow,
@@ -53,6 +55,7 @@ export function AdxGamesPage() {
       createGame: hasPermission(permissions, PermissionSlugs.AdxGamesCreate),
       updateGame: hasPermission(permissions, PermissionSlugs.AdxGamesUpdate),
       deleteGame: hasPermission(permissions, PermissionSlugs.AdxGamesDelete),
+      assignGame: hasPermission(permissions, PermissionSlugs.AdxGamesAssign),
     }),
     [permissions],
   )
@@ -63,6 +66,7 @@ export function AdxGamesPage() {
   const [filters, setFilters] = useState<AdxGameFilterParams>(DEFAULT_FILTERS)
   const [refresh, setRefresh] = useState(0)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [assignOpen, setAssignOpen] = useState(false)
   const [editing, setEditing] = useState<AdxGame | null>(null)
   const [deleting, setDeleting] = useState<AdxGame | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
@@ -85,7 +89,9 @@ export function AdxGamesPage() {
       }
     }
     void run()
-    return () => { ignore = true }
+    return () => {
+      ignore = true
+    }
   }, [filters, refresh])
 
   const sort = useMemo<SortState<AdxGameOrderBy>>(
@@ -152,7 +158,12 @@ export function AdxGamesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <FilterPanel fields={filterFields} onReset={onResetFilters} applyMode onApply={onApplyFilters} />
+      <FilterPanel
+        fields={filterFields}
+        onReset={onResetFilters}
+        applyMode
+        onApply={onApplyFilters}
+      />
       <section className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
         <Toolbar
           title="Games"
@@ -160,17 +171,34 @@ export function AdxGamesPage() {
           canCreate={access.createGame}
           createLabel="Create game"
           onCreate={() => setDialogOpen(true)}
-        />
+        >
+          {access.assignGame ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setAssignOpen(true)}
+            >
+              <Users className="size-3.5" />
+              Assign games
+            </Button>
+          ) : null}
+        </Toolbar>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>
-                <SortButton column="name" sort={sort} onSort={onSort}>Name</SortButton>
+                <SortButton column="name" sort={sort} onSort={onSort}>
+                  Name
+                </SortButton>
               </TableHead>
               <TableHead>Slug</TableHead>
+              <TableHead>Game URL</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>
-                <SortButton column="sort_order" sort={sort} onSort={onSort}>Sort</SortButton>
+                <SortButton column="sort_order" sort={sort} onSort={onSort}>
+                  Sort
+                </SortButton>
               </TableHead>
               <TableHead>Updated</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -178,23 +206,35 @@ export function AdxGamesPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <EmptyRow colSpan={6}>Loading games...</EmptyRow>
+              <EmptyRow colSpan={7}>Loading games...</EmptyRow>
             ) : items.length === 0 ? (
-              <EmptyRow colSpan={6}>No games found.</EmptyRow>
+              <EmptyRow colSpan={7}>No games found.</EmptyRow>
             ) : (
               items.map((game) => (
                 <TableRow key={game.id}>
                   <TableCell className="font-medium">{game.name}</TableCell>
-                  <TableCell><MonoText value={game.slug} /></TableCell>
-                  <TableCell><StatusPill value={game.status} /></TableCell>
+                  <TableCell>
+                    <MonoText value={game.slug} />
+                  </TableCell>
+                  <TableCell>
+                    <MonoText value={game.game_url} className="block max-w-64 truncate" />
+                  </TableCell>
+                  <TableCell>
+                    <StatusPill value={game.status} />
+                  </TableCell>
                   <TableCell>{game.sort_order}</TableCell>
-                  <TableCell><DateText value={game.updated_at} /></TableCell>
+                  <TableCell>
+                    <DateText value={game.updated_at} />
+                  </TableCell>
                   <TableCell>
                     <RowActions
                       row={game}
                       canUpdate={access.updateGame}
                       canDelete={access.deleteGame}
-                      onEdit={(row) => { setEditing(row); setDialogOpen(true) }}
+                      onEdit={(row) => {
+                        setEditing(row)
+                        setDialogOpen(true)
+                      }}
                       onDelete={setDeleting}
                     />
                   </TableCell>
@@ -206,19 +246,27 @@ export function AdxGamesPage() {
         <PaginationBar
           pagination={pagination}
           onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
-          onPageSizeChange={(perPage) => setFilters((prev) => ({ ...prev, page: 1, per_page: perPage }))}
+          onPageSizeChange={(perPage) =>
+            setFilters((prev) => ({ ...prev, page: 1, per_page: perPage }))
+          }
         />
       </section>
       <AdxGameDialog
         open={dialogOpen}
         game={editing}
-        onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditing(null) }}
+        onOpenChange={(open) => {
+          setDialogOpen(open)
+          if (!open) setEditing(null)
+        }}
         onSuccess={reload}
       />
+      <AssignUserAdxGamesDialog open={assignOpen} onOpenChange={setAssignOpen} />
       <AdxDeleteDialog
         open={Boolean(deleting)}
         deleting={deleteBusy}
-        onOpenChange={(open) => { if (!open) setDeleting(null) }}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(null)
+        }}
         title="Delete AdX Game"
         description={
           <>

@@ -192,6 +192,7 @@ enum Permission: string
     case AdxAccountsDelete = 'adx.accounts.delete';
     case AdxAccountsAssign = 'adx.accounts.assign';
     case AdxCampaignReportsView = 'adx.campaign-reports.view';
+    case AdxGamesAssign = 'adx.games.assign';
 
     // —— Revenue Report Range ——
     /**

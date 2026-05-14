@@ -27,7 +27,6 @@ class ListAdxLinksRequest extends FormRequest
             ...$this->sortRules(ListAdxLinksAction::ORDERABLE_COLUMNS),
             'keyword' => ['nullable', 'string', 'max:255'],
             'adx_game_id' => ['nullable', 'integer', 'exists:adx_games,id'],
-            'source' => ['nullable', 'string', 'max:50'],
             'status' => ['nullable', 'string', 'max:50'],
         ];
     }

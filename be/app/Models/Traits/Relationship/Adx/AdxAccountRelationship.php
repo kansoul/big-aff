@@ -18,7 +18,7 @@ trait AdxAccountRelationship
      */
     public function campaigns(): HasMany
     {
-        return $this->hasMany(AdxCampaign::class, 'adx_account_id');
+        return $this->hasMany(AdxCampaign::class, 'adx_account_id', 'account_id');
     }
 
     /**

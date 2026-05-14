@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { FileUp } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { Button } from '@/components/ui/button'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { adxApi } from '@/features/adx/api'
-import { AdxAccountConversionDialog, AdxDeleteDialog } from '@/features/adx/components'
+import {
+  AdxAccountConversionDialog,
+  AdxAccountConversionImportDialog,
+  AdxDeleteDialog,
+} from '@/features/adx/components'
 import {
   CONVERSION_TYPE_OPTIONS,
   EmptyRow,
@@ -70,6 +76,7 @@ export function AdxAccountConversionsPage() {
   const [filters, setFilters] = useState<AdxAccountConversionFilterParams>(DEFAULT_FILTERS)
   const [refresh, setRefresh] = useState(0)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [editing, setEditing] = useState<AdxAccountConversion | null>(null)
   const [deleting, setDeleting] = useState<AdxAccountConversion | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
@@ -92,7 +99,9 @@ export function AdxAccountConversionsPage() {
       }
     }
     void run()
-    return () => { ignore = true }
+    return () => {
+      ignore = true
+    }
   }, [filters, refresh])
 
   const sort = useMemo<SortState<AdxAccountConversionOrderBy>>(
@@ -138,6 +147,14 @@ export function AdxAccountConversionsPage() {
     setFilters(DEFAULT_FILTERS)
   }, [])
 
+  const onImportClick = useCallback(() => {
+    if (!access.createConversion) {
+      toast.error('You do not have permission to import conversions.')
+      return
+    }
+    setImportOpen(true)
+  }, [access.createConversion])
+
   const filterFields = useMemo<FilterFieldDef[]>(
     () => [
       {
@@ -169,7 +186,12 @@ export function AdxAccountConversionsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <FilterPanel fields={filterFields} onReset={onResetFilters} applyMode onApply={onApplyFilters} />
+      <FilterPanel
+        fields={filterFields}
+        onReset={onResetFilters}
+        applyMode
+        onApply={onApplyFilters}
+      />
       <section className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
         <Toolbar
           title="Account Conversions"
@@ -177,12 +199,21 @@ export function AdxAccountConversionsPage() {
           canCreate={access.createConversion}
           createLabel="Create mapping"
           onCreate={() => setDialogOpen(true)}
-        />
+        >
+          {access.createConversion ? (
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={onImportClick}>
+              <FileUp className="size-3.5" />
+              Import Bulk
+            </Button>
+          ) : null}
+        </Toolbar>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>
-                <SortButton column="account_id" sort={sort} onSort={onSort}>Account</SortButton>
+                <SortButton column="account_id" sort={sort} onSort={onSort}>
+                  Account
+                </SortButton>
               </TableHead>
               <TableHead>Source</TableHead>
               <TableHead>Type</TableHead>
@@ -199,17 +230,30 @@ export function AdxAccountConversionsPage() {
             ) : (
               items.map((conversion) => (
                 <TableRow key={conversion.id}>
-                  <TableCell><MonoText value={conversion.account_id} /></TableCell>
-                  <TableCell><StatusPill value={conversion.source} /></TableCell>
-                  <TableCell><HumanText value={conversion.conversion_type} /></TableCell>
-                  <TableCell><MonoText value={conversion.conversion_action_id} /></TableCell>
-                  <TableCell><StatusPill value={conversion.status} /></TableCell>
+                  <TableCell>
+                    <MonoText value={conversion.account_id} />
+                  </TableCell>
+                  <TableCell>
+                    <StatusPill value={conversion.source} />
+                  </TableCell>
+                  <TableCell>
+                    <HumanText value={conversion.conversion_type} />
+                  </TableCell>
+                  <TableCell>
+                    <MonoText value={conversion.conversion_action_id} />
+                  </TableCell>
+                  <TableCell>
+                    <StatusPill value={conversion.status} />
+                  </TableCell>
                   <TableCell>
                     <RowActions
                       row={conversion}
                       canUpdate={access.updateConversion}
                       canDelete={access.deleteConversion}
-                      onEdit={(row) => { setEditing(row); setDialogOpen(true) }}
+                      onEdit={(row) => {
+                        setEditing(row)
+                        setDialogOpen(true)
+                      }}
                       onDelete={setDeleting}
                     />
                   </TableCell>
@@ -221,19 +265,33 @@ export function AdxAccountConversionsPage() {
         <PaginationBar
           pagination={pagination}
           onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
-          onPageSizeChange={(perPage) => setFilters((prev) => ({ ...prev, page: 1, per_page: perPage }))}
+          onPageSizeChange={(perPage) =>
+            setFilters((prev) => ({ ...prev, page: 1, per_page: perPage }))
+          }
         />
       </section>
       <AdxAccountConversionDialog
         open={dialogOpen}
         conversion={editing}
-        onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditing(null) }}
+        onOpenChange={(open) => {
+          setDialogOpen(open)
+          if (!open) setEditing(null)
+        }}
         onSuccess={reload}
       />
+      {access.createConversion ? (
+        <AdxAccountConversionImportDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          onSuccess={reload}
+        />
+      ) : null}
       <AdxDeleteDialog
         open={Boolean(deleting)}
         deleting={deleteBusy}
-        onOpenChange={(open) => { if (!open) setDeleting(null) }}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(null)
+        }}
         title="Delete Conversion Mapping"
         description={
           <>

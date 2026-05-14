@@ -1,6 +1,8 @@
 import { axiosInstance } from '@/shared/api/axios'
 import type {
   AdxAccount,
+  AdxAccountBulkCreatePayload,
+  AdxAccountBulkCreateResponse,
   AdxAccountConversion,
   AdxAccountConversionFilterParams,
   AdxAccountConversionFormValues,
@@ -16,6 +18,11 @@ import type {
   AdxLink,
   AdxLinkFilterParams,
   AdxLinkFormValues,
+  AdxUserAccountAssignmentFilterParams,
+  AdxUserGameAssignmentFilterParams,
+  AdxUserWithAccounts,
+  AdxUserWithGames,
+  ImportResponse,
   ListResponse,
 } from '@/features/adx/types'
 
@@ -44,6 +51,25 @@ export const adxApi = {
   createAccount: (payload: AdxAccountFormValues) =>
     axiosInstance.post<{ data: AdxAccount }>('/adx/accounts', payload),
 
+  bulkCreateAccounts: (payload: AdxAccountBulkCreatePayload) =>
+    axiosInstance.post<AdxAccountBulkCreateResponse>('/adx/accounts/bulk', payload),
+
+  listUsersWithAccounts: (filters: AdxUserAccountAssignmentFilterParams) =>
+    axiosInstance.get<ListResponse<AdxUserWithAccounts>>('/adx/accounts/user-assignments', {
+      params: compactParams({
+        page: filters.page ?? 1,
+        per_page: filters.per_page ?? 100,
+        query: filters.query,
+        order_by: filters.order_by,
+        order: filters.order,
+      }),
+    }),
+
+  assignAccountsToUser: (userId: number, accountIds: string[]) =>
+    axiosInstance.post<{ skipped_account_ids: string[] }>(`/adx/accounts/users/${userId}/assign`, {
+      account_ids: accountIds,
+    }),
+
   updateAccount: (id: number, payload: Partial<AdxAccountFormValues>) =>
     axiosInstance.patch<{ data: AdxAccount }>(`/adx/accounts/${id}`, payload),
 
@@ -69,6 +95,22 @@ export const adxApi = {
 
   deleteGame: (id: number) => axiosInstance.delete(`/adx/games/${id}`),
 
+  listUsersWithGames: (filters: AdxUserGameAssignmentFilterParams) =>
+    axiosInstance.get<ListResponse<AdxUserWithGames>>('/adx/games/users', {
+      params: compactParams({
+        page: filters.page ?? 1,
+        per_page: filters.per_page ?? 15,
+        query: filters.query,
+        order_by: filters.order_by,
+        order: filters.order,
+      }),
+    }),
+
+  assignGamesToUser: (userId: number, gameIds: number[]) =>
+    axiosInstance.put<{ skipped_game_ids: number[] }>(`/adx/games/users/${userId}/assign`, {
+      game_ids: gameIds,
+    }),
+
   listLinks: (filters: AdxLinkFilterParams) =>
     axiosInstance.get<ListResponse<AdxLink>>('/adx/links', {
       params: compactParams({
@@ -76,7 +118,6 @@ export const adxApi = {
         per_page: filters.per_page ?? 15,
         keyword: filters.keyword,
         adx_game_id: filters.adx_game_id,
-        source: filters.source,
         status: filters.status,
         order_by: filters.order_by,
         order: filters.order,
@@ -138,6 +179,9 @@ export const adxApi = {
 
   createAccountConversion: (payload: AdxAccountConversionFormValues) =>
     axiosInstance.post<{ data: AdxAccountConversion }>('/adx/account-conversions', payload),
+
+  bulkImportAccountConversions: (lines: string) =>
+    axiosInstance.post<ImportResponse>('/adx/account-conversions/bulk-import', { lines }),
 
   updateAccountConversion: (id: number, payload: Partial<AdxAccountConversionFormValues>) =>
     axiosInstance.patch<{ data: AdxAccountConversion }>(`/adx/account-conversions/${id}`, payload),

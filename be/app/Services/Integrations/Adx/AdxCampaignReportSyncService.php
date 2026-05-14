@@ -49,7 +49,10 @@ class AdxCampaignReportSyncService
                     SUM(impressions) as impressions,
                     SUM(clicks) as clicks,
                     SUM(cost) as cost,
-                    SUM(platform_conversions) as platform_conversions,
+                    SUM(landing_view) as landing_view,
+                    SUM(get_game_link_click) as get_game_link_click,
+                    SUM(detail_view) as detail_view,
+                    SUM(get_bonus_click) as get_bonus_click,
                     MAX(currency) as currency
                 ')
                 ->first();
@@ -83,7 +86,7 @@ class AdxCampaignReportSyncService
                     'adx_link_data_id' => null,
                 ],
                 [
-                    'adx_account_id' => $campaign?->adx_account_id,
+                    'adx_account_id' => $campaign?->account?->id,
                     'adx_campaign_id' => $campaign?->id,
                     'account_name' => $campaign?->account?->account_name ?? $spend?->account_name,
                     'campaign_name' => $campaign?->campaign_name ?? $spend?->campaign_name,
@@ -97,7 +100,10 @@ class AdxCampaignReportSyncService
                     'roas' => $spendAmount > 0 ? $revenueAmount / $spendAmount : 0,
                     'ads_clicks' => $adsClicks,
                     'ads_impressions' => (int) ($spend?->impressions ?? 0),
-                    'platform_conversions' => (float) ($spend?->platform_conversions ?? 0),
+                    'landing_view' => (float) ($spend?->landing_view ?? 0),
+                    'get_game_link_click' => (float) ($spend?->get_game_link_click ?? 0),
+                    'detail_view' => (float) ($spend?->detail_view ?? 0),
+                    'get_bonus_click' => (float) ($spend?->get_bonus_click ?? 0),
                     'adx_impressions' => $adxImpressions,
                     'adx_clicks' => (int) ($revenue?->clicks ?? 0),
                     'adx_requests' => (int) ($revenue?->requests ?? 0),

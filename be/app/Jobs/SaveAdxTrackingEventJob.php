@@ -62,6 +62,8 @@ class SaveAdxTrackingEventJob implements ShouldQueue
                 return;
             }
 
+            $this->eventData['source'] = $campaign->source;
+
             DB::transaction(function () use ($eventType, $campaign): void {
                 $occurredAt = Carbon::parse($this->eventData['occurred_at'] ?? now());
                 $link = $this->resolveLink();
@@ -99,14 +101,14 @@ class SaveAdxTrackingEventJob implements ShouldQueue
         $campaignId = $this->eventData['campaign_id'] ?? null;
         $source = $this->eventData['source'] ?? null;
 
-        if (! is_string($campaignId) || $campaignId === '' || ! is_string($source)) {
+        if (! is_string($campaignId) || $campaignId === '') {
             return null;
         }
 
         return AdxCampaign::query()
             ->with('account')
-            ->where('source', $source)
             ->where('campaign_id', $campaignId)
+            ->when(is_string($source) && $source !== '', fn ($query) => $query->where('source', $source))
             ->first();
     }
 

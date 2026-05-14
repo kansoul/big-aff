@@ -15,7 +15,7 @@ trait AdxCampaignRelationship
      */
     public function account(): BelongsTo
     {
-        return $this->belongsTo(AdxAccount::class, 'adx_account_id');
+        return $this->belongsTo(AdxAccount::class, 'adx_account_id', 'account_id');
     }
 
     /**

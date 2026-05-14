@@ -30,15 +30,28 @@ export interface AdxGame {
   updated_at: string | null
 }
 
+export interface AdxAssignedGameSummary {
+  id: number
+  name: string
+  slug: string
+  game_url: string | null
+  status: string
+}
+
+export interface AdxUserWithGames {
+  id: number
+  name: string
+  email: string
+  games: AdxAssignedGameSummary[]
+}
+
 export interface AdxLink {
   id: number
+  source_id: number
   adx_game_id: number
   game?: Pick<AdxGame, 'id' | 'name' | 'slug'> | null
   name: string
-  slug: string
-  source: string
   landing_url: string
-  url_template: string | null
   status: string
   created_by: number | null
   updated_by: number | null
@@ -64,9 +77,23 @@ export interface AdxAccount {
   updated_at: string | null
 }
 
+export interface AdxAssignedAccountSummary {
+  id: number
+  source: string
+  account_id: string
+  account_name: string | null
+}
+
+export interface AdxUserWithAccounts {
+  id: number
+  name: string
+  email: string
+  accounts: AdxAssignedAccountSummary[]
+}
+
 export interface AdxCampaign {
   id: number
-  adx_account_id: number | null
+  adx_account_id: string | null
   source: string
   account?: Pick<AdxAccount, 'id' | 'account_id' | 'account_name'> | null
   campaign_id: string
@@ -74,7 +101,10 @@ export interface AdxCampaign {
   daily_budget: string | number
   lifetime_budget: string | number
   gam_custom_key: string
+  gam_custom_key_id: number | null
   gam_custom_value: string | null
+  gam_custom_value_id: number | null
+  gam_targeting_ready: boolean
   status: string
   start_time: string | null
   stop_time: string | null
@@ -150,8 +180,30 @@ export type ListResponse<T> = {
   pagination: PaginationMeta
 }
 
+export type ImportResponse = {
+  data: {
+    processed: number
+    skipped: number
+  }
+}
+
+export type AdxAccountBulkCreatePayload = {
+  source: string
+  status: string
+  is_special: boolean
+  sync_to_mcc: boolean
+  lines: string
+}
+
+export type AdxAccountBulkCreateResponse = {
+  data: {
+    created: AdxAccount[]
+    errors: string[]
+  }
+}
+
 export type AdxGameOrderBy = 'id' | 'name' | 'slug' | 'status' | 'sort_order' | 'created_at'
-export type AdxLinkOrderBy = 'id' | 'name' | 'slug' | 'source' | 'status' | 'created_at'
+export type AdxLinkOrderBy = 'id' | 'name' | 'status' | 'created_at'
 export type AdxAccountOrderBy =
   | 'id'
   | 'source'
@@ -201,7 +253,6 @@ export interface AdxGameFilterParams extends BaseListParams<AdxGameOrderBy> {
 export interface AdxLinkFilterParams extends BaseListParams<AdxLinkOrderBy> {
   keyword?: string | null
   adx_game_id?: number | null
-  source?: string | null
   status?: string | null
 }
 
@@ -211,10 +262,22 @@ export interface AdxAccountFilterParams extends BaseListParams<AdxAccountOrderBy
   status?: string | null
 }
 
+export interface AdxUserAccountAssignmentFilterParams extends BaseListParams<
+  'id' | 'name' | 'email' | 'created_at'
+> {
+  query?: string | null
+}
+
+export interface AdxUserGameAssignmentFilterParams extends BaseListParams<
+  'id' | 'name' | 'email' | 'created_at'
+> {
+  query?: string | null
+}
+
 export interface AdxCampaignFilterParams extends BaseListParams<AdxCampaignOrderBy> {
   keyword?: string | null
   source?: string | null
-  adx_account_id?: number | null
+  adx_account_id?: string | null
   account_id?: string | null
   campaign_id?: string | null
   status?: string | null
@@ -248,10 +311,7 @@ export const adxGameSchema = z.object({
 export const adxLinkSchema = z.object({
   adx_game_id: z.coerce.number().int().min(1, 'Game is required'),
   name: z.string().min(1, 'Name is required').max(255),
-  slug: z.string().max(255).optional().nullable(),
-  source: z.string().min(1, 'Source is required').max(50),
   landing_url: z.string().min(1, 'Landing URL is required'),
-  url_template: z.string().optional().nullable(),
   status: z.string().min(1, 'Status is required').max(50).default('active'),
 })
 

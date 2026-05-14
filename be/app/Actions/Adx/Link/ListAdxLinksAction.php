@@ -10,7 +10,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ListAdxLinksAction
 {
-    public const ORDERABLE_COLUMNS = ['id', 'name', 'slug', 'source', 'status', 'created_at'];
+    public const ORDERABLE_COLUMNS = ['id', 'name', 'status', 'created_at'];
 
     /**
      * @param  array<string, mixed>  $filters
@@ -21,9 +21,8 @@ class ListAdxLinksAction
             ->with('game')
             ->when(! empty($filters['keyword']), fn ($q) => $q->where(fn ($inner) => $inner
                 ->where('name', 'like', '%'.$filters['keyword'].'%')
-                ->orWhere('slug', 'like', '%'.$filters['keyword'].'%')))
+                ->orWhere('landing_url', 'like', '%'.$filters['keyword'].'%')))
             ->when(! empty($filters['adx_game_id']), fn ($q) => $q->where('adx_game_id', $filters['adx_game_id']))
-            ->when(! empty($filters['source']), fn ($q) => $q->where('source', $filters['source']))
             ->when(! empty($filters['status']), fn ($q) => $q->where('status', $filters['status']));
 
         OwnershipFilter::forAuthUser()->applyTo($query);

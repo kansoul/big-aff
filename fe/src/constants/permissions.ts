@@ -148,6 +148,7 @@ export const PermissionSlugs = {
   AdxGamesCreate: 'adx.games.create',
   AdxGamesUpdate: 'adx.games.update',
   AdxGamesDelete: 'adx.games.delete',
+  AdxGamesAssign: 'adx.games.assign',
   AdxLinksView: 'adx.links.view',
   AdxLinksCreate: 'adx.links.create',
   AdxLinksUpdate: 'adx.links.update',
@@ -732,6 +733,7 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           { key: 'AdxGamesCreate', slug: PermissionSlugs.AdxGamesCreate, label: 'Create' },
           { key: 'AdxGamesUpdate', slug: PermissionSlugs.AdxGamesUpdate, label: 'Update' },
           { key: 'AdxGamesDelete', slug: PermissionSlugs.AdxGamesDelete, label: 'Delete' },
+          { key: 'AdxGamesAssign', slug: PermissionSlugs.AdxGamesAssign, label: 'Assign' },
         ],
       },
       {

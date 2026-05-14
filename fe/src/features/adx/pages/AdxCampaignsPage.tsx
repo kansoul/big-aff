@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
+import { Badge } from '@/components/ui/badge'
+import { Table } from '@/components/ui/table'
 import { adxApi } from '@/features/adx/api'
 import {
   DateText,
@@ -27,7 +29,6 @@ import type {
   PaginationMeta,
 } from '@/features/adx/types'
 import { formatApiError } from '@/features/settings/components'
-import { Table } from '@/components/ui/table'
 
 const DEFAULT_PAGE_SIZE = 15
 
@@ -53,6 +54,35 @@ function money(value: string | number | null | undefined): string {
   })
 }
 
+function TargetingCell({ campaign }: { campaign: AdxCampaign }) {
+  return (
+    <div className="flex min-w-56 flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <Badge variant={campaign.gam_targeting_ready ? 'success' : 'warning'}>
+          {campaign.gam_targeting_ready ? 'Ready' : 'Pending'}
+        </Badge>
+        <MonoText value={`${campaign.gam_custom_key}=${campaign.gam_custom_value ?? '-'}`} />
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <span>
+          Key ID:{' '}
+          <MonoText
+            value={campaign.gam_custom_key_id ? String(campaign.gam_custom_key_id) : null}
+            className="text-muted-foreground"
+          />
+        </span>
+        <span>
+          Value ID:{' '}
+          <MonoText
+            value={campaign.gam_custom_value_id ? String(campaign.gam_custom_value_id) : null}
+            className="text-muted-foreground"
+          />
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export function AdxCampaignsPage() {
   const [items, setItems] = useState<AdxCampaign[]>([])
   const [pagination, setPagination] = useState<PaginationMeta | null>(null)
@@ -76,7 +106,9 @@ export function AdxCampaignsPage() {
       }
     }
     void run()
-    return () => { ignore = true }
+    return () => {
+      ignore = true
+    }
   }, [filters])
 
   const sort = useMemo<SortState<AdxCampaignOrderBy>>(
@@ -155,14 +187,21 @@ export function AdxCampaignsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <FilterPanel fields={filterFields} onReset={onResetFilters} applyMode onApply={onApplyFilters} />
+      <FilterPanel
+        fields={filterFields}
+        onReset={onResetFilters}
+        applyMode
+        onApply={onApplyFilters}
+      />
       <section className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
         <Toolbar title="Campaigns" subtitle="Synchronized campaigns from Google/Facebook ads." />
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>
-                <SortButton column="campaign_id" sort={sort} onSort={onSort}>Campaign ID</SortButton>
+                <SortButton column="campaign_id" sort={sort} onSort={onSort}>
+                  Campaign ID
+                </SortButton>
               </TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Source</TableHead>
@@ -181,16 +220,26 @@ export function AdxCampaignsPage() {
             ) : (
               items.map((campaign) => (
                 <TableRow key={campaign.id}>
-                  <TableCell><MonoText value={campaign.campaign_id} /></TableCell>
-                  <TableCell>{campaign.campaign_name ?? '-'}</TableCell>
-                  <TableCell><StatusPill value={campaign.source} /></TableCell>
-                  <TableCell><MonoText value={campaign.account?.account_id} /></TableCell>
-                  <TableCell>{money(campaign.daily_budget)}</TableCell>
-                  <TableCell><StatusPill value={campaign.status} /></TableCell>
                   <TableCell>
-                    <MonoText value={`${campaign.gam_custom_key}=${campaign.gam_custom_value ?? '-'}`} />
+                    <MonoText value={campaign.campaign_id} />
                   </TableCell>
-                  <TableCell><DateText value={campaign.last_seen_at} /></TableCell>
+                  <TableCell>{campaign.campaign_name ?? '-'}</TableCell>
+                  <TableCell>
+                    <StatusPill value={campaign.source} />
+                  </TableCell>
+                  <TableCell>
+                    <MonoText value={campaign.account?.account_id} />
+                  </TableCell>
+                  <TableCell>{money(campaign.daily_budget)}</TableCell>
+                  <TableCell>
+                    <StatusPill value={campaign.status} />
+                  </TableCell>
+                  <TableCell>
+                    <TargetingCell campaign={campaign} />
+                  </TableCell>
+                  <TableCell>
+                    <DateText value={campaign.last_seen_at} />
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -199,7 +248,9 @@ export function AdxCampaignsPage() {
         <PaginationBar
           pagination={pagination}
           onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
-          onPageSizeChange={(perPage) => setFilters((prev) => ({ ...prev, page: 1, per_page: perPage }))}
+          onPageSizeChange={(perPage) =>
+            setFilters((prev) => ({ ...prev, page: 1, per_page: perPage }))
+          }
         />
       </section>
     </div>

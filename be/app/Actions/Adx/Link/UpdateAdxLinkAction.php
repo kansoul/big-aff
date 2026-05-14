@@ -4,6 +4,7 @@ namespace App\Actions\Adx\Link;
 
 use App\Models\AdxGame;
 use App\Models\AdxLink;
+use App\Support\OwnerResource\AdxGameOwnerResource;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,7 +20,7 @@ class UpdateAdxLinkAction
 
         if (! empty($data['adx_game_id'])) {
             $game = AdxGame::query()->findOrFail($data['adx_game_id']);
-            $ownership->authorize($game->created_by);
+            (new AdxGameOwnerResource)->authorize($game);
         }
 
         $link->fill($data);

@@ -18,7 +18,9 @@ class AdxCampaign extends Model
         'daily_budget',
         'lifetime_budget',
         'gam_custom_key',
+        'gam_custom_key_id',
         'gam_custom_value',
+        'gam_custom_value_id',
         'status',
         'start_time',
         'stop_time',
@@ -33,6 +35,8 @@ class AdxCampaign extends Model
         return [
             'daily_budget' => 'decimal:4',
             'lifetime_budget' => 'decimal:4',
+            'gam_custom_key_id' => 'integer',
+            'gam_custom_value_id' => 'integer',
             'start_time' => 'datetime',
             'stop_time' => 'datetime',
             'created_time' => 'datetime',

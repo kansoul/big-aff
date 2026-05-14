@@ -23,7 +23,7 @@ class ListAdxGamesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            ...$this->paginationRules(),
+            ...$this->paginationRules(maxPerPage: 500),
             ...$this->sortRules(ListAdxGamesAction::ORDERABLE_COLUMNS),
             'keyword' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'string', 'max:50'],

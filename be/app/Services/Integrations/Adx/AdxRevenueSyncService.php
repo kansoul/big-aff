@@ -14,12 +14,22 @@ class AdxRevenueSyncService
     public function sync(string $startDate, string $endDate): int
     {
         $campaignIds = AdxCampaign::query()
+            ->whereNotNull('gam_custom_value_id')
             ->whereNotNull('gam_custom_value')
             ->pluck('gam_custom_value')
             ->filter()
             ->unique()
             ->values()
             ->all();
+
+        if (empty($campaignIds)) {
+            Log::channel('sync_reports')->info('[AdxRevenueSync] Skipped GAM fetch because no verified campaign targeting values exist.', [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]);
+
+            return 0;
+        }
 
         try {
             $report = app(GamAdManagerReportService::class)->fetchAdxRevenueByCustomTargeting([

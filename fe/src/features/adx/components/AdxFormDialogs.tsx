@@ -521,10 +521,7 @@ export function AdxGameDialog({
 const LINK_DEFAULT_VALUES: AdxLinkFormValues = {
   adx_game_id: 0,
   name: '',
-  slug: null,
-  source: 'google',
   landing_url: '',
-  url_template: null,
   status: 'active',
 }
 
@@ -556,13 +553,14 @@ export function AdxLinkDialog({
         ? {
             adx_game_id: link.adx_game_id,
             name: link.name,
-            slug: link.slug,
-            source: link.source,
             landing_url: link.landing_url,
-            url_template: link.url_template,
             status: link.status,
           }
-        : { ...LINK_DEFAULT_VALUES, adx_game_id: games[0]?.id ?? 0 },
+        : {
+            ...LINK_DEFAULT_VALUES,
+            adx_game_id: games[0]?.id ?? 0,
+            landing_url: games[0]?.game_url ?? '',
+          },
     )
   }, [open, link, games, form])
 
@@ -607,7 +605,14 @@ export function AdxLinkDialog({
                     <Select
                       disabled={submitting || gameOptions.length === 0}
                       value={field.value ? String(field.value) : ''}
-                      onValueChange={(value) => field.onChange(Number(value))}
+                      onValueChange={(value) => {
+                        const gameId = Number(value)
+                        field.onChange(gameId)
+                        const selectedGame = games.find((game) => game.id === gameId)
+                        if (selectedGame?.game_url && (!isEdit || !form.getValues('landing_url'))) {
+                          form.setValue('landing_url', selectedGame.game_url)
+                        }
+                      }}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -626,75 +631,15 @@ export function AdxLinkDialog({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="source"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Source</FormLabel>
-                    <Select
-                      disabled={submitting}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {SOURCE_OPTIONS.map((source) => (
-                          <SelectItem key={source} value={source}>
-                            {source}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input disabled={submitting} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Slug</FormLabel>
-                    <FormControl>
-                      <Input
-                        disabled={submitting}
-                        value={field.value ?? ''}
-                        onChange={(event) => field.onChange(event.target.value || null)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
             <FormField
               control={form.control}
-              name="landing_url"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Landing URL</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Textarea disabled={submitting} {...field} />
+                    <Input disabled={submitting} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -702,16 +647,12 @@ export function AdxLinkDialog({
             />
             <FormField
               control={form.control}
-              name="url_template"
+              name="landing_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL Template</FormLabel>
+                  <FormLabel>Landing URL</FormLabel>
                   <FormControl>
-                    <Textarea
-                      disabled={submitting}
-                      value={field.value ?? ''}
-                      onChange={(event) => field.onChange(event.target.value || null)}
-                    />
+                    <Textarea disabled={submitting} {...field} readOnly />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

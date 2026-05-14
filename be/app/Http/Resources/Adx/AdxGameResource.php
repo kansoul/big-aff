@@ -27,6 +27,11 @@ class AdxGameResource extends JsonResource
             'sort_order' => $this->sort_order,
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
+            'assigned_users' => $this->whenLoaded('assignedUsers', fn () => $this->assignedUsers->map(fn ($user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ])->values()),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

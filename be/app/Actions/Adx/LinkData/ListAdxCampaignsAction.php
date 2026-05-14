@@ -38,7 +38,7 @@ class ListAdxCampaignsAction
             fn (array $ids) => AdxAccount::query()
                 ->whereIn('created_by', $ids)
                 ->orWhereHas('users', fn ($userQuery) => $userQuery->whereIn('users.id', $ids))
-                ->select('id'),
+                ->select('account_id'),
         );
         SortInput::fromValidatedArray($filters, self::ORDERABLE_COLUMNS, 'id', 'desc')->applyTo($query);
 

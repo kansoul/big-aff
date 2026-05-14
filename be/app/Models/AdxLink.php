@@ -13,10 +13,7 @@ class AdxLink extends Model
     protected $fillable = [
         'adx_game_id',
         'name',
-        'slug',
-        'source',
         'landing_url',
-        'url_template',
         'status',
         'created_by',
         'updated_by',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Adx\AccountConversion\ImportAdxAccountConversionsRequest;
 use App\Http\Requests\Adx\AccountConversion\ListAdxAccountConversionsRequest;
 use App\Http\Requests\Adx\AccountConversion\StoreAdxAccountConversionRequest;
 use App\Http\Requests\Adx\AccountConversion\UpdateAdxAccountConversionRequest;
@@ -35,6 +36,13 @@ class AdxAccountConversionController extends BaseController
         $conversion = $this->service->upsert($request->validated());
 
         return $this->sendResponse(['data' => new AdxAccountConversionResource($conversion)], Response::HTTP_CREATED);
+    }
+
+    public function import(ImportAdxAccountConversionsRequest $request): JsonResponse
+    {
+        $result = $this->service->import($request->validated()['lines']);
+
+        return $this->sendResponse(['data' => $result]);
     }
 
     public function update(UpdateAdxAccountConversionRequest $request, AdxAccountConversion $adxAccountConversion): JsonResponse

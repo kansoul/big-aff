@@ -21,6 +21,10 @@ class ListAdxCampaignReportsAction
         'profit',
         'roi',
         'roas',
+        'landing_view',
+        'get_game_link_click',
+        'detail_view',
+        'get_bonus_click',
         'created_at',
     ];
 

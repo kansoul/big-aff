@@ -62,7 +62,7 @@ class AdxAdsSpendSyncService
                         'campaign_id' => (string) $campaign['campaign_id'],
                     ],
                     [
-                        'adx_account_id' => $account->id,
+                        'adx_account_id' => $account->account_id,
                         'campaign_name' => $campaign['campaign_name'] ?? null,
                         'daily_budget' => (float) ($campaign['daily_budget'] ?? 0),
                         'lifetime_budget' => (float) ($campaign['lifetime_budget'] ?? 0),
@@ -86,17 +86,13 @@ class AdxAdsSpendSyncService
                 }
 
                 $campaign = $campaignsById->get($campaignId);
-                $conversions = (float) ($insight['article_views'] ?? 0)
-                    + (float) ($insight['search_views'] ?? 0)
-                    + (float) ($insight['fb_clicks'] ?? 0);
-
                 AdxCampaign::query()->updateOrCreate(
                     [
                         'source' => $account->source,
                         'campaign_id' => $campaignId,
                     ],
                     [
-                        'adx_account_id' => $account->id,
+                        'adx_account_id' => $account->account_id,
                         'campaign_name' => $campaign['campaign_name'] ?? null,
                         'daily_budget' => (float) ($campaign['daily_budget'] ?? 0),
                         'lifetime_budget' => (float) ($campaign['lifetime_budget'] ?? 0),
@@ -119,7 +115,10 @@ class AdxAdsSpendSyncService
                         'clicks' => (int) ($insight['clicks'] ?? 0),
                         'cost' => (float) ($insight['spend'] ?? 0),
                         'currency' => strtoupper($insight['spend_type'] ?? 'USD'),
-                        'platform_conversions' => $conversions,
+                        'landing_view' => (float) ($insight['landing_view'] ?? 0),
+                        'get_game_link_click' => (float) ($insight['get_game_link_click'] ?? 0),
+                        'detail_view' => (float) ($insight['detail_view'] ?? 0),
+                        'get_bonus_click' => (float) ($insight['get_bonus_click'] ?? 0),
                         'fetched_at' => $now,
                     ],
                 );
@@ -136,16 +135,18 @@ class AdxAdsSpendSyncService
      */
     private function ensureGamTargeting(AdxCampaign $adxCampaign, string $campaignId): void
     {
-        if ($adxCampaign->gam_custom_key && $adxCampaign->gam_custom_value) {
+        if ($adxCampaign->gam_custom_key_id && $adxCampaign->gam_custom_value_id) {
             return;
         }
 
-        $success = app(AdxGamCustomTargetingService::class)->ensureCampaignTargeting($campaignId);
+        $targeting = app(AdxGamCustomTargetingService::class)->ensureCampaignTargeting($campaignId);
 
-        if ($success) {
+        if ($targeting !== null) {
             $adxCampaign->update([
-                'gam_custom_key' => 'campid',
-                'gam_custom_value' => $campaignId,
+                'gam_custom_key' => $targeting['key_name'],
+                'gam_custom_key_id' => $targeting['key_id'],
+                'gam_custom_value' => $targeting['value_name'],
+                'gam_custom_value_id' => $targeting['value_id'],
             ]);
         }
     }

@@ -3,6 +3,7 @@
 namespace App\Services\Adx;
 
 use App\Actions\Adx\Account\AssignAdxAccountAction;
+use App\Actions\Adx\Account\BulkCreateAdxAccountsAction;
 use App\Actions\Adx\Account\CreateAdxAccountAction;
 use App\Actions\Adx\Account\DeleteAdxAccountAction;
 use App\Actions\Adx\Account\GetAdxAccountAssignOptionsAction;
@@ -19,6 +20,7 @@ class AdxAccountService
     public function __construct(
         private readonly ListAdxAccountsAction $listAction,
         private readonly CreateAdxAccountAction $createAction,
+        private readonly BulkCreateAdxAccountsAction $bulkCreateAction,
         private readonly UpdateAdxAccountAction $updateAction,
         private readonly DeleteAdxAccountAction $deleteAction,
         private readonly GetAdxAccountAssignOptionsAction $assignOptionsAction,
@@ -34,6 +36,14 @@ class AdxAccountService
     public function create(array $data): AdxAccount
     {
         return $this->createAction->execute($data);
+    }
+
+    /**
+     * @return array{created: list<AdxAccount>, errors: list<string>}
+     */
+    public function bulkCreate(array $data): array
+    {
+        return $this->bulkCreateAction->execute($data);
     }
 
     public function update(AdxAccount $account, array $data): AdxAccount

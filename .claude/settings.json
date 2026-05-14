@@ -40,7 +40,8 @@
       "Bash(sed -n '60,90p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Http/Controllers/Api/StyleController.php)",
       "Bash(sed -n '1,45p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Services/Team/TeamService.php)",
       "Bash(sed -n '1,45p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Services/Account/AccountService.php)",
-      "Bash(sed -n '65,80p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Services/Post/PostService.php)"
+      "Bash(sed -n '65,80p' /Users/kansoul/Code/ticollab/big-ticollab/be/app/Services/Post/PostService.php)",
+      "Bash(vendor/bin/pint app/Actions/Blog/ListBlogPostsAction.php --format agent)"
     ]
   }
 }

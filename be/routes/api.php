@@ -250,6 +250,8 @@ Route::middleware('auth:sanctum')->group(function () {
                 ->middleware('permission.scope:'.Permission::AdxAccountsView->value);
             Route::post('/', [AdxAccountController::class, 'store'])
                 ->middleware('permission.scope:'.Permission::AdxAccountsCreate->value);
+            Route::post('bulk', [AdxAccountController::class, 'bulkStore'])
+                ->middleware('permission.scope:'.Permission::AdxAccountsCreate->value);
             Route::get('{adxAccount}', [AdxAccountController::class, 'show'])
                 ->middleware('permission.scope:'.Permission::AdxAccountsView->value);
             Route::match(['put', 'patch'], '{adxAccount}', [AdxAccountController::class, 'update'])
@@ -263,6 +265,10 @@ Route::middleware('auth:sanctum')->group(function () {
                 ->middleware('permission.scope:'.Permission::AdxGamesView->value);
             Route::post('/', [AdxGameController::class, 'store'])
                 ->middleware('permission.scope:'.Permission::AdxGamesCreate->value);
+            Route::get('users', [AdxGameController::class, 'listUsersWithGames'])
+                ->middleware('permission.scope:'.Permission::AdxGamesAssign->value);
+            Route::put('users/{user}/assign', [AdxGameController::class, 'assignToUser'])
+                ->middleware('permission.scope:'.Permission::AdxGamesAssign->value);
             Route::get('{adxGame}', [AdxGameController::class, 'show'])
                 ->middleware('permission.scope:'.Permission::AdxGamesView->value);
             Route::match(['put', 'patch'], '{adxGame}', [AdxGameController::class, 'update'])
@@ -293,6 +299,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', [AdxAccountConversionController::class, 'index'])
                 ->middleware('permission.scope:'.Permission::AdxAccountConversionsView->value);
             Route::post('/', [AdxAccountConversionController::class, 'store'])
+                ->middleware('permission.scope:'.Permission::AdxAccountConversionsCreate->value);
+            Route::post('bulk-import', [AdxAccountConversionController::class, 'import'])
                 ->middleware('permission.scope:'.Permission::AdxAccountConversionsCreate->value);
             Route::match(['put', 'patch'], '{adxAccountConversion}', [AdxAccountConversionController::class, 'update'])
                 ->middleware('permission.scope:'.Permission::AdxAccountConversionsUpdate->value);

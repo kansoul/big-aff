@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Adx\Account\AssignAdxAccountRequest;
+use App\Http\Requests\Adx\Account\BulkStoreAdxAccountsRequest;
 use App\Http\Requests\Adx\Account\ListAdxAccountsRequest;
 use App\Http\Requests\Adx\Account\ListUsersWithAdxAccountsRequest;
 use App\Http\Requests\Adx\Account\StoreAdxAccountRequest;
@@ -39,6 +40,18 @@ class AdxAccountController extends BaseController
         $account = $this->service->create($request->validated());
 
         return $this->sendResponse(['data' => new AdxAccountResource($account)], Response::HTTP_CREATED);
+    }
+
+    public function bulkStore(BulkStoreAdxAccountsRequest $request): JsonResponse
+    {
+        $result = $this->service->bulkCreate($request->validated());
+
+        return $this->sendResponse([
+            'data' => [
+                'created' => AdxAccountResource::collection($result['created']),
+                'errors' => $result['errors'],
+            ],
+        ], Response::HTTP_CREATED);
     }
 
     public function show(AdxAccount $adxAccount): JsonResponse
