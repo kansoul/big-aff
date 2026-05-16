@@ -1360,6 +1360,7 @@ function CampaignReportTableCardInner({
     manualSorting: true,
     rowCount,
     enableTableFooter: true,
+    enableStickyHeader: true,
     enableStickyFooter: true,
     enableExpanding: grouped,
     enableExpandAll: false,
