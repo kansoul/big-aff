@@ -317,6 +317,8 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('conversions', [AdxReportController::class, 'conversions']);
             });
 
+        Route::get('reports/campaigns/filters', [AdxReportController::class, 'campaignFilters'])
+            ->middleware('permission.scope:'.Permission::AdxCampaignReportsView->value);
         Route::get('reports/campaigns', [AdxReportController::class, 'campaigns'])
             ->middleware('permission.scope:'.Permission::AdxCampaignReportsView->value);
     });

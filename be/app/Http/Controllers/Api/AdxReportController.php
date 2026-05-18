@@ -31,6 +31,13 @@ class AdxReportController extends BaseController
         return $this->paginatedReport($paginator);
     }
 
+    public function campaignFilters(ListAdxReportsRequest $request): JsonResponse
+    {
+        return $this->sendResponse([
+            'data' => $this->service->campaignFilters($request->validated()),
+        ]);
+    }
+
     public function revenue(ListAdxReportsRequest $request): JsonResponse
     {
         $paginator = $this->service->revenue($request->validated());

@@ -124,6 +124,14 @@ export interface AdxRealtimeReportRef {
   get_bonus_clicks: number
 }
 
+export interface AdxReportLinkDataRef {
+  id: number
+  adx_link_id: number | null
+  adx_campaign_id: number | null
+  adx_account_id: number | null
+  landing_url: string | null
+}
+
 export interface AdxCampaignReport {
   id: number
   date: string
@@ -139,6 +147,8 @@ export interface AdxCampaignReport {
   campaign_id: string | null
   campaign_name: string | null
   campaign_status: string | null
+  daily_budget: string | number
+  lifetime_budget: string | number
   spend: string | number
   revenue: string | number
   profit: string | number
@@ -146,12 +156,24 @@ export interface AdxCampaignReport {
   roas: string | number
   ads_clicks: number
   ads_impressions: number
+  landing_view: string | number
+  get_game_link_click: string | number
+  detail_view: string | number
+  get_bonus_click: string | number
   adx_impressions: number
   adx_clicks: number
+  adx_requests: number
+  adx_matched_requests: number
+  adx_viewable_impressions: number
   cpc: string | number
   epc: string | number
   rpm: string | number
   currency: string
+  account?: Pick<AdxAccount, 'id' | 'account_id' | 'account_name'> | null
+  campaign?: Pick<AdxCampaign, 'id' | 'campaign_id' | 'campaign_name' | 'status'> | null
+  link_data?: AdxReportLinkDataRef | null
+  link?: Pick<AdxLink, 'id' | 'name' | 'landing_url'> | null
+  game?: Pick<AdxGame, 'id' | 'name' | 'slug'> | null
   realtime_report: AdxRealtimeReportRef | null
   created_at: string | null
   updated_at: string | null
@@ -178,6 +200,29 @@ export type AdxConversionType =
 export type ListResponse<T> = {
   data: T[]
   pagination: PaginationMeta
+}
+
+export type AdxCampaignReportFiltersResponse = {
+  data: {
+    accounts: Array<{
+      account_id: string
+      account_name: string | null
+    }>
+    campaigns: Array<{
+      campaign_id: string
+      campaign_name: string | null
+    }>
+    games: Array<{
+      id: number
+      name: string | null
+      slug: string | null
+    }>
+    links: Array<{
+      id: number
+      name: string | null
+      landing_url: string | null
+    }>
+  }
 }
 
 export type ImportResponse = {
@@ -236,7 +281,20 @@ export type AdxCampaignReportOrderBy =
   | 'profit'
   | 'roi'
   | 'roas'
+  | 'landing_view'
+  | 'get_game_link_click'
+  | 'detail_view'
+  | 'get_bonus_click'
   | 'created_at'
+
+export type AdxCampaignReportGroupBy =
+  | ''
+  | 'source'
+  | 'account_id'
+  | 'campaign_id'
+  | 'adx_game_id'
+  | 'adx_link_id'
+  | 'adx_link_data_id'
 
 export interface BaseListParams<TOrderBy extends string> {
   page?: number
@@ -293,9 +351,18 @@ export interface AdxAccountConversionFilterParams extends BaseListParams<AdxAcco
 export interface AdxCampaignReportFilterParams extends BaseListParams<AdxCampaignReportOrderBy> {
   date_from?: string | null
   date_to?: string | null
+  keyword?: string | null
   source?: string | null
   account_id?: string | null
+  account_ids?: string[]
   campaign_id?: string | null
+  campaign_ids?: string[]
+  adx_link_data_id?: number | null
+  adx_link_id?: number | null
+  adx_link_ids?: number[]
+  adx_game_id?: number | null
+  adx_game_ids?: number[]
+  group_by?: AdxCampaignReportGroupBy
 }
 
 export const adxGameSchema = z.object({

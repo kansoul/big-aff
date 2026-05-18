@@ -9,6 +9,7 @@ import type {
   AdxAccountFilterParams,
   AdxAccountFormValues,
   AdxCampaign,
+  AdxCampaignReportFiltersResponse,
   AdxCampaignFilterParams,
   AdxCampaignReport,
   AdxCampaignReportFilterParams,
@@ -32,6 +33,27 @@ function compactParams<T extends Record<string, unknown>>(params: T): Record<str
       ([, value]) => value !== null && value !== undefined && value !== '',
     ),
   )
+}
+
+function buildCampaignReportParams(filters: AdxCampaignReportFilterParams) {
+  return compactParams({
+    page: filters.page ?? 1,
+    per_page: filters.per_page ?? 15,
+    date_from: filters.date_from,
+    date_to: filters.date_to,
+    keyword: filters.keyword,
+    source: filters.source,
+    account_id: filters.account_id,
+    ...(filters.account_ids?.length ? { 'account_ids[]': filters.account_ids } : {}),
+    campaign_id: filters.campaign_id,
+    ...(filters.campaign_ids?.length ? { 'campaign_ids[]': filters.campaign_ids } : {}),
+    adx_link_id: filters.adx_link_id,
+    ...(filters.adx_link_ids?.length ? { 'adx_link_ids[]': filters.adx_link_ids } : {}),
+    adx_game_id: filters.adx_game_id,
+    ...(filters.adx_game_ids?.length ? { 'adx_game_ids[]': filters.adx_game_ids } : {}),
+    order_by: filters.order_by,
+    order: filters.order,
+  })
 }
 
 export const adxApi = {
@@ -150,17 +172,12 @@ export const adxApi = {
 
   listCampaignReports: (filters: AdxCampaignReportFilterParams) =>
     axiosInstance.get<ListResponse<AdxCampaignReport>>('/adx/reports/campaigns', {
-      params: compactParams({
-        page: filters.page ?? 1,
-        per_page: filters.per_page ?? 15,
-        date_from: filters.date_from,
-        date_to: filters.date_to,
-        source: filters.source,
-        account_id: filters.account_id,
-        campaign_id: filters.campaign_id,
-        order_by: filters.order_by,
-        order: filters.order,
-      }),
+      params: buildCampaignReportParams(filters),
+    }),
+
+  campaignReportFilters: (filters: AdxCampaignReportFilterParams = {}) =>
+    axiosInstance.get<AdxCampaignReportFiltersResponse>('/adx/reports/campaigns/filters', {
+      params: buildCampaignReportParams(filters),
     }),
 
   listAccountConversions: (filters: AdxAccountConversionFilterParams) =>

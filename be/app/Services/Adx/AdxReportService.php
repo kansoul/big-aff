@@ -29,6 +29,11 @@ class AdxReportService
         return $this->campaignReportsAction->execute($filters);
     }
 
+    public function campaignFilters(array $filters = []): array
+    {
+        return $this->campaignReportsAction->filters($filters);
+    }
+
     public function revenue(array $filters): LengthAwarePaginator
     {
         return $this->revenueReportsAction->execute($filters);
