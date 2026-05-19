@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import { useSearchParams } from 'react-router-dom'
 
 import { formatApiError } from '@/features/settings/components'
 import {
@@ -99,6 +100,7 @@ const createDefaultValues: AdsLinkCreateFormValues = {
 }
 
 export function AdsLinksPage() {
+  const [searchParams] = useSearchParams()
   const user = useAuthStore((s) => s.user)
   const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
   const role = getUserRole(user?.roles ?? [], !!user?.is_admin)
@@ -126,6 +128,13 @@ export function AdsLinksPage() {
   const [editRow, setEditRow] = useState<AdsLink | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const handledCreatePostIdRef = useRef<number | null>(null)
+
+  const requestedCreatePostId = useMemo(() => {
+    if (searchParams.get('create') !== '1') return null
+    const postId = Number(searchParams.get('post_id'))
+    return Number.isFinite(postId) && postId > 0 ? postId : null
+  }, [searchParams])
 
   const createForm = useForm<AdsLinkCreateFormValues>({
     resolver: zodResolver(adsLinkCreateSchema),
@@ -197,6 +206,16 @@ export function AdsLinksPage() {
     }
   }, [editRow, editForm])
 
+  useEffect(() => {
+    if (!canCreate || requestedCreatePostId === null) return
+    if (handledCreatePostIdRef.current === requestedCreatePostId) return
+
+    handledCreatePostIdRef.current = requestedCreatePostId
+    setFormError(null)
+    createForm.reset({ ...createDefaultValues, post_id: requestedCreatePostId })
+    setCreateOpen(true)
+  }, [canCreate, createForm, requestedCreatePostId])
+
   const onCreateOpenChange = useCallback(
     (open: boolean) => {
       setCreateOpen(open)
@@ -229,7 +248,11 @@ export function AdsLinksPage() {
         fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
       })
-      createForm.reset(createDefaultValues)
+      createForm.reset(
+        options?.createAnother && values.post_id
+          ? { ...createDefaultValues, post_id: values.post_id }
+          : createDefaultValues,
+      )
       if (!options?.createAnother) {
         setCreateOpen(false)
       }
@@ -311,8 +334,9 @@ export function AdsLinksPage() {
 
   const onAddClick = useCallback(() => {
     setFormError(null)
+    createForm.reset(createDefaultValues)
     setCreateOpen(true)
-  }, [])
+  }, [createForm])
 
   const onEditRow = useCallback((row: AdsLink) => {
     setFormError(null)

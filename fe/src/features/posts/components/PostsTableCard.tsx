@@ -14,6 +14,7 @@ import {
   FileText,
   Globe,
   GlobeLock,
+  Link2,
   Pencil,
   Plus,
   Trash2,
@@ -56,8 +57,10 @@ type ActionMeta = {
   canDelete: boolean
   canPublish: boolean
   canAssignPosts: boolean
+  canCreateAdsLink: boolean
   onViewRow: (row: Post) => void
   onAssignRow: (row: Post) => void
+  onCreateAdsLinkRow: (row: Post) => void
   onEditRow: (row: Post) => void
   onDeleteRow: (row: Post) => void
   onToggleHidden: (row: Post) => void
@@ -78,8 +81,10 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
     canDelete,
     canPublish,
     canAssignPosts,
+    canCreateAdsLink,
     onEditRow,
     onAssignRow,
+    onCreateAdsLinkRow,
     onDeleteRow,
     onToggleHidden,
     onPublishRow,
@@ -240,25 +245,43 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Post>[] {
           <span className="text-muted-foreground/25 text-xs">—</span>
         ),
     },
-    ...(canUpdate || canDelete || canPublish || canAssignPosts
+    ...(canUpdate || canDelete || canPublish || canAssignPosts || canCreateAdsLink
       ? [
           {
             id: 'actions',
             header: 'Actions',
-            size: 184,
+            size: 216,
             enableSorting: false,
             enableGlobalFilter: false,
             enableHiding: false,
             mantineTableHeadCellProps: {
               sx: {
-                width: 184,
+                width: 216,
                 '& .mantine-TableHeadCell-Content': { justifyContent: 'flex-end' },
               },
             },
-            mantineTableBodyCellProps: { style: { width: 184 } },
+            mantineTableBodyCellProps: { style: { width: 216 } },
             Cell: ({ row }: { row: { original: Post } }) => (
               <TooltipProvider>
                 <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  {canCreateAdsLink ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() => onCreateAdsLinkRow(row.original)}
+                        >
+                          <Link2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Create ads link
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null}
                   {canAssignPosts ? (
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -396,10 +419,12 @@ type PostsTableCardProps = {
   canDelete: boolean
   canPublish: boolean
   canAssignPosts: boolean
+  canCreateAdsLink: boolean
   onAddClick: () => void
   onAssignPostsClick: () => void
   onViewRow: (row: Post) => void
   onEditRow: (row: Post) => void
+  onCreateAdsLinkRow: (row: Post) => void
   onAssignRow: (row: Post) => void
   onDeleteRow: (row: Post) => void
   onToggleHidden: (row: Post) => void
@@ -425,10 +450,12 @@ function PostsTableCardInner({
   canDelete,
   canPublish,
   canAssignPosts,
+  canCreateAdsLink,
   onAddClick,
   onAssignPostsClick,
   onViewRow,
   onEditRow,
+  onCreateAdsLinkRow,
   onAssignRow,
   onDeleteRow,
   onToggleHidden,
@@ -462,8 +489,10 @@ function PostsTableCardInner({
         canDelete,
         canPublish,
         canAssignPosts: canAssignPosts && !role.isMember,
+        canCreateAdsLink,
         onViewRow,
         onAssignRow,
+        onCreateAdsLinkRow,
         onEditRow,
         onDeleteRow,
         onToggleHidden,
@@ -475,8 +504,10 @@ function PostsTableCardInner({
       canDelete,
       canPublish,
       canAssignPosts,
+      canCreateAdsLink,
       onViewRow,
       onAssignRow,
+      onCreateAdsLinkRow,
       onEditRow,
       onDeleteRow,
       onToggleHidden,

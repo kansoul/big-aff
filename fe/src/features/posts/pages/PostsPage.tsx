@@ -90,6 +90,12 @@ export function PostsPage() {
   const canDelete = useMemo(() => hasPermission(perms, PermissionSlugs.PostsDelete), [perms])
   const canPublish = useMemo(() => hasPermission(perms, PermissionSlugs.PostsPublish), [perms])
   const canAssignPosts = useMemo(() => hasPermission(perms, PermissionSlugs.PostsAssign), [perms])
+  const canCreateAdsLink = useMemo(
+    () =>
+      hasPermission(perms, PermissionSlugs.AdsLinksView) &&
+      hasPermission(perms, PermissionSlugs.AdsLinksCreate),
+    [perms],
+  )
 
   const [data, setData] = useState<Post[]>([])
   const [rowCount, setRowCount] = useState(0)
@@ -173,6 +179,14 @@ export function PostsPage() {
   const onEditRow = useCallback(
     (row: Post) => {
       void navigate(postEditPath(row.id))
+    },
+    [navigate],
+  )
+
+  const onCreateAdsLinkRow = useCallback(
+    (row: Post) => {
+      const params = new URLSearchParams({ post_id: String(row.id), create: '1' })
+      void navigate(`${PATHS.adsLinks}?${params.toString()}`)
     },
     [navigate],
   )
@@ -317,10 +331,12 @@ export function PostsPage() {
         canDelete={canDelete}
         canPublish={canPublish}
         canAssignPosts={canAssignPosts}
+        canCreateAdsLink={canCreateAdsLink}
         onAddClick={onAddClick}
         onAssignPostsClick={onAssignPostsClick}
         onViewRow={onViewRow}
         onEditRow={onEditRow}
+        onCreateAdsLinkRow={onCreateAdsLinkRow}
         onAssignRow={onAssignRow}
         onDeleteRow={onDeleteRow}
         onToggleHidden={onToggleHidden}
