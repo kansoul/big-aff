@@ -6,6 +6,7 @@ use App\Models\AdxCampaign;
 use App\Models\AdxLinkData;
 use App\Models\AdxRevenueReport;
 use App\Services\Integrations\Adsense\GamAdManagerReportService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -31,18 +32,32 @@ class AdxRevenueSyncService
             return 0;
         }
 
+        $synced = 0;
+        $current = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+
+        while ($current->lte($end)) {
+            $date = $current->toDateString();
+            $synced += $this->syncDate($date, $campaignIds);
+            $current->addDay();
+        }
+
+        return $synced;
+    }
+
+    private function syncDate(string $date, array $campaignIds): int
+    {
         try {
             $report = app(GamAdManagerReportService::class)->fetchAdxRevenueByCustomTargeting([
-                'date_from' => $startDate,
-                'date_to' => $endDate,
+                'date_from' => $date,
+                'date_to' => $date,
                 'gam_custom_key' => 'campid',
                 'custom_targeting_values' => $campaignIds,
                 'currency' => 'USD',
             ]);
         } catch (Throwable $e) {
             Log::channel('sync_reports')->error('[AdxRevenueSync] GAM fetch failed', [
-                'start_date' => $startDate,
-                'end_date' => $endDate,
+                'date' => $date,
                 'error' => $e->getMessage(),
             ]);
 
@@ -66,7 +81,7 @@ class AdxRevenueSyncService
 
             AdxRevenueReport::query()->updateOrCreate(
                 [
-                    'date' => $dimensions['date_pt'] ?? $startDate,
+                    'date' => $date,
                     'gam_custom_key' => $row['gam_custom_key'],
                     'gam_custom_value' => $row['gam_custom_value'],
                     'campaign_id' => $campaignId,

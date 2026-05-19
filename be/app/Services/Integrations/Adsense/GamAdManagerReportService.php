@@ -55,11 +55,11 @@ class GamAdManagerReportService
         $reportJobId = $this->runReportJob($soapClient, [
             'dimensions' => $reportDimensions,
             'columns' => self::REPORT_COLUMNS,
-            'dateRangeType' => 'CUSTOM_DATE',
             'startDate' => $this->soapDate($dateFrom),
             'endDate' => $this->soapDate($dateTo),
-            'timeZoneType' => 'PACIFIC',
+            'dateRangeType' => 'CUSTOM_DATE',
             ...($currency ? ['reportCurrency' => $currency] : []),
+            'timeZoneType' => 'PACIFIC',
         ]);
 
         $this->waitUntilReportCompletes($soapClient, $reportJobId);
@@ -156,7 +156,7 @@ class GamAdManagerReportService
      */
     private function requestedDimensions(?array $dimensions): array
     {
-        $dimensions = $dimensions ?: ['date'];
+        $dimensions = $dimensions ?: ['date', 'custom_criteria'];
 
         foreach ($dimensions as $dimension) {
             if (! array_key_exists($dimension, self::DIMENSIONS)) {
@@ -301,7 +301,7 @@ class GamAdManagerReportService
             foreach ($headers as $index => $header) {
                 $map[$header] = $values[$index] ?? null;
             }
-
+            
             $revenueMicros = $this->parseMicros($map['ad_exchange_line_item_level_revenue'] ?? null);
             $ecpmMicros = $this->parseMicros($map['ad_exchange_line_item_level_average_ecpm'] ?? null);
             $impressions = $this->parseInteger($map['ad_exchange_line_item_level_impressions'] ?? null);
