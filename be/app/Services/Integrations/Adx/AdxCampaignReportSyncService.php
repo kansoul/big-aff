@@ -4,6 +4,8 @@ namespace App\Services\Integrations\Adx;
 
 use App\Models\AdxCampaign;
 use App\Models\AdxCampaignReport;
+use App\Models\AdxLinkData;
+use App\Models\AdxRealtimeReport;
 use App\Models\AdxRevenueReport;
 use App\Models\AdxSpendReport;
 use Carbon\CarbonPeriod;
@@ -23,102 +25,203 @@ class AdxCampaignReportSyncService
 
     private function syncDate(string $date): int
     {
-        $campaignIds = collect()
-            ->merge(AdxSpendReport::query()->whereDate('date', $date)->pluck('campaign_id'))
-            ->merge(AdxRevenueReport::query()->whereDate('date', $date)->pluck('campaign_id'))
-            ->filter()
-            ->unique()
-            ->values();
+        $rows = [];
 
-        $count = 0;
+        $this->collectSpendRows($rows, $date);
+        $this->collectRevenueRows($rows, $date);
+        $this->collectRealtimeRows($rows, $date);
 
-        foreach ($campaignIds as $campaignId) {
-            $campaign = AdxCampaign::query()
-                ->with('account')
-                ->where('campaign_id', $campaignId)
-                ->first();
-
-            $spend = AdxSpendReport::query()
-                ->whereDate('date', $date)
-                ->where('campaign_id', $campaignId)
-                ->selectRaw('
-                    MAX(source) as source,
-                    MAX(account_id) as account_id,
-                    MAX(account_name) as account_name,
-                    MAX(campaign_name) as campaign_name,
-                    SUM(impressions) as impressions,
-                    SUM(clicks) as clicks,
-                    SUM(cost) as cost,
-                    SUM(landing_view) as landing_view,
-                    SUM(get_game_link_click) as get_game_link_click,
-                    SUM(detail_view) as detail_view,
-                    SUM(get_bonus_click) as get_bonus_click,
-                    MAX(currency) as currency
-                ')
-                ->first();
-
-            $revenue = AdxRevenueReport::query()
-                ->whereDate('date', $date)
-                ->where('campaign_id', $campaignId)
-                ->selectRaw('
-                    SUM(impressions) as impressions,
-                    SUM(clicks) as clicks,
-                    SUM(requests) as requests,
-                    SUM(matched_requests) as matched_requests,
-                    SUM(viewable_impressions) as viewable_impressions,
-                    SUM(total_revenue) as total_revenue,
-                    MAX(currency) as currency
-                ')
-                ->first();
-
-            $spendAmount = (float) ($spend?->cost ?? 0);
-            $revenueAmount = (float) ($revenue?->total_revenue ?? 0);
-            $profit = $revenueAmount - $spendAmount;
-            $adsClicks = (int) ($spend?->clicks ?? 0);
-            $adxImpressions = (int) ($revenue?->impressions ?? 0);
-
-            AdxCampaignReport::query()->updateOrCreate(
-                [
-                    'date' => $date,
-                    'source' => $campaign?->source ?? $spend?->source ?? 'other',
-                    'account_id' => $campaign?->account?->account_id ?? $spend?->account_id,
-                    'campaign_id' => $campaignId,
-                    'adx_link_data_id' => null,
-                ],
-                [
-                    'adx_account_id' => $campaign?->account?->id,
-                    'adx_campaign_id' => $campaign?->id,
-                    'account_name' => $campaign?->account?->account_name ?? $spend?->account_name,
-                    'campaign_name' => $campaign?->campaign_name ?? $spend?->campaign_name,
-                    'campaign_status' => $campaign?->status,
-                    'daily_budget' => (float) ($campaign?->daily_budget ?? 0),
-                    'lifetime_budget' => (float) ($campaign?->lifetime_budget ?? 0),
-                    'spend' => $spendAmount,
-                    'revenue' => $revenueAmount,
-                    'profit' => $profit,
-                    'roi' => $spendAmount > 0 ? ($profit / $spendAmount) * 100 : 0,
-                    'roas' => $spendAmount > 0 ? $revenueAmount / $spendAmount : 0,
-                    'ads_clicks' => $adsClicks,
-                    'ads_impressions' => (int) ($spend?->impressions ?? 0),
-                    'landing_view' => (float) ($spend?->landing_view ?? 0),
-                    'get_game_link_click' => (float) ($spend?->get_game_link_click ?? 0),
-                    'detail_view' => (float) ($spend?->detail_view ?? 0),
-                    'get_bonus_click' => (float) ($spend?->get_bonus_click ?? 0),
-                    'adx_impressions' => $adxImpressions,
-                    'adx_clicks' => (int) ($revenue?->clicks ?? 0),
-                    'adx_requests' => (int) ($revenue?->requests ?? 0),
-                    'adx_matched_requests' => (int) ($revenue?->matched_requests ?? 0),
-                    'adx_viewable_impressions' => (int) ($revenue?->viewable_impressions ?? 0),
-                    'cpc' => $adsClicks > 0 ? $spendAmount / $adsClicks : 0,
-                    'epc' => $adsClicks > 0 ? $revenueAmount / $adsClicks : 0,
-                    'rpm' => $adxImpressions > 0 ? ($revenueAmount / $adxImpressions) * 1000 : 0,
-                    'currency' => strtoupper($spend?->currency ?? $revenue?->currency ?? 'USD'),
-                ],
-            );
-
-            $count++;
+        foreach ($rows as $row) {
+            $this->persistRow($row);
         }
 
-        return $count;
+        return count($rows);
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $rows
+     */
+    private function collectSpendRows(array &$rows, string $date): void
+    {
+        AdxSpendReport::query()
+            ->whereDate('date', $date)
+            ->get()
+            ->each(function (AdxSpendReport $report) use (&$rows, $date): void {
+                $linkData = $this->resolveLinkData($report->source, $report->account_id, $report->campaign_id);
+                $row = &$this->row($rows, $date, $report->source, $report->account_id, $report->campaign_id, $linkData);
+
+                $row['account_name'] = $report->account_name ?: $row['account_name'];
+                $row['campaign_name'] = $report->campaign_name ?: $row['campaign_name'];
+                $row['spend'] += (float) $report->cost;
+                $row['ads_clicks'] += (int) $report->clicks;
+                $row['ads_impressions'] += (int) $report->impressions;
+                $row['landing_view'] += (float) $report->landing_view;
+                $row['get_game_link_click'] += (float) $report->get_game_link_click;
+                $row['detail_view'] += (float) $report->detail_view;
+                $row['get_bonus_click'] += (float) $report->get_bonus_click;
+                $row['currency'] = $report->currency ?: $row['currency'];
+            });
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $rows
+     */
+    private function collectRevenueRows(array &$rows, string $date): void
+    {
+        AdxRevenueReport::query()
+            ->with('linkData')
+            ->whereDate('date', $date)
+            ->get()
+            ->each(function (AdxRevenueReport $report) use (&$rows, $date): void {
+                $linkData = $report->linkData ?: $this->resolveLinkData(null, null, $report->campaign_id);
+                $source = $linkData?->source ?? 'other';
+                $accountId = $linkData?->account_id;
+                $campaignId = $report->campaign_id ?? $linkData?->campaign_id;
+                $row = &$this->row($rows, $date, $source, $accountId, $campaignId, $linkData);
+
+                $row['adx_link_id'] = $report->adx_link_id ?? $row['adx_link_id'];
+                $row['adx_game_id'] = $report->adx_game_id ?? $row['adx_game_id'];
+                $row['revenue'] += (float) $report->total_revenue;
+                $row['adx_impressions'] += (int) $report->impressions;
+                $row['adx_clicks'] += (int) $report->clicks;
+                $row['adx_requests'] += (int) $report->requests;
+                $row['adx_matched_requests'] += (int) $report->matched_requests;
+                $row['adx_viewable_impressions'] += (int) $report->viewable_impressions;
+                $row['currency'] = $report->currency ?: $row['currency'];
+            });
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $rows
+     */
+    private function collectRealtimeRows(array &$rows, string $date): void
+    {
+        AdxRealtimeReport::query()
+            ->with('linkData')
+            ->whereDate('report_date', $date)
+            ->get()
+            ->each(function (AdxRealtimeReport $report) use (&$rows, $date): void {
+                $linkData = $report->linkData;
+                $row = &$this->row($rows, $date, $linkData?->source ?? 'other', $linkData?->account_id, $linkData?->campaign_id, $linkData);
+
+                $row['adx_realtime_report_id'] = $report->id;
+            });
+    }
+
+    private function resolveLinkData(?string $source, ?string $accountId, ?string $campaignId): ?AdxLinkData
+    {
+        if ($campaignId === null || $campaignId === '') {
+            return null;
+        }
+
+        return AdxLinkData::query()
+            ->when($source, fn ($query) => $query->where('source', $source))
+            ->when($accountId, fn ($query) => $query->where('account_id', $accountId))
+            ->where('campaign_id', $campaignId)
+            ->orderByDesc('last_seen_at')
+            ->first();
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $rows
+     * @return array<string, mixed>
+     */
+    private function &row(array &$rows, string $date, string $source, ?string $accountId, ?string $campaignId, ?AdxLinkData $linkData): array
+    {
+        $campaign = $this->resolveCampaign($source, $accountId, $campaignId);
+        $resolvedSource = $campaign?->source ?? $source;
+        $resolvedAccountId = $campaign?->account?->account_id ?? $accountId;
+        $resolvedCampaignId = $campaign?->campaign_id ?? $campaignId;
+
+        $key = implode('|', [
+            $date,
+            $resolvedSource,
+            $resolvedAccountId ?? '',
+            $resolvedCampaignId ?? '',
+            $linkData?->id ?? '',
+        ]);
+
+        if (! isset($rows[$key])) {
+            $rows[$key] = [
+                'date' => $date,
+                'source' => $resolvedSource,
+                'adx_account_id' => $campaign?->account?->id,
+                'adx_campaign_id' => $campaign?->id,
+                'adx_link_data_id' => $linkData?->id,
+                'adx_link_id' => $linkData?->adx_link_id,
+                'adx_game_id' => $linkData?->adx_game_id,
+                'adx_realtime_report_id' => null,
+                'account_id' => $resolvedAccountId,
+                'account_name' => $campaign?->account?->account_name,
+                'campaign_id' => $resolvedCampaignId,
+                'campaign_name' => $campaign?->campaign_name,
+                'campaign_status' => $campaign?->status,
+                'daily_budget' => (float) ($campaign?->daily_budget ?? 0),
+                'lifetime_budget' => (float) ($campaign?->lifetime_budget ?? 0),
+                'spend' => 0.0,
+                'revenue' => 0.0,
+                'ads_clicks' => 0,
+                'ads_impressions' => 0,
+                'landing_view' => 0.0,
+                'get_game_link_click' => 0.0,
+                'detail_view' => 0.0,
+                'get_bonus_click' => 0.0,
+                'adx_impressions' => 0,
+                'adx_clicks' => 0,
+                'adx_requests' => 0,
+                'adx_matched_requests' => 0,
+                'adx_viewable_impressions' => 0,
+                'currency' => 'USD',
+            ];
+        }
+
+        return $rows[$key];
+    }
+
+    private function resolveCampaign(string $source, ?string $accountId, ?string $campaignId): ?AdxCampaign
+    {
+        if ($campaignId === null || $campaignId === '') {
+            return null;
+        }
+
+        return AdxCampaign::query()
+            ->with('account')
+            ->where('campaign_id', $campaignId)
+            ->when($source !== 'other', fn ($query) => $query->where('source', $source))
+            ->when($accountId, fn ($query) => $query->whereHas('account', fn ($accountQuery) => $accountQuery->where('account_id', $accountId)))
+            ->orderByDesc('last_seen_at')
+            ->first();
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function persistRow(array $row): void
+    {
+        $spend = (float) $row['spend'];
+        $revenue = (float) $row['revenue'];
+        $profit = $revenue - $spend;
+        $adsClicks = (int) $row['ads_clicks'];
+        $adxImpressions = (int) $row['adx_impressions'];
+
+        AdxCampaignReport::query()->updateOrCreate(
+            [
+                'date' => $row['date'],
+                'source' => $row['source'],
+                'account_id' => $row['account_id'],
+                'campaign_id' => $row['campaign_id'],
+                'adx_link_data_id' => $row['adx_link_data_id'],
+            ],
+            [
+                ...$row,
+                'profit' => $profit,
+                'roi' => $spend > 0 ? ($profit / $spend) * 100 : 0,
+                'roas' => $spend > 0 ? $revenue / $spend : 0,
+                'cpc' => $adsClicks > 0 ? $spend / $adsClicks : 0,
+                'epc' => $adsClicks > 0 ? $revenue / $adsClicks : 0,
+                'rpm' => $adxImpressions > 0 ? ($revenue / $adxImpressions) * 1000 : 0,
+                'currency' => strtoupper((string) $row['currency']),
+            ],
+        );
     }
 }

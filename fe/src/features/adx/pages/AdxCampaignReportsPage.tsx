@@ -110,11 +110,18 @@ const COUNT_FIELDS = [
   'adx_viewable_impressions',
   'adx_clicks',
 ] as const
+const REALTIME_FIELDS = [
+  'rt_landing_views',
+  'rt_get_game_link_clicks',
+  'rt_detail_views',
+  'rt_get_bonus_clicks',
+] as const
 
 type MoneyField = (typeof MONEY_FIELDS)[number]
 type CountField = (typeof COUNT_FIELDS)[number]
+type RealtimeField = (typeof REALTIME_FIELDS)[number]
 type RatioField = 'roi' | 'roas' | 'cpc' | 'epc' | 'rpm'
-type MetricField = MoneyField | CountField | RatioField
+type MetricField = MoneyField | CountField | RealtimeField | RatioField
 type MetricTone = 'green' | 'blue' | 'yellow'
 
 type AdxCampaignReportSummary = Record<MetricField, number>
@@ -193,9 +200,23 @@ function parseNumberArray(value: unknown): number[] {
   return value.map((item) => Number(item)).filter((item) => Number.isFinite(item))
 }
 
+function getRealtimeReportMetric(row: AdxCampaignReport, field: RealtimeField): number {
+  switch (field) {
+    case 'rt_landing_views':
+      return toNumber(row.realtime_report?.landing_views)
+    case 'rt_get_game_link_clicks':
+      return toNumber(row.realtime_report?.get_game_link_clicks)
+    case 'rt_detail_views':
+      return toNumber(row.realtime_report?.detail_views)
+    case 'rt_get_bonus_clicks':
+      return toNumber(row.realtime_report?.get_bonus_clicks)
+  }
+}
+
 function parseGroupBy(value: unknown): AdxCampaignReportGroupBy {
   if (typeof value !== 'string' || value === '__none__') return ''
   const allowed: AdxCampaignReportGroupBy[] = [
+    'source',
     'account_id',
     'campaign_id',
     'adx_game_id',
@@ -223,6 +244,10 @@ function buildSummary(rows: AdxCampaignReport[]): AdxCampaignReportSummary {
     adx_impressions: 0,
     adx_viewable_impressions: 0,
     adx_clicks: 0,
+    rt_landing_views: 0,
+    rt_get_game_link_clicks: 0,
+    rt_detail_views: 0,
+    rt_get_bonus_clicks: 0,
     roi: 0,
     roas: 0,
     cpc: 0,
@@ -233,13 +258,14 @@ function buildSummary(rows: AdxCampaignReport[]): AdxCampaignReportSummary {
   for (const row of rows) {
     for (const field of MONEY_FIELDS) summary[field] += toNumber(row[field])
     for (const field of COUNT_FIELDS) summary[field] += toNumber(row[field])
+    for (const field of REALTIME_FIELDS) summary[field] += getRealtimeReportMetric(row, field)
   }
 
   summary.profit = summary.revenue - summary.spend
   summary.roi = summary.spend > 0 ? (summary.profit / summary.spend) * 100 : 0
   summary.roas = summary.spend > 0 ? summary.revenue / summary.spend : 0
   summary.cpc = summary.ads_clicks > 0 ? summary.spend / summary.ads_clicks : 0
-  summary.epc = summary.adx_clicks > 0 ? summary.revenue / summary.adx_clicks : 0
+  summary.epc = summary.ads_clicks > 0 ? summary.revenue / summary.ads_clicks : 0
   summary.rpm = summary.adx_impressions > 0 ? (summary.revenue / summary.adx_impressions) * 1000 : 0
 
   return summary
@@ -247,7 +273,15 @@ function buildSummary(rows: AdxCampaignReport[]): AdxCampaignReportSummary {
 
 function getMetric(row: TableRow, field: MetricField): number {
   if (isGroupRow(row)) return row.group_summary[field]
-  return toNumber(row[field])
+  switch (field) {
+    case 'rt_landing_views':
+    case 'rt_get_game_link_clicks':
+    case 'rt_detail_views':
+    case 'rt_get_bonus_clicks':
+      return getRealtimeReportMetric(row, field)
+    default:
+      return toNumber((row as unknown as Record<string, unknown>)[field])
+  }
 }
 
 function getGroupKey(row: AdxCampaignReport, groupBy: AdxCampaignReportGroupBy): string {
@@ -258,6 +292,8 @@ function getGroupKey(row: AdxCampaignReport, groupBy: AdxCampaignReportGroupBy):
 
 function getGroupLabel(row: AdxCampaignReport, groupBy: AdxCampaignReportGroupBy): string {
   switch (groupBy) {
+    case 'source':
+      return row.source ? row.source.toUpperCase() : 'Unknown source'
     case 'account_id':
       return row.account_name
         ? `${row.account_name} (${row.account_id ?? 'unknown'})`
@@ -303,7 +339,15 @@ function groupRows(rows: AdxCampaignReport[], groupBy: AdxCampaignReportGroupBy)
   }))
 }
 
-function HeaderLabel({ tone, children }: { tone?: MetricTone; children: React.ReactNode }) {
+function HeaderLabel({
+  tone,
+  align = 'left',
+  children,
+}: {
+  tone?: MetricTone
+  align?: 'left' | 'center'
+  children: React.ReactNode
+}) {
   const toneClass =
     tone === 'green'
       ? 'bg-emerald-500'
@@ -314,7 +358,11 @@ function HeaderLabel({ tone, children }: { tone?: MetricTone; children: React.Re
           : null
 
   return (
-    <div className="flex min-h-[20px] items-center gap-1 whitespace-nowrap">
+    <div
+      className={`flex min-h-[20px] w-full items-center gap-1 whitespace-nowrap ${
+        align === 'center' ? 'justify-center text-center' : ''
+      }`}
+    >
       {toneClass && <span className={`size-1.5 shrink-0 rounded-full ${toneClass}`} />}
       <span className="leading-tight font-bold">{children}</span>
     </div>
@@ -329,7 +377,10 @@ function metricFooter(
   if (!summary) return null
   const text = formatter(summary[field])
   return (
-    <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap" title={text}>
+    <span
+      className="block w-full whitespace-nowrap text-center text-[10px] font-semibold tabular-nums"
+      title={text}
+    >
       {text}
     </span>
   )
@@ -341,20 +392,33 @@ function makeMetricCol(
   size: number,
   summary: AdxCampaignReportSummary | null,
   formatter: (value: number) => string,
-  tone: MetricTone,
+  tone?: MetricTone,
+  colorize?: boolean,
 ): MRT_ColumnDef<TableRow> {
   return {
     accessorKey: field,
     header,
-    Header: <HeaderLabel tone={tone}>{header}</HeaderLabel>,
+    Header: (
+      <HeaderLabel tone={tone} align="center">
+        {header}
+      </HeaderLabel>
+    ),
     size,
     minSize: size,
     enableSorting: SORTABLE_COLUMNS.has(field as AdxCampaignReportOrderBy),
     Cell: ({ row }) => {
-      const text = formatter(getMetric(row.original, field))
+      const value = getMetric(row.original, field)
+      const text = formatter(value)
+      const colorClass = colorize
+        ? value > 0
+          ? 'text-emerald-500'
+          : value < 0
+            ? 'text-red-500'
+            : 'text-foreground'
+        : 'text-foreground'
       return (
         <span
-          className="block whitespace-nowrap tabular-nums text-[10px] text-foreground"
+          className={`block w-full whitespace-nowrap text-center text-[10px] tabular-nums ${colorClass}`}
           title={text}
         >
           {text}
@@ -366,25 +430,37 @@ function makeMetricCol(
 }
 
 function getColumns(summary: AdxCampaignReportSummary | null): MRT_ColumnDef<TableRow>[] {
-  const money = (field: MoneyField, header: string, size: number) =>
+  const realtimeCount = (field: RealtimeField, header: string, size: number) =>
+    makeMetricCol(field, header, size, summary, (value) => formatDecimal(value, 0), 'green')
+  const spendMoney = (field: MetricField, header: string, size: number) =>
     makeMetricCol(field, header, size, summary, formatMoney, 'blue')
-  const revenue = (field: MetricField, header: string, size: number) =>
+  const spendCount = (field: CountField, header: string, size: number) =>
+    makeMetricCol(field, header, size, summary, (value) => formatDecimal(value, 0), 'blue')
+  const spendRatio = (field: RatioField, header: string, size: number) =>
+    makeMetricCol(field, header, size, summary, formatDecimal, 'blue')
+  const revenueMetric = (field: MetricField, header: string, size: number) =>
     makeMetricCol(
       field,
       header,
       size,
       summary,
-      field === 'roi'
-        ? formatPercent
-        : field === 'revenue' || field === 'profit'
-          ? formatMoney
-          : formatDecimal,
+      field === 'revenue' ? formatMoney : formatDecimal,
       'yellow',
     )
-  const count = (field: CountField, header: string, size: number) =>
-    makeMetricCol(field, header, size, summary, (value) => formatDecimal(value, 0), 'green')
-  const costRatio = (field: RatioField, header: string, size: number) =>
-    makeMetricCol(field, header, size, summary, formatDecimal, 'blue')
+  const revenueCount = (field: CountField, header: string, size: number) =>
+    makeMetricCol(field, header, size, summary, (value) => formatDecimal(value, 0), 'yellow')
+  const derivedMoney = (field: MetricField, header: string, size: number, colorize?: boolean) =>
+    makeMetricCol(field, header, size, summary, formatMoney, undefined, colorize)
+  const derivedRatio = (field: RatioField, header: string, size: number, colorize?: boolean) =>
+    makeMetricCol(
+      field,
+      header,
+      size,
+      summary,
+      field === 'roi' ? formatPercent : formatDecimal,
+      undefined,
+      colorize,
+    )
 
   return [
     {
@@ -455,8 +531,8 @@ function getColumns(summary: AdxCampaignReportSummary | null): MRT_ColumnDef<Tab
       accessorKey: 'campaign_id',
       header: 'Campaign',
       Header: <HeaderLabel>Campaign</HeaderLabel>,
-      size: 300,
-      minSize: 300,
+      size: 220,
+      minSize: 220,
       enableSorting: true,
       Cell: ({ row }) => {
         if (isGroupRow(row.original)) return null
@@ -465,13 +541,13 @@ function getColumns(summary: AdxCampaignReportSummary | null): MRT_ColumnDef<Tab
         return (
           <div className="flex flex-col gap-0.5">
             <span
-              className="block whitespace-nowrap text-[10px] font-medium"
+              className="block whitespace-normal text-[10px] font-medium"
               title={name ?? id ?? undefined}
             >
               {name ?? id ?? '-'}
             </span>
             <span
-              className="block whitespace-nowrap font-mono text-[10px] text-muted-foreground"
+              className="block whitespace-normal font-mono text-[10px] text-muted-foreground"
               title={id ?? ''}
             >
               {id ?? '-'}
@@ -528,27 +604,34 @@ function getColumns(summary: AdxCampaignReportSummary | null): MRT_ColumnDef<Tab
         )
       },
     },
-    money('spend', 'Spend', 104),
-    revenue('revenue', 'Rev.', 86),
-    revenue('profit', 'Profit', 104),
-    revenue('roi', 'ROI', 86),
-    revenue('roas', 'ROAS', 92),
-    count('adx_clicks', 'ADX Clicks', 108),
-    count('ads_clicks', 'Ads Conv.', 108),
-    costRatio('cpc', 'RPC', 82),
-    revenue('epc', 'EPC', 82),
-    revenue('rpm', 'RPM', 86),
-    count('landing_view', 'Land. View', 118),
-    count('get_game_link_click', 'Game C.Link', 146),
-    count('detail_view', 'Detail View', 114),
-    count('get_bonus_click', 'Bonus Click', 120),
-    count('ads_impressions', 'Ads Impr.', 112),
-    count('adx_requests', 'ADX Reqs', 104),
-    count('adx_matched_requests', 'ADX Matched Reqs', 150),
-    count('adx_impressions', 'ADX Impr.', 112),
-    count('adx_viewable_impressions', 'ADX Viewable Impr.', 162),
-    money('daily_budget', 'Daily Budget', 132),
-    money('lifetime_budget', 'Lifetime Budget', 150),
+
+    revenueMetric('revenue', 'Rev.', 86),
+    spendMoney('spend', 'Spend', 104),
+    derivedMoney('profit', 'Profit', 104, true),
+    derivedRatio('roi', 'ROI', 86, true),
+    derivedRatio('roas', 'ROAS', 92),
+    revenueCount('adx_clicks', 'ADX Conv.', 108),
+
+    realtimeCount('rt_landing_views', 'R. Land View', 120),
+    spendCount('landing_view', 'A. Land View', 118),
+    realtimeCount('rt_get_game_link_clicks', 'R. Game Click', 130),
+    spendCount('get_game_link_click', 'A. Game Click', 130),
+    realtimeCount('rt_detail_views', 'R. Detail View', 126),
+    spendCount('detail_view', 'A. Detail View', 126),
+    realtimeCount('rt_get_bonus_clicks', 'R. Bonus Click', 132),
+    spendCount('get_bonus_click', 'A. Bonus Click', 132),
+
+    revenueCount('adx_impressions', 'ADX Impr.', 112),
+    revenueCount('adx_requests', 'ADX Reqs', 104),
+    revenueCount('adx_matched_requests', 'ADX Matched Reqs', 150),
+    revenueCount('adx_viewable_impressions', 'ADX Viewable Impr.', 162),
+    revenueMetric('epc', 'EPC', 82),
+    spendRatio('cpc', 'CPC', 82),
+    revenueMetric('rpm', 'RPM', 86),
+    spendCount('ads_impressions', 'Ads Impr.', 112),
+    spendCount('ads_clicks', 'Ads Click', 108),
+    spendMoney('daily_budget', 'Daily Budget', 132),
+    spendMoney('lifetime_budget', 'Lifetime Budget', 150),
   ]
 }
 
@@ -883,12 +966,16 @@ export function AdxCampaignReportsPage() {
         paddingLeft: '2px !important',
         paddingRight: '2px !important',
         verticalAlign: 'middle',
+        '& .mantine-TableHeadCell-Content': {
+          width: '100%',
+        },
         '& .mantine-TableHeadCell-Content-Wrapper': {
           overflow: 'visible',
           whiteSpace: 'nowrap',
           lineHeight: 1.1,
           display: 'flex',
           alignItems: 'center',
+          width: '100%',
         },
       },
     },
@@ -919,6 +1006,7 @@ export function AdxCampaignReportsPage() {
           whiteSpace: 'nowrap',
           '& > div': {
             overflow: 'visible',
+            width: '100%',
           },
         },
       }
@@ -935,7 +1023,16 @@ export function AdxCampaignReportsPage() {
           overflow: 'visible',
           '& > div': {
             overflow: 'visible',
+            width: '100%',
             whiteSpace: 'nowrap',
+          },
+          '& .mantine-TableFooterCell-Content': {
+            display: 'flex',
+            justifyContent: 'center',
+            width: '100%',
+          },
+          '& .mantine-TableFooterCell-Content-Wrapper': {
+            width: '100%',
           },
         }
       },
