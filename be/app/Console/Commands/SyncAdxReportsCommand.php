@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Adx\AdxDailyReportAggregationService;
 use App\Services\Integrations\Adx\AdxAdsSpendSyncService;
 use App\Services\Integrations\Adx\AdxCampaignReportSyncService;
 use App\Services\Integrations\Adx\AdxRevenueSyncService;
@@ -22,7 +21,6 @@ class SyncAdxReportsCommand extends Command
     public function handle(
         AdxAdsSpendSyncService $spendSync,
         AdxRevenueSyncService $revenueSync,
-        AdxDailyReportAggregationService $dailyReportSync,
         AdxCampaignReportSyncService $campaignReportSync,
     ): int {
         $this->call('adx:flush-realtime');
@@ -39,10 +37,9 @@ class SyncAdxReportsCommand extends Command
         try {
             $spendCount = $spendSync->sync($startDate, $endDate);
             $revenueCount = $revenueSync->sync($startDate, $endDate);
-            $linkLevelCount = $dailyReportSync->sync($startDate, $endDate);
             $campaignCount = $campaignReportSync->sync($startDate, $endDate);
 
-            $this->info("Synced AdX reports from {$startDate} to {$endDate}: spend={$spendCount}, revenue={$revenueCount}, link_level={$linkLevelCount}, campaigns={$campaignCount}.");
+            $this->info("Synced AdX reports from {$startDate} to {$endDate}: spend={$spendCount}, revenue={$revenueCount}, campaigns={$campaignCount}.");
 
             return Command::SUCCESS;
         } catch (Throwable $e) {
