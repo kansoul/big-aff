@@ -509,15 +509,15 @@ function getColumns(summary: AdxCampaignReportSummary | null): MRT_ColumnDef<Tab
         const name = row.original.account_name ?? row.original.account?.account_name
         const id = row.original.account_id ?? row.original.account?.account_id
         return (
-          <div className="flex flex-col gap-0.5">
+          <div className="flex min-w-0 max-w-full flex-col gap-0.5">
             <span
-              className="block whitespace-nowrap text-[10px] font-medium"
+              className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[10px] font-medium"
               title={name ?? id ?? undefined}
             >
               {name ?? id ?? '-'}
             </span>
             <span
-              className="block whitespace-nowrap font-mono text-[10px] text-muted-foreground"
+              className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[10px] text-muted-foreground"
               title={id ?? ''}
             >
               {id ?? '-'}
@@ -539,15 +539,15 @@ function getColumns(summary: AdxCampaignReportSummary | null): MRT_ColumnDef<Tab
         const name = row.original.campaign_name ?? row.original.campaign?.campaign_name
         const id = row.original.campaign_id ?? row.original.campaign?.campaign_id
         return (
-          <div className="flex flex-col gap-0.5">
+          <div className="flex min-w-0 max-w-full flex-col gap-0.5">
             <span
-              className="block whitespace-normal text-[10px] font-medium"
+              className="block max-w-full whitespace-normal text-[10px] font-medium wrap-break-word"
               title={name ?? id ?? undefined}
             >
               {name ?? id ?? '-'}
             </span>
             <span
-              className="block whitespace-normal font-mono text-[10px] text-muted-foreground"
+              className="block max-w-full whitespace-normal font-mono text-[10px] text-muted-foreground wrap-break-word"
               title={id ?? ''}
             >
               {id ?? '-'}
@@ -950,7 +950,7 @@ export function AdxCampaignReportsPage() {
     enableFullScreenToggle: false,
     mantineTableProps: {
       sx: {
-        tableLayout: 'auto',
+        tableLayout: 'fixed',
       },
     },
     mantineTableContainerProps: {
@@ -1002,10 +1002,11 @@ export function AdxCampaignReportsPage() {
           paddingLeft: '2px !important',
           paddingRight: '2px !important',
           fontWeight: isGroup ? 600 : undefined,
-          overflow: 'visible',
-          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          whiteSpace: 'normal',
           '& > div': {
-            overflow: 'visible',
+            minWidth: 0,
+            overflow: 'hidden',
             width: '100%',
           },
         },
