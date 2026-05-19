@@ -121,7 +121,6 @@ class AdxDailyReportAggregationService
             $source,
             $accountId ?? '',
             $campaignId ?? '',
-            $linkData?->id ?? '',
         ]);
 
         if (! isset($rows[$key])) {
@@ -147,6 +146,12 @@ class AdxDailyReportAggregationService
             ];
         }
 
+        if ($linkData !== null) {
+            $rows[$key]['adx_link_data_id'] ??= $linkData->id;
+            $rows[$key]['adx_link_id'] ??= $linkData->adx_link_id;
+            $rows[$key]['adx_game_id'] ??= $linkData->adx_game_id;
+        }
+
         return $rows[$key];
     }
 
@@ -167,7 +172,6 @@ class AdxDailyReportAggregationService
                 'source' => $row['source'],
                 'account_id' => $row['account_id'],
                 'campaign_id' => $row['campaign_id'],
-                'adx_link_data_id' => $row['adx_link_data_id'],
             ],
             [
                 ...$row,
