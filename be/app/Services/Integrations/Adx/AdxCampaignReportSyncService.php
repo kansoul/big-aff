@@ -138,7 +138,6 @@ class AdxCampaignReportSyncService
             $resolvedSource,
             $resolvedAccountId ?? '',
             $resolvedCampaignId ?? '',
-            $linkData?->id ?? '',
         ]);
 
         if (! isset($rows[$key])) {
@@ -173,6 +172,21 @@ class AdxCampaignReportSyncService
                 'adx_viewable_impressions' => 0,
                 'currency' => 'USD',
             ];
+        }
+
+        // Enrich existing row with link data if not yet set
+        if ($linkData !== null) {
+            $rows[$key]['adx_link_data_id'] ??= $linkData->id;
+            $rows[$key]['adx_link_id'] ??= $linkData->adx_link_id;
+            $rows[$key]['adx_game_id'] ??= $linkData->adx_game_id;
+        }
+
+        if ($campaign !== null) {
+            $rows[$key]['adx_account_id'] ??= $campaign->account?->id;
+            $rows[$key]['adx_campaign_id'] ??= $campaign->id;
+            $rows[$key]['account_name'] ??= $campaign->account?->account_name;
+            $rows[$key]['campaign_name'] ??= $campaign->campaign_name;
+            $rows[$key]['campaign_status'] ??= $campaign->status;
         }
 
         return $rows[$key];
@@ -210,7 +224,6 @@ class AdxCampaignReportSyncService
                 'source' => $row['source'],
                 'account_id' => $row['account_id'],
                 'campaign_id' => $row['campaign_id'],
-                'adx_link_data_id' => $row['adx_link_data_id'],
             ],
             [
                 ...$row,

@@ -28,7 +28,7 @@ class Post extends Model
         'created_by',
         'updated_by',
         'published_at',
-        'updated_at'
+        'updated_at',
     ];
 
     /**

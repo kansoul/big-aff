@@ -77,7 +77,7 @@ class AdxConversionSyncService
 
             return $this->resolveFailedIndices($response, (string) $customerId);
         } catch (Exception $e) {
-            Log::channel('sync_reports')->error('[AdxConversionSync] Upload failed: ' . $e->getMessage());
+            Log::channel('sync_reports')->error('[AdxConversionSync] Upload failed: '.$e->getMessage());
 
             return null;
         }

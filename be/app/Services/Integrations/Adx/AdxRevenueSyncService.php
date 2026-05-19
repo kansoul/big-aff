@@ -66,7 +66,7 @@ class AdxRevenueSyncService
 
             AdxRevenueReport::query()->updateOrCreate(
                 [
-                    'date' => $dimensions['date'] ?? $startDate,
+                    'date' => $dimensions['date_pt'] ?? $startDate,
                     'gam_custom_key' => $row['gam_custom_key'],
                     'gam_custom_value' => $row['gam_custom_value'],
                     'campaign_id' => $campaignId,

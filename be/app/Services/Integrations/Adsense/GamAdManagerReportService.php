@@ -23,7 +23,7 @@ class GamAdManagerReportService
     ];
 
     private const DIMENSIONS = [
-        'date' => 'DATE',
+        'date' => 'DATE_PT',
         'site' => 'SITE_NAME',
         'channel' => 'CHANNEL_NAME',
         'ad_unit' => 'AD_UNIT_NAME',
@@ -58,7 +58,7 @@ class GamAdManagerReportService
             'dateRangeType' => 'CUSTOM_DATE',
             'startDate' => $this->soapDate($dateFrom),
             'endDate' => $this->soapDate($dateTo),
-            'timeZoneType' => 'PUBLISHER',
+            'timeZoneType' => 'PACIFIC',
             ...($currency ? ['reportCurrency' => $currency] : []),
         ]);
 
@@ -99,7 +99,7 @@ class GamAdManagerReportService
             'date_from' => $filters['date_from'],
             'date_to' => $filters['date_to'],
             'currency' => $filters['currency'] ?? null,
-            'dimensions' => ['date', 'custom_criteria', 'ad_unit_id', 'ad_unit'],
+            'dimensions' => ['date', 'custom_criteria'],
         ]);
 
         $rows = collect($report['rows'] ?? [])
@@ -376,10 +376,11 @@ class GamAdManagerReportService
 
     /**
      * Normalize header.
+     * GAM CSV_DUMP prefixes columns with "Dimension.", "Column.", or "DimensionAttribute."
      */
     private function normalizeHeader(string $header): string
     {
-        $header = preg_replace('/^(Dimension|Column)\./', '', trim($header)) ?? $header;
+        $header = preg_replace('/^[A-Za-z]+\./', '', trim($header)) ?? $header;
         $header = strtolower($header);
 
         return str_replace([' ', '-'], '_', $header);
@@ -394,17 +395,24 @@ class GamAdManagerReportService
             return 0;
         }
 
-        $normalized = preg_replace('/[^\d\-]/', '', (string) $value);
+        // Strip everything except digits and leading minus, but preserve only integer part
+        $str = preg_replace('/\..*$/', '', (string) $value); // drop decimal part first
+        $normalized = preg_replace('/[^\d\-]/', '', $str ?? '');
 
         return $normalized === '' ? 0 : (int) $normalized;
     }
 
     /**
-     * Parse micros.
+     * Parse micros — GAM returns monetary values as integer micros in CSV_DUMP,
+     * but may include a decimal point (e.g. "120000.0"). Round to nearest int.
      */
     private function parseMicros(mixed $value): int
     {
-        return $this->parseInteger($value);
+        if ($value === null || $value === '') {
+            return 0;
+        }
+
+        return (int) round((float) $value);
     }
 
     /**
