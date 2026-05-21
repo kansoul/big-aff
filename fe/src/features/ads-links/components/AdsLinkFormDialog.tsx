@@ -332,6 +332,7 @@ export function EditAdsLinkDialog({
               <FormField
                 control={form.control}
                 name="channel_code"
+                disabled
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Channel</FormLabel>
