@@ -4,11 +4,20 @@ namespace App\Services\Integrations\Adsense;
 
 use App\Services\Integrations\Google\GamSoapClientFactory;
 use Carbon\CarbonImmutable;
+use Google\AdsApi\AdManager\v202605\AdSenseSettings;
+use Google\AdsApi\AdManager\v202605\AdUnit;
+use Google\AdsApi\AdManager\v202605\AdUnitSize;
+use Google\AdsApi\AdManager\v202605\Date;
+use Google\AdsApi\AdManager\v202605\InventoryService;
+use Google\AdsApi\AdManager\v202605\ReportDownloadOptions;
+use Google\AdsApi\AdManager\v202605\ReportJob;
+use Google\AdsApi\AdManager\v202605\ReportQuery;
+use Google\AdsApi\AdManager\v202605\ReportService;
+use Google\AdsApi\AdManager\v202605\Size;
+use Google\AdsApi\AdManager\v202605\Statement;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
 use RuntimeException;
-use SoapClient;
-use SoapFault;
 
 class GamAdManagerReportService
 {
@@ -44,26 +53,33 @@ class GamAdManagerReportService
     public function fetchAdxRevenue(array $filters): array
     {
         $requestedDimensions = $this->requestedDimensions($filters['dimensions'] ?? null);
-        $reportDimensions = array_map(fn (string $dimension) => self::DIMENSIONS[$dimension], $requestedDimensions);
+        $reportDimensions = array_map(fn(string $d) => self::DIMENSIONS[$d], $requestedDimensions);
         $dateFrom = CarbonImmutable::parse($filters['date_from']);
         $dateTo = CarbonImmutable::parse($filters['date_to']);
         $currency = $filters['currency'] ?? null;
 
-        $soapClient = $this->gamFactory->make(
-            "https://ads.google.com/apis/ads/publisher/{$this->gamFactory->apiVersion()}/ReportService?wsdl"
-        );
-        $reportJobId = $this->runReportJob($soapClient, [
-            'dimensions' => $reportDimensions,
-            'columns' => self::REPORT_COLUMNS,
-            'startDate' => $this->soapDate($dateFrom),
-            'endDate' => $this->soapDate($dateTo),
-            'dateRangeType' => 'CUSTOM_DATE',
-            ...($currency ? ['reportCurrency' => $currency] : []),
-            'timeZoneType' => 'PACIFIC',
-        ]);
+        $reportQuery = new ReportQuery;
+        $reportQuery->setDimensions($reportDimensions);
+        $reportQuery->setColumns(self::REPORT_COLUMNS);
+        $reportQuery->setDateRangeType('CUSTOM_DATE');
+        $reportQuery->setStartDate($this->gamDate($dateFrom));
+        $reportQuery->setEndDate($this->gamDate($dateTo));
+        $reportQuery->setTimeZoneType('PACIFIC');
+        if ($currency !== null) {
+            $reportQuery->setReportCurrency($currency);
+        }
 
-        $this->waitUntilReportCompletes($soapClient, $reportJobId);
-        $downloadUrl = $this->getDownloadUrl($soapClient, $reportJobId);
+        $reportJob = new ReportJob;
+        $reportJob->setReportQuery($reportQuery);
+
+        /** @var ReportService $reportService */
+        $reportService = $this->gamFactory->make(ReportService::class);
+
+        $reportJob = $reportService->runReportJob($reportJob);
+        $reportJobId = $reportJob->getId();
+
+        $this->waitUntilReportCompletes($reportService, $reportJobId);
+        $downloadUrl = $this->getDownloadUrl($reportService, $reportJobId);
         $csv = $this->downloadCsv($downloadUrl);
         $rows = $this->parseCsv($csv);
 
@@ -91,7 +107,7 @@ class GamAdManagerReportService
     {
         $customKey = $filters['gam_custom_key'] ?? 'campid';
         $allowedValues = collect($filters['custom_targeting_values'] ?? [])
-            ->map(fn ($value) => trim((string) $value))
+            ->map(fn($value) => trim((string) $value))
             ->filter()
             ->flip();
 
@@ -99,7 +115,7 @@ class GamAdManagerReportService
             'date_from' => $filters['date_from'],
             'date_to' => $filters['date_to'],
             'currency' => $filters['currency'] ?? null,
-            'dimensions' => ['date', 'custom_criteria'],
+            'dimensions' => ['date', 'custom_criteria', 'ad_unit_id', 'ad_unit'],
         ]);
 
         $rows = collect($report['rows'] ?? [])
@@ -121,7 +137,7 @@ class GamAdManagerReportService
             ->filter()
             ->when(
                 $allowedValues->isNotEmpty(),
-                fn ($collection) => $collection->filter(fn (array $row) => $allowedValues->has($row['campaign_id']))
+                fn($collection) => $collection->filter(fn(array $row) => $allowedValues->has($row['campaign_id']))
             )
             ->values()
             ->all();
@@ -134,13 +150,55 @@ class GamAdManagerReportService
         ];
     }
 
+    /**
+     * Fetch AdX/GAM revenue broken down by ad unit.
+     *
+     * @param  array{date_from: string, date_to: string, ad_unit_ids?: list<string>|null, currency?: string|null}  $filters
+     * @return array<string, mixed>
+     */
+    public function fetchAdxRevenueByAdUnit(array $filters): array
+    {
+        $allowedIds = collect($filters['ad_unit_ids'] ?? [])
+            ->map(fn($id) => trim((string) $id))
+            ->filter()
+            ->flip();
+
+        $report = $this->fetchAdxRevenue([
+            'date_from' => $filters['date_from'],
+            'date_to' => $filters['date_to'],
+            'currency' => $filters['currency'] ?? null,
+            'dimensions' => ['date', 'ad_unit_id', 'ad_unit', 'custom_criteria'],
+        ]);
+
+        $rows = collect($report['rows'] ?? [])
+            ->when(
+                $allowedIds->isNotEmpty(),
+                fn($col) => $col->filter(fn(array $row) => $allowedIds->has((string) data_get($row, 'dimensions.ad_unit_id', '')))
+            )
+            ->map(fn(array $row) => [
+                ...$row,
+                'ad_unit_id' => (string) data_get($row, 'dimensions.ad_unit_id', ''),
+                'ad_unit_name' => (string) (data_get($row, 'dimensions.ad_unit_name') ?? data_get($row, 'dimensions.ad_unit', '')),
+                'custom_criteria' => (string) data_get($row, 'dimensions.custom_criteria', ''),
+            ])
+            ->values()
+            ->all();
+
+        return [
+            ...$report,
+            'dimensions' => ['date', 'ad_unit_id', 'ad_unit', 'custom_criteria'],
+            'rows' => $rows,
+            'summary' => $this->summarizeRows($rows),
+        ];
+    }
+
     private function extractCustomTargetingValue(string $criteria, string $key): ?string
     {
         if ($criteria === '') {
             return null;
         }
 
-        $pattern = '/(?:^|[,;\\s])'.preg_quote($key, '/').'\\s*(?:=\\*|~\\*|=|~)\\s*([^,;\\s]+)/';
+        $pattern = '/(?:^|[,;\\s])' . preg_quote($key, '/') . '\\s*(?:=\\*|~\\*|=|~)\\s*([^,;\\s]+)/';
         if (! preg_match($pattern, $criteria, $matches)) {
             return null;
         }
@@ -167,49 +225,14 @@ class GamAdManagerReportService
         return array_values(array_unique($dimensions));
     }
 
-    /**
-     * Run a report job in Google Ad Manager.
-     *
-     * @param  array<string, mixed>  $reportQuery
-     */
-    private function runReportJob(SoapClient $client, array $reportQuery): int
-    {
-        try {
-            $response = $client->__soapCall('runReportJob', [[
-                'reportJob' => [
-                    'reportQuery' => $reportQuery,
-                ],
-            ]]);
-        } catch (SoapFault $fault) {
-            throw new RuntimeException('GAM runReportJob failed: '.$fault->getMessage(), previous: $fault);
-        }
-
-        $id = $response->rval->id ?? null;
-        if (! is_numeric($id)) {
-            throw new RuntimeException('GAM runReportJob response did not contain a report job ID.');
-        }
-
-        return (int) $id;
-    }
-
-    /**
-     * Wait for a report job to complete in Google Ad Manager.
-     */
-    private function waitUntilReportCompletes(SoapClient $client, int $reportJobId): void
+    private function waitUntilReportCompletes(ReportService $reportService, int $reportJobId): void
     {
         $attempts = max(1, (int) config('google.ad_manager.poll_attempts', 30));
         $interval = max(1, (int) config('google.ad_manager.poll_interval_seconds', 2));
 
         for ($attempt = 0; $attempt < $attempts; $attempt++) {
-            try {
-                $response = $client->__soapCall('getReportJobStatus', [[
-                    'reportJobId' => $reportJobId,
-                ]]);
-            } catch (SoapFault $fault) {
-                throw new RuntimeException('GAM getReportJobStatus failed: '.$fault->getMessage(), previous: $fault);
-            }
+            $status = $reportService->getReportJobStatus($reportJobId);
 
-            $status = (string) ($response->rval ?? '');
             if ($status === 'COMPLETED') {
                 return;
             }
@@ -224,26 +247,16 @@ class GamAdManagerReportService
         throw new RuntimeException("GAM report job [{$reportJobId}] did not complete in time.");
     }
 
-    /**
-     * Get download URL for a report in Google Ad Manager.
-     */
-    private function getDownloadUrl(SoapClient $client, int $reportJobId): string
+    private function getDownloadUrl(ReportService $reportService, int $reportJobId): string
     {
-        try {
-            $response = $client->__soapCall('getReportDownloadUrlWithOptions', [[
-                'reportJobId' => $reportJobId,
-                'reportDownloadOptions' => [
-                    'exportFormat' => 'CSV_DUMP',
-                    'includeReportProperties' => false,
-                    'includeTotalsRow' => false,
-                    'useGzipCompression' => false,
-                ],
-            ]]);
-        } catch (SoapFault $fault) {
-            throw new RuntimeException('GAM getReportDownloadUrlWithOptions failed: '.$fault->getMessage(), previous: $fault);
-        }
+        $options = new ReportDownloadOptions;
+        $options->setExportFormat('CSV_DUMP');
+        $options->setIncludeReportProperties(false);
+        $options->setIncludeTotalsRow(false);
+        $options->setUseGzipCompression(false);
 
-        $url = $response->rval ?? null;
+        $url = $reportService->getReportDownloadUrlWithOptions($reportJobId, $options);
+
         if (! is_string($url) || trim($url) === '') {
             throw new RuntimeException('GAM response did not contain a report download URL.');
         }
@@ -251,9 +264,6 @@ class GamAdManagerReportService
         return $url;
     }
 
-    /**
-     * Download CSV from Google Ad Manager.
-     */
     private function downloadCsv(string $downloadUrl): string
     {
         $response = Http::timeout(60)
@@ -267,9 +277,6 @@ class GamAdManagerReportService
     }
 
     /**
-     * Parse CSV from Google Ad Manager.
-     *
-     *
      * @return list<array<string, mixed>>
      */
     public function parseCsv(string $csv): array
@@ -289,7 +296,7 @@ class GamAdManagerReportService
             return [];
         }
 
-        $headers = array_map(fn (string $header) => $this->normalizeHeader($header), $headers);
+        $headers = array_map(fn(string $header) => $this->normalizeHeader($header), $headers);
         $rows = [];
 
         while (($values = fgetcsv($stream, null, ',', '"', '')) !== false) {
@@ -301,7 +308,7 @@ class GamAdManagerReportService
             foreach ($headers as $index => $header) {
                 $map[$header] = $values[$index] ?? null;
             }
-            
+
             $revenueMicros = $this->parseMicros($map['ad_exchange_line_item_level_revenue'] ?? null);
             $ecpmMicros = $this->parseMicros($map['ad_exchange_line_item_level_average_ecpm'] ?? null);
             $impressions = $this->parseInteger($map['ad_exchange_line_item_level_impressions'] ?? null);
@@ -326,8 +333,6 @@ class GamAdManagerReportService
     }
 
     /**
-     * Summarize rows from Google Ad Manager.
-     *
      * @param  list<array<string, mixed>>  $rows
      * @return array<string, int|float>
      */
@@ -353,8 +358,6 @@ class GamAdManagerReportService
     }
 
     /**
-     * Extract dimensions from a row.
-     *
      * @param  array<string, mixed>  $row
      * @return array<string, mixed>
      */
@@ -370,14 +373,10 @@ class GamAdManagerReportService
 
         return array_filter(
             array_diff_key($row, array_flip($metricHeaders)),
-            fn (mixed $value) => $value !== null && $value !== ''
+            fn(mixed $value) => $value !== null && $value !== ''
         );
     }
 
-    /**
-     * Normalize header.
-     * GAM CSV_DUMP prefixes columns with "Dimension.", "Column.", or "DimensionAttribute."
-     */
     private function normalizeHeader(string $header): string
     {
         $header = preg_replace('/^[A-Za-z]+\./', '', trim($header)) ?? $header;
@@ -386,26 +385,18 @@ class GamAdManagerReportService
         return str_replace([' ', '-'], '_', $header);
     }
 
-    /**
-     * Parse integer.
-     */
     private function parseInteger(mixed $value): int
     {
         if ($value === null || $value === '') {
             return 0;
         }
 
-        // Strip everything except digits and leading minus, but preserve only integer part
-        $str = preg_replace('/\..*$/', '', (string) $value); // drop decimal part first
+        $str = preg_replace('/\..*$/', '', (string) $value);
         $normalized = preg_replace('/[^\d\-]/', '', $str ?? '');
 
         return $normalized === '' ? 0 : (int) $normalized;
     }
 
-    /**
-     * Parse micros — GAM returns monetary values as integer micros in CSV_DUMP,
-     * but may include a decimal point (e.g. "120000.0"). Round to nearest int.
-     */
     private function parseMicros(mixed $value): int
     {
         if ($value === null || $value === '') {
@@ -415,26 +406,187 @@ class GamAdManagerReportService
         return (int) round((float) $value);
     }
 
-    /**
-     * Convert micros to currency.
-     */
     private function microsToCurrency(int $micros): float
     {
         return round($micros / 1_000_000, 6);
     }
 
     /**
-     * Convert CarbonImmutable to SOAP date.
+     * Fetch all ad units from GAM InventoryService (paginated).
      *
-     *
-     * @return array{year: int, month: int, day: int}
+     * @return list<array{id: string, name: string, description: string, parent_id: string|null, has_children: bool, status: string, ad_unit_code: string, target_window: string, is_interstitial: bool, is_native: bool, is_fluid: bool, adsense_enabled: bool, last_modified: string|null}>
      */
-    private function soapDate(CarbonImmutable $date): array
+    public function fetchAdUnits(): array
     {
+        /** @var InventoryService $inventoryService */
+        $inventoryService = $this->gamFactory->make(InventoryService::class);
+
+        $adUnits = [];
+        $pageSize = 500;
+        $offset = 0;
+
+        do {
+            $page = $inventoryService->getAdUnitsByStatement(
+                new Statement("LIMIT {$pageSize} OFFSET {$offset}")
+            );
+
+            $results = $page->getResults() ?? [];
+
+            foreach ($results as $unit) {
+                $lastModified = null;
+                $lmdt = $unit->getLastModifiedDateTime();
+                if ($lmdt !== null) {
+                    $d = $lmdt->getDate();
+                    if ($d !== null) {
+                        $lastModified = sprintf(
+                            '%04d-%02d-%02d %02d:%02d:%02d',
+                            $d->getYear(),
+                            $d->getMonth(),
+                            $d->getDay(),
+                            $lmdt->getHour() ?? 0,
+                            $lmdt->getMinute() ?? 0,
+                            $lmdt->getSecond() ?? 0
+                        );
+                    }
+                }
+
+                $adSenseEnabled = false;
+                $adSenseSettings = $unit->getAdSenseSettings();
+                if ($adSenseSettings !== null) {
+                    $adSenseEnabled = (bool) $adSenseSettings->getAdSenseEnabled();
+                }
+
+                $adUnits[] = [
+                    'id' => (string) ($unit->getId() ?? ''),
+                    'name' => (string) ($unit->getName() ?? ''),
+                    'description' => (string) ($unit->getDescription() ?? ''),
+                    'parent_id' => $unit->getParentId() !== null ? (string) $unit->getParentId() : null,
+                    'has_children' => (bool) ($unit->getHasChildren() ?? false),
+                    'status' => (string) ($unit->getStatus() ?? ''),
+                    'ad_unit_code' => (string) ($unit->getAdUnitCode() ?? ''),
+                    'target_window' => (string) ($unit->getTargetWindow() ?? ''),
+                    'is_interstitial' => (bool) ($unit->getIsInterstitial() ?? false),
+                    'is_native' => (bool) ($unit->getIsNative() ?? false),
+                    'is_fluid' => (bool) ($unit->getIsFluid() ?? false),
+                    'adsense_enabled' => $adSenseEnabled,
+                    'last_modified' => $lastModified,
+                ];
+            }
+
+            $totalCount = (int) ($page->getTotalResultSetSize() ?? 0);
+            $offset += $pageSize;
+        } while ($offset < $totalCount);
+
+        return $adUnits;
+    }
+
+    /**
+     * Create a new ad unit in GAM InventoryService.
+     *
+     * @param  array{
+     *     name: string,
+     *     parent_id: int,
+     *     ad_unit_code?: string|null,
+     *     description?: string|null,
+     *     target_window?: 'TOP'|'BLANK'|null,
+     *     explicitly_targeted?: bool,
+     *     is_interstitial?: bool,
+     *     is_native?: bool,
+     *     is_fluid?: bool,
+     *     adsense_enabled?: bool,
+     *     applied_team_ids?: list<int>|null,
+     *     sizes?: list<array{width: int, height: int}>|null,
+     * }  $params
+     * @return array{id: string, name: string, ad_unit_code: string, status: string, parent_id: string|null}
+     */
+    public function createAdUnit(array $params): array
+    {
+        $name = trim($params['name']);
+        if ($name === '') {
+            throw new InvalidArgumentException('Ad unit name is required.');
+        }
+
+        $parentId = (int) $params['parent_id'];
+        if ($parentId <= 0) {
+            throw new InvalidArgumentException('A valid parent_id is required.');
+        }
+
+        $adUnit = new AdUnit;
+        $adUnit->setName($name);
+        $adUnit->setParentId($parentId);
+        $adUnit->setTargetWindow($params['target_window'] ?? 'TOP');
+
+        if (! empty($params['ad_unit_code'])) {
+            $adUnit->setAdUnitCode(trim($params['ad_unit_code']));
+        }
+
+        if (! empty($params['description'])) {
+            $adUnit->setDescription(trim($params['description']));
+        }
+
+        if (isset($params['explicitly_targeted'])) {
+            $adUnit->setExplicitlyTargeted((bool) $params['explicitly_targeted']);
+        }
+
+        if (isset($params['is_interstitial'])) {
+            $adUnit->setIsInterstitial((bool) $params['is_interstitial']);
+        }
+
+        if (isset($params['is_native'])) {
+            $adUnit->setIsNative((bool) $params['is_native']);
+        }
+
+        if (isset($params['is_fluid'])) {
+            $adUnit->setIsFluid((bool) $params['is_fluid']);
+        }
+
+        if (isset($params['adsense_enabled'])) {
+            $settings = new AdSenseSettings;
+            $settings->setAdSenseEnabled((bool) $params['adsense_enabled']);
+            $adUnit->setAdSenseSettings($settings);
+        }
+
+        if (! empty($params['applied_team_ids'])) {
+            $adUnit->setAppliedTeamIds(array_map('intval', $params['applied_team_ids']));
+        }
+
+        if (! empty($params['sizes'])) {
+            $adUnitSizes = array_map(function (array $s) {
+                $size = new Size;
+                $size->setWidth((int) $s['width']);
+                $size->setHeight((int) $s['height']);
+                $size->setIsAspectRatio(false);
+
+                $adUnitSize = new AdUnitSize;
+                $adUnitSize->setSize($size);
+                $adUnitSize->setEnvironmentType('BROWSER');
+
+                return $adUnitSize;
+            }, $params['sizes']);
+            $adUnit->setAdUnitSizes($adUnitSizes);
+        }
+
+        /** @var InventoryService $inventoryService */
+        $inventoryService = $this->gamFactory->make(InventoryService::class);
+        $created = $inventoryService->createAdUnits([$adUnit]);
+
+        if (empty($created) || $created[0]->getId() === null) {
+            throw new RuntimeException('GAM createAdUnits response did not contain the created ad unit.');
+        }
+
+        $result = $created[0];
+
         return [
-            'year' => (int) $date->year,
-            'month' => (int) $date->month,
-            'day' => (int) $date->day,
+            'id' => (string) $result->getId(),
+            'name' => (string) ($result->getName() ?? ''),
+            'ad_unit_code' => (string) ($result->getAdUnitCode() ?? ''),
+            'status' => (string) ($result->getStatus() ?? ''),
+            'parent_id' => $result->getParentId() !== null ? (string) $result->getParentId() : null,
         ];
+    }
+
+    private function gamDate(CarbonImmutable $date): Date
+    {
+        return new Date($date->year, $date->month, $date->day);
     }
 }

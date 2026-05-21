@@ -25,7 +25,7 @@ return [
     ],
     // Google Ad Manager / AdX reporting
     'ad_manager' => [
-        'api_version' => env('GOOGLE_AD_MANAGER_API_VERSION', 'v202511'),
+        'api_version' => env('GOOGLE_AD_MANAGER_API_VERSION', 'v202605'),
         'network_code' => env('GOOGLE_AD_MANAGER_NETWORK_CODE'),
         'application_name' => env('GOOGLE_AD_MANAGER_APPLICATION_NAME', env('GOOGLE_APPLICATION_NAME', 'Laravel Google API')),
         'service_account_json_path' => env('GOOGLE_AD_MANAGER_SERVICE_ACCOUNT_JSON_PATH'),

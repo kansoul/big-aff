@@ -6,12 +6,14 @@ use App\Models\AdxCampaign;
 use App\Services\Integrations\Adsense\GamAdManagerReportService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class TestGamRevenueCommand extends Command
 {
     protected $signature = 'adx:test-gam-revenue
-        {date? : Date to fetch (Y-m-d). Defaults to yesterday}
+        {date_from? : Start date (Y-m-d). Defaults to yesterday}
+        {date_to? : End date (Y-m-d). Defaults to date_from}
         {--campaign= : Filter by a specific campaign ID (gam_custom_value)}
         {--limit=10 : Max rows to display}';
 
@@ -19,9 +21,13 @@ class TestGamRevenueCommand extends Command
 
     public function handle(GamAdManagerReportService $gamService): int
     {
-        $date = $this->argument('date')
-            ? Carbon::parse($this->argument('date'))->toDateString()
+        $dateFrom = $this->argument('date_from')
+            ? Carbon::parse($this->argument('date_from'))->toDateString()
             : Carbon::yesterday()->toDateString();
+
+        $dateTo = $this->argument('date_to')
+            ? Carbon::parse($this->argument('date_to'))->toDateString()
+            : $dateFrom;
 
         $campaignFilter = $this->option('campaign');
         $limit = (int) $this->option('limit');
@@ -43,12 +49,12 @@ class TestGamRevenueCommand extends Command
             return Command::FAILURE;
         }
 
-        $this->info("Fetching GAM revenue for date={$date} with " . count($campaignIds) . ' campaign targeting value(s)...');
+        $this->info("Fetching GAM revenue for {$dateFrom} → {$dateTo} with " . count($campaignIds) . ' campaign targeting value(s)...');
 
         try {
             $report = $gamService->fetchAdxRevenueByCustomTargeting([
-                'date_from' => $date,
-                'date_to' => $date,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
                 'gam_custom_key' => 'campid',
                 'custom_targeting_values' => $campaignIds,
                 'currency' => 'USD',
@@ -84,9 +90,7 @@ class TestGamRevenueCommand extends Command
         }
 
         $this->newLine();
-        $this->info("=== Rows (showing up to {$limit}) ===");
-
-        $displayed = array_slice($rows, 0, $limit);
+        Log::info('Rows: ', $rows);
         $this->table(
             ['Date', 'Campaign ID', 'Ad Unit', 'Impressions', 'Revenue (USD)', 'eCPM'],
             array_map(fn(array $row) => [
@@ -96,12 +100,8 @@ class TestGamRevenueCommand extends Command
                 number_format($row['ad_exchange_impressions'] ?? 0),
                 number_format($row['ad_exchange_revenue'] ?? 0, 6),
                 number_format($row['ad_exchange_average_ecpm'] ?? 0, 6),
-            ], $displayed)
+            ], $rows)
         );
-
-        if (count($rows) > $limit) {
-            $this->line('... and ' . (count($rows) - $limit) . ' more rows (increase --limit to see all).');
-        }
 
         return Command::SUCCESS;
     }

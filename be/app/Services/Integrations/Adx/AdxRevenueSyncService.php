@@ -6,7 +6,6 @@ use App\Models\AdxCampaign;
 use App\Models\AdxLinkData;
 use App\Models\AdxRevenueReport;
 use App\Services\Integrations\Adsense\GamAdManagerReportService;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -32,32 +31,18 @@ class AdxRevenueSyncService
             return 0;
         }
 
-        $synced = 0;
-        $current = Carbon::parse($startDate);
-        $end = Carbon::parse($endDate);
-
-        while ($current->lte($end)) {
-            $date = $current->toDateString();
-            $synced += $this->syncDate($date, $campaignIds);
-            $current->addDay();
-        }
-
-        return $synced;
-    }
-
-    private function syncDate(string $date, array $campaignIds): int
-    {
         try {
             $report = app(GamAdManagerReportService::class)->fetchAdxRevenueByCustomTargeting([
-                'date_from' => $date,
-                'date_to' => $date,
+                'date_from' => $startDate,
+                'date_to' => $endDate,
                 'gam_custom_key' => 'campid',
                 'custom_targeting_values' => $campaignIds,
                 'currency' => 'USD',
             ]);
         } catch (Throwable $e) {
             Log::channel('sync_reports')->error('[AdxRevenueSync] GAM fetch failed', [
-                'date' => $date,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
                 'error' => $e->getMessage(),
             ]);
 
@@ -66,11 +51,15 @@ class AdxRevenueSyncService
 
         $synced = 0;
         $now = now();
+        $networkCode = $report['network_code'] ?? null;
+        $currency = strtoupper($report['currency'] ?? 'USD');
 
         foreach (($report['rows'] ?? []) as $row) {
             $dimensions = $row['dimensions'] ?? [];
             $campaignId = (string) ($row['campaign_id'] ?? '');
-            if ($campaignId === '') {
+            $date = $dimensions['date_pt'] ?? null;
+
+            if ($campaignId === '' || $date === null) {
                 continue;
             }
 
@@ -88,7 +77,7 @@ class AdxRevenueSyncService
                     'ad_unit_id' => $dimensions['ad_unit_id'] ?? null,
                 ],
                 [
-                    'gam_network_code' => $report['network_code'] ?? null,
+                    'gam_network_code' => $networkCode,
                     'adx_link_data_id' => $linkData?->id,
                     'adx_link_id' => $linkData?->adx_link_id,
                     'adx_game_id' => $linkData?->adx_game_id,
@@ -101,7 +90,7 @@ class AdxRevenueSyncService
                     'adx_revenue' => (float) ($row['ad_exchange_revenue'] ?? 0),
                     'ad_server_revenue' => 0,
                     'total_revenue' => (float) ($row['ad_exchange_revenue'] ?? 0),
-                    'currency' => strtoupper($report['currency'] ?? 'USD'),
+                    'currency' => $currency,
                     'fetched_at' => $now,
                 ],
             );
