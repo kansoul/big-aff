@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListParentChildAssignmentsAction
 {
-    public const array ORDERABLE_COLUMNS = ['id', 'name', 'email', 'created_at'];
+    public const ORDERABLE_COLUMNS = ['id', 'name', 'email', 'created_at'];
 
     /**
      * @param  array<string, mixed>  $filters

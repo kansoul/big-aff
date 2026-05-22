@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class ListKeywordTrackingAction
 {
-    public const array ORDERABLE_COLUMNS = ['keyword', 'click_count', 'click_ad_count'];
+    public const ORDERABLE_COLUMNS = ['keyword', 'click_count', 'click_ad_count'];
 
     public function execute(array $filters): LengthAwarePaginator
     {

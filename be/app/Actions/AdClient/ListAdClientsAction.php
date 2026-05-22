@@ -9,7 +9,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ListAdClientsAction
 {
-    public const array ORDERABLE_COLUMNS = [
+    public const ORDERABLE_COLUMNS = [
         'id',
         'ad_client_id',
         'product_code',

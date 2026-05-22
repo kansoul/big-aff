@@ -10,7 +10,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ListKeywordSetsAction
 {
-    public const array ORDERABLE_COLUMNS = [
+    public const ORDERABLE_COLUMNS = [
         'id',
         'name',
         'created_by',
