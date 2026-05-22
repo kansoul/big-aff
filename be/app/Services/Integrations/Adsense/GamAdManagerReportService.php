@@ -2,6 +2,7 @@
 
 namespace App\Services\Integrations\Adsense;
 
+use App\Services\Integrations\Adsense\Traits\HasAdxRowHelpers;
 use App\Services\Integrations\Google\GamSoapClientFactory;
 use Carbon\CarbonImmutable;
 use Google\AdsApi\AdManager\v202605\AdSenseSettings;
@@ -19,8 +20,16 @@ use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
 use RuntimeException;
 
+/**
+ * Fetches AdX/GAM revenue reports via the **legacy SOAP API**
+ * (`googleads/googleads-php-lib` library).
+ *
+ * For the newer REST-based Beta API, see {@see GamAdManagerBetaReportService}.
+ */
 class GamAdManagerReportService
 {
+    use HasAdxRowHelpers;
+
     public function __construct(private readonly GamSoapClientFactory $gamFactory) {}
 
     private const REPORT_COLUMNS = [
@@ -53,7 +62,7 @@ class GamAdManagerReportService
     public function fetchAdxRevenue(array $filters): array
     {
         $requestedDimensions = $this->requestedDimensions($filters['dimensions'] ?? null);
-        $reportDimensions = array_map(fn(string $d) => self::DIMENSIONS[$d], $requestedDimensions);
+        $reportDimensions = array_map(fn (string $d) => self::DIMENSIONS[$d], $requestedDimensions);
         $dateFrom = CarbonImmutable::parse($filters['date_from']);
         $dateTo = CarbonImmutable::parse($filters['date_to']);
         $currency = $filters['currency'] ?? null;
@@ -107,7 +116,7 @@ class GamAdManagerReportService
     {
         $customKey = $filters['gam_custom_key'] ?? 'campid';
         $allowedValues = collect($filters['custom_targeting_values'] ?? [])
-            ->map(fn($value) => trim((string) $value))
+            ->map(fn ($value) => trim((string) $value))
             ->filter()
             ->flip();
 
@@ -137,7 +146,7 @@ class GamAdManagerReportService
             ->filter()
             ->when(
                 $allowedValues->isNotEmpty(),
-                fn($collection) => $collection->filter(fn(array $row) => $allowedValues->has($row['campaign_id']))
+                fn ($collection) => $collection->filter(fn (array $row) => $allowedValues->has($row['campaign_id']))
             )
             ->values()
             ->all();
@@ -159,7 +168,7 @@ class GamAdManagerReportService
     public function fetchAdxRevenueByAdUnit(array $filters): array
     {
         $allowedIds = collect($filters['ad_unit_ids'] ?? [])
-            ->map(fn($id) => trim((string) $id))
+            ->map(fn ($id) => trim((string) $id))
             ->filter()
             ->flip();
 
@@ -173,9 +182,9 @@ class GamAdManagerReportService
         $rows = collect($report['rows'] ?? [])
             ->when(
                 $allowedIds->isNotEmpty(),
-                fn($col) => $col->filter(fn(array $row) => $allowedIds->has((string) data_get($row, 'dimensions.ad_unit_id', '')))
+                fn ($col) => $col->filter(fn (array $row) => $allowedIds->has((string) data_get($row, 'dimensions.ad_unit_id', '')))
             )
-            ->map(fn(array $row) => [
+            ->map(fn (array $row) => [
                 ...$row,
                 'ad_unit_id' => (string) data_get($row, 'dimensions.ad_unit_id', ''),
                 'ad_unit_name' => (string) (data_get($row, 'dimensions.ad_unit_name') ?? data_get($row, 'dimensions.ad_unit', '')),
@@ -198,7 +207,7 @@ class GamAdManagerReportService
             return null;
         }
 
-        $pattern = '/(?:^|[,;\\s])' . preg_quote($key, '/') . '\\s*(?:=\\*|~\\*|=|~)\\s*([^,;\\s]+)/';
+        $pattern = '/(?:^|[,;\s])'.preg_quote($key, '/').'\s*(?:=\*|~\*|=|~)\s*([^,;\s]+)/';
         if (! preg_match($pattern, $criteria, $matches)) {
             return null;
         }
@@ -296,7 +305,7 @@ class GamAdManagerReportService
             return [];
         }
 
-        $headers = array_map(fn(string $header) => $this->normalizeHeader($header), $headers);
+        $headers = array_map(fn (string $header) => $this->normalizeHeader($header), $headers);
         $rows = [];
 
         while (($values = fgetcsv($stream, null, ',', '"', '')) !== false) {
@@ -333,31 +342,6 @@ class GamAdManagerReportService
     }
 
     /**
-     * @param  list<array<string, mixed>>  $rows
-     * @return array<string, int|float>
-     */
-    private function summarizeRows(array $rows): array
-    {
-        $impressions = array_sum(array_column($rows, 'ad_exchange_impressions'));
-        $clicks = array_sum(array_column($rows, 'ad_exchange_clicks'));
-        $responsesServed = array_sum(array_column($rows, 'ad_exchange_responses_served'));
-        $revenueMicros = array_sum(array_column($rows, 'ad_exchange_revenue_micros'));
-
-        return [
-            'row_count' => count($rows),
-            'ad_exchange_impressions' => (int) $impressions,
-            'ad_exchange_clicks' => (int) $clicks,
-            'ad_exchange_responses_served' => (int) $responsesServed,
-            'ad_exchange_revenue_micros' => (int) $revenueMicros,
-            'ad_exchange_revenue' => $this->microsToCurrency((int) $revenueMicros),
-            'ad_exchange_average_ecpm' => $impressions > 0
-                ? round(($this->microsToCurrency((int) $revenueMicros) / $impressions) * 1000, 6)
-                : 0.0,
-            'ad_exchange_ctr' => $impressions > 0 ? round(($clicks / $impressions) * 100, 4) : 0.0,
-        ];
-    }
-
-    /**
      * @param  array<string, mixed>  $row
      * @return array<string, mixed>
      */
@@ -373,7 +357,7 @@ class GamAdManagerReportService
 
         return array_filter(
             array_diff_key($row, array_flip($metricHeaders)),
-            fn(mixed $value) => $value !== null && $value !== ''
+            fn (mixed $value) => $value !== null && $value !== ''
         );
     }
 
@@ -383,32 +367,6 @@ class GamAdManagerReportService
         $header = strtolower($header);
 
         return str_replace([' ', '-'], '_', $header);
-    }
-
-    private function parseInteger(mixed $value): int
-    {
-        if ($value === null || $value === '') {
-            return 0;
-        }
-
-        $str = preg_replace('/\..*$/', '', (string) $value);
-        $normalized = preg_replace('/[^\d\-]/', '', $str ?? '');
-
-        return $normalized === '' ? 0 : (int) $normalized;
-    }
-
-    private function parseMicros(mixed $value): int
-    {
-        if ($value === null || $value === '') {
-            return 0;
-        }
-
-        return (int) round((float) $value);
-    }
-
-    private function microsToCurrency(int $micros): float
-    {
-        return round($micros / 1_000_000, 6);
     }
 
     /**
@@ -429,7 +387,6 @@ class GamAdManagerReportService
             $page = $inventoryService->getAdUnitsByStatement(
                 new Statement("LIMIT {$pageSize} OFFSET {$offset}")
             );
-
             $results = $page->getResults() ?? [];
 
             foreach ($results as $unit) {

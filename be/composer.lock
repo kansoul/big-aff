@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1827039f1c335b9c1e7084235f4a63fc",
+    "content-hash": "b1aa00a67d2b2c3aeebfc76952794c08",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -1394,6 +1394,55 @@
                 "source": "https://github.com/protocolbuffers/protobuf-php/tree/v5.34.1"
             },
             "time": "2026-03-19T20:51:56+00:00"
+        },
+        {
+            "name": "googleads/ad-manager",
+            "version": "v0.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/googleapis/php-ads-ad-manager.git",
+                "reference": "b4a2e74f73f5459259a0141f21cc18337d3e9fd9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/googleapis/php-ads-ad-manager/zipball/b4a2e74f73f5459259a0141f21cc18337d3e9fd9",
+                "reference": "b4a2e74f73f5459259a0141f21cc18337d3e9fd9",
+                "shasum": ""
+            },
+            "require": {
+                "google/gax": "^1.38.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.0"
+            },
+            "suggest": {
+                "ext-grpc": "Enables use of gRPC, a universal high-performance RPC framework created by Google.",
+                "ext-protobuf": "Provides a significant increase in throughput over the pure PHP protobuf implementation. See https://cloud.google.com/php/grpc for installation instructions."
+            },
+            "type": "library",
+            "extra": {
+                "component": {
+                    "id": "googleads/ad-manager",
+                    "path": "AdsAdManager",
+                    "target": "googleapis/php-ads-ad-manager"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Google\\Ads\\AdManager\\": "src",
+                    "GPBMetadata\\Google\\Ads\\Admanager\\": "metadata"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "Google Ads Ad Manager Client for PHP",
+            "support": {
+                "source": "https://github.com/googleapis/php-ads-ad-manager/tree/v0.7.0"
+            },
+            "time": "2026-05-12T19:06:48+00:00"
         },
         {
             "name": "googleads/google-ads-php",

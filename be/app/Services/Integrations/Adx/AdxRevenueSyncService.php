@@ -5,7 +5,7 @@ namespace App\Services\Integrations\Adx;
 use App\Models\AdxCampaign;
 use App\Models\AdxLinkData;
 use App\Models\AdxRevenueReport;
-use App\Services\Integrations\Adsense\GamAdManagerReportService;
+use App\Services\Integrations\Adsense\GamAdManagerBetaReportService;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -32,12 +32,12 @@ class AdxRevenueSyncService
         }
 
         try {
-            $report = app(GamAdManagerReportService::class)->fetchAdxRevenueByCustomTargeting([
+            // Sử dụng Report ID đã được tạo sẵn trên GAM. Hoặc cấu hình qua env/config.
+            $reportId = config('google.ad_manager.beta_report_id', '7556487270');
+
+            $report = app(GamAdManagerBetaReportService::class)->fetchAdxRevenueById($reportId, [
                 'date_from' => $startDate,
                 'date_to' => $endDate,
-                'gam_custom_key' => 'campid',
-                'custom_targeting_values' => $campaignIds,
-                'currency' => 'USD',
             ]);
         } catch (Throwable $e) {
             Log::channel('sync_reports')->error('[AdxRevenueSync] GAM fetch failed', [
@@ -56,10 +56,22 @@ class AdxRevenueSyncService
 
         foreach (($report['rows'] ?? []) as $row) {
             $dimensions = $row['dimensions'] ?? [];
-            $campaignId = (string) ($row['campaign_id'] ?? '');
-            $date = $dimensions['date_pt'] ?? null;
 
-            if ($campaignId === '' || $date === null) {
+            // Beta API trả về date dạng 20260519
+            $rawDate = (string) ($dimensions['date'] ?? '');
+            $date = null;
+            if (strlen($rawDate) === 8) {
+                $date = substr($rawDate, 0, 4) . '-' . substr($rawDate, 4, 2) . '-' . substr($rawDate, 6, 2);
+            }
+
+            // Beta API trả về custom_criteria dạng "campid=23844646707"
+            $criteria = (string) ($dimensions['custom_criteria'] ?? '');
+            $campaignId = '';
+            if (preg_match('/(?:^|[,;\s])campid\s*(?:=\*|~\*|=|~)\s*([^,;\s]+)/', $criteria, $matches)) {
+                $campaignId = trim($matches[1]);
+            }
+
+            if ($campaignId === '' || $date === null || !in_array($campaignId, $campaignIds, true)) {
                 continue;
             }
 
@@ -71,17 +83,17 @@ class AdxRevenueSyncService
             AdxRevenueReport::query()->updateOrCreate(
                 [
                     'date' => $date,
-                    'gam_custom_key' => $row['gam_custom_key'],
-                    'gam_custom_value' => $row['gam_custom_value'],
+                    'gam_custom_key' => 'campid',
+                    'gam_custom_value' => $campaignId,
                     'campaign_id' => $campaignId,
-                    'ad_unit_id' => $dimensions['ad_unit_id'] ?? null,
+                    'ad_unit_id' => $dimensions['ad_unit_id_top_level'] ?? $dimensions['ad_unit_id'] ?? null,
                 ],
                 [
                     'gam_network_code' => $networkCode,
                     'adx_link_data_id' => $linkData?->id,
                     'adx_link_id' => $linkData?->adx_link_id,
                     'adx_game_id' => $linkData?->adx_game_id,
-                    'ad_unit_name' => $dimensions['ad_unit'] ?? null,
+                    'ad_unit_name' => $dimensions['ad_unit_top_level'] ?? $dimensions['ad_unit'] ?? null,
                     'impressions' => (int) ($row['ad_exchange_impressions'] ?? 0),
                     'clicks' => (int) ($row['ad_exchange_clicks'] ?? 0),
                     'requests' => (int) ($row['ad_exchange_responses_served'] ?? 0),

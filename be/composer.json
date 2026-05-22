@@ -14,6 +14,7 @@
         "dedoc/scramble": "^0.13.17",
         "facebook/php-business-sdk": "^25.0",
         "google/apiclient": "^2.19",
+        "googleads/ad-manager": "^0.7.0",
         "googleads/google-ads-php": "^32.3",
         "googleads/googleads-php-lib": "^73.0",
         "laravel/framework": "^13.0",
