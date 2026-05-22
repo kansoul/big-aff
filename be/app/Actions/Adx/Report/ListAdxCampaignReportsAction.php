@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListAdxCampaignReportsAction
 {
-    public const array ORDERABLE_COLUMNS = [
+    public const ORDERABLE_COLUMNS = [
         'id',
         'date',
         'source',

@@ -33,7 +33,7 @@ class GetRevenueReportRangeAction
         foreach ($filters['ranges'] as $range) {
             $startDateTime = Carbon::parse("{$range['start_date']} {$range['start_time']}");
             $endDateTime = Carbon::parse("{$range['end_date']} {$range['end_time']}");
-            $label = $startDateTime->toDateTimeString().' - '.$endDateTime->toDateTimeString();
+            $label = $startDateTime->toDateTimeString() . ' - ' . $endDateTime->toDateTimeString();
 
             $channelCodes = $range['channel_codes'];
 

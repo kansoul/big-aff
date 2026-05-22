@@ -96,7 +96,7 @@ const METRIC_OPTIONS: { label: string; value: string }[] = [
   { label: 'Page Views', value: 'page_views' },
   { label: 'Impressions', value: 'impressions' },
   { label: 'Ad Requests', value: 'ad_requests' },
-  { label: 'CPC', value: 'cost_per_click' },
+  { label: 'RPC', value: 'cost_per_click' },
   { label: 'Ad Req RPM', value: 'ad_requests_rpm' },
   { label: 'Impr RPM', value: 'impressions_rpm' },
   { label: 'Funnel Req', value: 'funnel_requests' },
@@ -105,7 +105,7 @@ const METRIC_OPTIONS: { label: string; value: string }[] = [
   { label: 'Funnel RPM', value: 'funnel_rpm' },
 ]
 
-const DEFAULT_METRIC = METRIC_OPTIONS[0].value as RevenueChartMetric
+const DEFAULT_METRIC: RevenueChartMetric = 'cost_per_click'
 
 const CHART_COLOR = '#3b82f6'
 const CHART_COLOR_MUTED = '#93c5fd'
