@@ -332,7 +332,6 @@ export function EditAdsLinkDialog({
               <FormField
                 control={form.control}
                 name="channel_code"
-                disabled
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Channel</FormLabel>
@@ -341,6 +340,7 @@ export function EditAdsLinkDialog({
                       onValueChange={field.onChange}
                       options={channels.map((c) => ({ label: c.name, value: c.code }))}
                       placeholder="Select channel"
+                      disabled
                     />
                     <FormMessage />
                   </FormItem>

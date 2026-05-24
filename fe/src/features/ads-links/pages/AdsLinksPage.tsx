@@ -275,7 +275,7 @@ export function AdsLinksPage() {
       setSubmitting(true)
       await adsLinksApi.update(editRow.id, {
         rac: values.rac,
-        channel_code: editRow.is_old ? (values.channel_code ?? null) : undefined,
+        channel_code: editRow.is_old ? (values.channel_code ?? editRow.channel_code) : undefined,
         keyword_set_id: values.keyword_set_id ?? null,
         fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
