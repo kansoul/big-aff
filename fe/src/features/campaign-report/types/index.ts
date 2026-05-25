@@ -243,6 +243,7 @@ export interface CampaignReportToggleStatusResponse {
 export interface CampaignReportFilterParams {
   date_from?: string | null
   date_to?: string | null
+  keyword?: string | null
   user_ids?: number[]
   account_ids?: string[]
   ads_type?: string | null
@@ -423,7 +424,6 @@ export interface CampaignRuleSingleResponse {
 }
 
 export interface CampaignRuleFilterParams {
-  keyword?: string | null
   entity_type?: CampaignRuleEntityType | null
   is_active?: boolean | null
   order?: 'asc' | 'desc' | null

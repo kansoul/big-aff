@@ -27,7 +27,6 @@ class CampaignRuleController extends BaseController
      * @queryParam per_page integer Items per page (max 100). Example: 15
      * @queryParam order_by string Column to order by. Example: created_at
      * @queryParam order_direction string asc or desc. Example: desc
-     * @queryParam keyword string Search by title, code, user name, or user email. Example: rule_abc
      * @queryParam entity_type string Filter by entity type (campaign|ad_adset). Example: campaign
      * @queryParam is_active boolean Filter by active status. Example: true
      */

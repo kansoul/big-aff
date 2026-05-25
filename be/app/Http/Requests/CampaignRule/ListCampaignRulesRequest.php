@@ -27,7 +27,6 @@ class ListCampaignRulesRequest extends FormRequest
             $this->paginationRules(),
             $this->sortRules(ListCampaignRulesAction::ORDERABLE_COLUMNS),
             [
-                'keyword' => ['sometimes', 'nullable', 'string', 'max:255'],
                 'entity_type' => ['sometimes', Rule::enum(EntityTypeEnum::class)],
                 'is_active' => ['sometimes', 'boolean'],
             ],

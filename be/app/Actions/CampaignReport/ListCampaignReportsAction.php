@@ -170,6 +170,29 @@ class ListCampaignReportsAction
             $query->whereDate('date_start', '<=', $filters['date_to']);
         }
 
+        if (! empty($filters['keyword'])) {
+            $keyword = (string) $filters['keyword'];
+
+            $query->where(function (Builder $builder) use ($keyword): void {
+                $builder
+                    ->where('campaign_reports.account_id', 'like', "%{$keyword}%")
+                    ->orWhere('campaign_reports.account_name', 'like', "%{$keyword}%")
+                    ->orWhere('campaign_reports.campaign_id', 'like', "%{$keyword}%")
+                    ->orWhere('campaign_reports.campaign_name', 'like', "%{$keyword}%")
+                    ->orWhere('campaign_reports.channel_code', 'like', "%{$keyword}%")
+                    ->orWhere('campaign_reports.channel_name', 'like', "%{$keyword}%")
+                    ->orWhere('campaign_reports.style_code', 'like', "%{$keyword}%")
+                    ->orWhere('campaign_reports.style_name', 'like', "%{$keyword}%")
+                    ->orWhereHas('realtimeReport.linkData.adsLink', function (Builder $adsLink) use ($keyword): void {
+                        $adsLink->where('slug', 'like', "%{$keyword}%");
+                    })
+                    ->orWhereHas('realtimeReport.linkData.adsLink.site', function (Builder $site) use ($keyword): void {
+                        $site->where('url', 'like', "%{$keyword}%")
+                            ->orWhere('name', 'like', "%{$keyword}%");
+                    });
+            });
+        }
+
         if (! empty($filters['account_ids'])) {
             $query->whereIn('campaign_reports.account_id', $filters['account_ids']);
         }

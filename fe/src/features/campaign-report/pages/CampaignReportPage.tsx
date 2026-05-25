@@ -33,6 +33,7 @@ const AUTO_REFETCH_INTERVAL_MS = 60_000
 const DEFAULT_FILTERS: CampaignReportFilterParams = {
   date_from: dayjs().format('YYYY-MM-DD'),
   date_to: dayjs().format('YYYY-MM-DD'),
+  keyword: null,
   user_ids: [],
   account_ids: [],
   ads_type: null,
@@ -61,6 +62,7 @@ function parseFiltersFromUrl(params: URLSearchParams): CampaignReportFilterParam
   return {
     date_from: params.get('date_from') ?? DEFAULT_FILTERS.date_from,
     date_to: params.get('date_to') ?? DEFAULT_FILTERS.date_to,
+    keyword: params.get('keyword') ?? null,
     user_ids: params
       .getAll('user_ids[]')
       .map(Number)
@@ -85,6 +87,7 @@ function buildUrlParams(filters: CampaignReportFilterParams): URLSearchParams {
   const params = new URLSearchParams()
   if (filters.date_from) params.set('date_from', filters.date_from)
   if (filters.date_to) params.set('date_to', filters.date_to)
+  if (filters.keyword) params.set('keyword', filters.keyword)
   ;(filters.user_ids ?? []).forEach((id) => params.append('user_ids[]', String(id)))
   ;(filters.account_ids ?? []).forEach((id) => params.append('account_ids[]', String(id)))
   if (filters.ads_type) params.set('ads_type', filters.ads_type)
@@ -269,6 +272,7 @@ export function CampaignReportPage() {
       ...prev,
       date_from: range?.from ?? null,
       date_to: range?.to ?? null,
+      keyword: parseStringOrNull(values.keyword),
       user_ids: parseNumberArray(values.user_ids),
       account_ids: parseStringArray(values.account_ids),
       ads_type: parseStringOrNull(values.ads_type),
@@ -361,6 +365,13 @@ export function CampaignReportPage() {
           to: filters.date_to ?? null,
         },
         placeholder: 'Select date range',
+      },
+      {
+        field: 'keyword',
+        label: 'Search',
+        type: 'input',
+        value: filters.keyword ?? null,
+        placeholder: 'Campaign, account, channel, link...',
       },
       {
         field: 'user_ids',

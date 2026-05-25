@@ -513,11 +513,8 @@ function CampaignRulesDialogInner({ trigger }: CampaignRulesDialogProps) {
   }, [])
 
   const onFilterApply = useCallback((values: Record<string, unknown>) => {
-    const keyword = typeof values.keyword === 'string' ? values.keyword.trim() : ''
-
     setFilters((prev) => ({
       ...prev,
-      keyword: keyword || null,
       entity_type:
         values.entity_type === 'campaign' || values.entity_type === 'ad_adset'
           ? values.entity_type
@@ -560,13 +557,6 @@ function CampaignRulesDialogInner({ trigger }: CampaignRulesDialogProps) {
   const filterFields = useMemo<FilterFieldDef[]>(
     () => [
       {
-        field: 'keyword',
-        label: 'Keyword',
-        type: 'input',
-        value: filters.keyword ?? null,
-        placeholder: 'Title, code, user...',
-      },
-      {
         field: 'entity_type',
         label: 'Entity Type',
         type: 'select',
@@ -588,7 +578,7 @@ function CampaignRulesDialogInner({ trigger }: CampaignRulesDialogProps) {
         ],
       },
     ],
-    [filters.keyword, filters.entity_type, filters.is_active],
+    [filters.entity_type, filters.is_active],
   )
 
   return (
