@@ -184,6 +184,7 @@ export const campaignReportApi = {
       params: {
         page: filters.page ?? 1,
         per_page: filters.per_page ?? 30,
+        ...(filters.keyword?.trim() ? { keyword: filters.keyword.trim() } : {}),
         ...(filters.entity_type ? { entity_type: filters.entity_type } : {}),
         ...(filters.is_active != null ? { is_active: filters.is_active ? '1' : '0' } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),

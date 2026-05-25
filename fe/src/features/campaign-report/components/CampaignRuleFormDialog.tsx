@@ -49,7 +49,6 @@ function toNullableNumber(val: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-
 function isNullableNumberString(
   val: string | null | undefined,
   opts: { min?: number; integer?: boolean } = {},
@@ -84,7 +83,7 @@ const schema = z
     title: z.string().min(1, 'Title is required').max(255, 'Max 255 characters'),
     code_rule: z.string().optional(),
     entity_type: z.enum(['campaign', 'ad_adset'], { message: 'Entity type is required' }),
-    entity_ids_text: z.string().min(1, 'Entity IDs is required'),
+    entity_ids_text: z.string().optional(),
     // Campaign auto-off conditions
     min_roi: z
       .string()
@@ -122,6 +121,14 @@ const schema = z
       .refine((value) => isNullableHHMMString(value), 'End Hour must match HH:mm'),
   })
   .superRefine((data, ctx) => {
+    if (data.entity_type === 'ad_adset' && !data.entity_ids_text?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Ad/Adset IDs are required',
+        path: ['entity_ids_text'],
+      })
+    }
+
     if (data.entity_type === 'campaign' || data.entity_type === 'ad_adset') {
       const hasRoi = data.min_roi != null && data.min_roi.trim() !== ''
       const hasProfit = data.min_profit != null && data.min_profit.trim() !== ''
@@ -369,16 +376,26 @@ export function CampaignRuleFormDialog({
                     {entityType === 'campaign'
                       ? 'Campaign IDs (One per line)'
                       : 'Ad/Adset IDs (One per line)'}{' '}
-                    {!isEdit && <span className="text-destructive">*</span>}
+                    {entityType === 'ad_adset' && <span className="text-destructive">*</span>}
                   </FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder={'1234567890\n1234567891\n1234567892'}
+                      placeholder={
+                        entityType === 'campaign'
+                          ? 'Optional\n1234567890\n1234567891'
+                          : '1234567890\n1234567891\n1234567892'
+                      }
                       className="min-h-32 resize-y font-mono text-sm"
                       disabled={submitting}
                       {...field}
                     />
                   </FormControl>
+                  {entityType === 'campaign' && (
+                    <FormDescription>
+                      Leave blank to create the rule and let matching campaigns be added
+                      automatically.
+                    </FormDescription>
+                  )}
                   {entityType === 'ad_adset' && (
                     <FormDescription>
                       Enter Ad IDs or Adset IDs (they are unique so the system will detect

@@ -33,8 +33,8 @@ class StoreCampaignRuleRequest extends FormRequest
             'is_active' => ['sometimes', 'boolean'],
             'expired_at' => ['nullable', 'date', 'after:now'],
 
-            /** FB campaign_id values, or mixed FB ad_id / adset_id values (see entity_type). */
-            'entity_ids' => ['required', 'array', 'min:1'],
+            /** Optional FB campaign_id values, or mixed FB ad_id / adset_id values (see entity_type). */
+            'entity_ids' => ['nullable', 'array'],
             'entity_ids.*' => ['string'],
 
             // Campaign-level/ Ad/Adset-level conditions
@@ -62,7 +62,15 @@ class StoreCampaignRuleRequest extends FormRequest
                 return;
             }
 
-            foreach ($this->input('entity_ids', []) as $index => $id) {
+            $ids = $this->normalizedEntityIds();
+
+            if ($entity === EntityTypeEnum::AdAdset->value && empty($ids)) {
+                $v->errors()->add('entity_ids', 'Entity IDs are required for ad/adset rules.');
+
+                return;
+            }
+
+            foreach ($ids as $index => $id) {
                 $id = is_string($id) ? trim($id) : (string) $id;
                 if ($id === '') {
                     continue;
@@ -129,5 +137,21 @@ class StoreCampaignRuleRequest extends FormRequest
         }
 
         return is_string($raw) ? $raw : null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function normalizedEntityIds(): array
+    {
+        $ids = $this->input('entity_ids', []);
+        if (! is_array($ids)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(
+            static fn (mixed $item): string => is_string($item) ? trim($item) : (string) $item,
+            $ids,
+        ), static fn (string $id): bool => $id !== ''));
     }
 }

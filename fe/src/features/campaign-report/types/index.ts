@@ -423,6 +423,7 @@ export interface CampaignRuleSingleResponse {
 }
 
 export interface CampaignRuleFilterParams {
+  keyword?: string | null
   entity_type?: CampaignRuleEntityType | null
   is_active?: boolean | null
   order?: 'asc' | 'desc' | null

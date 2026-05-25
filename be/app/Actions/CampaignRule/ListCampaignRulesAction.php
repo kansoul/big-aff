@@ -30,6 +30,21 @@ class ListCampaignRulesAction
         $query = CampaignRule::query()->with(['user', 'applyRules']);
         (new CampaignRuleOwnerResource)->applyTo($query);
 
+        if (! empty($filters['keyword'])) {
+            $keyword = addcslashes((string) $filters['keyword'], '%_\\');
+
+            $query->where(function ($query) use ($keyword): void {
+                $query
+                    ->where('title', 'like', "%{$keyword}%")
+                    ->orWhere('code_rule', 'like', "%{$keyword}%")
+                    ->orWhereHas('user', function ($query) use ($keyword): void {
+                        $query
+                            ->where('name', 'like', "%{$keyword}%")
+                            ->orWhere('email', 'like', "%{$keyword}%");
+                    });
+            });
+        }
+
         if (isset($filters['entity_type'])) {
             $query->where('entity_type', $filters['entity_type']);
         }
