@@ -2,60 +2,85 @@
 
 namespace App\Services\Integrations\Google;
 
-use Google\AdsApi\AdManager\AdManagerServices;
-use Google\AdsApi\AdManager\AdManagerSession;
-use Google\AdsApi\AdManager\AdManagerSessionBuilder;
-use Google\AdsApi\Common\OAuth2TokenBuilder;
+use Google\Client as GoogleClient;
+use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
+use RuntimeException;
+use SoapClient;
+use SoapHeader;
 
 class GamSoapClientFactory
 {
-    private ?AdManagerSession $session = null;
+    private const TOKEN_CACHE_KEY = 'gam_service_account_token';
 
-    private AdManagerServices $services;
+    private const TOKEN_TTL_SECONDS = 55 * 60;
 
-    public function __construct()
+    public function make(string $wsdl): SoapClient
     {
-        $this->services = new AdManagerServices;
-    }
+        $accessToken = $this->accessToken();
+        $context = stream_context_create([
+            'http' => [
+                'header' => "Authorization: Bearer {$accessToken}\r\n",
+            ],
+        ]);
 
-    /**
-     * @template T
-     *
-     * @param  class-string<T>  $serviceClass
-     * @return T
-     */
-    public function make(string $serviceClass): mixed
-    {
-        return $this->services->get($this->session(), $serviceClass);
-    }
+        $client = new SoapClient($wsdl, [
+            'exceptions' => true,
+            'trace' => false,
+            'cache_wsdl' => WSDL_CACHE_MEMORY,
+            'stream_context' => $context,
+        ]);
 
-    public function session(): AdManagerSession
-    {
-        if ($this->session === null) {
-            $jsonPath = storage_path($this->configString('service_account_json_path'));
-            if (! file_exists($jsonPath)) {
-                throw new InvalidArgumentException("GAM service account JSON not found at [{$jsonPath}].");
-            }
+        $client->__setSoapHeaders(new SoapHeader($this->namespace(), 'RequestHeader', [
+            'networkCode' => $this->configString('network_code'),
+            'applicationName' => $this->configString('application_name'),
+        ]));
 
-            $oAuth2Credential = (new OAuth2TokenBuilder)
-                ->withJsonKeyFilePath($jsonPath)
-                ->withScopes($this->configString('scope'))
-                ->build();
-
-            $this->session = (new AdManagerSessionBuilder)
-                ->withNetworkCode($this->configString('network_code'))
-                ->withApplicationName($this->configString('application_name'))
-                ->withOAuth2Credential($oAuth2Credential)
-                ->build();
-        }
-
-        return $this->session;
+        return $client;
     }
 
     public function apiVersion(): string
     {
         return $this->configString('api_version');
+    }
+
+    public function namespace(): string
+    {
+        return "https://www.google.com/apis/ads/publisher/{$this->apiVersion()}";
+    }
+
+    private function accessToken(): string
+    {
+        return Cache::remember(self::TOKEN_CACHE_KEY, self::TOKEN_TTL_SECONDS, function (): string {
+            return $this->fetchFreshAccessToken();
+        });
+    }
+
+    private function fetchFreshAccessToken(): string
+    {
+        $jsonPath = storage_path($this->configString('service_account_json_path'));
+        if (! file_exists($jsonPath)) {
+            throw new InvalidArgumentException("GAM service account JSON not found at [{$jsonPath}].");
+        }
+
+        $client = new GoogleClient;
+        $client->setApplicationName($this->configString('application_name'));
+        $client->setScopes([$this->configString('scope')]);
+        $client->setAuthConfig($jsonPath);
+
+        $token = $client->fetchAccessTokenWithAssertion();
+
+        if (! empty($token['error'])) {
+            $message = $token['error_description'] ?? $token['error'];
+            throw new RuntimeException("Failed to authenticate Google Ad Manager service account: {$message}");
+        }
+
+        $accessToken = $token['access_token'] ?? null;
+        if (! is_string($accessToken) || trim($accessToken) === '') {
+            throw new RuntimeException('Google Ad Manager service account response did not contain an access token.');
+        }
+
+        return $accessToken;
     }
 
     private function configString(string $key): string
