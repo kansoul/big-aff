@@ -468,30 +468,85 @@ class CampaignReportService
     }
 
     /**
-     * Sort the assembled groups by their group_summary value for the requested sort column.
-     * This is needed because groups are built from individually-sorted rows, but the displayed
-     * summary values (especially r_conversion from revenue_reports, r_rpc as a derived ratio)
-     * may differ from the per-row DB values used in the SQL ORDER BY.
+     * Sort groups by group_summary and items within each group by the row value for the same column.
+     * Group order uses aggregated summaries which may differ from per-row SQL ORDER BY.
      *
      * @param  array<int, array<string, mixed>>  $groups
      * @param  array<string, mixed>  $filters
      * @return array<int, array<string, mixed>>
      */
-    private const GROUP_SORT_COLUMNS = ['r_conversion', 'a_conversion', 'r_rpc', 'r_revenue', 'r_cpa'];
-
     private function sortGroups(array $groups, array $filters): array
     {
         $orderBy = $filters['order_by'] ?? null;
 
-        if ($orderBy === null || ! in_array($orderBy, self::GROUP_SORT_COLUMNS, true) || count($groups) <= 1) {
+        if ($orderBy === null) {
             return $groups;
         }
 
-        $direction = strtolower((string) ($filters['order'] ?? 'desc')) === 'asc' ? 1 : -1;
+        $direction = $this->groupSortDirection($filters);
 
-        usort($groups, fn (array $a, array $b) => (((float) ($a['group_summary'][$orderBy] ?? 0)) <=> ((float) ($b['group_summary'][$orderBy] ?? 0))) * $direction);
+        foreach ($groups as &$group) {
+            $items = $group['items'] ?? [];
+            if (count($items) > 1) {
+                usort(
+                    $items,
+                    fn (CampaignReport $a, CampaignReport $b) => $this->compareForSort(
+                        $this->sortValueForCampaignReport($a, $orderBy),
+                        $this->sortValueForCampaignReport($b, $orderBy),
+                        $direction,
+                    ),
+                );
+                $group['items'] = $items;
+            }
+        }
+        unset($group);
+
+        if (count($groups) <= 1) {
+            return $groups;
+        }
+
+        usort(
+            $groups,
+            fn (array $a, array $b) => $this->compareForSort(
+                $a['group_summary'][$orderBy] ?? null,
+                $b['group_summary'][$orderBy] ?? null,
+                $direction,
+            ),
+        );
 
         return $groups;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    private function groupSortDirection(array $filters): int
+    {
+        return strtolower((string) ($filters['order'] ?? 'desc')) === 'asc' ? 1 : -1;
+    }
+
+    private function sortValueForCampaignReport(CampaignReport $row, string $orderBy): mixed
+    {
+        $value = $row->getAttribute($orderBy);
+
+        if ($value === null && $orderBy === 'r_cpa') {
+            $rConversion = (float) ($row->r_conversion ?? 0);
+
+            return $rConversion > 0
+                ? ((float) ($row->a_spend ?? 0)) / $rConversion
+                : 0.0;
+        }
+
+        return $value;
+    }
+
+    private function compareForSort(mixed $left, mixed $right, int $direction): int
+    {
+        if (is_numeric($left) && is_numeric($right)) {
+            return ((float) $left <=> (float) $right) * $direction;
+        }
+
+        return strcmp((string) $left, (string) $right) * $direction;
     }
 
     // ─── User / account resolution ────────────────────────────────────────────
