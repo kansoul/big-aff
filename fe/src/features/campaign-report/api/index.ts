@@ -40,6 +40,7 @@ function buildListParams(filters: CampaignReportFilterParams) {
     per_page: filters.per_page ?? 15,
     ...(filters.date_from ? { date_from: filters.date_from } : {}),
     ...(filters.date_to ? { date_to: filters.date_to } : {}),
+    ...(filters.keyword ? { keyword: filters.keyword } : {}),
     ...(filters.user_ids?.length ? { 'user_ids[]': filters.user_ids } : {}),
     ...(filters.account_ids?.length ? { 'account_ids[]': filters.account_ids } : {}),
     ...(filters.ads_type ? { ads_type: filters.ads_type } : {}),
