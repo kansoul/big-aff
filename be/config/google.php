@@ -30,8 +30,8 @@ return [
         'application_name' => env('GOOGLE_AD_MANAGER_APPLICATION_NAME', env('GOOGLE_APPLICATION_NAME', 'Laravel Google API')),
         'service_account_json_path' => env('GOOGLE_AD_MANAGER_SERVICE_ACCOUNT_JSON_PATH'),
         'scope' => env('GOOGLE_AD_MANAGER_SCOPE', 'https://www.googleapis.com/auth/dfp'),
-        'poll_interval_seconds' => env('GOOGLE_AD_MANAGER_REPORT_POLL_INTERVAL_SECONDS', 2),
-        'poll_attempts' => env('GOOGLE_AD_MANAGER_REPORT_POLL_ATTEMPTS', 30),
+        'poll_interval_seconds' => env('GOOGLE_AD_MANAGER_REPORT_POLL_INTERVAL_SECONDS', 5),
+        'poll_attempts' => env('GOOGLE_AD_MANAGER_REPORT_POLL_ATTEMPTS', 60),
     ],
     'scopes' => [
         'adsense' => 'https://www.googleapis.com/auth/adsense.readonly',

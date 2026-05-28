@@ -115,6 +115,9 @@ const REALTIME_FIELDS = [
   'rt_get_game_link_clicks',
   'rt_detail_views',
   'rt_get_bonus_clicks',
+  'rt_inter_click_ad',
+  'rt_reward_click_ad',
+  'rt_banner_click_ad',
 ] as const
 
 type MoneyField = (typeof MONEY_FIELDS)[number]
@@ -210,6 +213,12 @@ function getRealtimeReportMetric(row: AdxCampaignReport, field: RealtimeField): 
       return toNumber(row.realtime_report?.detail_views)
     case 'rt_get_bonus_clicks':
       return toNumber(row.realtime_report?.get_bonus_clicks)
+    case 'rt_inter_click_ad':
+      return toNumber(row.realtime_report?.inter_click_ad)
+    case 'rt_reward_click_ad':
+      return toNumber(row.realtime_report?.reward_click_ad)
+    case 'rt_banner_click_ad':
+      return toNumber(row.realtime_report?.banner_click_ad)
   }
 }
 
@@ -248,6 +257,9 @@ function buildSummary(rows: AdxCampaignReport[]): AdxCampaignReportSummary {
     rt_get_game_link_clicks: 0,
     rt_detail_views: 0,
     rt_get_bonus_clicks: 0,
+    rt_inter_click_ad: 0,
+    rt_reward_click_ad: 0,
+    rt_banner_click_ad: 0,
     roi: 0,
     roas: 0,
     cpc: 0,
@@ -278,6 +290,9 @@ function getMetric(row: TableRow, field: MetricField): number {
     case 'rt_get_game_link_clicks':
     case 'rt_detail_views':
     case 'rt_get_bonus_clicks':
+    case 'rt_inter_click_ad':
+    case 'rt_reward_click_ad':
+    case 'rt_banner_click_ad':
       return getRealtimeReportMetric(row, field)
     default:
       return toNumber((row as unknown as Record<string, unknown>)[field])
@@ -359,7 +374,7 @@ function HeaderLabel({
 
   return (
     <div
-      className={`flex min-h-[20px] w-full items-center gap-1 whitespace-nowrap ${
+      className={`flex min-h-5 w-full items-center gap-1 whitespace-nowrap ${
         align === 'center' ? 'justify-center text-center' : ''
       }`}
     >
@@ -611,7 +626,9 @@ function getColumns(summary: AdxCampaignReportSummary | null): MRT_ColumnDef<Tab
     derivedRatio('roi', 'ROI', 86, true),
     derivedRatio('roas', 'ROAS', 92),
     revenueCount('adx_clicks', 'ADX Conv.', 108),
-
+    realtimeCount('rt_banner_click_ad', 'R. Banner Ad', 126),
+    realtimeCount('rt_inter_click_ad', 'R. Inter Ad', 116),
+    realtimeCount('rt_reward_click_ad', 'R. Reward Ad', 126),
     realtimeCount('rt_landing_views', 'R. Land View', 120),
     spendCount('landing_view', 'A. Land View', 118),
     realtimeCount('rt_get_game_link_clicks', 'R. Game Click', 130),

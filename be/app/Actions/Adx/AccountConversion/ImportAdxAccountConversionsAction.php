@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 
 class ImportAdxAccountConversionsAction
 {
+    private const BATCH_SIZE = 500;
+
     /**
      * @var array<string, string>
      */
@@ -29,6 +31,15 @@ class ImportAdxAccountConversionsAction
         'getbonusclicku' => 'get_bonus_click',
         'get_bonus_click' => 'get_bonus_click',
         'get_bonus_clicks' => 'get_bonus_click',
+        'interclickad' => 'inter_click_ad',
+        'interclickadu' => 'inter_click_ad',
+        'inter_click_ad' => 'inter_click_ad',
+        'rewardclickad' => 'reward_click_ad',
+        'rewardclickadu' => 'reward_click_ad',
+        'reward_click_ad' => 'reward_click_ad',
+        'bannerclickad' => 'banner_click_ad',
+        'bannerclickadu' => 'banner_click_ad',
+        'banner_click_ad' => 'banner_click_ad',
     ];
 
     /**
@@ -37,72 +48,110 @@ class ImportAdxAccountConversionsAction
     public function execute(string $rawData): array
     {
         $lines = explode("\n", $rawData);
-        $processed = 0;
         $skipped = 0;
+        $now = now();
+        $rowsByKey = [];
 
-        DB::transaction(function () use ($lines, &$processed, &$skipped): void {
-            $ownerResource = new AdxAccountOwnerResource;
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
 
-            foreach ($lines as $line) {
-                $line = trim($line);
-                if ($line === '') {
-                    continue;
-                }
+            $parts = array_map('trim', explode('|', $line));
+            if ($this->isHeaderRow($parts)) {
+                continue;
+            }
 
-                $parts = array_map('trim', explode('|', $line));
-                if ($this->isHeaderRow($parts)) {
-                    continue;
-                }
+            $source = 'google';
+            if (count($parts) === 3) {
+                [$accountId, $conversionName, $conversionActionId] = $parts;
+            } elseif (count($parts) === 4) {
+                [$source, $accountId, $conversionName, $conversionActionId] = $parts;
+            } else {
+                $skipped++;
 
-                $source = 'google';
-                if (count($parts) === 3) {
-                    [$accountId, $conversionName, $conversionActionId] = $parts;
-                } elseif (count($parts) === 4) {
-                    [$source, $accountId, $conversionName, $conversionActionId] = $parts;
-                } else {
-                    $skipped++;
+                continue;
+            }
 
-                    continue;
-                }
+            $conversionType = $this->conversionTypeFromName($conversionName);
+            if ($source === '' || $accountId === '' || $conversionActionId === '' || $conversionType === null) {
+                $skipped++;
 
-                $conversionType = $this->conversionTypeFromName($conversionName);
-                if ($source === '' || $accountId === '' || $conversionActionId === '' || $conversionType === null) {
-                    $skipped++;
+                continue;
+            }
 
-                    continue;
-                }
+            $rowsByKey[$this->rowKey($source, $accountId, $conversionType)] = [
+                'source' => $source,
+                'account_id' => $accountId,
+                'conversion_type' => $conversionType,
+                'conversion_action_id' => $conversionActionId,
+                'name' => $conversionName,
+                'status' => 'active',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
 
-                $account = AdxAccount::query()
-                    ->where('source', $source)
-                    ->where('account_id', $accountId)
-                    ->first();
+        if ($rowsByKey === []) {
+            return ['processed' => 0, 'skipped' => $skipped];
+        }
 
-                if (! $account) {
-                    $skipped++;
+        $rows = $this->filterRowsWithAuthorizedAccounts(array_values($rowsByKey), $skipped);
 
-                    continue;
-                }
-
-                $ownerResource->authorize($account);
-
-                AdxAccountConversion::query()->updateOrCreate(
-                    [
-                        'source' => $source,
-                        'account_id' => $accountId,
-                        'conversion_type' => $conversionType,
-                    ],
-                    [
-                        'conversion_action_id' => $conversionActionId,
-                        'name' => $conversionName,
-                        'status' => 'active',
-                    ],
+        DB::transaction(function () use ($rows): void {
+            foreach (array_chunk($rows, self::BATCH_SIZE) as $chunk) {
+                AdxAccountConversion::query()->upsert(
+                    $chunk,
+                    uniqueBy: ['source', 'account_id', 'conversion_type'],
+                    update: ['conversion_action_id', 'name', 'status', 'updated_at'],
                 );
-
-                $processed++;
             }
         });
 
+        $processed = count($rows);
+
         return ['processed' => $processed, 'skipped' => $skipped];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private function filterRowsWithAuthorizedAccounts(array $rows, int &$skipped): array
+    {
+        $accountKeys = [];
+        foreach ($rows as $row) {
+            $accountKeys[$this->accountKey($row['source'], $row['account_id'])] = [
+                'source' => $row['source'],
+                'account_id' => $row['account_id'],
+            ];
+        }
+
+        $sources = array_values(array_unique(array_column($accountKeys, 'source')));
+        $accountIds = array_values(array_unique(array_column($accountKeys, 'account_id')));
+
+        $accounts = AdxAccount::query()
+            ->whereIn('source', $sources)
+            ->whereIn('account_id', $accountIds)
+            ->get()
+            ->filter(fn(AdxAccount $account): bool => isset($accountKeys[$this->accountKey($account->source, $account->account_id)]))
+            ->keyBy(fn(AdxAccount $account): string => $this->accountKey($account->source, $account->account_id));
+
+        $ownerResource = new AdxAccountOwnerResource;
+        foreach ($accounts as $account) {
+            $ownerResource->authorize($account);
+        }
+
+        return array_values(array_filter($rows, function (array $row) use ($accounts, &$skipped): bool {
+            if ($accounts->has($this->accountKey($row['source'], $row['account_id']))) {
+                return true;
+            }
+
+            $skipped++;
+
+            return false;
+        }));
     }
 
     /**
@@ -124,5 +173,15 @@ class ImportAdxAccountConversionsAction
         $key = strtolower(str_replace([' ', '-'], '', trim($conversionName)));
 
         return self::CONVERSION_MAPPING[$key] ?? null;
+    }
+
+    private function accountKey(string $source, string $accountId): string
+    {
+        return $source . '|' . $accountId;
+    }
+
+    private function rowKey(string $source, string $accountId, string $conversionType): string
+    {
+        return $this->accountKey($source, $accountId) . '|' . $conversionType;
     }
 }

@@ -25,7 +25,10 @@ const PLACEHOLDER = `Customer ID|Tên Conversion|Conversion ID
 706-350-4758|LandingViewU|7530496784
 706-350-4758|GetGameLinkClickU|7530496785
 706-350-4758|DetailViewU|7530496786
-706-350-4758|GetBonusClickU|7530496787`
+706-350-4758|GetBonusClickU|7530496787
+706-350-4758|InterClickAdU|7530496788
+706-350-4758|RewardClickAdU|7530496789
+706-350-4758|BannerClickAdU|7530496790`
 
 export function AdxAccountConversionImportDialog({
   open,
@@ -87,7 +90,7 @@ export function AdxAccountConversionImportDialog({
             placeholder={PLACEHOLDER}
             disabled={submitting}
             rows={10}
-            className="max-h-[50vh] resize-none overflow-y-auto font-mono text-xs [field-sizing:fixed] sm:min-h-60"
+            className="max-h-[50vh] resize-none overflow-y-auto font-mono text-xs field-sizing-fixed sm:min-h-60"
           />
         </div>
 

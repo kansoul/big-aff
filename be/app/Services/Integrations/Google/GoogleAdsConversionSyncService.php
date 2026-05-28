@@ -120,14 +120,9 @@ class GoogleAdsConversionSyncService
                                 case ConversionUploadError::CLICK_CONVERSION_ALREADY_EXISTS:
                                 case ConversionUploadError::EXPIRED_EVENT:
                                 case ConversionUploadError::UNPARSEABLE_GCLID:
-                                    break;
-
                                 case ConversionUploadError::CONVERSION_PRECEDES_EVENT:
                                 case ConversionUploadError::EVENT_NOT_FOUND:
                                 case ConversionUploadError::TOO_RECENT_EVENT:
-                                    if (! is_null($index)) {
-                                        $failedIndices[] = $index;
-                                    }
                                     break;
 
                                 default:
@@ -144,7 +139,7 @@ class GoogleAdsConversionSyncService
 
             return array_unique($failedIndices);
         } catch (Exception $e) {
-            Log::error('Error syncing Ad Revenue to Google Ads: '.$e->getMessage());
+            Log::error('Error syncing Ad Revenue to Google Ads: ' . $e->getMessage());
 
             return null;
         }

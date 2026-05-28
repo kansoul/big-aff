@@ -122,6 +122,9 @@ export interface AdxRealtimeReportRef {
   get_game_link_clicks: number
   detail_views: number
   get_bonus_clicks: number
+  inter_click_ad: number
+  reward_click_ad: number
+  banner_click_ad: number
 }
 
 export interface AdxReportLinkDataRef {
@@ -196,6 +199,9 @@ export type AdxConversionType =
   | 'get_game_link_click'
   | 'detail_view'
   | 'get_bonus_click'
+  | 'inter_click_ad'
+  | 'reward_click_ad'
+  | 'banner_click_ad'
 
 export type ListResponse<T> = {
   data: T[]
@@ -399,6 +405,9 @@ export const adxAccountConversionSchema = z.object({
     'get_game_link_click',
     'detail_view',
     'get_bonus_click',
+    'inter_click_ad',
+    'reward_click_ad',
+    'banner_click_ad',
   ]),
   conversion_action_id: z.string().min(1, 'Conversion action ID is required').max(191),
   name: z.string().max(255).optional().nullable(),

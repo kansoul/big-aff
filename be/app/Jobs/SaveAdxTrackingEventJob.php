@@ -35,7 +35,13 @@ class SaveAdxTrackingEventJob implements ShouldQueue
 
     private const VIEW_TYPES = ['landing_view', 'detail_view'];
 
-    private const CLICK_TYPES = ['get_game_link_click', 'get_bonus_click'];
+    private const CLICK_TYPES = [
+        'get_game_link_click',
+        'get_bonus_click',
+        'inter_click_ad',
+        'reward_click_ad',
+        'banner_click_ad',
+    ];
 
     /**
      * @param  array<string, mixed>  $eventData
@@ -109,7 +115,7 @@ class SaveAdxTrackingEventJob implements ShouldQueue
         return AdxCampaign::query()
             ->with('account')
             ->where('campaign_id', $campaignId)
-            ->when(is_string($source) && $source !== '', fn ($query) => $query->where('source', $source))
+            ->when(is_string($source) && $source !== '', fn($query) => $query->where('source', $source))
             ->first();
     }
 
@@ -205,6 +211,9 @@ class SaveAdxTrackingEventJob implements ShouldQueue
             'get_game_link_click' => 'get_game_link_clicks',
             'detail_view' => 'detail_views',
             'get_bonus_click' => 'get_bonus_clicks',
+            'inter_click_ad' => 'inter_click_ad',
+            'reward_click_ad' => 'reward_click_ad',
+            'banner_click_ad' => 'banner_click_ad',
         };
 
         $key = "adx_realtime:{$date}:{$linkDataId}";
@@ -215,7 +224,13 @@ class SaveAdxTrackingEventJob implements ShouldQueue
 
     private function defaultPageKey(string $eventType): string
     {
-        return in_array($eventType, ['landing_view', 'get_game_link_click'], true) ? 'landing' : 'detail';
+        return match ($eventType) {
+            'landing_view', 'get_game_link_click' => 'landing',
+            'inter_click_ad' => 'inter',
+            'reward_click_ad' => 'reward',
+            'banner_click_ad' => 'banner',
+            default => 'detail',
+        };
     }
 
     private function logError(Exception $exception): void

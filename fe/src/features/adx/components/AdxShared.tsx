@@ -30,6 +30,9 @@ export const CONVERSION_TYPE_OPTIONS = [
   'get_game_link_click',
   'detail_view',
   'get_bonus_click',
+  'inter_click_ad',
+  'reward_click_ad',
+  'banner_click_ad',
 ] as const
 
 export function HumanText({ value }: { value: string | null | undefined }) {

@@ -17,6 +17,9 @@ class AdxRealtimeReport extends Model
         'get_game_link_clicks',
         'detail_views',
         'get_bonus_clicks',
+        'inter_click_ad',
+        'reward_click_ad',
+        'banner_click_ad',
     ];
 
     protected function casts(): array
@@ -27,6 +30,9 @@ class AdxRealtimeReport extends Model
             'get_game_link_clicks' => 'integer',
             'detail_views' => 'integer',
             'get_bonus_clicks' => 'integer',
+            'inter_click_ad' => 'integer',
+            'reward_click_ad' => 'integer',
+            'banner_click_ad' => 'integer',
         ];
     }
 }

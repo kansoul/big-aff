@@ -33,7 +33,7 @@ class FlushAdxRealtimeReportCommand extends Command
             $this->upsertChunk($chunk);
         }
 
-        $this->line('Flushed '.count($rows).' adx_realtime_reports rows from Redis.');
+        $this->line('Flushed ' . count($rows) . ' adx_realtime_reports rows from Redis.');
     }
 
     /**
@@ -42,7 +42,7 @@ class FlushAdxRealtimeReportCommand extends Command
     private function scanKeys(string $pattern): array
     {
         $prefix = (string) config('database.redis.options.prefix', '');
-        $prefixedPattern = $prefix.$pattern;
+        $prefixedPattern = $prefix . $pattern;
 
         /** @var \Redis $client */
         $client = Redis::connection()->client();
@@ -103,6 +103,9 @@ class FlushAdxRealtimeReportCommand extends Command
                 'get_game_link_clicks' => (int) ($counts['get_game_link_clicks'] ?? 0),
                 'detail_views' => (int) ($counts['detail_views'] ?? 0),
                 'get_bonus_clicks' => (int) ($counts['get_bonus_clicks'] ?? 0),
+                'inter_click_ad' => (int) ($counts['inter_click_ad'] ?? 0),
+                'reward_click_ad' => (int) ($counts['reward_click_ad'] ?? 0),
+                'banner_click_ad' => (int) ($counts['banner_click_ad'] ?? 0),
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -125,6 +128,9 @@ class FlushAdxRealtimeReportCommand extends Command
                     'get_game_link_clicks' => DB::raw('get_game_link_clicks + VALUES(get_game_link_clicks)'),
                     'detail_views' => DB::raw('detail_views + VALUES(detail_views)'),
                     'get_bonus_clicks' => DB::raw('get_bonus_clicks + VALUES(get_bonus_clicks)'),
+                    'inter_click_ad' => DB::raw('inter_click_ad + VALUES(inter_click_ad)'),
+                    'reward_click_ad' => DB::raw('reward_click_ad + VALUES(reward_click_ad)'),
+                    'banner_click_ad' => DB::raw('banner_click_ad + VALUES(banner_click_ad)'),
                     'updated_at' => DB::raw('NOW()'),
                 ],
             );
