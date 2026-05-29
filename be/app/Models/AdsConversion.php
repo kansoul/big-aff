@@ -12,6 +12,7 @@ class AdsConversion extends Model
 
     protected $fillable = [
         'account_id',
+        'campaign_id',
         'gclid',
         'wbraid',
         'gbraid',

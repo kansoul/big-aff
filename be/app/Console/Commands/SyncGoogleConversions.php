@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Tracking\ResolveAdsConversionRpcAction;
 use App\Models\Account;
 use App\Models\AdsConversion;
 use App\Services\Integrations\Google\GoogleAdsConversionSyncService;
@@ -34,9 +35,10 @@ class SyncGoogleConversions extends Command
     {
         $accountCache = [];
         $googleAdsConversionSyncService = app(GoogleAdsConversionSyncService::class);
+        $resolveRpc = app(ResolveAdsConversionRpcAction::class);
 
         AdsConversion::whereNull('synced_at')
-            ->chunkById(self::BATCH_SIZE, function ($chunk) use (&$accountCache, $googleAdsConversionSyncService) {
+            ->chunkById(self::BATCH_SIZE, function ($chunk) use (&$accountCache, $googleAdsConversionSyncService, $resolveRpc) {
                 $grouped = $chunk->groupBy('account_id');
 
                 foreach ($grouped as $accountId => $records) {
@@ -80,14 +82,25 @@ class SyncGoogleConversions extends Command
                             continue;
                         }
 
-                        $adRevenuesPayload = $validRecords->map(function ($record) {
+                        $adRevenuesPayload = $validRecords->map(function ($record) use ($resolveRpc) {
+                            $conversionValue = $record->conversion_value;
+
+                            if (! $conversionValue || (float) $conversionValue <= 0) {
+                                $rpc = $resolveRpc->execute(
+                                    $record->campaign_id,
+                                    $record->conversion_date_time,
+                                );
+
+                                $conversionValue = $rpc;
+                            }
+
                             return [
                                 'gclid' => $record->gclid,
                                 'wbraid' => $record->wbraid,
                                 'gbraid' => $record->gbraid,
                                 'conversion_action_resource_name' => $record->real_resource_name,
-                                'conversion_value' => $record->conversion_value,
-                                'currency_code' => $record->currency_code,
+                                'conversion_value' => $conversionValue,
+                                'currency_code' => $conversionValue ? ($record->currency_code ?: 'USD') : $record->currency_code,
                                 'conversion_date_time' => $record->conversion_date_time,
                             ];
                         })->toArray();

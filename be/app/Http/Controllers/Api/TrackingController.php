@@ -45,11 +45,12 @@ class TrackingController extends BaseController
      * Store ads conversion
      *
      * @bodyParam account_id string required Account ID.
+     * @bodyParam campaign_id string required_without:conversion_value Campaign ID used to resolve channel RPC.
      * @bodyParam gclid string required GCLID.
      * @bodyParam wbraid string required WBRAID.
      * @bodyParam gbraid string required GBRAID.
      * @bodyParam conversion_action_resource_name string required Conversion action resource name.
-     * @bodyParam conversion_value float required Conversion value.
+     * @bodyParam conversion_value float required_without:campaign_id Conversion value in USD.
      * @bodyParam currency_code string required Conversion currency.
      */
     public function storeAdsConversion(StoreAdsConversionRequest $request): JsonResponse

@@ -25,6 +25,7 @@ class StoreAdsConversionJob implements ShouldQueue
         try {
             AdsConversion::create([
                 'account_id' => $this->data['account_id'],
+                'campaign_id' => $this->data['campaign_id'] ?? null,
                 'gclid' => $this->data['gclid'] ?? null,
                 'wbraid' => $this->data['wbraid'] ?? null,
                 'gbraid' => $this->data['gbraid'] ?? null,

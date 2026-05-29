@@ -17,6 +17,11 @@ class StoreAdsConversionRequest extends FormRequest
     {
         return [
             'account_id' => 'required|string|exists:accounts,account_id',
+            'campaign_id' => [
+                'required',
+                'string',
+                'exists:link_datas,campaign_id',
+            ],
             'gclid' => [
                 'nullable',
                 'string',
