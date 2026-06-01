@@ -30,6 +30,7 @@ class AccountResource extends JsonResource
             'status' => $this->status,
             'is_special' => $this->is_special,
             'sync_to_mcc' => $this->sync_to_mcc,
+            'roas_enabled' => $this->roas_enabled,
             'user_id' => $this->relationLoaded('users') ? $this->users->first()?->id : null,
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,

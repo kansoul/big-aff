@@ -99,7 +99,7 @@ export function AccountsPage() {
   const [updatingToggleKeys, setUpdatingToggleKeys] = useState<Set<string>>(new Set())
 
   const getToggleKey = useCallback(
-    (id: number, field: 'is_special' | 'sync_to_mcc') => `${id}:${field}`,
+    (id: number, field: 'is_special' | 'sync_to_mcc' | 'roas_enabled') => `${id}:${field}`,
     [],
   )
 
@@ -191,8 +191,17 @@ export function AccountsPage() {
     setDeleteTarget(row)
   }, [])
 
+  const toggleFieldLabels: Record<string, string> = useMemo(
+    () => ({
+      is_special: 'Special',
+      sync_to_mcc: 'Sync to MCC',
+      roas_enabled: 'ROAS',
+    }),
+    [],
+  )
+
   const onToggleField = useCallback(
-    async (row: Account, field: 'is_special' | 'sync_to_mcc', checked: boolean) => {
+    async (row: Account, field: 'is_special' | 'sync_to_mcc' | 'roas_enabled', checked: boolean) => {
       const key = getToggleKey(row.id, field)
 
       setUpdatingToggleKeys((prev) => {
@@ -210,11 +219,12 @@ export function AccountsPage() {
           status: row.status,
           is_special: field === 'is_special' ? checked : row.is_special,
           sync_to_mcc: field === 'sync_to_mcc' ? checked : row.sync_to_mcc,
+          roas_enabled: field === 'roas_enabled' ? checked : row.roas_enabled,
         })
 
         setData((prev) => prev.map((item) => (item.id === row.id ? response.data : item)))
         toast.success(
-          `${field === 'is_special' ? 'Special' : 'Sync to MCC'} updated to ${checked ? 'On' : 'Off'}`,
+          `${toggleFieldLabels[field] ?? field} updated to ${checked ? 'On' : 'Off'}`,
         )
       } catch (err) {
         toast.error(formatApiError(err))
@@ -226,11 +236,11 @@ export function AccountsPage() {
         })
       }
     },
-    [getToggleKey],
+    [getToggleKey, toggleFieldLabels],
   )
 
   const isFieldUpdating = useCallback(
-    (rowId: number, field: 'is_special' | 'sync_to_mcc') =>
+    (rowId: number, field: 'is_special' | 'sync_to_mcc' | 'roas_enabled') =>
       updatingToggleKeys.has(getToggleKey(rowId, field)),
     [getToggleKey, updatingToggleKeys],
   )

@@ -29,9 +29,12 @@ class StoreAdsConversionJob implements ShouldQueue
                 'gclid' => $this->data['gclid'] ?? null,
                 'wbraid' => $this->data['wbraid'] ?? null,
                 'gbraid' => $this->data['gbraid'] ?? null,
+                'session_id' => $this->data['session_id'] ?? null,
                 'conversion_action_resource_name' => $this->data['conversion_action_resource_name'],
                 'conversion_value' => $this->data['conversion_value'] ?? null,
                 'currency_code' => $this->data['currency_code'] ?? null,
+                'ip_address' => $this->data['ip_address'] ?? null,
+                'user_agent' => $this->data['user_agent'] ?? null,
                 'conversion_date_time' => $this->conversionDateTime,
             ]);
         } catch (Throwable $e) {

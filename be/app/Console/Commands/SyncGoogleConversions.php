@@ -45,6 +45,7 @@ class SyncGoogleConversions extends Command
                     try {
                         if (! isset($accountCache[$accountId])) {
                             $account = Account::where('account_id', $accountId)
+                                ->where('roas_enabled', true)
                                 ->with(['conversion', 'businessCenter'])
                                 ->first();
                             $accountCache[$accountId] = $account;
