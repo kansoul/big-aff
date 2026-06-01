@@ -23,7 +23,7 @@ class ListAdxReportsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            ...$this->paginationRules(200),
+            ...$this->paginationRules(1000000),
             ...$this->sortRules(ListAdxCampaignReportsAction::ORDERABLE_COLUMNS),
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],

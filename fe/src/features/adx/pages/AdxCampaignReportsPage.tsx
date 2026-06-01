@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import dayjs from '@/lib/dayjs'
 
@@ -76,6 +76,62 @@ const EMPTY_FILTER_OPTIONS: AdxCampaignReportFiltersResponse['data'] = {
   campaigns: [],
   games: [],
   links: [],
+}
+
+function parseFiltersFromUrl(params: URLSearchParams): AdxCampaignReportFilterParams {
+  return {
+    date_from: params.get('date_from') ?? DEFAULT_FILTERS.date_from,
+    date_to: params.get('date_to') ?? DEFAULT_FILTERS.date_to,
+    keyword: params.get('keyword') ?? null,
+    source: params.get('source') ?? null,
+    account_id: null,
+    account_ids: params.getAll('account_ids[]').filter(Boolean),
+    campaign_id: null,
+    campaign_ids: params.getAll('campaign_ids[]').filter(Boolean),
+    adx_link_data_id: params.get('adx_link_data_id')
+      ? Number(params.get('adx_link_data_id'))
+      : null,
+    adx_link_id: params.get('adx_link_id') ? Number(params.get('adx_link_id')) : null,
+    adx_link_ids: params
+      .getAll('adx_link_ids[]')
+      .map(Number)
+      .filter((value) => Number.isFinite(value)),
+    adx_game_id: params.get('adx_game_id') ? Number(params.get('adx_game_id')) : null,
+    adx_game_ids: params
+      .getAll('adx_game_ids[]')
+      .map(Number)
+      .filter((value) => Number.isFinite(value)),
+    group_by: parseGroupBy(params.get('group_by')),
+    order_by: (params.get('order_by') as AdxCampaignReportOrderBy) ?? DEFAULT_FILTERS.order_by,
+    order: (params.get('order') as SortDirection) ?? DEFAULT_FILTERS.order,
+    page: params.get('page') ? Number(params.get('page')) : DEFAULT_FILTERS.page,
+    per_page: params.get('per_page') ? Number(params.get('per_page')) : DEFAULT_FILTERS.per_page,
+  }
+}
+
+function buildUrlParams(filters: AdxCampaignReportFilterParams): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.date_from) params.set('date_from', filters.date_from)
+  if (filters.date_to) params.set('date_to', filters.date_to)
+  if (filters.keyword) params.set('keyword', filters.keyword)
+  if (filters.source) params.set('source', filters.source)
+  ;(filters.account_ids ?? []).forEach((id) => params.append('account_ids[]', id))
+  ;(filters.campaign_ids ?? []).forEach((id) => params.append('campaign_ids[]', id))
+  if (filters.adx_link_data_id) params.set('adx_link_data_id', String(filters.adx_link_data_id))
+  if (filters.adx_link_id) params.set('adx_link_id', String(filters.adx_link_id))
+  ;(filters.adx_link_ids ?? []).forEach((id) => params.append('adx_link_ids[]', String(id)))
+  if (filters.adx_game_id) params.set('adx_game_id', String(filters.adx_game_id))
+  ;(filters.adx_game_ids ?? []).forEach((id) => params.append('adx_game_ids[]', String(id)))
+  params.set('group_by', filters.group_by ?? '')
+  if (filters.order_by) params.set('order_by', filters.order_by)
+  if (filters.order) params.set('order', filters.order)
+  if (filters.page && filters.page !== DEFAULT_FILTERS.page) {
+    params.set('page', String(filters.page))
+  }
+  if (filters.per_page && filters.per_page !== DEFAULT_FILTERS.per_page) {
+    params.set('per_page', String(filters.per_page))
+  }
+  return params
 }
 
 const SORTABLE_COLUMNS = new Set<AdxCampaignReportOrderBy>([
@@ -653,16 +709,28 @@ function getColumns(summary: AdxCampaignReportSummary | null): MRT_ColumnDef<Tab
 }
 
 export function AdxCampaignReportsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [items, setItems] = useState<AdxCampaignReport[]>([])
   const [filterOptions, setFilterOptions] =
     useState<AdxCampaignReportFiltersResponse['data']>(EMPTY_FILTER_OPTIONS)
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [filters, setFilters] = useState<AdxCampaignReportFilterParams>(DEFAULT_FILTERS)
+  const [filters, setFilters] = useState<AdxCampaignReportFilterParams>(() =>
+    parseFiltersFromUrl(searchParams),
+  )
+  const isMounted = useRef(false)
   const isMobile = useIsMobile()
   const { pathname } = useLocation()
   const { columnVisibility: userColumnVisibility, setColumnVisibility: setUserColumnVisibility } =
     useColumnVisibilityStorage(pathname)
+
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true
+      return
+    }
+    setSearchParams(buildUrlParams(filters), { replace: true })
+  }, [filters, setSearchParams])
 
   useEffect(() => {
     let ignore = false
@@ -958,7 +1026,16 @@ export function AdxCampaignReportsPage() {
       }
     },
     mantinePaginationProps: {
-      rowsPerPageOptions: ['15', '30', '50', '100', '200'],
+      rowsPerPageOptions: [
+        '15',
+        '30',
+        '50',
+        '100',
+        '200',
+        '300',
+        '500',
+        { value: '1000000', label: 'All' },
+      ] as unknown as string[],
     },
     enableRowVirtualization: !isMobile,
     rowVirtualizerProps: { overscan: 5 },
