@@ -56,6 +56,30 @@ class AdsDeliveryEntitiesController extends BaseController
     }
 
     /**
+     * Get adset insight reports only by campaign ID.
+     */
+    public function adsets(GetAdsDeliveryEntitiesRequest $request, string $campaignId): JsonResponse
+    {
+        $adsets = $this->service->getAdsetsByCampaignId($campaignId, $request->validated());
+
+        return $this->sendResponse([
+            'data' => AdsetInsightsReportResource::collection($adsets),
+        ]);
+    }
+
+    /**
+     * Get ads insight reports only by campaign ID.
+     */
+    public function ads(GetAdsDeliveryEntitiesRequest $request, string $campaignId): JsonResponse
+    {
+        $ads = $this->service->getAdsByCampaignId($campaignId, $request->validated());
+
+        return $this->sendResponse([
+            'data' => AdsInsightsReportResource::collection($ads),
+        ]);
+    }
+
+    /**
      * Toggle adset status (ACTIVE/PAUSED).
      */
     public function toggleAdsetStatus(
