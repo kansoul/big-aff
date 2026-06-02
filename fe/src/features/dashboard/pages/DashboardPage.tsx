@@ -3,8 +3,8 @@ import { Activity, ArrowUpRight, Calendar, Network, Sparkles } from 'lucide-reac
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { hasPermission, PermissionSlugs } from '@/constants/permissions'
 import {
@@ -298,112 +298,6 @@ function MainTeamTopTable({ rows, loading }: { rows: RevenueMainTeamRow[]; loadi
   )
 }
 
-// ── page ──────────────────────────────────────────────────────────────────────
-
-interface StatsCardData {
-  title: string
-  primaryLabel: string
-  primaryValue: string
-  secondaryLabel: string
-  secondaryValue: string
-  color: 'emerald' | 'blue'
-  chartData: { value: number }[]
-}
-
-const EMPTY_CARD = (
-  title: string,
-  primaryLabel: string,
-  secondaryLabel: string,
-  color: 'emerald' | 'blue',
-): StatsCardData => ({
-  title,
-  primaryLabel,
-  primaryValue: '$0.00',
-  secondaryLabel,
-  secondaryValue: '$0.00',
-  color,
-  chartData: [],
-})
-
-const INITIAL_STATS: StatsCardData[] = [
-  EMPTY_CARD('Daily Revenue', 'Today', 'Yesterday', 'emerald'),
-  EMPTY_CARD('Weekly Revenue', 'This Week', 'Last Week', 'emerald'),
-  EMPTY_CARD('Monthly Revenue', 'This Month', 'Last Month', 'emerald'),
-  EMPTY_CARD('Daily Spend', 'Today', 'Yesterday', 'blue'),
-  EMPTY_CARD('Weekly Spend', 'This Week', 'Last Week', 'blue'),
-  EMPTY_CARD('Monthly Spend', 'This Month', 'Last Month', 'blue'),
-]
-
-function buildStatsCards(stats: InsightStatsData): StatsCardData[] {
-  const make = (
-    current: number,
-    previous: number,
-    title: string,
-    primaryLabel: string,
-    secondaryLabel: string,
-    color: 'emerald' | 'blue',
-  ): StatsCardData => ({
-    title,
-    primaryLabel,
-    primaryValue: formatCurrency(current),
-    secondaryLabel,
-    secondaryValue: formatCurrency(previous),
-    color,
-    chartData: [{ value: previous }, { value: current }],
-  })
-
-  return [
-    make(
-      stats.daily_revenue.today,
-      stats.daily_revenue.yesterday,
-      'Daily Revenue',
-      'Today',
-      'Yesterday',
-      'emerald',
-    ),
-    make(
-      stats.weekly_revenue.this_week,
-      stats.weekly_revenue.last_week,
-      'Weekly Revenue',
-      'This Week',
-      'Last Week',
-      'emerald',
-    ),
-    make(
-      stats.monthly_revenue.this_month,
-      stats.monthly_revenue.last_month,
-      'Monthly Revenue',
-      'This Month',
-      'Last Month',
-      'emerald',
-    ),
-    make(
-      stats.daily_spend.today,
-      stats.daily_spend.yesterday,
-      'Daily Spend',
-      'Today',
-      'Yesterday',
-      'blue',
-    ),
-    make(
-      stats.weekly_spend.this_week,
-      stats.weekly_spend.last_week,
-      'Weekly Spend',
-      'This Week',
-      'Last Week',
-      'blue',
-    ),
-    make(
-      stats.monthly_spend.this_month,
-      stats.monthly_spend.last_month,
-      'Monthly Spend',
-      'This Month',
-      'Last Month',
-      'blue',
-    ),
-  ]
-}
-
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user)
   const permissions = useMemo(() => user?.permissions ?? [], [user?.permissions])
@@ -425,8 +319,10 @@ export function DashboardPage() {
 
   const [statsLoading, setStatsLoading] = useState(true)
   const [tableLoading, setTableLoading] = useState(true)
-  const [statsCards, setStatsCards] = useState<StatsCardData[]>(INITIAL_STATS)
   const [rawStats, setRawStats] = useState<InsightStatsData | null>(null)
+  const [heroMonth, setHeroMonth] = useState(() => dayjs().format('YYYY-MM'))
+  const [heroRevenue, setHeroRevenue] = useState(0)
+  const [heroLoading, setHeroLoading] = useState(true)
   const [revenueTable, setRevenueTable] = useState<RevenueTableData | null>(null)
 
   // ── load 6 stats cards ───────────────────────────────────────────────────
@@ -435,7 +331,7 @@ export function DashboardPage() {
       const showLoading = options?.showLoading ?? true
 
       if (!canViewStats) {
-        setStatsCards(INITIAL_STATS)
+        setRawStats(null)
         if (showLoading) setStatsLoading(false)
         return
       }
@@ -443,7 +339,6 @@ export function DashboardPage() {
       try {
         if (showLoading) setStatsLoading(true)
         const res = await dashboardApi.insightStats()
-        setStatsCards(buildStatsCards(res.data.data))
         setRawStats(res.data.data)
       } catch {
         if (showLoading) toast.error('Failed to load dashboard stats.')
@@ -452,6 +347,29 @@ export function DashboardPage() {
       }
     },
     [canViewStats],
+  )
+
+  const loadHeroStats = useCallback(
+    async (options?: { showLoading?: boolean }) => {
+      const showLoading = options?.showLoading ?? true
+
+      if (!canViewStats) {
+        setHeroRevenue(0)
+        if (showLoading) setHeroLoading(false)
+        return
+      }
+
+      try {
+        if (showLoading) setHeroLoading(true)
+        const res = await dashboardApi.insightStats({ month: heroMonth })
+        setHeroRevenue(res.data.data.monthly_revenue.this_month)
+      } catch {
+        if (showLoading) toast.error('Failed to load monthly dashboard revenue.')
+      } finally {
+        if (showLoading) setHeroLoading(false)
+      }
+    },
+    [canViewStats, heroMonth],
   )
 
   // ── load revenue table (teams/users permission) ──────────────────────────
@@ -482,17 +400,22 @@ export function DashboardPage() {
   }, [loadStats])
 
   useEffect(() => {
+    void loadHeroStats()
+  }, [loadHeroStats])
+
+  useEffect(() => {
     void loadRevenueTable()
   }, [loadRevenueTable])
 
   useEffect(() => {
     const interval = window.setInterval(() => {
       void loadStats({ showLoading: false })
+      void loadHeroStats({ showLoading: false })
       void loadRevenueTable({ showLoading: false })
     }, AUTO_REFETCH_INTERVAL_MS)
 
     return () => window.clearInterval(interval)
-  }, [loadStats, loadRevenueTable])
+  }, [loadStats, loadHeroStats, loadRevenueTable])
 
   // ── derived insight cards ────────────────────────────────────────────────
   const teams = useMemo((): RevenueTeamRow[] => revenueTable?.by_team ?? [], [revenueTable])
@@ -529,10 +452,11 @@ export function DashboardPage() {
             <p className="text-zinc-300 text-base sm:text-lg max-w-xl leading-relaxed">
               {canViewStats ? (
                 <>
-                  Your campaigns are running. Monthly revenue this month:{' '}
+                  Your campaigns are running. Monthly revenue in{' '}
+                  {dayjs(`${heroMonth}-01`).format('MMMM YYYY')}:{' '}
                   <span className="text-emerald-400 font-bold inline-flex items-center gap-1">
                     <ArrowUpRight className="w-4 h-4" />
-                    {statsLoading ? '...' : statsCards[2]?.primaryValue}
+                    {heroLoading ? '...' : formatCurrency(heroRevenue)}
                   </span>
                 </>
               ) : (
@@ -542,13 +466,16 @@ export function DashboardPage() {
           </div>
 
           <div className="relative z-10 flex flex-col sm:flex-row md:flex-col lg:flex-row items-center gap-3 w-full md:w-auto">
-            <Button
-              variant="outline"
-              className="w-full md:w-auto gap-2 rounded-xl h-12 px-6 border-white/20 hover:bg-white/10 bg-white/5 text-white backdrop-blur-md transition-all shadow-sm"
-            >
-              <Calendar className="h-4 w-4" />
-              <span className="font-semibold">{dayjs().format('MMM D, YYYY')}</span>
-            </Button>
+            <div className="relative w-full md:w-auto">
+              <Calendar className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white" />
+              <Input
+                aria-label="Dashboard revenue month"
+                type="month"
+                value={heroMonth}
+                onChange={(event) => setHeroMonth(event.target.value || dayjs().format('YYYY-MM'))}
+                className="h-12 w-full min-w-44 rounded-xl border-white/20 bg-white/5 pl-11 pr-4 text-sm font-semibold text-white shadow-sm backdrop-blur-md transition-all [color-scheme:dark] hover:bg-white/10 md:w-auto"
+              />
+            </div>
           </div>
         </div>
       )}

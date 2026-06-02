@@ -26,6 +26,10 @@ export interface InsightStatsResponse {
   data: InsightStatsData
 }
 
+export interface InsightStatsParams {
+  month?: string
+}
+
 export interface RevenueStats {
   revenue: number
   spend: number

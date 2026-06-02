@@ -1,6 +1,7 @@
 import { axiosInstance } from '@/shared/api/axios'
 import type { ApiResponse, User } from '@/shared/types'
 import type {
+  InsightStatsParams,
   InsightStatsData,
   RevenueTableParams,
   RevenueTableResponse,
@@ -30,7 +31,12 @@ export const dashboardApi = {
     }
   },
 
-  insightStats: () => axiosInstance.get<{ data: InsightStatsData }>('/dashboard/insight-stats'),
+  insightStats: (params?: InsightStatsParams) =>
+    axiosInstance.get<{ data: InsightStatsData }>('/dashboard/insight-stats', {
+      params: {
+        ...(params?.month ? { month: params.month } : {}),
+      },
+    }),
 
   revenueTable: (params?: RevenueTableParams) =>
     axiosInstance.get<RevenueTableResponse>('/dashboard/revenue-table', {
