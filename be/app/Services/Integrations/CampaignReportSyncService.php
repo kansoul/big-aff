@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class CampaignReportSyncService
 {
@@ -25,6 +26,8 @@ class CampaignReportSyncService
         ['min_clicks' => 50, 'max_clicks' => 150, 'max_cvr' => 0.60, 'min_ctr' => 0.80],
         ['min_clicks' => 150, 'max_clicks' => 300, 'max_cvr' => 0.65, 'min_ctr' => 0.75],
     ];
+
+    private const CTR_ALERT_CACHE_TTL = 172_800;
 
     /**
      * Sync and aggregate data from InsightReport + RevenueReport into CampaignReport table.
@@ -78,7 +81,7 @@ class CampaignReportSyncService
                 'success' => false,
                 'synced_count' => $syncedCount,
                 'error_count' => $errorCount + 1,
-                'message' => 'Sync failed: ' . $e->getMessage(),
+                'message' => 'Sync failed: '.$e->getMessage(),
             ];
         }
     }
@@ -262,7 +265,7 @@ class CampaignReportSyncService
 
         return ! Channel::query()
             ->where('code', $channelCode)
-            ->whereHas('mainTeam', fn($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', false))
+            ->whereHas('mainTeam', fn ($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', false))
             ->exists();
     }
 
@@ -292,6 +295,13 @@ class CampaignReportSyncService
             return;
         }
 
+        $alertTierKey = self::alertTierKey($tier);
+        $cacheKey = self::highCtrAlertCacheKey($date, (int) $linkData->id);
+
+        if (Redis::get($cacheKey) === $alertTierKey) {
+            return;
+        }
+
         $linkData->loadMissing('adsLink.site');
 
         $campaign = $insightReport->campaign;
@@ -302,20 +312,35 @@ class CampaignReportSyncService
         $cvrPercent = round($cvr * 100, 2);
 
         $message = "⚠️ *High CTR Alert*\n\n"
-            . "Campaign ID: `{$campaignId}`\n"
-            . "Campaign Name: *{$campaignName}*\n"
-            . "URL: {$siteUrl}\n"
-            . "View Search: *{$viewSearch}*\n"
-            . "Click Ad: *{$sumRealtimeClickAdCount}*\n"
-            . "CTR: *{$ctrPercent}%*\n"
-            . "Conversion: *{$rConversion}*\n"
-            . "CVR: *{$cvrPercent}%*";
+            ."Campaign ID: `{$campaignId}`\n"
+            ."Campaign Name: *{$campaignName}*\n"
+            ."URL: {$siteUrl}\n"
+            ."View Search: *{$viewSearch}*\n"
+            ."Click Ad: *{$sumRealtimeClickAdCount}*\n"
+            ."CTR: *{$ctrPercent}%*\n"
+            ."Conversion: *{$rConversion}*\n"
+            ."CVR: *{$cvrPercent}%*";
 
         SendTelegramWarningJob::dispatch(
             message: $message,
             campaignId: (string) $campaignId,
             adsLinkId: (string) ($linkData->ads_link_id ?? ''),
         );
+
+        Redis::setex($cacheKey, self::CTR_ALERT_CACHE_TTL, $alertTierKey);
+    }
+
+    /**
+     * @param  array{min_clicks: int, max_clicks: int, max_cvr: float, min_ctr: float}  $tier
+     */
+    private static function alertTierKey(array $tier): string
+    {
+        return $tier['min_clicks'].'-'.$tier['max_clicks'];
+    }
+
+    private static function highCtrAlertCacheKey(string $date, int $linkDataId): string
+    {
+        return "campaign_report:high_ctr_alert:{$date}:link_data:{$linkDataId}:tier";
     }
 
     /**
