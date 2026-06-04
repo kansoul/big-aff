@@ -78,6 +78,7 @@ class SaveTrackingLogJob implements ShouldQueue
             'type' => $eventType,
             'page' => $this->logData['page'] ?? null,
             'query' => $this->logData['query'] ?? null,
+            'traffic' => $this->logData['test'] ?? null,
             'event_time' => $this->logData['event_time'] ?? $now,
             'created_at' => $this->logData['created_at'] ?? $now,
         ]);
@@ -101,6 +102,7 @@ class SaveTrackingLogJob implements ShouldQueue
             'type' => $eventType,
             'page' => $this->logData['page'] ?? null,
             'keyword_clicked' => $this->logData['keyword_clicked'] ?? null,
+            'traffic' => $this->logData['test'] ?? null,
             'event_time' => $this->logData['event_time'] ?? $now,
             'created_at' => $this->logData['created_at'] ?? $now,
         ]);

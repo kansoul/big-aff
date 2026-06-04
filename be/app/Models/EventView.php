@@ -23,6 +23,7 @@ class EventView extends Model
         'type',
         'page',
         'query',
+        'traffic',
         'event_time',
         'created_at',
     ];

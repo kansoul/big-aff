@@ -2,6 +2,7 @@
 
 namespace App\Services\Integrations;
 
+use App\Jobs\SendTelegramWarningJob;
 use App\Models\CampaignReport;
 use App\Models\Channel;
 use App\Models\InsightReport;
@@ -13,9 +14,21 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class CampaignReportSyncService
 {
+    /**
+     * @var array<int, array{min_clicks: int, max_clicks: int, max_cvr: float, min_ctr: float}>
+     */
+    private const CTR_ALERT_TIERS = [
+        ['min_clicks' => 25, 'max_clicks' => 50, 'max_cvr' => 0.55, 'min_ctr' => 0.85],
+        ['min_clicks' => 50, 'max_clicks' => 150, 'max_cvr' => 0.60, 'min_ctr' => 0.80],
+        ['min_clicks' => 150, 'max_clicks' => 300, 'max_cvr' => 0.65, 'min_ctr' => 0.75],
+    ];
+
+    private const CTR_ALERT_CACHE_TTL = 172_800;
+
     /**
      * Sync and aggregate data from InsightReport + RevenueReport into CampaignReport table.
      */
@@ -166,6 +179,7 @@ class CampaignReportSyncService
             $channelName = Channel::where('code', $linkData->channel_code)->value('name');
             $revenueData = $failedAdClientIds ? [] : self::getRevenueData($date, $linkData->channel_code);
             $rConversion = (int) ($revenueData['clicks'] ?? 0);
+            $sumRealtimeClickAdCount = self::sumRealtimeClickAdCount($date, $linkData->channel_code);
             $rCpa = $rConversion > 0 ? $spend / $rConversion : 0;
             $estimatedEarnings = (float) ($revenueData['estimated_earnings'] ?? 0);
             $costPerClick = isset($revenueData['cost_per_click']) && $revenueData['cost_per_click'] !== null
@@ -174,9 +188,19 @@ class CampaignReportSyncService
             if ($costPerClick === null || $costPerClick <= 0) {
                 $realtimeClicks = $rConversion > 0
                     ? $rConversion
-                    : self::sumRealtimeClickAdCount($date, $linkData->channel_code);
+                    : $sumRealtimeClickAdCount;
                 $costPerClick = $realtimeClicks > 0 ? $estimatedEarnings / $realtimeClicks : 0;
             }
+
+            self::sendHighCtrAlertIfNeeded(
+                date: $date,
+                linkData: $linkData,
+                insightReport: $insightReport,
+                realtimeReport: $realtimeReport,
+                rConversion: $rConversion,
+                sumRealtimeClickAdCount: $sumRealtimeClickAdCount,
+            );
+
             $data = [
                 'realtime_report_id' => $realtimeReport?->id,
                 // Style/Channel info
@@ -243,6 +267,94 @@ class CampaignReportSyncService
             ->where('code', $channelCode)
             ->whereHas('mainTeam', fn ($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', false))
             ->exists();
+    }
+
+    private static function sendHighCtrAlertIfNeeded(
+        string $date,
+        LinkData $linkData,
+        InsightReport $insightReport,
+        ?RealtimeReport $realtimeReport,
+        int $rConversion,
+        int $sumRealtimeClickAdCount,
+    ): void {
+        if (! Carbon::parse($date)->isToday()) {
+            return;
+        }
+
+        $tier = self::matchAlertTier($sumRealtimeClickAdCount);
+
+        if (! $tier || ! $realtimeReport) {
+            return;
+        }
+
+        $viewSearch = (int) ($realtimeReport->view_search_count ?? 0);
+        $ctr = $viewSearch / $sumRealtimeClickAdCount;
+        $cvr = $rConversion / $sumRealtimeClickAdCount;
+
+        if ($cvr >= $tier['max_cvr'] || $ctr <= $tier['min_ctr']) {
+            return;
+        }
+
+        $alertTierKey = self::alertTierKey($tier);
+        $cacheKey = self::highCtrAlertCacheKey($date, (int) $linkData->id);
+
+        if (Redis::get($cacheKey) === $alertTierKey) {
+            return;
+        }
+
+        $linkData->loadMissing('adsLink.site');
+
+        $campaign = $insightReport->campaign;
+        $campaignId = $insightReport->campaign_id ?? 'N/A';
+        $campaignName = $campaign?->campaign_name ?? 'N/A';
+        $siteUrl = $linkData->adsLink?->site?->url ?? 'N/A';
+        $ctrPercent = round($ctr * 100, 2);
+        $cvrPercent = round($cvr * 100, 2);
+
+        $message = "⚠️ *High CTR Alert*\n\n"
+            ."Campaign ID: `{$campaignId}`\n"
+            ."Campaign Name: *{$campaignName}*\n"
+            ."URL: {$siteUrl}\n"
+            ."View Search: *{$viewSearch}*\n"
+            ."Click Ad: *{$sumRealtimeClickAdCount}*\n"
+            ."CTR: *{$ctrPercent}%*\n"
+            ."Conversion: *{$rConversion}*\n"
+            ."CVR: *{$cvrPercent}%*";
+
+        SendTelegramWarningJob::dispatch(
+            message: $message,
+            campaignId: (string) $campaignId,
+            adsLinkId: (string) ($linkData->ads_link_id ?? ''),
+        );
+
+        Redis::setex($cacheKey, self::CTR_ALERT_CACHE_TTL, $alertTierKey);
+    }
+
+    /**
+     * @param  array{min_clicks: int, max_clicks: int, max_cvr: float, min_ctr: float}  $tier
+     */
+    private static function alertTierKey(array $tier): string
+    {
+        return $tier['min_clicks'].'-'.$tier['max_clicks'];
+    }
+
+    private static function highCtrAlertCacheKey(string $date, int $linkDataId): string
+    {
+        return "campaign_report:high_ctr_alert:{$date}:link_data:{$linkDataId}:tier";
+    }
+
+    /**
+     * @return array{min_clicks: int, max_clicks: int, max_cvr: float, min_ctr: float}|null
+     */
+    private static function matchAlertTier(int $clickAd): ?array
+    {
+        foreach (self::CTR_ALERT_TIERS as $tier) {
+            if ($clickAd >= $tier['min_clicks'] && $clickAd < $tier['max_clicks']) {
+                return $tier;
+            }
+        }
+
+        return null;
     }
 
     /**
