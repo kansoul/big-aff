@@ -23,6 +23,7 @@ class EventClick extends Model
         'type',
         'page',
         'keyword_clicked',
+        'traffic',
         'event_time',
         'created_at',
     ];

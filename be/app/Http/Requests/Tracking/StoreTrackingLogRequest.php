@@ -40,6 +40,7 @@ class StoreTrackingLogRequest extends FormRequest
             'referrer' => 'nullable|string|max:2048',
             'user_agent' => 'nullable|string|max:1000',
             'is_bot' => 'nullable|boolean',
+            'test' => 'nullable|string',
         ];
     }
 
