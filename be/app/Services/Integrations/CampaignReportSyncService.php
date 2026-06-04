@@ -281,14 +281,20 @@ class CampaignReportSyncService
             return;
         }
 
-        $tier = self::matchAlertTier($sumRealtimeClickAdCount);
+        $realtimeClickAdCount = (int) ($realtimeReport->click_ad_count ?? 0);
+        $tier = self::matchAlertTier($realtimeClickAdCount);
 
         if (! $tier || ! $realtimeReport) {
             return;
         }
 
         $viewSearch = (int) ($realtimeReport->view_search_count ?? 0);
-        $ctr = $viewSearch / $sumRealtimeClickAdCount;
+
+        if ($viewSearch <= 0) {
+            return;
+        }
+
+        $ctr = $realtimeClickAdCount / $viewSearch;
         $cvr = $rConversion / $sumRealtimeClickAdCount;
 
         if ($cvr >= $tier['max_cvr'] || $ctr <= $tier['min_ctr']) {
@@ -307,16 +313,17 @@ class CampaignReportSyncService
         $campaign = $insightReport->campaign;
         $campaignId = $insightReport->campaign_id ?? 'N/A';
         $campaignName = $campaign?->campaign_name ?? 'N/A';
-        $siteUrl = $linkData->adsLink?->site?->url ?? 'N/A';
+        $adsLinkUrl = self::adsLinkUrl($linkData);
         $ctrPercent = round($ctr * 100, 2);
         $cvrPercent = round($cvr * 100, 2);
 
         $message = "⚠️ *High CTR Alert*\n\n"
             ."Campaign ID: `{$campaignId}`\n"
             ."Campaign Name: *{$campaignName}*\n"
-            ."URL: {$siteUrl}\n"
+            ."Ads Link: {$adsLinkUrl}\n"
             ."View Search: *{$viewSearch}*\n"
-            ."Click Ad: *{$sumRealtimeClickAdCount}*\n"
+            ."Click Ad: *{$realtimeClickAdCount}*\n"
+            ."Channel Click Ad: *{$sumRealtimeClickAdCount}*\n"
             ."CTR: *{$ctrPercent}%*\n"
             ."Conversion: *{$rConversion}*\n"
             ."CVR: *{$cvrPercent}%*";
@@ -341,6 +348,21 @@ class CampaignReportSyncService
     private static function highCtrAlertCacheKey(string $date, int $linkDataId): string
     {
         return "campaign_report:high_ctr_alert:{$date}:link_data:{$linkDataId}:tier";
+    }
+
+    private static function adsLinkUrl(LinkData $linkData): string
+    {
+        $adsLink = $linkData->adsLink;
+
+        if (! $adsLink?->slug) {
+            return 'N/A';
+        }
+
+        $siteUrl = rtrim((string) ($adsLink->site?->url ?? ''), '/');
+
+        return $siteUrl !== ''
+            ? "{$siteUrl}/articles/{$adsLink->slug}"
+            : $adsLink->slug;
     }
 
     /**
