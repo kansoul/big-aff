@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Actions\CampaignRule\AutoMatchAdAdsetRulesAction;
 use App\Enums\AdsType;
+use App\Enums\EntityTypeEnum;
 use App\Models\Account;
 use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
@@ -11,6 +12,7 @@ use App\Services\Integrations\Facebook\FacebookAdsAdsetService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -111,6 +113,7 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
                     ->where('status', 'ACTIVE')
                     ->whereDate('date_start', $this->date)
                     ->whereHas('campaign', fn ($q) => $q->where('status', 'ACTIVE'))
+                    ->whereHas('campaignRules', $this->activeRuleConstraint())
                     ->pluck('adset_id')
                     ->each(function (string $adsetId): void {
                         EvaluateAdAdsetRuleJob::dispatch(
@@ -133,6 +136,7 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
                     ->where('status', 'ACTIVE')
                     ->whereDate('date_start', $this->date)
                     ->whereHas('campaign', fn ($q) => $q->where('status', 'ACTIVE'))
+                    ->whereHas('campaignRules', $this->activeRuleConstraint())
                     ->pluck('ad_id')
                     ->each(function (string $adId): void {
                         EvaluateAdAdsetRuleJob::dispatch(
@@ -143,6 +147,21 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
                     });
             }
         }
+    }
+
+    /**
+     * Constraint matching an active, non-expired ad/adset rule. Pre-filtering at
+     * dispatch keeps the queue from flooding with no-op jobs for ads/adsets that
+     * have no rule attached (the rule check would otherwise happen inside the job).
+     *
+     * @return \Closure(Builder): void
+     */
+    private function activeRuleConstraint(): \Closure
+    {
+        return fn ($q) => $q
+            ->where('entity_type', EntityTypeEnum::AdAdset->value)
+            ->where('is_active', true)
+            ->where(fn ($q2) => $q2->whereNull('expired_at')->orWhereDate('expired_at', '>=', now()->toDateString()));
     }
 
     /**

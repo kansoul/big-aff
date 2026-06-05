@@ -7,10 +7,12 @@ use App\Models\Account;
 use App\Models\AdsetInsightsReport;
 use App\Models\Campaign;
 use App\Models\CampaignReport;
+use App\Models\CampaignRule;
 use App\Models\EventClick;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 trait AdsInsightsReportRelationship
 {
@@ -20,6 +22,14 @@ trait AdsInsightsReportRelationship
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'account_id', 'account_id');
+    }
+
+    /**
+     * @return MorphToMany<CampaignRule, $this>
+     */
+    public function campaignRules(): MorphToMany
+    {
+        return $this->morphToMany(CampaignRule::class, 'sourceable', 'campaign_apply_rules', parentKey: 'ad_id');
     }
 
     /**
@@ -55,7 +65,8 @@ trait AdsInsightsReportRelationship
             ->selectRaw('COUNT(*)')
             ->whereColumn('event_clicks.ad_id', 'ads_insights_reports.ad_id')
             ->where('event_clicks.type', EventClickType::ClickAd->value)
-            ->whereRaw('DATE(event_clicks.created_at) = ads_insights_reports.date_start');
+            ->whereColumn('event_clicks.created_at', '>=', 'ads_insights_reports.date_start')
+            ->whereRaw('event_clicks.created_at < DATE_ADD(ads_insights_reports.date_start, INTERVAL 1 DAY)');
     }
 
     /**

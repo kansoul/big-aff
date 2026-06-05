@@ -25,6 +25,7 @@ class AdsetInsightsReportResource extends JsonResource
             'account_id' => $this->account_id,
             'status' => $this->status,
             'status_toggleable' => in_array($this->status, ['ACTIVE', 'PAUSED'], true),
+            'has_rule' => (bool) ($this->has_rule ?? false),
             'effective_status' => $this->effective_status,
             'daily_budget' => $this->daily_budget !== null ? (float) $this->daily_budget : null,
             'spend' => $this->spend,

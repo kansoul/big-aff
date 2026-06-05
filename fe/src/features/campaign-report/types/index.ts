@@ -625,6 +625,7 @@ interface DeliveryInsightCommon {
   account_id: string | null
   status: DeliveryEntityStatus | null
   status_toggleable: boolean
+  has_rule: boolean
   effective_status: string | null
   daily_budget: number | null
   spend: number | null

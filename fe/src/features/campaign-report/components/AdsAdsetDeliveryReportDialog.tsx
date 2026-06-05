@@ -272,6 +272,14 @@ function ColHeader({ color, children }: { color?: ColColor; children: React.Reac
   )
 }
 
+function RuleBadge() {
+  return (
+    <span className="ml-1 inline-flex items-center rounded bg-red-100 px-1 py-0.5 align-middle text-[9px] font-semibold leading-none text-red-700 dark:bg-red-900/60 dark:text-red-300">
+      Rule
+    </span>
+  )
+}
+
 // ─── Dialog body ──────────────────────────────────────────────────────────────
 
 function AdsAdsetDeliveryReportDialogInner({
@@ -496,7 +504,11 @@ function AdsAdsetDeliveryReportDialogInner({
       setToggling((prev) => ({ ...prev, [key]: true }))
       try {
         const { data } = await campaignReportApi.toggleAdsetStatus(row.id, next)
-        setAdsets((prev) => prev.map((r) => (r.id === row.id ? data.data : r)))
+        // Toggle response is computed without the list-only fields (has_rule, realtime
+        // metrics), so preserve them from the existing row to avoid the badge flickering off.
+        setAdsets((prev) =>
+          prev.map((r) => (r.id === row.id ? { ...data.data, has_rule: r.has_rule } : r)),
+        )
         toast.success(`Adset is now ${data.data.status}`)
       } catch (err) {
         toast.error(formatApiError(err))
@@ -515,7 +527,11 @@ function AdsAdsetDeliveryReportDialogInner({
       setToggling((prev) => ({ ...prev, [key]: true }))
       try {
         const { data } = await campaignReportApi.toggleAdStatus(row.id, next)
-        setAds((prev) => prev.map((r) => (r.id === row.id ? data.data : r)))
+        // Toggle response is computed without the list-only fields (has_rule, realtime
+        // metrics), so preserve them from the existing row to avoid the badge flickering off.
+        setAds((prev) =>
+          prev.map((r) => (r.id === row.id ? { ...data.data, has_rule: r.has_rule } : r)),
+        )
         toast.success(`Ad is now ${data.data.status}`)
       } catch (err) {
         toast.error(formatApiError(err))
@@ -549,6 +565,7 @@ function AdsAdsetDeliveryReportDialogInner({
         render: (r) => (
           <span className="text-xs text-foreground">
             {r.adset_name ?? <span className="text-muted-foreground/50">-</span>}
+            {r.has_rule && <RuleBadge />}
           </span>
         ),
       },
@@ -906,6 +923,7 @@ function AdsAdsetDeliveryReportDialogInner({
         render: (r) => (
           <span className="text-xs text-foreground">
             {r.ad_name ?? <span className="text-muted-foreground/50">-</span>}
+            {r.has_rule && <RuleBadge />}
           </span>
         ),
       },

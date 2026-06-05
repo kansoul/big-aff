@@ -19,7 +19,7 @@ class EvaluateCampaignRuleJob implements ShouldBeUnique, ShouldQueue
 
     public int $timeout = 60;
 
-    public int $uniqueFor = 300;
+    public int $uniqueFor = 1800;
 
     public function __construct(
         protected Campaign $campaign,

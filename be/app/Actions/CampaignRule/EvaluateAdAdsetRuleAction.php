@@ -146,10 +146,14 @@ class EvaluateAdAdsetRuleAction
     {
         $column = $entityType === AdsInsightsReport::class ? 'ad_id' : 'adset_id';
 
+        $dayStart = Carbon::parse($date)->startOfDay();
+        $dayEnd = $dayStart->copy()->addDay();
+
         return (int) DB::table('event_clicks')
             ->where($column, $entityId)
             ->where('type', EventClickType::ClickAd->value)
-            ->whereRaw('DATE(created_at) = ?', [$date])
+            ->where('created_at', '>=', $dayStart)
+            ->where('created_at', '<', $dayEnd)
             ->count();
     }
 

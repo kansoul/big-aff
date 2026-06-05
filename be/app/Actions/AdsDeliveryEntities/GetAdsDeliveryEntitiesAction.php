@@ -3,11 +3,13 @@
 namespace App\Actions\AdsDeliveryEntities;
 
 use App\Enums\AdsType;
+use App\Enums\EntityTypeEnum;
 use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
 use App\Support\AdsDelivery\DeliveryInsightsReportFilters;
 use App\Support\MainTeam\MainTeamReportDataScope;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class GetAdsDeliveryEntitiesAction
@@ -18,12 +20,15 @@ class GetAdsDeliveryEntitiesAction
      */
     public function execute(string $campaignId, array $filters): array
     {
+        $hasActiveRule = $this->activeRuleExistsConstraint();
+
         $adsetsQuery = AdsetInsightsReport::query()
             ->addSelect([
                 'adset_insights_reports.*',
                 'conversion_realtime' => AdsetInsightsReport::conversionRealtimeSubquery(),
                 'rpc_est' => AdsetInsightsReport::rpcEstSubquery(),
             ])
+            ->withExists(['campaignRules as has_rule' => $hasActiveRule])
             ->where('campaign_id', $campaignId)
             ->orderByDesc('date_start')
             ->orderBy('adset_name');
@@ -34,6 +39,7 @@ class GetAdsDeliveryEntitiesAction
                 'conversion_realtime' => AdsInsightsReport::conversionRealtimeSubquery(),
                 'rpc_est' => AdsInsightsReport::rpcEstSubquery(),
             ])
+            ->withExists(['campaignRules as has_rule' => $hasActiveRule])
             ->where('campaign_id', $campaignId)
             ->orderByDesc('date_start')
             ->orderBy('ad_name');
@@ -61,5 +67,19 @@ class GetAdsDeliveryEntitiesAction
             'adsets' => $adsetsQuery->get(),
             'ads' => $adsQuery->get(),
         ];
+    }
+
+    /**
+     * Constraint for the `campaignRules` existence check: the entity has at least
+     * one active, non-expired ad/adset rule attached.
+     *
+     * @return \Closure(Builder): void
+     */
+    private function activeRuleExistsConstraint(): \Closure
+    {
+        return fn ($rule) => $rule
+            ->where('entity_type', EntityTypeEnum::AdAdset->value)
+            ->where('is_active', true)
+            ->where(fn ($expiry) => $expiry->whereNull('expired_at')->orWhereDate('expired_at', '>=', now()->toDateString()));
     }
 }
