@@ -1056,7 +1056,35 @@ function getColumns(
     colRtClickAdCount,
     count('r_conversion', 'Conv.', 70, 'yellow'),
     count('a_conversion', 'A. Conv.', 85, 'blue'),
-    ratio('r_rpc', 'RPC', 70, 2, 'yellow'),
+    (() => {
+      const footerText = summary ? formatDecimal(toNumber(summary.r_rpc), 2) : null
+      return {
+        accessorKey: 'r_rpc',
+        header: 'RPC',
+        Header: <HeaderLabel icon="yellow">RPC</HeaderLabel>,
+        size: autoSize(70, footerText),
+        enableSorting: SORTABLE_COLUMNS.has('r_rpc'),
+        Cell: ({ row }) => {
+          if (!isGroupRow(row.original) && groupBy !== 'account_id')
+            return <span className="text-foreground/30 text-[10px]">—</span>
+          const val = isGroupRow(row.original)
+            ? toNumber(row.original.group_summary.r_rpc)
+            : toNumber(row.original.r_rpc)
+          const v = formatDecimal(val, 2)
+          return (
+            <span className="tabular-nums text-[10px] text-foreground truncate" title={v}>
+              {v}
+            </span>
+          )
+        },
+        Footer: () =>
+          footerText ? (
+            <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+              {footerText}
+            </span>
+          ) : null,
+      } as MRT_ColumnDef<TableRow>
+    })(),
 
     // ── CPA ──
     colRtCpa,
