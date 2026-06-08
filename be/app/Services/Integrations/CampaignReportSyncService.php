@@ -322,13 +322,13 @@ class CampaignReportSyncService
             return;
         }
 
-        $linkData->loadMissing('adsLink.site', 'adsLink.createdBy.campaignRuleSetting');
+        $linkData->loadMissing('adsLink.site', 'adsLink.creator.campaignRuleSetting');
 
         $campaign = $insightReport->campaign;
         $campaignId = $insightReport->campaign_id ?? 'N/A';
         $campaignName = $campaign?->campaign_name ?? 'N/A';
         $adsLinkUrl = self::adsLinkUrl($linkData);
-        $owner = $linkData->adsLink?->createdBy;
+        $owner = $linkData->adsLink?->creator;
         $ownerName = $owner?->name ?? 'N/A';
         $telegramChatIds = array_filter(
             array_map('trim', explode(',', $owner?->campaignRuleSetting?->telegram_chat_id ?? '')),
