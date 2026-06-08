@@ -3,6 +3,7 @@
 namespace App\Services\Integrations;
 
 use App\Jobs\SendTelegramWarningJob;
+use App\Models\Campaign;
 use App\Models\CampaignReport;
 use App\Models\Channel;
 use App\Models\InsightReport;
@@ -15,9 +16,12 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
 
 class CampaignReportSyncService
 {
+    private const MIN_SPEND_TRASH_CAMPAIGN = 5;
+
     /**
      * @var array<int, array{min_clicks: int, max_clicks: int, max_cvr: float, min_ctr: float}>
      */
@@ -28,6 +32,8 @@ class CampaignReportSyncService
     ];
 
     private const CTR_ALERT_CACHE_TTL = 172_800;
+
+    private const TRASH_CAMPAIGN_ALERT_CACHE_TTL = 86_400;
 
     /**
      * Sync and aggregate data from InsightReport + RevenueReport into CampaignReport table.
@@ -222,6 +228,14 @@ class CampaignReportSyncService
                 'r_funnel_rpm' => (float) ($revenueData['funnel_rpm'] ?? 0),
                 'r_cpa' => $rCpa,
             ];
+        } elseif ($spend > self::MIN_SPEND_TRASH_CAMPAIGN) {
+            $cacheKey = self::trashCampaignAlertCacheKey($date, (int) $insightReport->campaign_id);
+
+            if (! Redis::get($cacheKey)) {
+                $message = self::buildAlertMessageTrashCampaign($campaign, $date);
+                SendTelegramWarningJob::dispatch(message: $message, campaignId: (string) $insightReport->campaign_id, adsLinkId: (string) Str::uuid());
+                Redis::setex($cacheKey, self::TRASH_CAMPAIGN_ALERT_CACHE_TTL, 1);
+            }
         }
 
         return [
@@ -308,12 +322,13 @@ class CampaignReportSyncService
             return;
         }
 
-        $linkData->loadMissing('adsLink.site');
+        $linkData->loadMissing('adsLink.site', 'adsLink.createdBy');
 
         $campaign = $insightReport->campaign;
         $campaignId = $insightReport->campaign_id ?? 'N/A';
         $campaignName = $campaign?->campaign_name ?? 'N/A';
         $adsLinkUrl = self::adsLinkUrl($linkData);
+        $ownerName = $linkData->adsLink?->createdBy?->name ?? 'N/A';
         $ctrPercent = round($ctr * 100, 2);
         $cvrPercent = round($cvr * 100, 2);
 
@@ -321,6 +336,7 @@ class CampaignReportSyncService
             ."Campaign ID: `{$campaignId}`\n"
             ."Campaign Name: *{$campaignName}*\n"
             ."Ads Link: {$adsLinkUrl}\n"
+            ."Owner: *{$ownerName}*\n"
             ."View Search: *{$viewSearch}*\n"
             ."Click Ad: *{$realtimeClickAdCount}*\n"
             ."Channel Click Ad: *{$sumRealtimeClickAdCount}*\n"
@@ -348,6 +364,11 @@ class CampaignReportSyncService
     private static function highCtrAlertCacheKey(string $date, int $linkDataId): string
     {
         return "campaign_report:high_ctr_alert:{$date}:link_data:{$linkDataId}:tier";
+    }
+
+    private static function trashCampaignAlertCacheKey(string $date, int $campaignId): string
+    {
+        return "campaign_report:trash_campaign_alert:{$date}:campaign:{$campaignId}";
     }
 
     private static function adsLinkUrl(LinkData $linkData): string
@@ -417,5 +438,29 @@ class CampaignReportSyncService
             ->first();
 
         return $report ? $report->toArray() : [];
+    }
+
+    /**
+     * @param  Collection<int, Campaign>  $campaigns
+     */
+    private static function buildAlertMessageTrashCampaign(Campaign $campaign, ?string $date): string
+    {
+        $message = "⚠️ *Cảnh báo: Campaign không có Report*\n\n";
+        $message .= '🕐 *Thời gian:* '.now()->format('Y-m-d H:i:s')."\n";
+        $message .= '📅 *Ngày kiểm tra:* '.($date ?? 'Tất cả')."\n";
+
+        $accountName = $campaign->account?->account_name ?? 'N/A';
+        $fullAccountName = $accountName.' ('.$campaign->account_id.')';
+        $safeAccountName = str_replace('_', '\_', $fullAccountName);
+
+        $dateRange = $date ? "{$date}_{$date}%2Ctoday" : 'today%2Ctoday';
+        $link = "https://adsmanager.facebook.com/adsmanager/manage/adsets?act={$campaign->account_id}&date={$dateRange}&insights_date={$dateRange}&selected_campaign_ids={$campaign->campaign_id}&nav_source=no_referrer";
+
+        $message .= "*🏦 Account:* {$safeAccountName}\n";
+        $message .= "*🏷 Campaign:* [{$campaign->campaign_name}]({$link})\n";
+        $message .= "*🆔 Campaign ID:* {$campaign->campaign_id}\n";
+        $message .= "➖➖➖➖➖➖➖➖➖➖\n\n";
+
+        return $message;
     }
 }
