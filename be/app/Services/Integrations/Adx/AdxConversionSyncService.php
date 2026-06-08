@@ -77,7 +77,7 @@ class AdxConversionSyncService
 
             return $this->resolveFailedIndices($response, (string) $customerId);
         } catch (Exception $e) {
-            Log::channel('sync_reports')->error('[AdxConversionSync] Upload failed: '.$e->getMessage());
+            Log::channel('sync_reports')->error('[AdxConversionSync] Upload failed: ' . $e->getMessage());
 
             return null;
         }
@@ -119,14 +119,12 @@ class AdxConversionSyncService
                     case ConversionUploadError::CLICK_CONVERSION_ALREADY_EXISTS:
                     case ConversionUploadError::EXPIRED_EVENT:
                     case ConversionUploadError::UNPARSEABLE_GCLID:
+                    case ConversionUploadError::CONVERSION_PRECEDES_EVENT:
+                    case ConversionUploadError::EVENT_NOT_FOUND:
+                    case ConversionUploadError::TOO_RECENT_EVENT:
                         break;
 
                     default:
-                        Log::channel('sync_reports')->warning('[AdxConversionSync] Upload error', [
-                            'account_id' => $accountId,
-                            'index' => $index,
-                            'error' => $error->getMessage(),
-                        ]);
                         if (! is_null($index)) {
                             $failedIndices[] = $index;
                         }
