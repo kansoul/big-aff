@@ -25,17 +25,20 @@ class GetInsightChartAction
      *   monthly_revenue: array{this_month: float, last_month: float},
      * }
      */
-    public function execute(): array
+    public function execute(?string $month = null): array
     {
         $now = Carbon::now();
+        $selectedMonth = $month
+            ? Carbon::createFromFormat('Y-m-d', $month.'-01')->startOfMonth()
+            : $now->copy()->startOfMonth();
 
         return [
             'daily_spend' => $this->daily($now, 'spend'),
             'weekly_spend' => $this->weekly($now, 'spend'),
-            'monthly_spend' => $this->monthly($now, 'spend'),
+            'monthly_spend' => $this->monthly($selectedMonth, 'spend'),
             'daily_revenue' => $this->daily($now, 'revenue'),
             'weekly_revenue' => $this->weekly($now, 'revenue'),
-            'monthly_revenue' => $this->monthly($now, 'revenue'),
+            'monthly_revenue' => $this->monthly($selectedMonth, 'revenue'),
         ];
     }
 

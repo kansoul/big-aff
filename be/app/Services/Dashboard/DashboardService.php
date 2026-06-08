@@ -12,9 +12,9 @@ class DashboardService
         private readonly GetRevenueTableAction $getRevenueTableAction,
     ) {}
 
-    public function insightStats(): array
+    public function insightStats(array $filters = []): array
     {
-        return $this->getInsightChartAction->execute();
+        return $this->getInsightChartAction->execute($filters['month'] ?? null);
     }
 
     public function revenueTable(array $filters): array

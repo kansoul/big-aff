@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Dashboard\InsightStatsRequest;
 use App\Http\Requests\Dashboard\RevenueTableRequest;
 use App\Services\Dashboard\DashboardService;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +24,8 @@ class DashboardController extends BaseController
      * authenticated user and their children, compared across today/yesterday,
      * this week/last week, and this month/last month.
      *
+     * @queryParam month string Optional month for monthly revenue/spend buckets, format YYYY-MM. Example: 2026-06
+     *
      * @response 200 {
      *   "data": {
      *     "daily_spend":    {"today": 120.50, "yesterday": 98.30},
@@ -34,9 +37,9 @@ class DashboardController extends BaseController
      *   }
      * }
      */
-    public function insightStats(): JsonResponse
+    public function insightStats(InsightStatsRequest $request): JsonResponse
     {
-        return $this->sendResponse(['data' => $this->dashboardService->insightStats()]);
+        return $this->sendResponse(['data' => $this->dashboardService->insightStats($request->validated())]);
     }
 
     /**
