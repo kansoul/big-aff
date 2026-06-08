@@ -26,7 +26,7 @@ class CampaignReportSyncService
      * @var array<int, array{min_clicks: int, max_clicks: int, max_cvr: float, min_ctr: float}>
      */
     private const CTR_ALERT_TIERS = [
-        ['min_clicks' => 25, 'max_clicks' => 50, 'max_cvr' => 0.55, 'min_ctr' => 0.85],
+        ['min_clicks' => 20, 'max_clicks' => 50, 'max_cvr' => 0.55, 'min_ctr' => 0.85],
         ['min_clicks' => 50, 'max_clicks' => 150, 'max_cvr' => 0.60, 'min_ctr' => 0.80],
         ['min_clicks' => 150, 'max_clicks' => 300, 'max_cvr' => 0.65, 'min_ctr' => 0.75],
     ];
@@ -322,13 +322,17 @@ class CampaignReportSyncService
             return;
         }
 
-        $linkData->loadMissing('adsLink.site', 'adsLink.createdBy');
+        $linkData->loadMissing('adsLink.site', 'adsLink.createdBy.campaignRuleSetting');
 
         $campaign = $insightReport->campaign;
         $campaignId = $insightReport->campaign_id ?? 'N/A';
         $campaignName = $campaign?->campaign_name ?? 'N/A';
         $adsLinkUrl = self::adsLinkUrl($linkData);
-        $ownerName = $linkData->adsLink?->createdBy?->name ?? 'N/A';
+        $owner = $linkData->adsLink?->createdBy;
+        $ownerName = $owner?->name ?? 'N/A';
+        $telegramChatIds = array_filter(
+            array_map('trim', explode(',', $owner?->campaignRuleSetting?->telegram_chat_id ?? '')),
+        );
         $ctrPercent = round($ctr * 100, 2);
         $cvrPercent = round($cvr * 100, 2);
 
@@ -344,11 +348,14 @@ class CampaignReportSyncService
             ."Conversion: *{$rConversion}*\n"
             ."CVR: *{$cvrPercent}%*";
 
-        SendTelegramWarningJob::dispatch(
-            message: $message,
-            campaignId: (string) $campaignId,
-            adsLinkId: (string) ($linkData->ads_link_id ?? ''),
-        );
+        foreach ($telegramChatIds as $chatId) {
+            SendTelegramWarningJob::dispatch(
+                message: $message,
+                campaignId: (string) $campaignId,
+                adsLinkId: (string) ($linkData->ads_link_id ?? ''),
+                chatIdOverride: $chatId,
+            );
+        }
 
         Redis::setex($cacheKey, self::CTR_ALERT_CACHE_TTL, $alertTierKey);
     }
