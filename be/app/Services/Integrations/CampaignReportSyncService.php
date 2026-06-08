@@ -2,7 +2,6 @@
 
 namespace App\Services\Integrations;
 
-use App\Jobs\SendTelegramAlertJob;
 use App\Jobs\SendTelegramWarningJob;
 use App\Models\Campaign;
 use App\Models\CampaignReport;
@@ -17,6 +16,7 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
 
 class CampaignReportSyncService
 {
@@ -233,7 +233,7 @@ class CampaignReportSyncService
 
             if (! Redis::get($cacheKey)) {
                 $message = self::buildAlertMessageTrashCampaign($campaign, $date);
-                SendTelegramAlertJob::dispatch(message: $message);
+                SendTelegramWarningJob::dispatch(message: $message, campaignId: (string) $insightReport->campaign_id, adsLinkId: (string) Str::uuid());
                 Redis::setex($cacheKey, self::TRASH_CAMPAIGN_ALERT_CACHE_TTL, 1);
             }
         }
