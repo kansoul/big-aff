@@ -25,13 +25,16 @@ class ResolveAdsConversionRpcAction
         $date = $this->resolveDate($conversionDateTime);
 
         $report = RevenueReport::query()
-            ->whereDate('date', $date)
+            ->whereDate('date', '<=', $date)
             ->where('channel_code', $channelCode)
             ->selectRaw('
+                date,
                 SUM(estimated_earnings) as estimated_earnings,
                 SUM(clicks) as clicks,
                 AVG(cost_per_click) as cost_per_click
             ')
+            ->groupBy('date')
+            ->orderByDesc('date')
             ->first();
 
         if (! $report) {
