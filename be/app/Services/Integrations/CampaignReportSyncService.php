@@ -10,6 +10,7 @@ use App\Models\InsightReport;
 use App\Models\LinkData;
 use App\Models\RealtimeReport;
 use App\Models\RevenueReport;
+use App\Services\Integrations\Ads\AdsStatusService;
 use App\Support\MainTeam\MainTeamReportDataScope;
 use Carbon\Carbon;
 use Exception;
@@ -30,6 +31,12 @@ class CampaignReportSyncService
         ['min_clicks' => 50, 'max_clicks' => 150, 'max_cvr' => 0.60, 'min_ctr' => 0.80],
         ['min_clicks' => 150, 'max_clicks' => 300, 'max_cvr' => 0.65, 'min_ctr' => 0.75],
     ];
+
+    private const HIGH_CTR_AUTO_PAUSE_MIN_CLICKS = 15;
+
+    private const HIGH_CTR_AUTO_PAUSE_MIN_CTR = 0.85;
+
+    private const HIGH_CTR_AUTO_PAUSE_CACHE_TTL = 86_400;
 
     private const CTR_ALERT_CACHE_TTL = 172_800;
 
@@ -317,10 +324,7 @@ class CampaignReportSyncService
 
         $alertTierKey = self::alertTierKey($tier);
         $cacheKey = self::highCtrAlertCacheKey($date, (int) $linkData->id);
-
-        if (Redis::get($cacheKey) === $alertTierKey) {
-            return;
-        }
+        $alreadyAlerted = Redis::get($cacheKey) === $alertTierKey;
 
         $linkData->loadMissing('adsLink.site', 'adsLink.creator.campaignRuleSetting');
 
@@ -333,31 +337,117 @@ class CampaignReportSyncService
         $telegramChatIds = array_filter(
             array_map('trim', explode(',', $owner?->campaignRuleSetting?->telegram_chat_id ?? '')),
         );
-        $ctrPercent = round($ctr * 100, 2);
-        $cvrPercent = round($cvr * 100, 2);
 
-        $message = "⚠️ *High CTR Alert*\n\n"
-            ."Campaign ID: `{$campaignId}`\n"
-            ."Campaign Name: *{$campaignName}*\n"
-            ."Ads Link: {$adsLinkUrl}\n"
-            ."Owner: *{$ownerName}*\n"
-            ."View Search: *{$viewSearch}*\n"
-            ."Click Ad: *{$realtimeClickAdCount}*\n"
-            ."Channel Click Ad: *{$sumRealtimeClickAdCount}*\n"
-            ."CTR: *{$ctrPercent}%*\n"
-            ."Conversion: *{$rConversion}*\n"
-            ."CVR: *{$cvrPercent}%*";
+        if (! $alreadyAlerted) {
+            $ctrPercent = round($ctr * 100, 2);
+            $cvrPercent = round($cvr * 100, 2);
 
-        foreach ($telegramChatIds as $chatId) {
-            SendTelegramWarningJob::dispatch(
-                message: $message,
-                campaignId: (string) $campaignId,
-                adsLinkId: (string) ($linkData->ads_link_id ?? ''),
-                chatIdOverride: $chatId,
-            );
+            $message = "⚠️ *High CTR Alert*\n\n"
+                ."Campaign ID: `{$campaignId}`\n"
+                ."Campaign Name: *{$campaignName}*\n"
+                ."Ads Link: {$adsLinkUrl}\n"
+                ."Owner: *{$ownerName}*\n"
+                ."View Search: *{$viewSearch}*\n"
+                ."Click Ad: *{$realtimeClickAdCount}*\n"
+                ."Channel Click Ad: *{$sumRealtimeClickAdCount}*\n"
+                ."CTR: *{$ctrPercent}%*\n"
+                ."Conversion: *{$rConversion}*\n"
+                ."CVR: *{$cvrPercent}%*";
+
+            foreach ($telegramChatIds as $chatId) {
+                SendTelegramWarningJob::dispatch(
+                    message: $message,
+                    campaignId: (string) $campaignId,
+                    adsLinkId: (string) ($linkData->ads_link_id ?? ''),
+                    chatIdOverride: $chatId,
+                );
+            }
+
+            Redis::setex($cacheKey, self::CTR_ALERT_CACHE_TTL, $alertTierKey);
         }
 
-        Redis::setex($cacheKey, self::CTR_ALERT_CACHE_TTL, $alertTierKey);
+        self::autoPauseHighCtrCampaignIfNeeded(
+            linkData: $linkData,
+            insightReport: $insightReport,
+            telegramChatIds: $telegramChatIds,
+            ownerName: $ownerName,
+            adsLinkUrl: $adsLinkUrl,
+            clickAdCount: $realtimeClickAdCount,
+            ctr: $ctr,
+        );
+    }
+
+    /**
+     * @param  string[]  $telegramChatIds
+     */
+    private static function autoPauseHighCtrCampaignIfNeeded(
+        LinkData $linkData,
+        InsightReport $insightReport,
+        array $telegramChatIds,
+        string $ownerName,
+        string $adsLinkUrl,
+        int $clickAdCount,
+        float $ctr,
+    ): void {
+        if ($clickAdCount <= self::HIGH_CTR_AUTO_PAUSE_MIN_CLICKS) {
+            return;
+        }
+
+        if ($ctr <= self::HIGH_CTR_AUTO_PAUSE_MIN_CTR) {
+            return;
+        }
+
+        $campaignId = (string) ($insightReport->campaign_id ?? '');
+
+        if ($campaignId === '') {
+            return;
+        }
+
+        $campaign = $insightReport->campaign;
+
+        if ($campaign?->status === 'PAUSED') {
+            return;
+        }
+
+        $cacheKey = "campaign_report:high_ctr_auto_pause:{$campaignId}";
+
+        if (Redis::get($cacheKey)) {
+            return;
+        }
+
+        try {
+            app(AdsStatusService::class)->updateCampaignStatus($campaignId, 'PAUSED');
+
+            Campaign::where('campaign_id', $campaignId)->update(['status' => 'PAUSED']);
+            CampaignReport::where('campaign_id', $campaignId)->update(['campaign_status' => 'PAUSED']);
+
+            Redis::setex($cacheKey, self::HIGH_CTR_AUTO_PAUSE_CACHE_TTL, 1);
+
+            $ctrPercent = round($ctr * 100, 2);
+            $campaignName = $campaign?->campaign_name ?? 'N/A';
+
+            $message = "🛑 *Campaign Auto-Paused*\n\n"
+                ."Campaign ID: `{$campaignId}`\n"
+                ."Campaign Name: *{$campaignName}*\n"
+                ."Ads Link: {$adsLinkUrl}\n"
+                ."Owner: *{$ownerName}*\n"
+                ."CTR (15m): *{$ctrPercent}%* (> ".round(self::HIGH_CTR_AUTO_PAUSE_MIN_CTR * 100)."%) \n"
+                ."Click Ad (15m): *{$clickAdCount}* (> ".self::HIGH_CTR_AUTO_PAUSE_MIN_CLICKS.')';
+
+            foreach ($telegramChatIds as $chatId) {
+                SendTelegramWarningJob::dispatch(
+                    message: $message,
+                    campaignId: $campaignId,
+                    adsLinkId: (string) ($linkData->ads_link_id ?? ''),
+                    chatIdOverride: $chatId,
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::error('[CampaignReportSync] Failed to auto-pause high CTR campaign', [
+                'campaign_id' => $campaignId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
