@@ -4,8 +4,7 @@ namespace App\Actions\Dashboard;
 
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
-use App\Support\OwnerResource\AccountLinkedOwnerResource;
-use App\Support\OwnerResource\ChannelLinkedOwnerResource;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -45,7 +44,7 @@ class GetInsightChartAction
     private function spendBaseQuery(): Builder
     {
         $query = InsightReport::query();
-        (new AccountLinkedOwnerResource)->applyTo($query);
+        OwnershipFilter::forAuthUser()->applyTo($query, 'owner_user_id');
 
         return $query;
     }
@@ -53,7 +52,7 @@ class GetInsightChartAction
     private function revenueBaseQuery(): Builder
     {
         $query = RevenueReport::query();
-        (new ChannelLinkedOwnerResource)->applyTo($query);
+        OwnershipFilter::forAuthUser()->applyTo($query, 'owner_user_id');
 
         return $query;
     }
