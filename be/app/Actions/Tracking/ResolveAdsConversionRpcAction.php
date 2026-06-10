@@ -24,15 +24,19 @@ class ResolveAdsConversionRpcAction
 
         $date = $this->resolveDate($conversionDateTime);
 
+        $startDate = Carbon::parse($date)->subDays(2)->toDateString();
+
         $report = RevenueReport::query()
             ->whereDate('date', '<=', $date)
+            ->whereDate('date', '>=', $startDate)
             ->where('channel_code', $channelCode)
-            ->selectRaw('
-                date,
-                SUM(estimated_earnings) as estimated_earnings,
-                SUM(clicks) as clicks,
-                AVG(cost_per_click) as cost_per_click
-            ')
+            ->select([
+                'date',
+                'estimated_earnings',
+                'clicks',
+                'cost_per_click'
+            ])
+            ->where('clicks', '>', 0)
             ->groupBy('date')
             ->orderByDesc('date')
             ->first();
@@ -47,9 +51,6 @@ class ResolveAdsConversionRpcAction
         }
 
         $clicks = (int) ($report->clicks ?? 0);
-        if ($clicks <= 0) {
-            return null;
-        }
 
         return (float) ($report->estimated_earnings ?? 0) / $clicks;
     }
