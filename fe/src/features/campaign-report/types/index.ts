@@ -687,6 +687,14 @@ export interface DeliveryEntitiesListResponse {
   }
 }
 
+export interface DeliveryAdsetListResponse {
+  data: AdsetInsightRow[]
+}
+
+export interface DeliveryAdsListResponse {
+  data: AdsInsightRow[]
+}
+
 export interface DeliveryEntityStatusOption {
   value: string
   label: string

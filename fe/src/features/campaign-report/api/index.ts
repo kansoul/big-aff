@@ -20,6 +20,8 @@ import type {
   CampaignScheduleListResponse,
   CampaignScheduleSingleResponse,
   CampaignScheduleUpdatePayload,
+  DeliveryAdsetListResponse,
+  DeliveryAdsListResponse,
   DeliveryEntitiesFilterParams,
   DeliveryEntitiesListResponse,
   DeliveryEntityStatusOptionsResponse,
@@ -204,6 +206,38 @@ export const campaignReportApi = {
           ...(filters.status ? { status: filters.status } : {}),
           ...(filters.adset_id ? { adset_id: filters.adset_id } : {}),
           ...(filters.adset_name ? { adset_name: filters.adset_name } : {}),
+          ...(filters.ad_id ? { ad_id: filters.ad_id } : {}),
+          ...(filters.ad_name ? { ad_name: filters.ad_name } : {}),
+        },
+      },
+    ),
+
+  listDeliveryAdsets: (campaignId: string, filters: DeliveryEntitiesFilterParams) =>
+    axiosInstance.get<DeliveryAdsetListResponse>(
+      `/campaign-reports/${encodeURIComponent(campaignId)}/delivery-entities-reports/adsets`,
+      {
+        params: {
+          ...(filters.date_from ? { date_from: filters.date_from } : {}),
+          ...(filters.date_to ? { date_to: filters.date_to } : {}),
+          ...(filters.created_time_from ? { created_time_from: filters.created_time_from } : {}),
+          ...(filters.created_time_to ? { created_time_to: filters.created_time_to } : {}),
+          ...(filters.status ? { status: filters.status } : {}),
+          ...(filters.adset_id ? { adset_id: filters.adset_id } : {}),
+          ...(filters.adset_name ? { adset_name: filters.adset_name } : {}),
+        },
+      },
+    ),
+
+  listDeliveryAds: (campaignId: string, filters: DeliveryEntitiesFilterParams) =>
+    axiosInstance.get<DeliveryAdsListResponse>(
+      `/campaign-reports/${encodeURIComponent(campaignId)}/delivery-entities-reports/ads`,
+      {
+        params: {
+          ...(filters.date_from ? { date_from: filters.date_from } : {}),
+          ...(filters.date_to ? { date_to: filters.date_to } : {}),
+          ...(filters.created_time_from ? { created_time_from: filters.created_time_from } : {}),
+          ...(filters.created_time_to ? { created_time_to: filters.created_time_to } : {}),
+          ...(filters.status ? { status: filters.status } : {}),
           ...(filters.ad_id ? { ad_id: filters.ad_id } : {}),
           ...(filters.ad_name ? { ad_name: filters.ad_name } : {}),
         },

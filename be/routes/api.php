@@ -429,6 +429,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('delivery-entities-reports/status-options', [AdsDeliveryEntitiesController::class, 'statusOptions']);
         Route::get('{campaignId}/delivery-entities-reports', [AdsDeliveryEntitiesController::class, 'index'])
             ->middleware('permission.scope:'.Permission::DeliveryEntitiesReportsView->value);
+        Route::get('{campaignId}/delivery-entities-reports/adsets', [AdsDeliveryEntitiesController::class, 'adsets'])
+            ->middleware('permission.scope:'.Permission::DeliveryEntitiesReportsView->value);
+        Route::get('{campaignId}/delivery-entities-reports/ads', [AdsDeliveryEntitiesController::class, 'ads'])
+            ->middleware('permission.scope:'.Permission::DeliveryEntitiesReportsView->value);
         Route::patch('/adsets/{adsetInsightId}/toggle-status', [AdsDeliveryEntitiesController::class, 'toggleAdsetStatus'])
             ->middleware('permission.scope:'.Permission::DeliveryEntitiesReportsUpdate->value);
         Route::patch('/ads/{adsInsightId}/toggle-status', [AdsDeliveryEntitiesController::class, 'toggleAdStatus'])

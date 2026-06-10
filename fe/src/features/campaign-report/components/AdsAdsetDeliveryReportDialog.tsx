@@ -342,9 +342,12 @@ function AdsAdsetDeliveryReportDialogInner({
     async (activeFilters: DeliveryEntitiesFilterParams) => {
       try {
         setLoading(true)
-        const { data } = await campaignReportApi.listDeliveryEntities(campaignId, activeFilters)
-        setAdsets(data.data.adsets)
-        setAds(data.data.ads)
+        const [adsetsRes, adsRes] = await Promise.all([
+          campaignReportApi.listDeliveryAdsets(campaignId, activeFilters),
+          campaignReportApi.listDeliveryAds(campaignId, activeFilters),
+        ])
+        setAdsets(adsetsRes.data.data)
+        setAds(adsRes.data.data)
       } catch (err) {
         toast.error(formatApiError(err))
       } finally {
