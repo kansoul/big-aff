@@ -45,7 +45,6 @@ class SyncGoogleConversions extends Command
                     try {
                         if (! isset($accountCache[$accountId])) {
                             $account = Account::where('account_id', $accountId)
-                                ->where('roas_enabled', true)
                                 ->with(['conversion', 'businessCenter'])
                                 ->first();
                             $accountCache[$accountId] = $account;
@@ -83,16 +82,20 @@ class SyncGoogleConversions extends Command
                             continue;
                         }
 
-                        $adRevenuesPayload = $validRecords->map(function ($record) use ($resolveRpc) {
-                            $conversionValue = $record->conversion_value;
+                        $roasEnabled = $account->roas_enabled;
 
-                            if (! $conversionValue || (float) $conversionValue <= 0) {
-                                $rpc = $resolveRpc->execute(
-                                    $record->campaign_id,
-                                    $record->conversion_date_time,
-                                );
+                        $adRevenuesPayload = $validRecords->map(function ($record) use ($resolveRpc, $roasEnabled) {
+                            $conversionValue = 0;
 
-                                $conversionValue = $rpc;
+                            if ($roasEnabled) {
+                                $conversionValue = $record->conversion_value;
+
+                                if (! $conversionValue || (float) $conversionValue <= 0) {
+                                    $conversionValue = $resolveRpc->execute(
+                                        $record->campaign_id,
+                                        $record->conversion_date_time,
+                                    );
+                                }
                             }
 
                             return [
@@ -130,7 +133,7 @@ class SyncGoogleConversions extends Command
                             $this->error("Failed to sync records for customer {$accountId}");
                         }
                     } catch (Throwable $e) {
-                        Log::error("Error processing ad revenue sync for customer {$accountId}: ".$e->getMessage());
+                        Log::error("Error processing ad revenue sync for customer {$accountId}: " . $e->getMessage());
                         $this->error("Error syncing customer {$accountId}");
                     }
                 }

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\AdsConversion;
+use App\Models\TrackingSession;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -23,6 +24,13 @@ class StoreAdsConversionJob implements ShouldQueue
     public function handle(): void
     {
         try {
+            $session = TrackingSession::where('session_id', $this->data['session_id'])->first();
+            $ipAddress = null;
+            $userAgent = null;
+            if ($session) {
+                $ipAddress = $session->ip_address;
+                $userAgent = $session->user_agent;
+            }
             AdsConversion::create([
                 'account_id' => $this->data['account_id'],
                 'campaign_id' => $this->data['campaign_id'] ?? null,
@@ -33,12 +41,12 @@ class StoreAdsConversionJob implements ShouldQueue
                 'conversion_action_resource_name' => $this->data['conversion_action_resource_name'],
                 'conversion_value' => $this->data['conversion_value'] ?? null,
                 'currency_code' => $this->data['currency_code'] ?? null,
-                'ip_address' => $this->data['ip_address'] ?? null,
-                'user_agent' => $this->data['user_agent'] ?? null,
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
                 'conversion_date_time' => $this->conversionDateTime,
             ]);
         } catch (Throwable $e) {
-            Log::error('AdRevenue job error: '.$e->getMessage());
+            Log::error('AdRevenue job error: ' . $e->getMessage());
         }
     }
 }
