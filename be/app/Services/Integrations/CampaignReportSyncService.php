@@ -121,6 +121,10 @@ class CampaignReportSyncService
                             continue;
                         }
 
+                        if (! Carbon::parse($date)->isToday()) {
+                            unset($reportData['owner_user_id']);
+                        }
+
                         CampaignReport::updateOrCreate(
                             [
                                 'date_start' => $date,

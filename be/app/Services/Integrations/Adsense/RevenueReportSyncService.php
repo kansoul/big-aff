@@ -316,6 +316,13 @@ class RevenueReportSyncService
 
         $owner = $this->ownerResolver->forChannelCode($rowData['channel_code']);
 
+        $isToday = Carbon::parse($rowData['date'])->isToday();
+
+        $updateColumns = ['style_name', 'channel_name', 'page_views', 'clicks', 'ad_requests', 'impressions', 'ad_requests_rpm', 'impressions_rpm', 'estimated_earnings', 'cost_per_click', 'funnel_requests', 'funnel_impressions', 'funnel_clicks', 'funnel_rpm', 'updated_at'];
+        if ($isToday) {
+            $updateColumns = array_merge(['owner_user_id', 'owner_main_team_id'], $updateColumns);
+        }
+
         RevenueReport::upsert(
             [[
                 'ad_client_id' => $rowData['ad_client_id'],
@@ -341,25 +348,7 @@ class RevenueReportSyncService
                 'updated_at' => $now,
             ]],
             uniqueBy: ['ad_client_id', 'style_code', 'channel_code', 'date'],
-            update: [
-                'style_name',
-                'channel_name',
-                'owner_user_id',
-                'owner_main_team_id',
-                'page_views',
-                'clicks',
-                'ad_requests',
-                'impressions',
-                'ad_requests_rpm',
-                'impressions_rpm',
-                'estimated_earnings',
-                'cost_per_click',
-                'funnel_requests',
-                'funnel_impressions',
-                'funnel_clicks',
-                'funnel_rpm',
-                'updated_at',
-            ],
+            update: $updateColumns,
         );
 
         $this->saveChartSnapshot($rowData, $now);
@@ -454,28 +443,15 @@ class RevenueReportSyncService
             ];
         })->all();
 
+        $updateColumns = ['style_name', 'channel_name', 'page_views', 'clicks', 'ad_requests', 'impressions', 'ad_requests_rpm', 'impressions_rpm', 'estimated_earnings', 'cost_per_click', 'funnel_requests', 'funnel_impressions', 'funnel_clicks', 'funnel_rpm', 'updated_at'];
+        if (Carbon::parse($date)->isToday()) {
+            $updateColumns = array_merge(['owner_user_id', 'owner_main_team_id'], $updateColumns);
+        }
+
         RevenueReport::upsert(
             $upsertRows,
             uniqueBy: ['ad_client_id', 'style_code', 'channel_code', 'date'],
-            update: [
-                'style_name',
-                'channel_name',
-                'owner_user_id',
-                'owner_main_team_id',
-                'page_views',
-                'clicks',
-                'ad_requests',
-                'impressions',
-                'ad_requests_rpm',
-                'impressions_rpm',
-                'estimated_earnings',
-                'cost_per_click',
-                'funnel_requests',
-                'funnel_impressions',
-                'funnel_clicks',
-                'funnel_rpm',
-                'updated_at',
-            ],
+            update: $updateColumns,
         );
     }
 }

@@ -101,11 +101,27 @@ class GoogleCampaignSyncService
                         ];
                     }, $insights);
 
-                    InsightReport::upsert(
-                        $insightsData,
-                        ['account_id', 'campaign_id', 'date_start'],
-                        ['impressions', 'clicks', 'reach', 'ad_clicks', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'article_views', 'search_views', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'owner_user_id', 'owner_main_team_id', 'updated_at']
-                    );
+                    $today = now()->toDateString();
+                    $baseColumns = ['impressions', 'clicks', 'reach', 'ad_clicks', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'article_views', 'search_views', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'updated_at'];
+
+                    [$todayRows, $historicalRows] = collect($insightsData)
+                        ->partition(fn ($row) => $row['date_start'] === $today);
+
+                    if ($todayRows->isNotEmpty()) {
+                        InsightReport::upsert(
+                            $todayRows->all(),
+                            ['account_id', 'campaign_id', 'date_start'],
+                            array_merge($baseColumns, ['owner_user_id', 'owner_main_team_id']),
+                        );
+                    }
+
+                    if ($historicalRows->isNotEmpty()) {
+                        InsightReport::upsert(
+                            $historicalRows->all(),
+                            ['account_id', 'campaign_id', 'date_start'],
+                            $baseColumns,
+                        );
+                    }
 
                     return $insightsData;
                 });
@@ -213,11 +229,27 @@ class GoogleCampaignSyncService
                     }, $insights);
 
                     // Không chứa article_views, search_views, ad_clicks → không ghi đè conversion data
-                    InsightReport::upsert(
-                        $insightsData,
-                        ['account_id', 'campaign_id', 'date_start'],
-                        ['impressions', 'clicks', 'reach', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'owner_user_id', 'owner_main_team_id', 'updated_at']
-                    );
+                    $today = now()->toDateString();
+                    $baseColumns = ['impressions', 'clicks', 'reach', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'updated_at'];
+
+                    [$todayRows, $historicalRows] = collect($insightsData)
+                        ->partition(fn ($row) => $row['date_start'] === $today);
+
+                    if ($todayRows->isNotEmpty()) {
+                        InsightReport::upsert(
+                            $todayRows->all(),
+                            ['account_id', 'campaign_id', 'date_start'],
+                            array_merge($baseColumns, ['owner_user_id', 'owner_main_team_id']),
+                        );
+                    }
+
+                    if ($historicalRows->isNotEmpty()) {
+                        InsightReport::upsert(
+                            $historicalRows->all(),
+                            ['account_id', 'campaign_id', 'date_start'],
+                            $baseColumns,
+                        );
+                    }
 
                     return $insightsData;
                 });
