@@ -361,17 +361,16 @@ class GetRevenueTableAction
         $lastMonthTo = $now->copy()->subMonthNoOverflow()->endOfMonth()->toDateString();
 
         return InsightReport::query()
-            ->join('accounts', 'accounts.account_id', '=', 'insight_reports.account_id')
-            ->whereNotNull('accounts.main_team_id')
-            ->whereDate('insight_reports.date_start', '>=', $lastMonthFrom)
-            ->whereDate('insight_reports.date_start', '<=', $thisMonthTo)
-            ->groupBy('accounts.main_team_id')
+            ->whereNotNull('owner_main_team_id')
+            ->whereDate('date_start', '>=', $lastMonthFrom)
+            ->whereDate('date_start', '<=', $thisMonthTo)
+            ->groupBy('owner_main_team_id')
             ->selectRaw('
-                accounts.main_team_id as main_team_id,
-                COALESCE(SUM(CASE WHEN insight_reports.date_start = ? THEN insight_reports.spend ELSE 0 END), 0) as today_spend,
-                COALESCE(SUM(CASE WHEN insight_reports.date_start = ? THEN insight_reports.spend ELSE 0 END), 0) as yesterday_spend,
-                COALESCE(SUM(CASE WHEN insight_reports.date_start >= ? AND insight_reports.date_start <= ? THEN insight_reports.spend ELSE 0 END), 0) as this_month_spend,
-                COALESCE(SUM(CASE WHEN insight_reports.date_start >= ? AND insight_reports.date_start <= ? THEN insight_reports.spend ELSE 0 END), 0) as last_month_spend
+                owner_main_team_id as main_team_id,
+                COALESCE(SUM(CASE WHEN date_start = ? THEN spend ELSE 0 END), 0) as today_spend,
+                COALESCE(SUM(CASE WHEN date_start = ? THEN spend ELSE 0 END), 0) as yesterday_spend,
+                COALESCE(SUM(CASE WHEN date_start >= ? AND date_start <= ? THEN spend ELSE 0 END), 0) as this_month_spend,
+                COALESCE(SUM(CASE WHEN date_start >= ? AND date_start <= ? THEN spend ELSE 0 END), 0) as last_month_spend
             ', [$today, $yesterday, $thisMonthFrom, $thisMonthTo, $lastMonthFrom, $lastMonthTo])
             ->get()
             ->keyBy('main_team_id');
@@ -387,17 +386,16 @@ class GetRevenueTableAction
         $lastMonthTo = $now->copy()->subMonthNoOverflow()->endOfMonth()->toDateString();
 
         return RevenueReport::query()
-            ->join('channels', 'channels.code', '=', 'revenue_reports.channel_code')
-            ->whereNotNull('channels.main_team_id')
-            ->whereDate('revenue_reports.date', '>=', $lastMonthFrom)
-            ->whereDate('revenue_reports.date', '<=', $thisMonthTo)
-            ->groupBy('channels.main_team_id')
+            ->whereNotNull('owner_main_team_id')
+            ->whereDate('date', '>=', $lastMonthFrom)
+            ->whereDate('date', '<=', $thisMonthTo)
+            ->groupBy('owner_main_team_id')
             ->selectRaw('
-                channels.main_team_id as main_team_id,
-                COALESCE(SUM(CASE WHEN revenue_reports.date = ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as today_revenue,
-                COALESCE(SUM(CASE WHEN revenue_reports.date = ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as yesterday_revenue,
-                COALESCE(SUM(CASE WHEN revenue_reports.date >= ? AND revenue_reports.date <= ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as this_month_revenue,
-                COALESCE(SUM(CASE WHEN revenue_reports.date >= ? AND revenue_reports.date <= ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as last_month_revenue
+                owner_main_team_id as main_team_id,
+                COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as today_revenue,
+                COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as yesterday_revenue,
+                COALESCE(SUM(CASE WHEN date >= ? AND date <= ? THEN estimated_earnings ELSE 0 END), 0) as this_month_revenue,
+                COALESCE(SUM(CASE WHEN date >= ? AND date <= ? THEN estimated_earnings ELSE 0 END), 0) as last_month_revenue
             ', [$today, $yesterday, $thisMonthFrom, $thisMonthTo, $lastMonthFrom, $lastMonthTo])
             ->get()
             ->keyBy('main_team_id');
