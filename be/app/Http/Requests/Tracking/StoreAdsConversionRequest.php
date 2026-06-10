@@ -17,6 +17,10 @@ class StoreAdsConversionRequest extends FormRequest
     {
         return [
             'account_id' => 'required|string|exists:accounts,account_id',
+            'campaign_id' => [
+                'nullable',
+                'string',
+            ],
             'gclid' => [
                 'nullable',
                 'string',
@@ -32,18 +36,10 @@ class StoreAdsConversionRequest extends FormRequest
                 'string',
                 'required_without_all:gclid,wbraid',
             ],
-            'conversion_action_resource_name' => [
-                'required',
-                'string',
-            ],
-            'conversion_value' => [
-                'nullable',
-                'numeric',
-            ],
-            'currency_code' => [
-                'nullable',
-                'string',
-            ],
+            'session_id' => ['nullable', 'string', 'max:255'],
+            'conversion_action_resource_name' => ['required', 'string'],
+            'conversion_value' => ['nullable', 'numeric'],
+            'currency_code' => ['nullable', 'string'],
         ];
     }
 

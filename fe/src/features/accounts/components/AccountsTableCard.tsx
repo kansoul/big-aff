@@ -23,7 +23,7 @@ import { ACCOUNT_STATUS_OPTIONS } from '@/features/accounts/types'
 import type { SearchableSelectOption } from '@/components/common/SearchableSelect'
 import { AssignUserAccountsDialog } from './AssignUserAccountsDialog'
 
-type ToggleField = 'is_special' | 'sync_to_mcc'
+type ToggleField = 'is_special' | 'sync_to_mcc' | 'roas_enabled'
 
 const ADS_TYPE_OPTIONS = [
   { value: 'facebook', label: 'Facebook' },
@@ -158,6 +158,24 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
             aria-label={`Toggle sync to MCC for ${row.original.account_id}`}
             onCheckedChange={(checked) => {
               void onToggleField(row.original, 'sync_to_mcc', checked)
+            }}
+          />
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'roas_enabled',
+      header: 'ROAS',
+      size: 100,
+      enableSorting: false,
+      Cell: ({ row }) => (
+        <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+          <Switch
+            checked={row.original.roas_enabled}
+            disabled={!canUpdate || isFieldUpdating(row.original.id, 'roas_enabled')}
+            aria-label={`Toggle ROAS upload for ${row.original.account_id}`}
+            onCheckedChange={(checked) => {
+              void onToggleField(row.original, 'roas_enabled', checked)
             }}
           />
         </div>

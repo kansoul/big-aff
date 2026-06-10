@@ -135,6 +135,7 @@ export function CreateAccountDialog({
       status: null,
       is_special: false,
       sync_to_mcc: false,
+      roas_enabled: false,
       lines: '',
     },
   })
@@ -150,6 +151,7 @@ export function CreateAccountDialog({
       status: null,
       is_special: false,
       sync_to_mcc: false,
+      roas_enabled: false,
       lines: '',
     })
   }, [open, form])
@@ -169,6 +171,7 @@ export function CreateAccountDialog({
         status: values.status,
         is_special: values.is_special,
         sync_to_mcc: values.sync_to_mcc,
+        roas_enabled: values.roas_enabled,
         lines: values.lines,
       })
       toast.success('Account created successfully')
@@ -181,6 +184,7 @@ export function CreateAccountDialog({
           status: null,
           is_special: false,
           sync_to_mcc: false,
+          roas_enabled: false,
           lines: '',
         })
       } else {
@@ -321,7 +325,7 @@ export function CreateAccountDialog({
               )}
             />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <FormField
                 control={form.control}
                 name="is_special"
@@ -355,6 +359,25 @@ export function CreateAccountDialog({
                     </FormControl>
                     <div className="space-y-0.5">
                       <FormLabel>Sync To MCC</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="roas_enabled"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center gap-3 rounded-md border p-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={!!field.value}
+                        onCheckedChange={(checked) => field.onChange(checked === true)}
+                        disabled={submitting}
+                      />
+                    </FormControl>
+                    <div className="space-y-0.5">
+                      <FormLabel>ROAS Upload</FormLabel>
                     </div>
                   </FormItem>
                 )}
@@ -463,6 +486,7 @@ export function EditAccountDialog({
       status: null,
       is_special: false,
       sync_to_mcc: false,
+      roas_enabled: false,
     },
   })
 
@@ -479,6 +503,7 @@ export function EditAccountDialog({
       status: account?.status ?? null,
       is_special: account?.is_special ?? false,
       sync_to_mcc: account?.sync_to_mcc ?? false,
+      roas_enabled: account?.roas_enabled ?? false,
     }),
     [account],
   )
@@ -505,6 +530,7 @@ export function EditAccountDialog({
         status: values.status,
         is_special: values.is_special,
         sync_to_mcc: values.sync_to_mcc,
+        roas_enabled: values.roas_enabled,
       })
       toast.success('Account updated successfully')
       onOpenChange(false)
@@ -678,7 +704,7 @@ export function EditAccountDialog({
               )}
             />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <FormField
                 control={form.control}
                 name="is_special"
@@ -712,6 +738,25 @@ export function EditAccountDialog({
                     </FormControl>
                     <div className="space-y-0.5">
                       <FormLabel>Sync To MCC</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="roas_enabled"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center gap-3 rounded-md border p-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(checked) => field.onChange(checked === true)}
+                        disabled={submitting}
+                      />
+                    </FormControl>
+                    <div className="space-y-0.5">
+                      <FormLabel>ROAS Upload</FormLabel>
                     </div>
                   </FormItem>
                 )}

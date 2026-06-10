@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Tracking\ResolveAdsConversionRpcAction;
 use App\Models\Account;
 use App\Models\AdsConversion;
 use App\Services\Integrations\Google\GoogleAdsConversionSyncService;
@@ -34,9 +35,10 @@ class SyncGoogleConversions extends Command
     {
         $accountCache = [];
         $googleAdsConversionSyncService = app(GoogleAdsConversionSyncService::class);
+        $resolveRpc = app(ResolveAdsConversionRpcAction::class);
 
         AdsConversion::whereNull('synced_at')
-            ->chunkById(self::BATCH_SIZE, function ($chunk) use (&$accountCache, $googleAdsConversionSyncService) {
+            ->chunkById(self::BATCH_SIZE, function ($chunk) use (&$accountCache, $googleAdsConversionSyncService, $resolveRpc) {
                 $grouped = $chunk->groupBy('account_id');
 
                 foreach ($grouped as $accountId => $records) {
@@ -80,14 +82,29 @@ class SyncGoogleConversions extends Command
                             continue;
                         }
 
-                        $adRevenuesPayload = $validRecords->map(function ($record) {
+                        $roasEnabled = $account->roas_enabled;
+
+                        $adRevenuesPayload = $validRecords->map(function ($record) use ($resolveRpc, $roasEnabled) {
+                            $conversionValue = 0;
+
+                            if ($roasEnabled) {
+                                $conversionValue = $record->conversion_value;
+
+                                if (! $conversionValue || (float) $conversionValue <= 0) {
+                                    $conversionValue = $resolveRpc->execute(
+                                        $record->campaign_id,
+                                        $record->conversion_date_time,
+                                    );
+                                }
+                            }
+
                             return [
                                 'gclid' => $record->gclid,
                                 'wbraid' => $record->wbraid,
                                 'gbraid' => $record->gbraid,
                                 'conversion_action_resource_name' => $record->real_resource_name,
-                                'conversion_value' => $record->conversion_value,
-                                'currency_code' => $record->currency_code,
+                                'conversion_value' => $conversionValue,
+                                'currency_code' => $conversionValue ? ($record->currency_code ?: 'USD') : $record->currency_code,
                                 'conversion_date_time' => $record->conversion_date_time,
                             ];
                         })->toArray();
@@ -116,7 +133,7 @@ class SyncGoogleConversions extends Command
                             $this->error("Failed to sync records for customer {$accountId}");
                         }
                     } catch (Throwable $e) {
-                        Log::error("Error processing ad revenue sync for customer {$accountId}: ".$e->getMessage());
+                        Log::error("Error processing ad revenue sync for customer {$accountId}: " . $e->getMessage());
                         $this->error("Error syncing customer {$accountId}");
                     }
                 }

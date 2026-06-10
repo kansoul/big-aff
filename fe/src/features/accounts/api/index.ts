@@ -80,6 +80,7 @@ export const accountsApi = {
       status: payload.status ?? null,
       is_special: payload.is_special ?? false,
       sync_to_mcc: payload.sync_to_mcc ?? false,
+      roas_enabled: payload.roas_enabled ?? false,
       lines: payload.lines,
     }),
 
@@ -96,6 +97,7 @@ export const accountsApi = {
       status: payload.status ?? null,
       is_special: payload.is_special,
       sync_to_mcc: payload.sync_to_mcc,
+      roas_enabled: payload.roas_enabled,
     }),
 
   remove: (id: number) => axiosInstance.delete(`/accounts/${id}`),
