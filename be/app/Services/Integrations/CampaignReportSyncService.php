@@ -251,6 +251,7 @@ class CampaignReportSyncService
 
             // Campaign info
             'account_id' => $insightReport->account_id,
+            'owner_user_id' => $insightReport->owner_user_id,
             'account_name' => $account?->account_name,
             'campaign_id' => $insightReport->campaign_id,
             'campaign_name' => $campaign?->campaign_name,

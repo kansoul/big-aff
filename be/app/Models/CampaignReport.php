@@ -19,6 +19,7 @@ class CampaignReport extends Model
         'realtime_report_id',
         'date_start',
         'account_id',
+        'owner_user_id',
         'account_name',
         'campaign_id',
         'campaign_name',
@@ -66,6 +67,7 @@ class CampaignReport extends Model
     {
         return [
             'date_start' => 'date',
+            'owner_user_id' => 'integer',
             'daily_budget' => 'decimal:2',
             'lifetime_budget' => 'decimal:2',
             'r_search_views' => 'integer',

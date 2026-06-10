@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\Campaign;
 use App\Models\InsightReport;
 use App\Services\MainSystem\MainSystemSyncService;
+use App\Support\ReportOwner\ReportOwnerResolver;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -44,6 +45,7 @@ class GoogleCampaignSyncService
             ->values();
 
         $service = app(GoogleAdsService::class);
+        $ownerResolver = new ReportOwnerResolver;
 
         foreach ($accounts as $account) {
             try {
@@ -56,7 +58,9 @@ class GoogleCampaignSyncService
                 $insights = $response['insights'];
                 $campaigns = $response['campaigns'];
 
-                $insightsData = DB::transaction(function () use ($insights, $campaigns) {
+                $owner = $ownerResolver->forAccountId($account->account_id);
+
+                $insightsData = DB::transaction(function () use ($insights, $campaigns, $owner) {
                     if (! empty($campaigns)) {
                         Campaign::upsert(
                             $campaigns,
@@ -70,7 +74,7 @@ class GoogleCampaignSyncService
                         }
                     }
 
-                    $insightsData = array_map(function ($insight) {
+                    $insightsData = array_map(function ($insight) use ($owner) {
                         return [
                             'account_id' => $insight['account_id'],
                             'campaign_id' => $insight['campaign_id'],
@@ -91,6 +95,8 @@ class GoogleCampaignSyncService
                             'ctr' => $insight['ctr'],
                             'frequency' => $insight['frequency'],
                             'spend_type' => $insight['spend_type'],
+                            'owner_user_id' => $owner['owner_user_id'],
+                            'owner_main_team_id' => $owner['owner_main_team_id'],
                             'updated_at' => now(),
                         ];
                     }, $insights);
@@ -98,7 +104,7 @@ class GoogleCampaignSyncService
                     InsightReport::upsert(
                         $insightsData,
                         ['account_id', 'campaign_id', 'date_start'],
-                        ['impressions', 'clicks', 'reach', 'ad_clicks', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'article_views', 'search_views', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'updated_at']
+                        ['impressions', 'clicks', 'reach', 'ad_clicks', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'article_views', 'search_views', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'owner_user_id', 'owner_main_team_id', 'updated_at']
                     );
 
                     return $insightsData;
@@ -153,6 +159,7 @@ class GoogleCampaignSyncService
             ->values();
 
         $service = app(GoogleAdsService::class);
+        $ownerResolver = new ReportOwnerResolver;
 
         foreach ($accounts as $account) {
             try {
@@ -165,7 +172,9 @@ class GoogleCampaignSyncService
                 $insights = $response['insights'];
                 $campaigns = $response['campaigns'];
 
-                $insightsData = DB::transaction(function () use ($insights, $campaigns) {
+                $owner = $ownerResolver->forAccountId($account->account_id);
+
+                $insightsData = DB::transaction(function () use ($insights, $campaigns, $owner) {
                     if (! empty($campaigns)) {
                         Campaign::upsert(
                             $campaigns,
@@ -179,7 +188,7 @@ class GoogleCampaignSyncService
                         }
                     }
 
-                    $insightsData = array_map(function ($insight) {
+                    $insightsData = array_map(function ($insight) use ($owner) {
                         return [
                             'account_id' => $insight['account_id'],
                             'campaign_id' => $insight['campaign_id'],
@@ -197,6 +206,8 @@ class GoogleCampaignSyncService
                             'ctr' => $insight['ctr'],
                             'frequency' => $insight['frequency'],
                             'spend_type' => $insight['spend_type'],
+                            'owner_user_id' => $owner['owner_user_id'],
+                            'owner_main_team_id' => $owner['owner_main_team_id'],
                             'updated_at' => now(),
                         ];
                     }, $insights);
@@ -205,7 +216,7 @@ class GoogleCampaignSyncService
                     InsightReport::upsert(
                         $insightsData,
                         ['account_id', 'campaign_id', 'date_start'],
-                        ['impressions', 'clicks', 'reach', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'updated_at']
+                        ['impressions', 'clicks', 'reach', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'owner_user_id', 'owner_main_team_id', 'updated_at']
                     );
 
                     return $insightsData;
