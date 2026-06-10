@@ -3,9 +3,7 @@
 namespace App\Support\ReportOwner;
 
 use App\Models\Account;
-use App\Models\AccountUser;
 use App\Models\Channel;
-use App\Models\ChannelUser;
 
 /**
  * Resolves the owner (user + main team) of a channel or account at sync time so
@@ -56,20 +54,20 @@ class ReportOwnerResolver
     private function resolveChannelOwner(string $channelCode): array
     {
         $channel = Channel::query()
-            ->where('code', $channelCode)
-            ->first(['id', 'main_team_id']);
+            ->where('channels.code', $channelCode)
+            ->leftJoin('channel_user', function ($join) {
+                $join->on('channel_user.channel_id', '=', 'channels.id')
+                    ->whereNull('channel_user.deleted_at');
+            })
+            ->orderByDesc('channel_user.id')
+            ->first(['channels.main_team_id', 'channel_user.user_id as owner_user_id']);
 
         if (! $channel) {
             return $this->emptyOwner();
         }
 
-        $ownerUserId = ChannelUser::query()
-            ->where('channel_id', $channel->id)
-            ->orderByDesc('id')
-            ->value('user_id');
-
         return [
-            'owner_user_id' => $ownerUserId !== null ? (int) $ownerUserId : null,
+            'owner_user_id' => $channel->owner_user_id !== null ? (int) $channel->owner_user_id : null,
             'owner_main_team_id' => $channel->main_team_id !== null ? (int) $channel->main_team_id : null,
         ];
     }
@@ -80,20 +78,17 @@ class ReportOwnerResolver
     private function resolveAccountOwner(string $externalAccountId): array
     {
         $account = Account::query()
-            ->where('account_id', $externalAccountId)
-            ->first(['id', 'main_team_id']);
+            ->where('accounts.account_id', $externalAccountId)
+            ->leftJoin('account_user', 'account_user.account_id', '=', 'accounts.id')
+            ->orderByDesc('account_user.id')
+            ->first(['accounts.main_team_id', 'account_user.user_id as owner_user_id']);
 
         if (! $account) {
             return $this->emptyOwner();
         }
 
-        $ownerUserId = AccountUser::query()
-            ->where('account_id', $account->id)
-            ->orderByDesc('id')
-            ->value('user_id');
-
         return [
-            'owner_user_id' => $ownerUserId !== null ? (int) $ownerUserId : null,
+            'owner_user_id' => $account->owner_user_id !== null ? (int) $account->owner_user_id : null,
             'owner_main_team_id' => $account->main_team_id !== null ? (int) $account->main_team_id : null,
         ];
     }
