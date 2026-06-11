@@ -145,11 +145,27 @@ class SyncFacebookCampaignBatchJob implements ShouldQueue
                         ];
                     }, $insights);
 
-                    InsightReport::upsert(
-                        $insightsData,
-                        ['account_id', 'campaign_id', 'date_start'],
-                        ['impressions', 'clicks', 'reach', 'ad_clicks', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'article_views', 'search_views', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'owner_user_id', 'owner_main_team_id', 'updated_at']
-                    );
+                    $today = Carbon::today()->toDateString();
+                    $baseUpdateColumns = ['impressions', 'clicks', 'reach', 'ad_clicks', 'cpa', 'search_clicks', 'ctr_link', 'cpc_link', 'article_views', 'search_views', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'updated_at'];
+
+                    [$todayInsights, $historicalInsights] = collect($insightsData)
+                        ->partition(fn ($row) => $row['date_start'] === $today);
+
+                    if ($todayInsights->isNotEmpty()) {
+                        InsightReport::upsert(
+                            $todayInsights->all(),
+                            ['account_id', 'campaign_id', 'date_start'],
+                            array_merge($baseUpdateColumns, ['owner_user_id', 'owner_main_team_id']),
+                        );
+                    }
+
+                    if ($historicalInsights->isNotEmpty()) {
+                        InsightReport::upsert(
+                            $historicalInsights->all(),
+                            ['account_id', 'campaign_id', 'date_start'],
+                            $baseUpdateColumns,
+                        );
+                    }
 
                     return $insightsData;
                 });
