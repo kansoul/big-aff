@@ -139,7 +139,7 @@ class SyncFacebookCampaignBatchJob implements ShouldQueue
                             'frequency' => $insight['frequency'],
                             'spend_type' => $insight['spend_type'],
                             'owner_user_id' => $owner['owner_user_id'],
-                            'owner_main_team_id' => $owner['owner_main_team_id'],
+                            'owner_main_team_id' => $owner['owner_main_team_id'] ?? null,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ];

@@ -92,7 +92,7 @@ class PersistMainSystemInsightReportsJob implements ShouldQueue
                 'cpm' => $this->nullableFloat($insight['cpm'] ?? null),
                 'ctr' => $this->nullableFloat($insight['ctr'] ?? null),
                 'frequency' => $this->nullableFloat($insight['frequency'] ?? null),
-                'owner_main_team_id' => $this->mainTeamId,
+                'owner_main_team_id' => $this->mainTeamId ?? null,
                 'spend_type' => $insight['spend_type'] ?? null,
                 'deleted_at' => null,
                 'created_at' => $now,
