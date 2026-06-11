@@ -24,7 +24,9 @@ class StoreAdsConversionJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            $session = TrackingSession::where('session_id', $this->data['session_id'])->first();
+            $session = isset($this->data['session_id'])
+                ? TrackingSession::where('session_id', $this->data['session_id'])->first()
+                : null;
             $ipAddress = null;
             $userAgent = null;
             if ($session) {
@@ -46,7 +48,7 @@ class StoreAdsConversionJob implements ShouldQueue
                 'conversion_date_time' => $this->conversionDateTime,
             ]);
         } catch (Throwable $e) {
-            Log::error('AdRevenue job error: ' . $e->getMessage());
+            Log::error('AdRevenue job error: '.$e->getMessage());
         }
     }
 }
