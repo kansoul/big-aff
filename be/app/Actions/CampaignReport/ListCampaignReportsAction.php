@@ -5,7 +5,7 @@ namespace App\Actions\CampaignReport;
 use App\Models\CampaignReport;
 use App\Models\RealtimeReport;
 use App\Support\MainTeam\MainTeamReportDataScope;
-use App\Support\OwnerResource\AccountLinkedOwnerResource;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -82,13 +82,7 @@ class ListCampaignReportsAction
 
         $query = $this->buildBaseQuery($filters)
             ->leftJoin('realtime_reports as rt', 'rt.id', '=', 'campaign_reports.realtime_report_id')
-            ->leftJoin(
-                DB::raw('(SELECT accounts.account_id AS str_acct_id, MIN(account_user.user_id) AS primary_user_id FROM account_user JOIN accounts ON accounts.id = account_user.account_id JOIN users ON users.id = account_user.user_id WHERE users.role_id != 1 GROUP BY accounts.account_id) AS pu_list'),
-                'pu_list.str_acct_id',
-                '=',
-                'campaign_reports.account_id',
-            )
-            ->leftJoin('users as u_list', 'u_list.id', '=', 'pu_list.primary_user_id')
+            ->leftJoin('users as u_list', 'u_list.id', '=', 'campaign_reports.owner_user_id')
             ->select(
                 'campaign_reports.*',
                 DB::raw('u_list.email as user_email'),
@@ -127,7 +121,7 @@ class ListCampaignReportsAction
      */
     public function buildBaseQuery(array $filters): Builder
     {
-        $resource = new AccountLinkedOwnerResource;
+        $ownership = OwnershipFilter::forAuthUser();
 
         $query = CampaignReport::query();
 
@@ -141,25 +135,16 @@ class ListCampaignReportsAction
         }
 
         if (! empty($filters['user_ids'])) {
-            $userIds = $resource->isAdmin()
+            $userIds = $ownership->isAdmin()
                 ? array_map('intval', (array) $filters['user_ids'])
                 : array_values(array_intersect(
                     array_map('intval', (array) $filters['user_ids']),
-                    $resource->allowedUserIds(),
+                    $ownership->allowedUserIds(),
                 ));
 
-            $query->whereIn('campaign_reports.account_id', function ($sub) use ($userIds, $filters) {
-                $sub->select('accounts.account_id')
-                    ->from('account_user')
-                    ->join('accounts', 'accounts.id', '=', 'account_user.account_id')
-                    ->whereNull('accounts.deleted_at')
-                    ->when(! empty($filters['account_ids']), function ($sub) use ($filters) {
-                        $sub->whereIn('accounts.account_id', $filters['account_ids']);
-                    })
-                    ->whereIn('account_user.user_id', $userIds);
-            });
+            $query->whereIn('campaign_reports.owner_user_id', $userIds);
         } else {
-            $resource->applyTo($query);
+            $ownership->applyTo($query, 'campaign_reports.owner_user_id');
         }
 
         if (! empty($filters['date_from'])) {

@@ -6,8 +6,7 @@ use App\Enums\TeamRole;
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
 use App\Support\MainTeam\MainTeamReportDataScope;
-use App\Support\OwnerResource\AccountLinkedOwnerResource;
-use App\Support\OwnerResource\ChannelLinkedOwnerResource;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -87,57 +86,36 @@ class BuildRevenueStatsUserRowsAction
      */
     private function spendByUser(array $filters, bool $skipMainTeamScope = false): Collection
     {
-        $perAccount = InsightReport::query()
+        $query = InsightReport::query()
             ->when(
                 ! empty($filters['date_from']),
-                fn ($query) => $query->whereDate('date_start', '>=', Carbon::parse($filters['date_from'])->toDateString())
+                fn ($q) => $q->whereDate('date_start', '>=', Carbon::parse($filters['date_from'])->toDateString())
             )
             ->when(
                 ! empty($filters['date_to']),
-                fn ($query) => $query->whereDate('date_start', '<=', Carbon::parse($filters['date_to'])->toDateString())
+                fn ($q) => $q->whereDate('date_start', '<=', Carbon::parse($filters['date_to'])->toDateString())
             )
             ->when(
                 ! empty($filters['account_ids']),
-                function ($query) use ($filters) {
-                    $query->whereIn('account_id', function ($subquery) use ($filters) {
-                        $subquery->select('account_id')
-                            ->from('accounts')
-                            ->whereIn('id', $filters['account_ids']);
-                    });
-                }
+                fn ($q) => $q->whereIn('account_id', function ($sub) use ($filters) {
+                    $sub->select('account_id')->from('accounts')->whereIn('id', $filters['account_ids']);
+                })
             )
             ->when(
                 config('main_system.is_main') && ! empty($filters['main_team_ids']),
-                function ($query) use ($filters) {
-                    $query->whereIn('account_id', function ($subquery) use ($filters) {
-                        $subquery->select('account_id')
-                            ->from('accounts')
-                            ->whereIn('main_team_id', $filters['main_team_ids']);
-                    });
-                }
+                fn ($q) => $q->whereIn('owner_main_team_id', $filters['main_team_ids'])
             )
-            ->when(config('main_system.is_main') && ! $skipMainTeamScope, fn ($query) => MainTeamReportDataScope::excludeNonFetchableAccounts($query))
-            ->selectRaw('account_id, COALESCE(SUM(spend), 0) as spend')
-            ->groupBy('account_id');
+            ->when(
+                config('main_system.is_main') && ! $skipMainTeamScope,
+                fn ($q) => MainTeamReportDataScope::excludeNonFetchableAccounts($q)
+            )
+            ->whereNotNull('owner_user_id')
+            ->selectRaw('owner_user_id as user_id, COALESCE(SUM(spend), 0) as spend')
+            ->groupBy('owner_user_id');
 
-        (new AccountLinkedOwnerResource)->applyTo($perAccount);
+        OwnershipFilter::forAuthUser()->applyTo($query, 'owner_user_id');
 
-        $latestAccountUserIds = DB::table('account_user')
-            ->groupBy('account_id')
-            ->selectRaw('MAX(id) as id');
-
-        $primaryUserPerAccount = DB::table('account_user')
-            ->joinSub($latestAccountUserIds, 'latest', 'latest.id', '=', 'account_user.id')
-            ->join('accounts', 'accounts.id', '=', 'account_user.account_id')
-            ->select('accounts.account_id as account_id', 'account_user.user_id as user_id');
-
-        return DB::query()
-            ->fromSub($perAccount, 'ir')
-            ->joinSub($primaryUserPerAccount, 'pu', 'pu.account_id', '=', 'ir.account_id')
-            ->groupBy('pu.user_id')
-            ->selectRaw('pu.user_id as user_id, COALESCE(SUM(ir.spend), 0) as spend')
-            ->get()
-            ->keyBy('user_id');
+        return $query->get()->keyBy('user_id');
     }
 
     /**
@@ -150,52 +128,34 @@ class BuildRevenueStatsUserRowsAction
      */
     private function revenueByUser(array $filters, bool $skipMainTeamScope = false): Collection
     {
-        $perChannel = RevenueReport::query()
+        $query = RevenueReport::query()
             ->when(
                 ! empty($filters['date_from']),
-                fn ($query) => $query->whereDate('date', '>=', Carbon::parse($filters['date_from'])->toDateString())
+                fn ($q) => $q->whereDate('date', '>=', Carbon::parse($filters['date_from'])->toDateString())
             )
             ->when(
                 ! empty($filters['date_to']),
-                fn ($query) => $query->whereDate('date', '<=', Carbon::parse($filters['date_to'])->toDateString())
+                fn ($q) => $q->whereDate('date', '<=', Carbon::parse($filters['date_to'])->toDateString())
             )
             ->when(
                 ! empty($filters['channel_codes']),
-                fn ($query) => $query->whereIn('channel_code', $filters['channel_codes'])
+                fn ($q) => $q->whereIn('channel_code', $filters['channel_codes'])
             )
             ->when(
                 config('main_system.is_main') && ! empty($filters['main_team_ids']),
-                function ($query) use ($filters) {
-                    $query->whereIn('channel_code', function ($subquery) use ($filters) {
-                        $subquery->select('code')
-                            ->from('channels')
-                            ->whereIn('main_team_id', $filters['main_team_ids']);
-                    });
-                }
+                fn ($q) => $q->whereIn('owner_main_team_id', $filters['main_team_ids'])
             )
-            ->when(config('main_system.is_main') && ! $skipMainTeamScope, fn ($query) => MainTeamReportDataScope::excludeNonFetchableChannels($query))
-            ->selectRaw('channel_code, COALESCE(SUM(estimated_earnings), 0) as revenue')
-            ->groupBy('channel_code');
+            ->when(
+                config('main_system.is_main') && ! $skipMainTeamScope,
+                fn ($q) => MainTeamReportDataScope::excludeNonFetchableChannels($q)
+            )
+            ->whereNotNull('owner_user_id')
+            ->selectRaw('owner_user_id as user_id, COALESCE(SUM(estimated_earnings), 0) as revenue')
+            ->groupBy('owner_user_id');
 
-        (new ChannelLinkedOwnerResource)->applyTo($perChannel);
+        OwnershipFilter::forAuthUser()->applyTo($query, 'owner_user_id');
 
-        $latestChannelUserIds = DB::table('channel_user')
-            ->whereNull('deleted_at')
-            ->groupBy('channel_id')
-            ->selectRaw('MAX(id) as id');
-
-        $primaryUserPerChannel = DB::table('channel_user')
-            ->joinSub($latestChannelUserIds, 'latest', 'latest.id', '=', 'channel_user.id')
-            ->join('channels', 'channels.id', '=', 'channel_user.channel_id')
-            ->select('channels.code as channel_code', 'channel_user.user_id as user_id');
-
-        return DB::query()
-            ->fromSub($perChannel, 'rr')
-            ->joinSub($primaryUserPerChannel, 'pu', 'pu.channel_code', '=', 'rr.channel_code')
-            ->groupBy('pu.user_id')
-            ->selectRaw('pu.user_id as user_id, COALESCE(SUM(rr.revenue), 0) as revenue')
-            ->get()
-            ->keyBy('user_id');
+        return $query->get()->keyBy('user_id');
     }
 
     /**

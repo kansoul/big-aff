@@ -33,6 +33,8 @@ class InsightReport extends Model
         'ctr',
         'frequency',
         'spend_type',
+        'owner_user_id',
+        'owner_main_team_id',
     ];
 
     protected function casts(): array
@@ -54,6 +56,8 @@ class InsightReport extends Model
             'cpm' => 'float',
             'ctr' => 'float',
             'frequency' => 'float',
+            'owner_user_id' => 'integer',
+            'owner_main_team_id' => 'integer',
         ];
     }
 }

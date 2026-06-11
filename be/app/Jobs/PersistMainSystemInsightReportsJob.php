@@ -92,6 +92,7 @@ class PersistMainSystemInsightReportsJob implements ShouldQueue
                 'cpm' => $this->nullableFloat($insight['cpm'] ?? null),
                 'ctr' => $this->nullableFloat($insight['ctr'] ?? null),
                 'frequency' => $this->nullableFloat($insight['frequency'] ?? null),
+                'owner_main_team_id' => $this->mainTeamId ?? null,
                 'spend_type' => $insight['spend_type'] ?? null,
                 'deleted_at' => null,
                 'created_at' => $now,
@@ -118,11 +119,27 @@ class PersistMainSystemInsightReportsJob implements ShouldQueue
             }
 
             if ($insights !== []) {
-                InsightReport::query()->upsert(
-                    $insights,
-                    ['account_id', 'campaign_id', 'date_start'],
-                    ['impressions', 'reach', 'clicks', 'ad_clicks', 'article_views', 'search_views', 'search_clicks', 'cpa', 'ctr_link', 'cpc_link', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'deleted_at', 'updated_at'],
-                );
+                $today = now()->toDateString();
+                $baseColumns = ['impressions', 'reach', 'clicks', 'ad_clicks', 'article_views', 'search_views', 'search_clicks', 'cpa', 'ctr_link', 'cpc_link', 'spend', 'cpc', 'cpm', 'ctr', 'frequency', 'spend_type', 'deleted_at', 'updated_at'];
+
+                [$todayRows, $historicalRows] = collect($insights)
+                    ->partition(fn ($row) => $row['date_start'] === $today);
+
+                if ($todayRows->isNotEmpty()) {
+                    InsightReport::query()->upsert(
+                        $todayRows->all(),
+                        ['account_id', 'campaign_id', 'date_start'],
+                        array_merge($baseColumns, ['owner_main_team_id']),
+                    );
+                }
+
+                if ($historicalRows->isNotEmpty()) {
+                    InsightReport::query()->upsert(
+                        $historicalRows->all(),
+                        ['account_id', 'campaign_id', 'date_start'],
+                        $baseColumns,
+                    );
+                }
             }
         });
     }

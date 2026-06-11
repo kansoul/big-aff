@@ -19,6 +19,8 @@ class RevenueReport extends Model
         'channel_code',
         'style_name',
         'channel_name',
+        'owner_user_id',
+        'owner_main_team_id',
         'date',
         'page_views',
         'clicks',
@@ -38,6 +40,8 @@ class RevenueReport extends Model
     {
         return [
             'date' => 'date',
+            'owner_user_id' => 'integer',
+            'owner_main_team_id' => 'integer',
             'page_views' => 'integer',
             'clicks' => 'integer',
             'ad_requests' => 'integer',

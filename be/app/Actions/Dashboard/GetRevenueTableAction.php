@@ -7,8 +7,7 @@ use App\Enums\TeamRole;
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
 use App\Support\MainTeam\MainTeamReportDataScope;
-use App\Support\OwnerResource\AccountLinkedOwnerResource;
-use App\Support\OwnerResource\ChannelLinkedOwnerResource;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -67,46 +66,24 @@ class GetRevenueTableAction
         $from = $now->copy()->startOfMonth()->toDateString();
         $to = $now->copy()->endOfMonth()->toDateString();
         $today = $now->toDateString();
-
         $yesterday = $now->copy()->subDay()->toDateString();
 
-        $perAccount = InsightReport::query()
+        $query = InsightReport::query()
             ->whereDate('date_start', '>=', $from)
             ->whereDate('date_start', '<=', $to)
-            ->when(config('main_system.is_main'), fn ($query) => MainTeamReportDataScope::excludeNonFetchableAccounts($query))
+            ->when(config('main_system.is_main'), fn ($q) => MainTeamReportDataScope::excludeNonFetchableAccounts($q))
+            ->whereNotNull('owner_user_id')
             ->selectRaw('
-                account_id,
+                owner_user_id as user_id,
                 COALESCE(SUM(CASE WHEN date_start = ? THEN spend ELSE 0 END), 0) as daily_spend,
                 COALESCE(SUM(CASE WHEN date_start = ? THEN spend ELSE 0 END), 0) as yesterday_spend,
                 COALESCE(SUM(spend), 0) as monthly_spend
             ', [$today, $yesterday])
-            ->groupBy('account_id');
+            ->groupBy('owner_user_id');
 
-        (new AccountLinkedOwnerResource)->applyTo($perAccount);
+        OwnershipFilter::forAuthUser()->applyTo($query, 'owner_user_id');
 
-        // insight_reports.account_id stores the business string ID (e.g. act_xxx),
-        // so we resolve each account's primary user via accounts.account_id (string).
-        $latestAccountUserIds = DB::table('account_user')
-            ->groupBy('account_id')
-            ->selectRaw('MAX(id) as id');
-
-        $primaryUserPerAccount = DB::table('account_user')
-            ->joinSub($latestAccountUserIds, 'latest', 'latest.id', '=', 'account_user.id')
-            ->join('accounts', 'accounts.id', '=', 'account_user.account_id')
-            ->select('accounts.account_id as account_id', 'account_user.user_id as user_id');
-
-        return DB::query()
-            ->fromSub($perAccount, 'ir')
-            ->leftJoinSub($primaryUserPerAccount, 'pu', 'pu.account_id', '=', 'ir.account_id')
-            ->groupBy('pu.user_id')
-            ->selectRaw('
-                COALESCE(pu.user_id, 0) as user_id,
-                COALESCE(SUM(ir.daily_spend), 0) as daily_spend,
-                COALESCE(SUM(ir.yesterday_spend), 0) as yesterday_spend,
-                COALESCE(SUM(ir.monthly_spend), 0) as monthly_spend
-            ')
-            ->get()
-            ->keyBy('user_id');
+        return $query->get()->keyBy('user_id');
     }
 
     /**
@@ -117,45 +94,24 @@ class GetRevenueTableAction
         $from = $now->copy()->startOfMonth()->toDateString();
         $to = $now->copy()->endOfMonth()->toDateString();
         $today = $now->toDateString();
-
         $yesterday = $now->copy()->subDay()->toDateString();
 
-        $perChannel = RevenueReport::query()
+        $query = RevenueReport::query()
             ->whereDate('date', '>=', $from)
             ->whereDate('date', '<=', $to)
-            ->when(config('main_system.is_main'), fn ($query) => MainTeamReportDataScope::excludeNonFetchableChannels($query))
+            ->when(config('main_system.is_main'), fn ($q) => MainTeamReportDataScope::excludeNonFetchableChannels($q))
+            ->whereNotNull('owner_user_id')
             ->selectRaw('
-                channel_code,
+                owner_user_id as user_id,
                 COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as daily_revenue,
                 COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as yesterday_revenue,
                 COALESCE(SUM(estimated_earnings), 0) as monthly_revenue
             ', [$today, $yesterday])
-            ->groupBy('channel_code');
+            ->groupBy('owner_user_id');
 
-        (new ChannelLinkedOwnerResource)->applyTo($perChannel);
+        OwnershipFilter::forAuthUser()->applyTo($query, 'owner_user_id');
 
-        $latestChannelUserIds = DB::table('channel_user')
-            ->whereNull('deleted_at')
-            ->groupBy('channel_id')
-            ->selectRaw('MAX(id) as id');
-
-        $primaryUserPerChannel = DB::table('channel_user')
-            ->joinSub($latestChannelUserIds, 'latest', 'latest.id', '=', 'channel_user.id')
-            ->join('channels', 'channels.id', '=', 'channel_user.channel_id')
-            ->select('channels.code as channel_code', 'channel_user.user_id as user_id');
-
-        return DB::query()
-            ->fromSub($perChannel, 'rr')
-            ->leftJoinSub($primaryUserPerChannel, 'pu', 'pu.channel_code', '=', 'rr.channel_code')
-            ->groupBy('pu.user_id')
-            ->selectRaw('
-                COALESCE(pu.user_id, 0) as user_id,
-                COALESCE(SUM(rr.daily_revenue), 0) as daily_revenue,
-                COALESCE(SUM(rr.yesterday_revenue), 0) as yesterday_revenue,
-                COALESCE(SUM(rr.monthly_revenue), 0) as monthly_revenue
-            ')
-            ->get()
-            ->keyBy('user_id');
+        return $query->get()->keyBy('user_id');
     }
 
     /**
@@ -405,17 +361,16 @@ class GetRevenueTableAction
         $lastMonthTo = $now->copy()->subMonthNoOverflow()->endOfMonth()->toDateString();
 
         return InsightReport::query()
-            ->join('accounts', 'accounts.account_id', '=', 'insight_reports.account_id')
-            ->whereNotNull('accounts.main_team_id')
-            ->whereDate('insight_reports.date_start', '>=', $lastMonthFrom)
-            ->whereDate('insight_reports.date_start', '<=', $thisMonthTo)
-            ->groupBy('accounts.main_team_id')
+            ->whereNotNull('owner_main_team_id')
+            ->whereDate('date_start', '>=', $lastMonthFrom)
+            ->whereDate('date_start', '<=', $thisMonthTo)
+            ->groupBy('owner_main_team_id')
             ->selectRaw('
-                accounts.main_team_id as main_team_id,
-                COALESCE(SUM(CASE WHEN insight_reports.date_start = ? THEN insight_reports.spend ELSE 0 END), 0) as today_spend,
-                COALESCE(SUM(CASE WHEN insight_reports.date_start = ? THEN insight_reports.spend ELSE 0 END), 0) as yesterday_spend,
-                COALESCE(SUM(CASE WHEN insight_reports.date_start >= ? AND insight_reports.date_start <= ? THEN insight_reports.spend ELSE 0 END), 0) as this_month_spend,
-                COALESCE(SUM(CASE WHEN insight_reports.date_start >= ? AND insight_reports.date_start <= ? THEN insight_reports.spend ELSE 0 END), 0) as last_month_spend
+                owner_main_team_id as main_team_id,
+                COALESCE(SUM(CASE WHEN date_start = ? THEN spend ELSE 0 END), 0) as today_spend,
+                COALESCE(SUM(CASE WHEN date_start = ? THEN spend ELSE 0 END), 0) as yesterday_spend,
+                COALESCE(SUM(CASE WHEN date_start >= ? AND date_start <= ? THEN spend ELSE 0 END), 0) as this_month_spend,
+                COALESCE(SUM(CASE WHEN date_start >= ? AND date_start <= ? THEN spend ELSE 0 END), 0) as last_month_spend
             ', [$today, $yesterday, $thisMonthFrom, $thisMonthTo, $lastMonthFrom, $lastMonthTo])
             ->get()
             ->keyBy('main_team_id');
@@ -431,17 +386,16 @@ class GetRevenueTableAction
         $lastMonthTo = $now->copy()->subMonthNoOverflow()->endOfMonth()->toDateString();
 
         return RevenueReport::query()
-            ->join('channels', 'channels.code', '=', 'revenue_reports.channel_code')
-            ->whereNotNull('channels.main_team_id')
-            ->whereDate('revenue_reports.date', '>=', $lastMonthFrom)
-            ->whereDate('revenue_reports.date', '<=', $thisMonthTo)
-            ->groupBy('channels.main_team_id')
+            ->whereNotNull('owner_main_team_id')
+            ->whereDate('date', '>=', $lastMonthFrom)
+            ->whereDate('date', '<=', $thisMonthTo)
+            ->groupBy('owner_main_team_id')
             ->selectRaw('
-                channels.main_team_id as main_team_id,
-                COALESCE(SUM(CASE WHEN revenue_reports.date = ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as today_revenue,
-                COALESCE(SUM(CASE WHEN revenue_reports.date = ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as yesterday_revenue,
-                COALESCE(SUM(CASE WHEN revenue_reports.date >= ? AND revenue_reports.date <= ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as this_month_revenue,
-                COALESCE(SUM(CASE WHEN revenue_reports.date >= ? AND revenue_reports.date <= ? THEN revenue_reports.estimated_earnings ELSE 0 END), 0) as last_month_revenue
+                owner_main_team_id as main_team_id,
+                COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as today_revenue,
+                COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as yesterday_revenue,
+                COALESCE(SUM(CASE WHEN date >= ? AND date <= ? THEN estimated_earnings ELSE 0 END), 0) as this_month_revenue,
+                COALESCE(SUM(CASE WHEN date >= ? AND date <= ? THEN estimated_earnings ELSE 0 END), 0) as last_month_revenue
             ', [$today, $yesterday, $thisMonthFrom, $thisMonthTo, $lastMonthFrom, $lastMonthTo])
             ->get()
             ->keyBy('main_team_id');

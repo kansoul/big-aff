@@ -4,15 +4,13 @@ namespace App\Actions\AdsReport;
 
 use App\Models\Account;
 use App\Models\Campaign;
-use App\Models\CampaignReport;
-use App\Models\Channel;
 use App\Models\InsightReport;
 use App\Models\RevenueReport;
 use App\Models\User;
 use App\Support\AdsReport\AdsReportAccess;
 use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\OwnerResource\AccountOwnerResource;
-use App\Support\OwnerResource\ChannelOwnerResource;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +33,7 @@ class GetAdsReportStatsAction
         /** @var User $user */
         $user = Auth::user();
         $canViewUnscoped = AdsReportAccess::canViewUnscoped($user);
+        $ownership = OwnershipFilter::forAuthUser();
 
         $accountIds = $this->resolveAccountIds(
             $canViewUnscoped,
@@ -62,10 +61,10 @@ class GetAdsReportStatsAction
         $pausedCampaigns = (clone $campaignQuery)->where('status', 'PAUSED')->count();
         $archivedCampaigns = (clone $campaignQuery)->where('status', 'ARCHIVED')->count();
 
-        // Insight stats (spend, reach)
+        // Insight stats (spend, reach) — scoped by owner_user_id
         $insightQuery = InsightReport::query();
         if (! $canViewUnscoped) {
-            (new AccountLinkedOwnerResource)->applyTo($insightQuery);
+            $ownership->applyTo($insightQuery, 'owner_user_id');
         }
 
         if ($dateFrom) {
@@ -106,21 +105,12 @@ class GetAdsReportStatsAction
 
         if ($showRevenueProfit) {
             $revenueQuery = RevenueReport::query();
-            $channelCodes = CampaignReport::query()
-                ->when($dateFrom, fn ($query) => $query->whereDate('date_start', '>=', $dateFrom))
-                ->when($dateTo, fn ($query) => $query->whereDate('date_start', '<=', $dateTo))
-                ->when($accountIds !== null, fn ($query) => $query->whereIn('account_id', $accountIds))
-                ->when($campaignIds !== null, fn ($query) => $query->whereIn('campaign_id', $campaignIds))
-                ->select('channel_code');
-            $channelSubquery = Channel::query()
-                ->whereIn('code', $channelCodes)
-                ->when($mainTeamIds !== null, fn ($query) => $query->whereIn('main_team_id', $mainTeamIds))
-                ->select('code');
             if (! $canViewUnscoped) {
-                (new ChannelOwnerResource)->applyTo($channelSubquery);
+                $ownership->applyTo($revenueQuery, 'owner_user_id');
             }
-            $revenueQuery->whereIn('channel_code', $channelSubquery);
-
+            if ($mainTeamIds !== null) {
+                $revenueQuery->whereIn('owner_main_team_id', $mainTeamIds);
+            }
             if ($dateFrom) {
                 $revenueQuery->whereDate('date', '>=', $dateFrom);
             }

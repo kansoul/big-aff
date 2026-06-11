@@ -3,7 +3,7 @@
 namespace App\Actions\RevenueReport;
 
 use App\Models\RevenueReport;
-use App\Support\OwnerResource\ChannelLinkedOwnerResource;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -39,7 +39,7 @@ class ListRevenueReportsAction
     {
         $query = RevenueReport::query();
 
-        (new ChannelLinkedOwnerResource)->applyTo($query);
+        OwnershipFilter::forAuthUser()->applyTo($query, 'owner_user_id');
 
         if (! empty($filters['date_from'])) {
             $query->whereDate('date', '>=', $filters['date_from']);

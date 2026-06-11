@@ -9,6 +9,7 @@ use App\Models\RevenueChartReport;
 use App\Models\RevenueReport;
 use App\Models\Style;
 use App\Services\MainSystem\MainSystemSyncService;
+use App\Support\ReportOwner\ReportOwnerResolver;
 use Carbon\Carbon;
 use Exception;
 use Google\Client as GoogleClient;
@@ -23,8 +24,11 @@ class RevenueReportSyncService
 
     private GoogleClient $client;
 
+    private ReportOwnerResolver $ownerResolver;
+
     public function __construct()
     {
+        $this->ownerResolver = new ReportOwnerResolver;
         $this->initializeClient();
     }
 
@@ -310,6 +314,15 @@ class RevenueReportSyncService
     {
         $now = Carbon::now();
 
+        $owner = $this->ownerResolver->forChannelCode($rowData['channel_code']);
+
+        $isToday = Carbon::parse($rowData['date'])->isToday();
+
+        $updateColumns = ['style_name', 'channel_name', 'page_views', 'clicks', 'ad_requests', 'impressions', 'ad_requests_rpm', 'impressions_rpm', 'estimated_earnings', 'cost_per_click', 'funnel_requests', 'funnel_impressions', 'funnel_clicks', 'funnel_rpm', 'updated_at'];
+        if ($isToday) {
+            $updateColumns = array_merge(['owner_user_id', 'owner_main_team_id'], $updateColumns);
+        }
+
         RevenueReport::upsert(
             [[
                 'ad_client_id' => $rowData['ad_client_id'],
@@ -318,6 +331,8 @@ class RevenueReportSyncService
                 'date' => $rowData['date'],
                 'style_name' => $rowData['style_name'],
                 'channel_name' => $rowData['channel_name'],
+                'owner_user_id' => $owner['owner_user_id'],
+                'owner_main_team_id' => $owner['owner_main_team_id'] ?? null,
                 'page_views' => $rowData['page_views'],
                 'clicks' => $rowData['clicks'],
                 'ad_requests' => $rowData['ad_requests'],
@@ -333,23 +348,7 @@ class RevenueReportSyncService
                 'updated_at' => $now,
             ]],
             uniqueBy: ['ad_client_id', 'style_code', 'channel_code', 'date'],
-            update: [
-                'style_name',
-                'channel_name',
-                'page_views',
-                'clicks',
-                'ad_requests',
-                'impressions',
-                'ad_requests_rpm',
-                'impressions_rpm',
-                'estimated_earnings',
-                'cost_per_click',
-                'funnel_requests',
-                'funnel_impressions',
-                'funnel_clicks',
-                'funnel_rpm',
-                'updated_at',
-            ],
+            update: $updateColumns,
         );
 
         $this->saveChartSnapshot($rowData, $now);
@@ -414,48 +413,45 @@ class RevenueReportSyncService
 
         $now = Carbon::now();
 
-        $upsertRows = $rows->map(fn (RevenueChartReport $r) => [
-            'ad_client_id' => $r->ad_client_id,
-            'style_code' => $r->style_code,
-            'channel_code' => $r->channel_code,
-            'date' => $date,
-            'style_name' => $r->style_name,
-            'channel_name' => $r->channel_name,
-            'page_views' => $r->page_views,
-            'clicks' => $r->clicks,
-            'ad_requests' => $r->ad_requests,
-            'impressions' => $r->impressions,
-            'ad_requests_rpm' => $r->ad_requests_rpm,
-            'impressions_rpm' => $r->impressions_rpm,
-            'estimated_earnings' => $r->estimated_earnings,
-            'cost_per_click' => $r->cost_per_click,
-            'funnel_requests' => $r->funnel_requests,
-            'funnel_impressions' => $r->funnel_impressions,
-            'funnel_clicks' => $r->funnel_clicks,
-            'funnel_rpm' => $r->funnel_rpm,
-            'updated_at' => $now,
-        ])->all();
+        $ownerResolver = new ReportOwnerResolver;
+
+        $upsertRows = $rows->map(function (RevenueChartReport $r) use ($date, $now, $ownerResolver) {
+            $owner = $ownerResolver->forChannelCode($r->channel_code);
+
+            return [
+                'ad_client_id' => $r->ad_client_id,
+                'style_code' => $r->style_code,
+                'channel_code' => $r->channel_code,
+                'date' => $date,
+                'style_name' => $r->style_name,
+                'channel_name' => $r->channel_name,
+                'owner_user_id' => $owner['owner_user_id'],
+                'owner_main_team_id' => $owner['owner_main_team_id'] ?? null,
+                'page_views' => $r->page_views,
+                'clicks' => $r->clicks,
+                'ad_requests' => $r->ad_requests,
+                'impressions' => $r->impressions,
+                'ad_requests_rpm' => $r->ad_requests_rpm,
+                'impressions_rpm' => $r->impressions_rpm,
+                'estimated_earnings' => $r->estimated_earnings,
+                'cost_per_click' => $r->cost_per_click,
+                'funnel_requests' => $r->funnel_requests,
+                'funnel_impressions' => $r->funnel_impressions,
+                'funnel_clicks' => $r->funnel_clicks,
+                'funnel_rpm' => $r->funnel_rpm,
+                'updated_at' => $now,
+            ];
+        })->all();
+
+        $updateColumns = ['style_name', 'channel_name', 'page_views', 'clicks', 'ad_requests', 'impressions', 'ad_requests_rpm', 'impressions_rpm', 'estimated_earnings', 'cost_per_click', 'funnel_requests', 'funnel_impressions', 'funnel_clicks', 'funnel_rpm', 'updated_at'];
+        if (Carbon::parse($date)->isToday()) {
+            $updateColumns = array_merge(['owner_user_id', 'owner_main_team_id'], $updateColumns);
+        }
 
         RevenueReport::upsert(
             $upsertRows,
             uniqueBy: ['ad_client_id', 'style_code', 'channel_code', 'date'],
-            update: [
-                'style_name',
-                'channel_name',
-                'page_views',
-                'clicks',
-                'ad_requests',
-                'impressions',
-                'ad_requests_rpm',
-                'impressions_rpm',
-                'estimated_earnings',
-                'cost_per_click',
-                'funnel_requests',
-                'funnel_impressions',
-                'funnel_clicks',
-                'funnel_rpm',
-                'updated_at',
-            ],
+            update: $updateColumns,
         );
     }
 }
