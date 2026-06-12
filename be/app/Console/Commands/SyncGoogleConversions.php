@@ -95,6 +95,11 @@ class SyncGoogleConversions extends Command
                                         $record->campaign_id,
                                         $record->conversion_date_time,
                                     );
+
+                                    if ($conversionValue) {
+                                        $record->conversion_value = $conversionValue;
+                                        $record->save();
+                                    }
                                 }
                             }
 
@@ -133,7 +138,7 @@ class SyncGoogleConversions extends Command
                             $this->error("Failed to sync records for customer {$accountId}");
                         }
                     } catch (Throwable $e) {
-                        Log::error("Error processing ad revenue sync for customer {$accountId}: " . $e->getMessage());
+                        Log::error("Error processing ad revenue sync for customer {$accountId}: ".$e->getMessage());
                         $this->error("Error syncing customer {$accountId}");
                     }
                 }

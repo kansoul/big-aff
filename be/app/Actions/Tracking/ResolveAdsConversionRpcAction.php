@@ -34,10 +34,9 @@ class ResolveAdsConversionRpcAction
                 'date',
                 'estimated_earnings',
                 'clicks',
-                'cost_per_click'
+                'cost_per_click',
             ])
             ->where('clicks', '>', 0)
-            ->groupBy('date')
             ->orderByDesc('date')
             ->first();
 
