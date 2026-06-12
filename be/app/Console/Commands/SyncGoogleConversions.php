@@ -97,7 +97,7 @@ class SyncGoogleConversions extends Command
                                     );
 
                                     if ($conversionValue) {
-                                        $record->update(['conversion_value' => $conversionValue]);
+                                        AdsConversion::where('id', $record->id)->update(['conversion_value' => $conversionValue]);
                                     }
                                 }
                             }
