@@ -102,11 +102,18 @@ class PersistMainSystemInsightReportsJob implements ShouldQueue
             ->all();
 
         DB::transaction(function () use ($accounts, $campaigns, $insights): void {
-            if ($accounts !== []) {
-                Account::query()->upsert(
-                    $accounts,
-                    ['account_id'],
-                    ['account_name', 'ads_type', 'status', 'is_special', 'sync_to_mcc', 'main_team_id', 'deleted_at', 'updated_at'],
+            foreach ($accounts as $account) {
+                Account::updateOrCreate(
+                    ['account_id' => $account['account_id']],
+                    [
+                        'account_name' => $account['account_name'],
+                        'ads_type' => $account['ads_type'],
+                        'status' => $account['status'],
+                        'is_special' => $account['is_special'],
+                        'sync_to_mcc' => $account['sync_to_mcc'],
+                        'main_team_id' => $account['main_team_id'],
+                        'deleted_at' => $account['deleted_at'],
+                    ],
                 );
             }
 

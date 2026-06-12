@@ -201,7 +201,11 @@ export function AccountsPage() {
   )
 
   const onToggleField = useCallback(
-    async (row: Account, field: 'is_special' | 'sync_to_mcc' | 'roas_enabled', checked: boolean) => {
+    async (
+      row: Account,
+      field: 'is_special' | 'sync_to_mcc' | 'roas_enabled',
+      checked: boolean,
+    ) => {
       const key = getToggleKey(row.id, field)
 
       setUpdatingToggleKeys((prev) => {
@@ -216,6 +220,7 @@ export function AccountsPage() {
           account_name: row.account_name,
           ads_type: row.ads_type === 'unknown' ? 'facebook' : row.ads_type,
           business_center_id: row.business_center_id,
+          user_id: row.user_id,
           status: row.status,
           is_special: field === 'is_special' ? checked : row.is_special,
           sync_to_mcc: field === 'sync_to_mcc' ? checked : row.sync_to_mcc,
@@ -223,9 +228,7 @@ export function AccountsPage() {
         })
 
         setData((prev) => prev.map((item) => (item.id === row.id ? response.data : item)))
-        toast.success(
-          `${toggleFieldLabels[field] ?? field} updated to ${checked ? 'On' : 'Off'}`,
-        )
+        toast.success(`${toggleFieldLabels[field] ?? field} updated to ${checked ? 'On' : 'Off'}`)
       } catch (err) {
         toast.error(formatApiError(err))
       } finally {
