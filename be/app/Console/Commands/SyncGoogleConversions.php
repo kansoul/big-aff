@@ -84,23 +84,39 @@ class SyncGoogleConversions extends Command
 
                         $roasEnabled = $account->roas_enabled;
 
-                        $adRevenuesPayload = $validRecords->map(function ($record) use ($resolveRpc, $roasEnabled) {
-                            $conversionValue = 0;
+                        $validRecords = $validRecords->filter(function ($record) use ($resolveRpc, $roasEnabled) {
+                            if (! $roasEnabled) {
+                                $record->resolved_conversion_value = 0;
 
-                            if ($roasEnabled) {
-                                $conversionValue = $record->conversion_value;
+                                return true;
+                            }
+
+                            $conversionValue = $record->conversion_value;
+
+                            if (! $conversionValue || (float) $conversionValue <= 0) {
+                                $conversionValue = $resolveRpc->execute(
+                                    $record->campaign_id,
+                                    $record->created_at,
+                                );
 
                                 if (! $conversionValue || (float) $conversionValue <= 0) {
-                                    $conversionValue = $resolveRpc->execute(
-                                        $record->campaign_id,
-                                        $record->conversion_date_time,
-                                    );
-
-                                    if ($conversionValue) {
-                                        AdsConversion::where('id', $record->id)->update(['conversion_value' => $conversionValue]);
-                                    }
+                                    return false;
                                 }
+
+                                AdsConversion::where('id', $record->id)->update(['conversion_value' => $conversionValue]);
                             }
+
+                            $record->resolved_conversion_value = $conversionValue;
+
+                            return true;
+                        })->values();
+
+                        if ($validRecords->isEmpty()) {
+                            continue;
+                        }
+
+                        $adRevenuesPayload = $validRecords->map(function ($record) {
+                            $conversionValue = $record->resolved_conversion_value;
 
                             return [
                                 'gclid' => $record->gclid,
