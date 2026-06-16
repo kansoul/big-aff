@@ -318,6 +318,16 @@ export const router = createBrowserRouter([
                 handle: { title: 'Google Conversions' },
               },
               {
+                path: routeSegment(PATHS.gtags),
+                lazy: async () => {
+                  const { GtagsPage } = await import('@/features/gtags/pages/GtagsPage')
+                  return {
+                    Component: withPermission(GtagsPage, PermissionSlugs.GtagsView),
+                  }
+                },
+                handle: { title: 'Gtags' },
+              },
+              {
                 path: routeSegment(PATHS.adx),
                 element: <Navigate to={PATHS.adxAccounts} replace />,
                 handle: { title: 'AdX Tracking' },

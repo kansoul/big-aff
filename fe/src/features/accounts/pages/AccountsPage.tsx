@@ -99,7 +99,7 @@ export function AccountsPage() {
   const [updatingToggleKeys, setUpdatingToggleKeys] = useState<Set<string>>(new Set())
 
   const getToggleKey = useCallback(
-    (id: number, field: 'is_special' | 'sync_to_mcc' | 'roas_enabled') => `${id}:${field}`,
+    (id: number, field: 'is_special' | 'sync_to_mcc' | 'roas_enabled' | 'gtag_enabled') => `${id}:${field}`,
     [],
   )
 
@@ -196,6 +196,7 @@ export function AccountsPage() {
       is_special: 'Special',
       sync_to_mcc: 'Sync to MCC',
       roas_enabled: 'ROAS',
+      gtag_enabled: 'Gtag',
     }),
     [],
   )
@@ -203,7 +204,7 @@ export function AccountsPage() {
   const onToggleField = useCallback(
     async (
       row: Account,
-      field: 'is_special' | 'sync_to_mcc' | 'roas_enabled',
+      field: 'is_special' | 'sync_to_mcc' | 'roas_enabled' | 'gtag_enabled',
       checked: boolean,
     ) => {
       const key = getToggleKey(row.id, field)
@@ -225,6 +226,7 @@ export function AccountsPage() {
           is_special: field === 'is_special' ? checked : row.is_special,
           sync_to_mcc: field === 'sync_to_mcc' ? checked : row.sync_to_mcc,
           roas_enabled: field === 'roas_enabled' ? checked : row.roas_enabled,
+          gtag_enabled: field === 'gtag_enabled' ? checked : row.gtag_enabled,
         })
 
         setData((prev) => prev.map((item) => (item.id === row.id ? response.data : item)))
@@ -243,7 +245,7 @@ export function AccountsPage() {
   )
 
   const isFieldUpdating = useCallback(
-    (rowId: number, field: 'is_special' | 'sync_to_mcc' | 'roas_enabled') =>
+    (rowId: number, field: 'is_special' | 'sync_to_mcc' | 'roas_enabled' | 'gtag_enabled') =>
       updatingToggleKeys.has(getToggleKey(rowId, field)),
     [getToggleKey, updatingToggleKeys],
   )

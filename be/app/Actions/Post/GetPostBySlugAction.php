@@ -11,10 +11,15 @@ use App\Models\LinkData;
 use App\Models\Post;
 use App\Services\Integrations\Facebook\FacebookAdsService;
 use App\Services\Integrations\Google\GoogleAdsService;
+use App\Support\Gtag\GtagResolver;
 use Illuminate\Support\Facades\Log;
 
 class GetPostBySlugAction
 {
+    public function __construct(
+        private readonly GtagResolver $gtagResolver = new GtagResolver,
+    ) {}
+
     /**
      * Get post by slug
      */
@@ -68,6 +73,7 @@ class GetPostBySlugAction
                 if ($trafficType === TrafficType::GOOGLE || $campaign->ads_type === AdsType::GOOGLE->value) {
                     $post->account_id = $campaign->account_id;
                     $post->traffic_type = TrafficType::GOOGLE->value;
+                    $post->gtag = $this->gtagResolver->resolve($campaign->account_id);
                 } else {
                     $post->traffic_type = TrafficType::FACEBOOK->value;
                 }

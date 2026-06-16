@@ -8,12 +8,17 @@ use App\Http\Resources\Post\SearchPostResource;
 use App\Models\Campaign;
 use App\Models\LinkData;
 use App\Models\Post;
+use App\Support\Gtag\GtagResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Collection;
 
 class SearchPostsAction
 {
+    public function __construct(
+        private readonly GtagResolver $gtagResolver = new GtagResolver,
+    ) {}
+
     /**
      * Search posts
      */
@@ -39,6 +44,7 @@ class SearchPostsAction
             'channel' => $linkData->channel_code ?? null,
             'fbid' => implode(',', $linkData->adsLink->tracking_ids['fbid'] ?? []),
             'account_id' => $campaign->account_id ?? null,
+            'gtag' => $this->gtagResolver->resolve($campaign->account_id ?? null),
         ] : []);
     }
 

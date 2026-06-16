@@ -125,6 +125,11 @@ export const PermissionSlugs = {
   GoogleConversionsCreate: 'google-conversions.create',
   GoogleConversionsUpdate: 'google-conversions.update',
 
+  // Gtags
+  GtagsView: 'gtags.view',
+  GtagsCreate: 'gtags.create',
+  GtagsUpdate: 'gtags.update',
+
   // System
   UserTablePreferencesView: 'user-table-preferences.view',
   UserTablePreferencesUpdate: 'user-table-preferences.update',
@@ -668,6 +673,21 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
             slug: PermissionSlugs.GoogleConversionsUpdate,
             label: 'Update',
           },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'gtags',
+    label: 'Gtags',
+    screens: [
+      {
+        id: 'gtags',
+        label: 'Gtags',
+        permissions: [
+          { key: 'GtagsView', slug: PermissionSlugs.GtagsView, label: 'View' },
+          { key: 'GtagsCreate', slug: PermissionSlugs.GtagsCreate, label: 'Create' },
+          { key: 'GtagsUpdate', slug: PermissionSlugs.GtagsUpdate, label: 'Update' },
         ],
       },
     ],

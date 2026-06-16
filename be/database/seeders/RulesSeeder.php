@@ -9,6 +9,7 @@ use App\Models\Campaign;
 use App\Models\CampaignApplyRule;
 use App\Models\CampaignRule;
 use App\Models\Conversion;
+use App\Models\Gtag;
 use App\Models\User;
 use App\Models\UserCampaignRuleSetting;
 use Illuminate\Database\Seeder;
@@ -32,6 +33,8 @@ class RulesSeeder extends Seeder
 
     private const ADS_CONVERSION_COUNT = 80;
 
+    private const GTAG_COUNT = 80;
+
     public function run(): void
     {
         $admin = User::query()->where('email', 'admin@example.com')->firstOrFail();
@@ -44,6 +47,7 @@ class RulesSeeder extends Seeder
         $this->seedCampaignApplyRules();
         $this->seedConversions();
         $this->seedAdsConversions();
+        $this->seedGtags();
         $this->seedCampaignSchedules($admin);
     }
 
@@ -149,6 +153,32 @@ class RulesSeeder extends Seeder
                 'account_id' => $accountIds->random(),
             ])
             ->create();
+    }
+
+    private function seedGtags(): void
+    {
+        if (Gtag::query()->exists()) {
+            return;
+        }
+
+        // Gtags only surface for google accounts with gtag_enabled = true.
+        $accounts = Account::query()
+            ->where('ads_type', 'google')
+            ->inRandomOrder()
+            ->limit(self::GTAG_COUNT)
+            ->get();
+
+        if ($accounts->isEmpty()) {
+            return;
+        }
+
+        $accounts->each->update(['gtag_enabled' => true]);
+
+        $accounts->each(function (Account $account): void {
+            Gtag::factory()
+                ->state(['account_id' => $account->account_id])
+                ->create();
+        });
     }
 
     private function seedCampaignSchedules(User $admin): void

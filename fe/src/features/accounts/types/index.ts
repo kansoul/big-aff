@@ -47,6 +47,7 @@ export interface Account {
   is_special: boolean
   sync_to_mcc: boolean
   roas_enabled: boolean
+  gtag_enabled: boolean
   user_id: number | null
   created_by: number | null
   updated_by: number | null
@@ -94,6 +95,7 @@ export const accountCreateSchema = z.object({
   is_special: z.boolean().nullable().optional(),
   sync_to_mcc: z.boolean().nullable().optional(),
   roas_enabled: z.boolean().nullable().optional(),
+  gtag_enabled: z.boolean().nullable().optional(),
   lines: z.string().min(1, 'Lines is required'),
 })
 
@@ -110,6 +112,7 @@ export const accountUpdateSchema = z.object({
   is_special: z.boolean(),
   sync_to_mcc: z.boolean(),
   roas_enabled: z.boolean(),
+  gtag_enabled: z.boolean(),
 })
 
 export type AccountCreateFormValues = z.infer<typeof accountCreateSchema>
@@ -124,6 +127,7 @@ export type AccountCreatePayload = {
   is_special?: boolean | null
   sync_to_mcc?: boolean | null
   roas_enabled?: boolean | null
+  gtag_enabled?: boolean | null
   lines: string
 }
 
@@ -138,6 +142,7 @@ export type AccountUpdatePayload = {
   is_special: boolean
   sync_to_mcc: boolean
   roas_enabled: boolean
+  gtag_enabled: boolean
 }
 
 export type UserOrderBy =

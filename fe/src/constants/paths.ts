@@ -31,6 +31,7 @@ export const PATHS = {
   teamReport: '/team-report',
   campaignRuleSettings: '/campaign-rule-settings',
   googleConversions: '/google-conversions',
+  gtags: '/gtags',
   adx: '/adx',
   adxAccounts: '/adx/accounts',
   adxGames: '/adx/games',

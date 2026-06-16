@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\GoogleConversionController;
+use App\Http\Controllers\Api\GtagController;
 use App\Http\Controllers\Api\InactiveStyleController;
 use App\Http\Controllers\Api\KeywordSetController;
 use App\Http\Controllers\Api\LogController;
@@ -507,6 +508,17 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::GoogleConversionsUpdate->value);
         Route::post('bulk-import', [GoogleConversionController::class, 'import'])
             ->middleware('permission.scope:'.Permission::GoogleConversionsCreate->value);
+    });
+
+    Route::prefix('gtags')->group(function () {
+        Route::get('/', [GtagController::class, 'index'])
+            ->middleware('permission.scope:'.Permission::GtagsView->value);
+        Route::match(['put', 'patch'], '{account}', [GtagController::class, 'update'])
+            ->middleware('permission.scope:'.Permission::GtagsUpdate->value);
+        Route::post('bulk-update', [GtagController::class, 'bulkUpdate'])
+            ->middleware('permission.scope:'.Permission::GtagsUpdate->value);
+        Route::post('bulk-import', [GtagController::class, 'import'])
+            ->middleware('permission.scope:'.Permission::GtagsCreate->value);
     });
 
     Route::prefix('analytics-tracking')

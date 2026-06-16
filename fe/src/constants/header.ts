@@ -19,6 +19,7 @@ import {
   Radio,
   Repeat,
   SlidersHorizontal,
+  Tag,
   Target,
   UserCheck,
   UserCog,
@@ -163,6 +164,12 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         href: PATHS.googleConversions,
         icon: Repeat,
         requiredPermission: PermissionSlugs.GoogleConversionsView,
+      },
+      {
+        name: 'Gtags',
+        href: PATHS.gtags,
+        icon: Tag,
+        requiredPermission: PermissionSlugs.GtagsView,
       },
       {
         name: 'Campaign Rules',

@@ -194,7 +194,11 @@ enum Permission: string
     case AdxCampaignReportsView = 'adx.campaign-reports.view';
     case AdxGamesAssign = 'adx.games.assign';
 
-    // —— Revenue Report Range ——
+    // —— Gtags ——
+    case GtagsView = 'gtags.view';
+    case GtagsCreate = 'gtags.create';
+    case GtagsUpdate = 'gtags.update';
+
     /**
      * Bit value for this permission as a decimal string (2^index).
      * Uses GMP to support arbitrarily large bit positions.

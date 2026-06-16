@@ -22,6 +22,7 @@ class Account extends Model
         'is_special',
         'sync_to_mcc',
         'roas_enabled',
+        'gtag_enabled',
         'created_by',
         'updated_by',
     ];
@@ -33,5 +34,6 @@ class Account extends Model
         'sync_to_mcc' => 'boolean',
         'is_special' => 'boolean',
         'roas_enabled' => 'boolean',
+        'gtag_enabled' => 'boolean',
     ];
 }
