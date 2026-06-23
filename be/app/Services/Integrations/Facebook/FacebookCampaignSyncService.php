@@ -89,10 +89,6 @@ class FacebookCampaignSyncService
             );
         }
 
-        if (empty($jobs)) {
-            return;
-        }
-
         $startDate = $data['start_date'];
         $endDate = $data['end_date'];
         $failedAdClientIds = $data['failed_ad_client_ids'] ?? false;
