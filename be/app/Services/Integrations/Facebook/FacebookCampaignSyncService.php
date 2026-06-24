@@ -4,6 +4,7 @@ namespace App\Services\Integrations\Facebook;
 
 use App\Enums\AdsType;
 use App\Jobs\EvaluateCampaignRuleJob;
+use App\Jobs\NoopJob;
 use App\Jobs\SyncFacebookCampaignBatchJob;
 use App\Models\Account;
 use App\Models\Campaign;
@@ -89,6 +90,10 @@ class FacebookCampaignSyncService
             );
         }
 
+        if (empty($jobs)) {
+            $jobs[] = new NoopJob;
+        }
+
         $startDate = $data['start_date'];
         $endDate = $data['end_date'];
         $failedAdClientIds = $data['failed_ad_client_ids'] ?? false;
@@ -100,7 +105,7 @@ class FacebookCampaignSyncService
                 if ($isTest) {
                     return;
                 }
-
+                info("[FacebookCampaignSync] All batches completed. Syncing campaign reports for date range: {$startDate} to {$endDate}");
                 try {
                     $resp = CampaignReportSyncService::sync([
                         'start_date' => $startDate,
