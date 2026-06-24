@@ -105,7 +105,6 @@ class FacebookCampaignSyncService
                 if ($isTest) {
                     return;
                 }
-                info("[FacebookCampaignSync] All batches completed. Syncing campaign reports for date range: {$startDate} to {$endDate}");
                 try {
                     $resp = CampaignReportSyncService::sync([
                         'start_date' => $startDate,
