@@ -7,6 +7,7 @@ use App\Models\Campaign;
 use App\Models\CampaignReport;
 use App\Services\Integrations\Ads\AdsStatusService;
 use App\Support\OwnerResource\AccountOwnerResource;
+use Google\Ads\GoogleAds\V21\Enums\BiddingStrategyTypeEnum\BiddingStrategyType;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -45,6 +46,14 @@ class UpdateCampaignReportTargetCpaAction
             return [
                 'success' => false,
                 'message' => 'Campaign is missing account_id.',
+                'status' => 422,
+            ];
+        }
+
+        if (in_array((int) $reportRow->bidding_strategy_type, [BiddingStrategyType::TARGET_ROAS, BiddingStrategyType::MAXIMIZE_CONVERSION_VALUE], true)) {
+            return [
+                'success' => false,
+                'message' => 'Target CPA cannot be set for ROAS-based bidding strategies.',
                 'status' => 422,
             ];
         }
@@ -101,7 +110,7 @@ class UpdateCampaignReportTargetCpaAction
 
             return [
                 'success' => false,
-                'message' => 'An error occurred while updating target CPA: '.$e->getMessage(),
+                'message' => 'An error occurred while updating target CPA: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }

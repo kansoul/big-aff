@@ -64,6 +64,7 @@ class AdsStatusService
                 $campaignId,
                 $targetCpa,
                 $campaign->bidding_strategy_type,
+                $campaign->target_cpa
             );
         }
 

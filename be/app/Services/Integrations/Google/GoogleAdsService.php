@@ -19,7 +19,6 @@ use Google\Ads\GoogleAds\V21\Services\MutateGoogleAdsRequest;
 use Google\Ads\GoogleAds\V21\Services\MutateOperation;
 use Google\Ads\GoogleAds\V21\Services\SearchGoogleAdsRequest;
 use Google\Auth\Credentials\UserRefreshCredentials;
-use Google\Protobuf\FieldMask;
 use Illuminate\Support\Facades\Log;
 
 class GoogleAdsService
@@ -639,7 +638,7 @@ class GoogleAdsService
      * @param  int|null  $strategyType  BiddingStrategyType enum value of the campaign
      * @return bool Success status
      */
-    public function updateCampaignTargetCpa(string $accountId, string $campaignId, float $targetCpa, ?int $strategyType): bool
+    public function updateCampaignTargetCpa(string $accountId, string $campaignId, float $targetCpa, ?int $strategyType, ?float $oldTargetCpa): bool
     {
         $customerId = preg_replace('/-/', '', $accountId);
         $micros = (int) round($targetCpa * 1000000);
@@ -648,22 +647,14 @@ class GoogleAdsService
             $campaign = new Campaign;
             $campaign->setResourceName("customers/{$customerId}/campaigns/{$campaignId}");
 
-            if ($strategyType === BiddingStrategyType::MAXIMIZE_CONVERSIONS) {
+            if ($strategyType === BiddingStrategyType::MAXIMIZE_CONVERSIONS && $oldTargetCpa) {
                 $campaign->setMaximizeConversions(new MaximizeConversions([
                     'target_cpa_micros' => $micros,
                 ]));
-
-                $updateMask = new FieldMask([
-                    'paths' => ['maximize_conversions.target_cpa_micros'],
-                ]);
-            } elseif ($strategyType === BiddingStrategyType::TARGET_CPA) {
+            } elseif ($strategyType === BiddingStrategyType::MAXIMIZE_CONVERSIONS && !$oldTargetCpa) {
                 $campaign->setTargetCpa(new TargetCpa([
                     'target_cpa_micros' => $micros,
                 ]));
-
-                $updateMask = new FieldMask([
-                    'paths' => ['target_cpa.target_cpa_micros'],
-                ]);
             } else {
                 Log::warning('GoogleAdsService: Campaign bidding strategy does not support a target CPA.', [
                     'campaign_id' => $campaignId,
@@ -675,7 +666,7 @@ class GoogleAdsService
 
             $campaignOperation = new CampaignOperation;
             $campaignOperation->setUpdate($campaign);
-            $campaignOperation->setUpdateMask($updateMask);
+            $campaignOperation->setUpdateMask(FieldMasks::allSetFieldsOf($campaign));
 
             $mutateOperation = new MutateOperation;
             $mutateOperation->setCampaignOperation($campaignOperation);

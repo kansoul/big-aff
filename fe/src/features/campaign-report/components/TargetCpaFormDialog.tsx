@@ -82,6 +82,9 @@ export function TargetCpaFormDialog({
   }, [open, row, form])
 
   const rpc = toNumber(row?.r_rpc)
+  // ROAS-based strategies (TARGET_ROAS = 8, MAXIMIZE_CONVERSION_VALUE = 11)
+  // do not carry a target CPA, so it cannot be edited.
+  const isRoasStrategy = row?.bidding_strategy_type === 8 || row?.bidding_strategy_type === 11
 
   const save = async (targetCpa: number) => {
     if (!row) return
@@ -114,127 +117,149 @@ export function TargetCpaFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Set Target CPA</DialogTitle>
+          <DialogTitle>{isRoasStrategy ? 'Target CPA' : 'Set Target CPA'}</DialogTitle>
           {row?.campaign_name && (
             <p className="w-full min-w-0 text-sm wrap-break-word text-muted-foreground">
               {row.campaign_name}
             </p>
           )}
         </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              void form.handleSubmit(onSubmit)()
-            }}
-            className="flex flex-col gap-5"
-          >
-            <FormField
-              control={form.control}
-              name="target_cpa"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Target CPA (USD)</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                        $
-                      </span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max={MAX_TARGET_CPA}
-                        placeholder="1.00"
-                        className="pl-6"
-                        disabled={submitting || pendingCpa !== null}
-                        {...field}
-                        onChange={(e) => {
-                          setPendingCpa(null)
-                          field.onChange(e)
-                        }}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormDescription>Chi phí mục tiêu cho mỗi hành động (CPA).</FormDescription>
-                  <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      Tối đa <span className="font-medium text-foreground">${MAX_TARGET_CPA}</span>
-                    </span>
-                    {rpc > 0 && (
-                      <span>
-                        RPC hiện tại:{' '}
-                        <span className="font-medium text-foreground">${rpc.toFixed(2)}</span>
-                      </span>
-                    )}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {formError && (
-              <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{formError}</span>
-              </div>
-            )}
-            {pendingCpa !== null && (
-              <div className="flex flex-col items-center justify-center text-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
-                <div className="flex items-center gap-2 font-semibold">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>Cảnh báo CPA cao</span>
-                </div>
-                <span>
-                  Bạn có muốn quất CPA{' '}
-                  <span className="font-semibold">${pendingCpa.toFixed(2)}</span> cao hơn RPC{' '}
-                  <span className="font-semibold">${rpc.toFixed(2)}</span> tận{' '}
-                  <span className="font-semibold">${(pendingCpa - rpc).toFixed(2)}</span> không?
-                </span>
-              </div>
-            )}
+        {isRoasStrategy ? (
+          <div className="flex flex-col gap-5">
+            <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                Campaign này dùng chiến lược đặt giá thầu theo ROAS (Target ROAS / Maximize
+                Conversion Value), không thể đặt Target CPA.
+              </span>
+            </div>
             <DialogFooter>
-              {pendingCpa !== null ? (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={submitting}
-                    onClick={() => setPendingCpa(null)}
-                  >
-                    Sửa lại
-                  </Button>
-                  <Button type="button" disabled={submitting} onClick={() => void save(pendingCpa)}>
-                    {submitting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4" />
-                    )}
-                    Quất luôn
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={submitting}
-                    onClick={() => onOpenChange(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={submitting}>
-                    {submitting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4" />
-                    )}
-                    Save
-                  </Button>
-                </>
-              )}
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Đóng
+              </Button>
             </DialogFooter>
-          </form>
-        </Form>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                void form.handleSubmit(onSubmit)()
+              }}
+              className="flex flex-col gap-5"
+            >
+              <FormField
+                control={form.control}
+                name="target_cpa"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target CPA (USD)</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          $
+                        </span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max={MAX_TARGET_CPA}
+                          placeholder="1.00"
+                          className="pl-6"
+                          disabled={submitting || pendingCpa !== null}
+                          {...field}
+                          onChange={(e) => {
+                            setPendingCpa(null)
+                            field.onChange(e)
+                          }}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormDescription>Chi phí mục tiêu cho mỗi hành động (CPA).</FormDescription>
+                    <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        Tối đa{' '}
+                        <span className="font-medium text-foreground">${MAX_TARGET_CPA}</span>
+                      </span>
+                      {rpc > 0 && (
+                        <span>
+                          RPC hiện tại:{' '}
+                          <span className="font-medium text-foreground">${rpc.toFixed(2)}</span>
+                        </span>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {formError && (
+                <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+              {pendingCpa !== null && (
+                <div className="flex flex-col items-center justify-center text-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>Cảnh báo CPA cao</span>
+                  </div>
+                  <span>
+                    Bạn có muốn quất CPA{' '}
+                    <span className="font-semibold">${pendingCpa.toFixed(2)}</span> cao hơn RPC{' '}
+                    <span className="font-semibold">${rpc.toFixed(2)}</span> tận{' '}
+                    <span className="font-semibold">${(pendingCpa - rpc).toFixed(2)}</span> không?
+                  </span>
+                </div>
+              )}
+              <DialogFooter>
+                {pendingCpa !== null ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={submitting}
+                      onClick={() => setPendingCpa(null)}
+                    >
+                      Sửa lại
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => void save(pendingCpa)}
+                    >
+                      {submitting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      Quất luôn
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={submitting}
+                      onClick={() => onOpenChange(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={submitting}>
+                      {submitting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      Save
+                    </Button>
+                  </>
+                )}
+              </DialogFooter>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   )

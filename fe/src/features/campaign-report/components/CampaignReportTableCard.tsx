@@ -1039,6 +1039,18 @@ function getColumns(
       const r = row.original
       const isGoogle = (r.ads_type ?? '').toLowerCase() === 'google'
       if (!isGoogle) return <span className="text-foreground/50 text-[10px]">—</span>
+      // ROAS-based strategies (TARGET_ROAS = 8, MAXIMIZE_CONVERSION_VALUE = 11)
+      // do not carry a target CPA, so it cannot be edited.
+      if (r.bidding_strategy_type === 8 || r.bidding_strategy_type === 11) {
+        return (
+          <span
+            className="text-foreground/50 text-[10px] truncate"
+            title="ROAS-based bidding strategy — target CPA not applicable"
+          >
+            tROAS
+          </span>
+        )
+      }
       const value = toNumber(r.target_cpa)
       return (
         <button

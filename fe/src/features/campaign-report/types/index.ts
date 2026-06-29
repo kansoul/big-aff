@@ -72,6 +72,7 @@ export interface CampaignReportRow {
   daily_budget: string | number | null
   lifetime_budget: string | number | null
   target_cpa: string | number | null
+  bidding_strategy_type: number | null
 
   channel_code: string | null
   channel_name: string | null
