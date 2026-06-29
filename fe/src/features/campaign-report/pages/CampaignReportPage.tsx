@@ -266,6 +266,20 @@ export function CampaignReportPage() {
     [onToggleCampaignStatus],
   )
 
+  const onUpdateTargetCpa = useCallback((campaignId: string, targetCpa: number) => {
+    const applyTargetCpa = (r: CampaignReportRow): CampaignReportRow =>
+      r.campaign_id === campaignId ? { ...r, target_cpa: targetCpa } : r
+
+    setRows((prev) =>
+      prev.map((row) => {
+        if ('is_group' in row && row.is_group === true) {
+          return { ...row, items: row.items.map(applyTargetCpa) }
+        }
+        return applyTargetCpa(row as CampaignReportRow)
+      }),
+    )
+  }, [])
+
   const onApplyFilters = useCallback((values: Record<string, unknown>) => {
     const range = parseDateRange(values.date_range)
     setFilters((prev) => ({
@@ -466,6 +480,7 @@ export function CampaignReportPage() {
         onPaginationChange={onPaginationChange}
         onSortingChange={onSortingChange}
         onToggleCampaignStatus={handleToggleCampaignStatus}
+        onUpdateTargetCpa={onUpdateTargetCpa}
         role={role}
       />
     </div>

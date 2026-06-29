@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\CampaignReport\ToggleCampaignReportStatusAction;
+use App\Actions\CampaignReport\UpdateCampaignReportTargetCpaAction;
 use App\Http\Requests\CampaignReport\ListCampaignReportsRequest;
 use App\Http\Requests\CampaignReport\ToggleCampaignReportStatusRequest;
+use App\Http\Requests\CampaignReport\UpdateCampaignReportTargetCpaRequest;
 use App\Http\Resources\CampaignReportResource;
 use App\Services\CampaignReport\CampaignReportFilterService;
 use App\Services\CampaignReport\CampaignReportService;
@@ -21,6 +23,7 @@ class CampaignReportController extends BaseController
         private readonly CampaignReportService $campaignReportService,
         private readonly CampaignReportFilterService $campaignReportFilterService,
         private readonly ToggleCampaignReportStatusAction $toggleCampaignReportStatusAction,
+        private readonly UpdateCampaignReportTargetCpaAction $updateCampaignReportTargetCpaAction,
     ) {}
 
     /**
@@ -131,6 +134,39 @@ class CampaignReportController extends BaseController
             'data' => [
                 'campaign_id' => $campaign_id,
                 'status' => $result['status_value'],
+            ],
+        ]);
+    }
+
+    /**
+     * Update a Google campaign's target CPA (chi phí mục tiêu cho mỗi hành động) on the ads
+     * platform and mirror the value locally. Only supported for Google campaigns.
+     *
+     * @urlParam campaign_id string required Campaign ID. Example: 1234567890
+     *
+     * @bodyParam target_cpa number required New target CPA in account currency. Example: 25.5
+     */
+    public function updateTargetCpa(UpdateCampaignReportTargetCpaRequest $request, string $campaign_id): JsonResponse
+    {
+        $payload = $request->validated();
+
+        $result = $this->updateCampaignReportTargetCpaAction->execute(
+            campaignId: $campaign_id,
+            targetCpa: (float) $payload['target_cpa'],
+        );
+
+        if (! $result['success']) {
+            return $this->sendError(
+                (string) $result['message'],
+                [],
+                (int) ($result['status'] ?? 500),
+            );
+        }
+
+        return $this->sendResponse([
+            'data' => [
+                'campaign_id' => $campaign_id,
+                'target_cpa' => $result['target_cpa'],
             ],
         ]);
     }

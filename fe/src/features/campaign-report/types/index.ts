@@ -71,6 +71,7 @@ export interface CampaignReportRow {
   ads_manager_link?: string | null
   daily_budget: string | number | null
   lifetime_budget: string | number | null
+  target_cpa: string | number | null
 
   channel_code: string | null
   channel_name: string | null
@@ -237,6 +238,13 @@ export interface CampaignReportToggleStatusResponse {
   data: {
     campaign_id: string
     status: string
+  }
+}
+
+export interface CampaignReportUpdateTargetCpaResponse {
+  data: {
+    campaign_id: string
+    target_cpa: number
   }
 }
 

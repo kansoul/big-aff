@@ -35,6 +35,7 @@ import {
   RevenueChartReportInternalDialog,
   RevenueChartDialog,
   RevenueReportRangeDialog,
+  TargetCpaFormDialog,
   TrackingAnalyticsDialog,
 } from '@/features/campaign-report/components'
 import { Button } from '@/components/ui'
@@ -404,6 +405,7 @@ function getColumns(
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void,
   onOpenTrackingAnalytics: (row: CampaignReportRow) => void,
   onOpenAdsAdsetReport: (row: CampaignReportRow) => void,
+  onOpenTargetCpa: (row: CampaignReportRow) => void,
   canViewDeliveryReports: boolean,
   dateFrom?: string | null,
   dateTo?: string | null,
@@ -1025,6 +1027,34 @@ function getColumns(
   const colRtViewSearchCount = count('rt_view_search_count', 'R. S.View', 78, 'green')
   const colRtViewArticleCount = count('rt_view_article_count', 'R. Article Views', 100, 'green')
 
+  // ── Target CPA (Google only, editable) ──
+  const colTargetCpa: MRT_ColumnDef<TableRow> = {
+    accessorKey: 'target_cpa',
+    header: 'Target CPA',
+    Header: <HeaderLabel icon="blue">Target CPA</HeaderLabel>,
+    size: 95,
+    enableSorting: false,
+    Cell: ({ row }) => {
+      if (isGroupRow(row.original)) return null
+      const r = row.original
+      const isGoogle = (r.ads_type ?? '').toLowerCase() === 'google'
+      if (!isGoogle) return <span className="text-foreground/50 text-[10px]">—</span>
+      const value = toNumber(r.target_cpa)
+      return (
+        <button
+          className="tabular-nums text-[10px] text-primary underline underline-offset-2 truncate cursor-pointer"
+          title="Edit target CPA"
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenTargetCpa(r)
+          }}
+        >
+          {value > 0 ? formatUsd(value) : 'Set'}
+        </button>
+      )
+    },
+  }
+
   // Column order matches AllReportResource.php
   return [
     // ── Group label (grouped mode only) ──
@@ -1040,6 +1070,7 @@ function getColumns(
     colAdsAdsetReport,
     colCampaignStatus,
     colCampaignOnOff,
+    colTargetCpa,
     colLink,
     colAdsType,
     colChannelName,
@@ -1196,6 +1227,7 @@ type Props = {
   onPaginationChange: (page: number, perPage: number) => void
   onSortingChange: (orderBy: CampaignReportOrderBy | null, order: 'asc' | 'desc' | null) => void
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void
+  onUpdateTargetCpa: (campaignId: string, targetCpa: number) => void
   role: RBACRole
 }
 
@@ -1211,6 +1243,7 @@ function CampaignReportTableCardInner({
   onPaginationChange,
   onSortingChange,
   onToggleCampaignStatus,
+  onUpdateTargetCpa,
   role,
 }: Props) {
   const grouped = Boolean(filters.group_by)
@@ -1227,6 +1260,8 @@ function CampaignReportTableCardInner({
   const [insightChartTarget, setInsightChartTarget] = useState<InsightChartDialogTarget | null>(
     null,
   )
+  const [targetCpaOpen, setTargetCpaOpen] = useState(false)
+  const [targetCpaTarget, setTargetCpaTarget] = useState<CampaignReportRow | null>(null)
   const [summaryOnly, setSummaryOnly] = useState(false)
   const [prevPerPage, setPrevPerPage] = useState<number | null>(null)
   const effectiveSummaryOnly = grouped && summaryOnly
@@ -1325,6 +1360,16 @@ function CampaignReportTableCardInner({
     if (!next) setInsightChartTarget(null)
   }, [])
 
+  const openTargetCpa = useCallback((row: CampaignReportRow) => {
+    setTargetCpaTarget(row)
+    setTargetCpaOpen(true)
+  }, [])
+
+  const onTargetCpaOpenChange = useCallback((next: boolean) => {
+    setTargetCpaOpen(next)
+    if (!next) setTargetCpaTarget(null)
+  }, [])
+
   const canViewDeliveryReports = useMemo(
     () => hasPermission(userPermissions, PermissionSlugs.DeliveryEntitiesReportsView),
     [userPermissions],
@@ -1339,6 +1384,7 @@ function CampaignReportTableCardInner({
         onToggleCampaignStatus,
         openTrackingAnalytics,
         openDeliveryReport,
+        openTargetCpa,
         canViewDeliveryReports,
         filters.date_from,
         filters.date_to,
@@ -1354,6 +1400,7 @@ function CampaignReportTableCardInner({
       onToggleCampaignStatus,
       openTrackingAnalytics,
       openDeliveryReport,
+      openTargetCpa,
       canViewDeliveryReports,
       summary,
       toggling,
@@ -1682,6 +1729,13 @@ function CampaignReportTableCardInner({
           initialDateTo={insightChartTarget.dateTo}
         />
       )}
+
+      <TargetCpaFormDialog
+        open={targetCpaOpen}
+        onOpenChange={onTargetCpaOpenChange}
+        row={targetCpaTarget}
+        onSuccess={onUpdateTargetCpa}
+      />
     </>
   )
 }

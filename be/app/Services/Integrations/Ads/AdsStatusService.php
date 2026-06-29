@@ -51,6 +51,22 @@ class AdsStatusService
         }
     }
 
+    /**
+     * Update a campaign's target CPA. Only supported for Google campaigns.
+     */
+    public function updateCampaignTargetCpa(string $campaignId, float $targetCpa): bool
+    {
+        $campaign = Campaign::where('campaign_id', $campaignId)->first();
+
+        if ($campaign && $campaign->ads_type === 'google') {
+            return $this->google->updateCampaignTargetCpa($campaign->account_id, $campaignId, $targetCpa);
+        }
+
+        Log::warning('Target CPA update is only supported for Google campaigns: '.$campaignId);
+
+        return false;
+    }
+
     public function updateAdsetStatus(string $adsetId, string $status): bool
     {
         try {

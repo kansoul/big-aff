@@ -88,6 +88,7 @@ class CampaignReportResource extends JsonResource
             'ads_manager_link' => $this->buildAdsManagerLink(),
             'daily_budget' => $this->daily_budget,
             'lifetime_budget' => $this->lifetime_budget,
+            'target_cpa' => $this->target_cpa,
 
             'style_code' => $this->style_code,
             'style_name' => $this->style_name,

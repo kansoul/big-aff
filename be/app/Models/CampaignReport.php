@@ -27,6 +27,7 @@ class CampaignReport extends Model
         'ads_type',
         'daily_budget',
         'lifetime_budget',
+        'target_cpa',
         // adsense / revenue
         'style_code',
         'style_name',
@@ -70,6 +71,7 @@ class CampaignReport extends Model
             'owner_user_id' => 'integer',
             'daily_budget' => 'decimal:2',
             'lifetime_budget' => 'decimal:2',
+            'target_cpa' => 'decimal:2',
             'r_search_views' => 'integer',
             'r_conversion' => 'integer',
             'r_revenue' => 'decimal:2',

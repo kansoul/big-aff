@@ -18,6 +18,7 @@ class Campaign extends Model
         'campaign_name',
         'daily_budget',
         'lifetime_budget',
+        'target_cpa',
         'status',
         'start_time',
         'stop_time',
@@ -34,5 +35,6 @@ class Campaign extends Model
         'updated_time' => 'datetime',
         'daily_budget' => 'decimal:2',
         'lifetime_budget' => 'decimal:2',
+        'target_cpa' => 'decimal:2',
     ];
 }

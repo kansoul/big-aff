@@ -481,6 +481,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('filters', [CampaignReportController::class, 'filters']);
             Route::get('/', [CampaignReportController::class, 'index']);
             Route::post('{campaign_id}/toggle-status', [CampaignReportController::class, 'toggleStatus']);
+            Route::post('{campaign_id}/target-cpa', [CampaignReportController::class, 'updateTargetCpa']);
         });
 
     Route::prefix('revenue-chart-reports')

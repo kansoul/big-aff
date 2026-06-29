@@ -263,6 +263,7 @@ class CampaignReportSyncService
             'ads_type' => $campaign?->ads_type,
             'daily_budget' => $campaign?->daily_budget ?? 0,
             'lifetime_budget' => $campaign?->lifetime_budget ?? 0,
+            'target_cpa' => $campaign?->target_cpa ?? 0,
 
             // Ads spend fields (a_*) from InsightReport
             'a_ad_clicks' => (int) ($insightReport->ad_clicks ?? 0),

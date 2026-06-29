@@ -7,6 +7,8 @@ use Carbon\Carbon;
 use Exception;
 use Google\Ads\GoogleAds\Lib\V21\GoogleAdsClientBuilder;
 use Google\Ads\GoogleAds\Util\FieldMasks;
+use Google\Ads\GoogleAds\V21\Common\TargetCpa;
+use Google\Ads\GoogleAds\V21\Enums\BudgetPeriodEnum\BudgetPeriod;
 use Google\Ads\GoogleAds\V21\Enums\CampaignStatusEnum\CampaignStatus;
 use Google\Ads\GoogleAds\V21\Resources\Campaign;
 use Google\Ads\GoogleAds\V21\Services\CampaignOperation;
@@ -54,7 +56,8 @@ class GoogleAdsService
                 campaign.start_date,
                 campaign.end_date,
                 campaign_budget.period,
-                campaign_budget.amount_micros
+                campaign_budget.amount_micros,
+                campaign.target_cpa.target_cpa_micros
             FROM campaign
             WHERE campaign.id = {$campaignId}
             LIMIT 1
@@ -104,8 +107,9 @@ class GoogleAdsService
                         'campaign_id' => (string) $campaign->getId(),
                         'ads_type' => 'google',
                         'name' => $campaign->getName(),
-                        'daily_budget' => $budget->getPeriod() === 'DAILY' ? ($budget->getAmountMicros() / 1000000) : 0,
-                        'lifetime_budget' => $budget->getPeriod() !== 'DAILY' ? ($budget->getAmountMicros() / 1000000) : 0,
+                        'daily_budget' => $budget->getPeriod() === BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
+                        'lifetime_budget' => $budget->getPeriod() !== BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
+                        'target_cpa' => $campaign->getTargetCpa()?->getTargetCpaMicros() ? ($campaign->getTargetCpa()->getTargetCpaMicros() / 1000000) : 0,
                         'status' => $this->mapCampaignStatus($campaign->getStatus()),
                         'start_time' => Carbon::parse($campaign->getStartDate()),
                         'stop_time' => Carbon::parse($campaign->getEndDate()),
@@ -150,6 +154,7 @@ class GoogleAdsService
                     campaign.end_date,
                     campaign_budget.period,
                     campaign_budget.amount_micros,
+                    campaign.target_cpa.target_cpa_micros,
                     segments.date,
                     metrics.impressions,
                     metrics.clicks,
@@ -178,8 +183,9 @@ class GoogleAdsService
                         'campaign_id' => (string) $campaignId,
                         'ads_type' => 'google',
                         'campaign_name' => $campaign->getName(),
-                        'daily_budget' => $budget->getPeriod() === 'DAILY' ? ($budget->getAmountMicros() / 1000000) : 0,
-                        'lifetime_budget' => $budget->getPeriod() !== 'DAILY' ? ($budget->getAmountMicros() / 1000000) : 0,
+                        'daily_budget' => $budget->getPeriod() === BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
+                        'lifetime_budget' => $budget->getPeriod() !== BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
+                        'target_cpa' => $campaign->getTargetCpa()?->getTargetCpaMicros() ? ($campaign->getTargetCpa()->getTargetCpaMicros() / 1000000) : 0,
                         'status' => $this->mapCampaignStatus($campaign->getStatus()),
                         'start_time' => Carbon::parse($campaign->getStartDate()),
                         'stop_time' => Carbon::parse($campaign->getEndDate()),
@@ -291,7 +297,8 @@ class GoogleAdsService
                 campaign.start_date,
                 campaign.end_date,
                 campaign_budget.period,
-                campaign_budget.amount_micros
+                campaign_budget.amount_micros,
+                campaign.target_cpa.target_cpa_micros
             FROM campaign
             WHERE campaign.status IN ('ENABLED', 'PAUSED', 'REMOVED')
         ";
@@ -309,8 +316,9 @@ class GoogleAdsService
                     'campaign_id' => (string) $campaign->getId(),
                     'ads_type' => 'google',
                     'campaign_name' => $campaign->getName(),
-                    'daily_budget' => $budget->getPeriod() === 'DAILY' ? ($budget->getAmountMicros() / 1000000) : 0,
-                    'lifetime_budget' => $budget->getPeriod() !== 'DAILY' ? ($budget->getAmountMicros() / 1000000) : 0,
+                    'daily_budget' => $budget->getPeriod() === BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
+                    'lifetime_budget' => $budget->getPeriod() !== BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
+                    'target_cpa' => $campaign->getTargetCpa()?->getTargetCpaMicros() ? ($campaign->getTargetCpa()->getTargetCpaMicros() / 1000000) : 0,
                     'status' => $this->mapCampaignStatus($campaign->getStatus()),
                     'start_time' => Carbon::parse($campaign->getStartDate()),
                     'stop_time' => Carbon::parse($campaign->getEndDate()),
@@ -351,6 +359,7 @@ class GoogleAdsService
                     campaign.end_date,
                     campaign_budget.period,
                     campaign_budget.amount_micros,
+                    campaign.target_cpa.target_cpa_micros,
                     segments.date,
                     metrics.impressions,
                     metrics.clicks,
@@ -378,8 +387,9 @@ class GoogleAdsService
                         'campaign_id' => (string) $campaignId,
                         'ads_type' => 'google',
                         'campaign_name' => $campaign->getName(),
-                        'daily_budget' => $budget->getPeriod() === 'DAILY' ? ($budget->getAmountMicros() / 1000000) : 0,
-                        'lifetime_budget' => $budget->getPeriod() !== 'DAILY' ? ($budget->getAmountMicros() / 1000000) : 0,
+                        'daily_budget' => $budget->getPeriod() === BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
+                        'lifetime_budget' => $budget->getPeriod() !== BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
+                        'target_cpa' => $campaign->getTargetCpa()?->getTargetCpaMicros() ? ($campaign->getTargetCpa()->getTargetCpaMicros() / 1000000) : 0,
                         'status' => $this->mapCampaignStatus($campaign->getStatus()),
                         'start_time' => Carbon::parse($campaign->getStartDate()),
                         'stop_time' => Carbon::parse($campaign->getEndDate()),
@@ -584,6 +594,47 @@ class GoogleAdsService
             return true;
         } catch (Exception $e) {
             Log::error('Error updating Google Ads campaign status: '.$e->getMessage().' - Account: '.$accountId.' - Campaign: '.$campaignId);
+
+            return false;
+        }
+    }
+
+    /**
+     * Update campaign target CPA (target_cpa_micros) on Google Ads.
+     *
+     * @param  string  $accountId  Google Ads account ID
+     * @param  string  $campaignId  Campaign ID to update
+     * @param  float  $targetCpa  New target CPA in account currency (e.g. USD)
+     * @return bool Success status
+     */
+    public function updateCampaignTargetCpa(string $accountId, string $campaignId, float $targetCpa): bool
+    {
+        $preAccountId = preg_replace('/-/', '', $accountId);
+
+        try {
+            $campaign = new Campaign;
+            $campaign->setResourceName("customers/{$preAccountId}/campaigns/{$campaignId}");
+            $campaign->setTargetCpa(new TargetCpa([
+                'target_cpa_micros' => (int) round($targetCpa * 1000000),
+            ]));
+
+            $campaignOperation = new CampaignOperation;
+            $campaignOperation->setUpdate($campaign);
+            $campaignOperation->setUpdateMask(FieldMasks::allSetFieldsOf($campaign));
+
+            $mutateOperation = new MutateOperation;
+            $mutateOperation->setCampaignOperation($campaignOperation);
+
+            $this->gaService->mutate(
+                new MutateGoogleAdsRequest([
+                    'customer_id' => $preAccountId,
+                    'mutate_operations' => [$mutateOperation],
+                ])
+            );
+
+            return true;
+        } catch (Exception $e) {
+            Log::error('Error updating Google Ads campaign target CPA: '.$e->getMessage().' - Account: '.$accountId.' - Campaign: '.$campaignId);
 
             return false;
         }
