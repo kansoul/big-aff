@@ -1030,8 +1030,8 @@ function getColumns(
   // ── Target CPA (Google only, editable) ──
   const colTargetCpa: MRT_ColumnDef<TableRow> = {
     accessorKey: 'target_cpa',
-    header: 'Target CPA',
-    Header: <HeaderLabel icon="blue">Target CPA</HeaderLabel>,
+    header: 'tCPA',
+    Header: <HeaderLabel icon="blue">tCPA</HeaderLabel>,
     size: 95,
     enableSorting: false,
     Cell: ({ row }) => {
@@ -1070,7 +1070,6 @@ function getColumns(
     colAdsAdsetReport,
     colCampaignStatus,
     colCampaignOnOff,
-    colTargetCpa,
     colLink,
     colAdsType,
     colChannelName,
@@ -1120,6 +1119,7 @@ function getColumns(
     // ── CPA ──
     colRtCpa,
     ratio('r_cpa', 'CPA', 68, 2, 'yellow'),
+    colTargetCpa,
     ratio('a_cpa', 'A. CPA', 85, 2, 'blue'),
 
     // ── Search impressions & RPM ──

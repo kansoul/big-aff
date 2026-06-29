@@ -116,7 +116,7 @@ export function TargetCpaFormDialog({
         <DialogHeader>
           <DialogTitle>Set Target CPA</DialogTitle>
           {row?.campaign_name && (
-            <p className="truncate text-sm text-muted-foreground" title={row.campaign_name}>
+            <p className="w-full min-w-0 text-sm wrap-break-word text-muted-foreground">
               {row.campaign_name}
             </p>
           )}
