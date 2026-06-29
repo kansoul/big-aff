@@ -2,6 +2,7 @@
 
 namespace App\Services\Integrations\Adx;
 
+use App\Services\Integrations\Google\GoogleAdsService;
 use Carbon\Carbon;
 use Exception;
 use Google\Ads\GoogleAds\Lib\V21\GoogleAdsClientBuilder;
@@ -67,6 +68,7 @@ class AdxGoogleAdsService
                     campaign_budget.period,
                     campaign_budget.amount_micros,
                     campaign.target_cpa.target_cpa_micros,
+                    campaign.maximize_conversions.target_cpa_micros,
                     segments.date,
                     metrics.impressions,
                     metrics.clicks,
@@ -98,6 +100,7 @@ class AdxGoogleAdsService
                         'campaign_name' => $campaign->getName(),
                         'daily_budget' => $budget->getPeriod() === BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
                         'lifetime_budget' => $budget->getPeriod() !== BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
+                        'target_cpa' => GoogleAdsService::extractTargetCpa($campaign),
                         'status' => $this->mapCampaignStatus($campaign->getStatus()),
                         'start_time' => Carbon::parse($campaign->getStartDate()),
                         'stop_time' => Carbon::parse($campaign->getEndDate()),
@@ -209,7 +212,8 @@ class AdxGoogleAdsService
                     campaign.end_date,
                     campaign_budget.period,
                     campaign_budget.amount_micros,
-                    campaign.target_cpa.target_cpa_micros
+                    campaign.target_cpa.target_cpa_micros,
+                    campaign.maximize_conversions.target_cpa_micros
                 FROM campaign
                 WHERE campaign.status IN ('ENABLED', 'PAUSED', 'REMOVED')
             ";
@@ -231,7 +235,7 @@ class AdxGoogleAdsService
                     'campaign_name' => $campaign->getName(),
                     'daily_budget' => $budget->getPeriod() === BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
                     'lifetime_budget' => $budget->getPeriod() !== BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
-                    'target_cpa' => $campaign->getTargetCpa()?->getTargetCpaMicros() ? ($campaign->getTargetCpa()->getTargetCpaMicros() / 1000000) : 0,
+                    'target_cpa' => GoogleAdsService::extractTargetCpa($campaign),
                     'status' => $this->mapCampaignStatus($campaign->getStatus()),
                     'start_time' => Carbon::parse($campaign->getStartDate()),
                     'stop_time' => Carbon::parse($campaign->getEndDate()),

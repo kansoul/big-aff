@@ -7,7 +7,9 @@ use Carbon\Carbon;
 use Exception;
 use Google\Ads\GoogleAds\Lib\V21\GoogleAdsClientBuilder;
 use Google\Ads\GoogleAds\Util\FieldMasks;
+use Google\Ads\GoogleAds\V21\Common\MaximizeConversions;
 use Google\Ads\GoogleAds\V21\Common\TargetCpa;
+use Google\Ads\GoogleAds\V21\Enums\BiddingStrategyTypeEnum\BiddingStrategyType;
 use Google\Ads\GoogleAds\V21\Enums\BudgetPeriodEnum\BudgetPeriod;
 use Google\Ads\GoogleAds\V21\Enums\CampaignStatusEnum\CampaignStatus;
 use Google\Ads\GoogleAds\V21\Resources\Campaign;
@@ -57,7 +59,9 @@ class GoogleAdsService
                 campaign.end_date,
                 campaign_budget.period,
                 campaign_budget.amount_micros,
-                campaign.target_cpa.target_cpa_micros
+                campaign.target_cpa.target_cpa_micros,
+                campaign.maximize_conversions.target_cpa_micros,
+                campaign.bidding_strategy_type
             FROM campaign
             WHERE campaign.id = {$campaignId}
             LIMIT 1
@@ -109,7 +113,8 @@ class GoogleAdsService
                         'name' => $campaign->getName(),
                         'daily_budget' => $budget->getPeriod() === BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
                         'lifetime_budget' => $budget->getPeriod() !== BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
-                        'target_cpa' => $campaign->getTargetCpa()?->getTargetCpaMicros() ? ($campaign->getTargetCpa()->getTargetCpaMicros() / 1000000) : 0,
+                        'target_cpa' => self::extractTargetCpa($campaign),
+                        'bidding_strategy_type' => $campaign->getBiddingStrategyType(),
                         'status' => $this->mapCampaignStatus($campaign->getStatus()),
                         'start_time' => Carbon::parse($campaign->getStartDate()),
                         'stop_time' => Carbon::parse($campaign->getEndDate()),
@@ -155,6 +160,8 @@ class GoogleAdsService
                     campaign_budget.period,
                     campaign_budget.amount_micros,
                     campaign.target_cpa.target_cpa_micros,
+                    campaign.maximize_conversions.target_cpa_micros,
+                    campaign.bidding_strategy_type,
                     segments.date,
                     metrics.impressions,
                     metrics.clicks,
@@ -185,7 +192,8 @@ class GoogleAdsService
                         'campaign_name' => $campaign->getName(),
                         'daily_budget' => $budget->getPeriod() === BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
                         'lifetime_budget' => $budget->getPeriod() !== BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
-                        'target_cpa' => $campaign->getTargetCpa()?->getTargetCpaMicros() ? ($campaign->getTargetCpa()->getTargetCpaMicros() / 1000000) : 0,
+                        'target_cpa' => self::extractTargetCpa($campaign),
+                        'bidding_strategy_type' => $campaign->getBiddingStrategyType(),
                         'status' => $this->mapCampaignStatus($campaign->getStatus()),
                         'start_time' => Carbon::parse($campaign->getStartDate()),
                         'stop_time' => Carbon::parse($campaign->getEndDate()),
@@ -298,7 +306,9 @@ class GoogleAdsService
                 campaign.end_date,
                 campaign_budget.period,
                 campaign_budget.amount_micros,
-                campaign.target_cpa.target_cpa_micros
+                campaign.target_cpa.target_cpa_micros,
+                campaign.maximize_conversions.target_cpa_micros,
+                campaign.bidding_strategy_type
             FROM campaign
             WHERE campaign.status IN ('ENABLED', 'PAUSED', 'REMOVED')
         ";
@@ -318,7 +328,8 @@ class GoogleAdsService
                     'campaign_name' => $campaign->getName(),
                     'daily_budget' => $budget->getPeriod() === BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
                     'lifetime_budget' => $budget->getPeriod() !== BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
-                    'target_cpa' => $campaign->getTargetCpa()?->getTargetCpaMicros() ? ($campaign->getTargetCpa()->getTargetCpaMicros() / 1000000) : 0,
+                    'target_cpa' => self::extractTargetCpa($campaign),
+                    'bidding_strategy_type' => $campaign->getBiddingStrategyType(),
                     'status' => $this->mapCampaignStatus($campaign->getStatus()),
                     'start_time' => Carbon::parse($campaign->getStartDate()),
                     'stop_time' => Carbon::parse($campaign->getEndDate()),
@@ -360,6 +371,8 @@ class GoogleAdsService
                     campaign_budget.period,
                     campaign_budget.amount_micros,
                     campaign.target_cpa.target_cpa_micros,
+                    campaign.maximize_conversions.target_cpa_micros,
+                    campaign.bidding_strategy_type,
                     segments.date,
                     metrics.impressions,
                     metrics.clicks,
@@ -389,7 +402,8 @@ class GoogleAdsService
                         'campaign_name' => $campaign->getName(),
                         'daily_budget' => $budget->getPeriod() === BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
                         'lifetime_budget' => $budget->getPeriod() !== BudgetPeriod::DAILY ? ($budget->getAmountMicros() / 1000000) : 0,
-                        'target_cpa' => $campaign->getTargetCpa()?->getTargetCpaMicros() ? ($campaign->getTargetCpa()->getTargetCpaMicros() / 1000000) : 0,
+                        'target_cpa' => self::extractTargetCpa($campaign),
+                        'bidding_strategy_type' => $campaign->getBiddingStrategyType(),
                         'status' => $this->mapCampaignStatus($campaign->getStatus()),
                         'start_time' => Carbon::parse($campaign->getStartDate()),
                         'stop_time' => Carbon::parse($campaign->getEndDate()),
@@ -600,23 +614,55 @@ class GoogleAdsService
     }
 
     /**
-     * Update campaign target CPA (target_cpa_micros) on Google Ads.
+     * Extract the campaign target CPA (in account currency) from whichever bidding
+     * strategy carries it. Standalone Target CPA takes priority, then the target CPA
+     * set on a Maximize Conversions strategy. Returns 0 when neither is set.
+     */
+    public static function extractTargetCpa(Campaign $campaign): float
+    {
+        $micros = $campaign->getTargetCpa()?->getTargetCpaMicros()
+            ?: $campaign->getMaximizeConversions()?->getTargetCpaMicros();
+
+        return $micros ? ((int) $micros) / 1000000 : 0;
+    }
+
+    /**
+     * Update campaign target CPA (target_cpa_micros) on Google Ads. The value is
+     * written onto whichever bidding strategy the campaign currently uses so we never
+     * change the campaign's strategy type. The strategy type is supplied by the caller
+     * (persisted on the campaign during sync) so no extra API read is needed.
      *
      * @param  string  $accountId  Google Ads account ID
      * @param  string  $campaignId  Campaign ID to update
      * @param  float  $targetCpa  New target CPA in account currency (e.g. USD)
+     * @param  int|null  $strategyType  BiddingStrategyType enum value of the campaign
      * @return bool Success status
      */
-    public function updateCampaignTargetCpa(string $accountId, string $campaignId, float $targetCpa): bool
+    public function updateCampaignTargetCpa(string $accountId, string $campaignId, float $targetCpa, ?int $strategyType): bool
     {
         $preAccountId = preg_replace('/-/', '', $accountId);
+        $micros = (int) round($targetCpa * 1000000);
 
         try {
             $campaign = new Campaign;
             $campaign->setResourceName("customers/{$preAccountId}/campaigns/{$campaignId}");
-            $campaign->setTargetCpa(new TargetCpa([
-                'target_cpa_micros' => (int) round($targetCpa * 1000000),
-            ]));
+
+            if ($strategyType === BiddingStrategyType::MAXIMIZE_CONVERSIONS) {
+                $campaign->setMaximizeConversions(new MaximizeConversions([
+                    'target_cpa_micros' => $micros,
+                ]));
+            } elseif ($strategyType === BiddingStrategyType::TARGET_CPA) {
+                $campaign->setTargetCpa(new TargetCpa([
+                    'target_cpa_micros' => $micros,
+                ]));
+            } else {
+                Log::warning('GoogleAdsService: Campaign bidding strategy does not support a target CPA.', [
+                    'campaign_id' => $campaignId,
+                    'bidding_strategy_type' => $strategyType,
+                ]);
+
+                return false;
+            }
 
             $campaignOperation = new CampaignOperation;
             $campaignOperation->setUpdate($campaign);

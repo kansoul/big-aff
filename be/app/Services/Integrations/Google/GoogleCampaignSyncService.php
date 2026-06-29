@@ -65,7 +65,7 @@ class GoogleCampaignSyncService
                         Campaign::upsert(
                             $campaigns,
                             ['campaign_id'],
-                            ['campaign_name', 'daily_budget', 'lifetime_budget', 'status', 'start_time', 'stop_time', 'created_time', 'updated_time', 'created_at', 'updated_at']
+                            ['campaign_name', 'daily_budget', 'lifetime_budget', 'target_cpa', 'bidding_strategy_type', 'status', 'start_time', 'stop_time', 'created_time', 'updated_time', 'created_at', 'updated_at']
                         );
 
                         $campaignIds = array_column($campaigns, 'campaign_id');
@@ -195,7 +195,7 @@ class GoogleCampaignSyncService
                         Campaign::upsert(
                             $campaigns,
                             ['campaign_id'],
-                            ['campaign_name', 'daily_budget', 'lifetime_budget', 'status', 'start_time', 'stop_time', 'created_time', 'updated_time', 'created_at', 'updated_at']
+                            ['campaign_name', 'daily_budget', 'lifetime_budget', 'target_cpa', 'bidding_strategy_type', 'status', 'start_time', 'stop_time', 'created_time', 'updated_time', 'created_at', 'updated_at']
                         );
 
                         $campaignIds = array_column($campaigns, 'campaign_id');

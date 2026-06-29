@@ -19,6 +19,7 @@ class Campaign extends Model
         'daily_budget',
         'lifetime_budget',
         'target_cpa',
+        'bidding_strategy_type',
         'status',
         'start_time',
         'stop_time',
@@ -36,5 +37,6 @@ class Campaign extends Model
         'daily_budget' => 'decimal:2',
         'lifetime_budget' => 'decimal:2',
         'target_cpa' => 'decimal:2',
+        'bidding_strategy_type' => 'integer',
     ];
 }

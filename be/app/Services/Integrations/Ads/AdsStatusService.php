@@ -59,7 +59,12 @@ class AdsStatusService
         $campaign = Campaign::where('campaign_id', $campaignId)->first();
 
         if ($campaign && $campaign->ads_type === 'google') {
-            return $this->google->updateCampaignTargetCpa($campaign->account_id, $campaignId, $targetCpa);
+            return $this->google->updateCampaignTargetCpa(
+                $campaign->account_id,
+                $campaignId,
+                $targetCpa,
+                $campaign->bidding_strategy_type,
+            );
         }
 
         Log::warning('Target CPA update is only supported for Google campaigns: '.$campaignId);
