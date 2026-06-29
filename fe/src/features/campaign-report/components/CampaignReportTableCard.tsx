@@ -1032,7 +1032,7 @@ function getColumns(
     accessorKey: 'target_cpa',
     header: 'tCPA',
     Header: <HeaderLabel icon="blue">tCPA</HeaderLabel>,
-    size: 95,
+    size: autoSize(55, null),
     enableSorting: false,
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
@@ -1042,7 +1042,10 @@ function getColumns(
       const value = toNumber(r.target_cpa)
       return (
         <button
-          className="tabular-nums text-[10px] text-primary underline underline-offset-2 truncate cursor-pointer"
+          className={cn(
+            'tabular-nums text-[10px] underline underline-offset-2 truncate cursor-pointer',
+            value > 0 ? '' : 'text-rose-500',
+          )}
           title="Edit target CPA"
           onClick={(e) => {
             e.stopPropagation()
