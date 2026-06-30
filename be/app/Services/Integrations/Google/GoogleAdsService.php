@@ -651,7 +651,7 @@ class GoogleAdsService
                 $campaign->setMaximizeConversions(new MaximizeConversions([
                     'target_cpa_micros' => $micros,
                 ]));
-            } elseif ($strategyType === BiddingStrategyType::MAXIMIZE_CONVERSIONS && !$oldTargetCpa) {
+            } elseif (($strategyType === BiddingStrategyType::MAXIMIZE_CONVERSIONS && !$oldTargetCpa) || $strategyType === BiddingStrategyType::TARGET_CPA) {
                 $campaign->setTargetCpa(new TargetCpa([
                     'target_cpa_micros' => $micros,
                 ]));
