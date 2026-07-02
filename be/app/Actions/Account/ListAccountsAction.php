@@ -52,7 +52,7 @@ class ListAccountsAction
         }
 
         if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+            $query->where('status', mb_strtoupper((string) $filters['status']));
         }
 
         SortInput::fromValidatedArray(

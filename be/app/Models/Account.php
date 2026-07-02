@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\Attribute\AccountAttribute;
 use App\Models\Traits\Relationship\AccountRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Account extends Model
 {
-    use AccountRelationship, HasFactory, SoftDeletes;
+    use AccountAttribute, AccountRelationship, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'business_center_id',
@@ -29,7 +30,6 @@ class Account extends Model
 
     protected $casts = [
         'ads_type' => 'string',
-        'status' => 'string',
         'main_team_id' => 'integer',
         'sync_to_mcc' => 'boolean',
         'is_special' => 'boolean',
