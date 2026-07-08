@@ -51,7 +51,7 @@ function parseStrings(value: unknown): string[] {
 
 function parseAdsTypes(value: unknown): AdsReportAdsType[] {
   return parseStrings(value).filter((v): v is AdsReportAdsType =>
-    ['facebook', 'google'].includes(v),
+    ['facebook', 'google', 'tiktok'].includes(v),
   )
 }
 
@@ -317,6 +317,7 @@ export function AdsReportPage() {
         options: [
           { value: 'facebook', label: 'Facebook' },
           { value: 'google', label: 'Google' },
+          { value: 'tiktok', label: 'TikTok' },
         ],
         placeholder: 'All types',
       },

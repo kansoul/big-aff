@@ -1,4 +1,4 @@
-export type AdsReportAdsType = 'facebook' | 'google'
+export type AdsReportAdsType = 'facebook' | 'google' | 'tiktok'
 
 export interface AdsReportStatsCampaigns {
   total: number

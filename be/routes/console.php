@@ -49,6 +49,11 @@ Schedule::command('reports:fetch-ads-adsets-by-facebook')
     ->name('fetch-ads-adsets-by-facebook')
     ->withoutOverlapping(20);
 
+Schedule::command('reports:fetch-ads-adsets-by-tiktok')
+    ->everyFiveMinutes()
+    ->name('fetch-ads-adsets-by-tiktok')
+    ->withoutOverlapping(20);
+
 Schedule::command('campaigns:run-schedules')
     ->name('run-campaign-schedules')
     ->withoutOverlapping(30)

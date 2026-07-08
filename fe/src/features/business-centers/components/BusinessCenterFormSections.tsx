@@ -103,6 +103,7 @@ export function BusinessCenterFormSections({ control }: BusinessCenterFormSectio
                   options={[
                     { value: 'facebook', label: 'Facebook' },
                     { value: 'google', label: 'Google' },
+                    { value: 'tiktok', label: 'TikTok' },
                   ]}
                 />
               </FormControl>

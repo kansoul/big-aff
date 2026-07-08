@@ -3,6 +3,7 @@
 namespace App\Http\Requests\CampaignReport;
 
 use App\Actions\CampaignReport\ListCampaignReportsAction;
+use App\Enums\AdsType;
 use App\Http\Requests\Concerns\ValidatesPaginationQuery;
 use App\Http\Requests\Concerns\ValidatesSortQuery;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -47,7 +48,7 @@ class ListCampaignReportsRequest extends FormRequest
                 'user_ids.*' => ['integer'],
                 'account_ids' => ['nullable', 'array'],
                 'account_ids.*' => ['string', 'max:255'],
-                'ads_type' => ['nullable', 'string', Rule::in(['facebook', 'google'])],
+                'ads_type' => ['nullable', 'string', Rule::in(AdsType::values())],
                 'campaign_ids' => ['nullable', 'array'],
                 'campaign_ids.*' => ['string', 'max:255'],
                 'channel_codes' => ['nullable', 'array'],

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'base_url' => env('TIKTOK_API_BASE_URL', 'https://business-api.tiktok.com/open_api/v1.3'),
     'ads' => [
         'app_id' => env('TIKTOK_ADS_APP_ID'),
         'secret' => env('TIKTOK_ADS_SECRET'),
