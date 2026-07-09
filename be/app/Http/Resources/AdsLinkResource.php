@@ -30,6 +30,7 @@ class AdsLinkResource extends JsonResource
             'style_name' => $this->whenLoaded('style', fn () => $this->style?->name),
             'fbid' => $trackingIds['fbid'] ?? null,
             'googleid' => $trackingIds['googleid'] ?? null,
+            'tiktokid' => $trackingIds['tiktokid'] ?? null,
             'site' => $this->whenLoaded('site', fn () => [
                 'id' => $this->site->id,
                 'name' => $this->site->name,

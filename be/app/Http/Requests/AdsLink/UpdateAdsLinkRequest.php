@@ -23,6 +23,7 @@ class UpdateAdsLinkRequest extends FormRequest
             'keyword_set_id' => ['nullable', 'integer', 'exists:keyword_sets,id'],
             'fbid' => ['nullable', 'string'],
             'googleid' => ['nullable', 'string'],
+            'tiktokid' => ['nullable', 'string'],
             'note' => ['nullable', 'string'],
         ];
     }
@@ -33,10 +34,11 @@ class UpdateAdsLinkRequest extends FormRequest
             function (Validator $validator): void {
                 $fbid = $this->input('fbid');
                 $googleid = $this->input('googleid');
+                $tiktokid = $this->input('tiktokid');
 
-                if (isset($fbid) || isset($googleid)) {
-                    if (empty($fbid) && empty($googleid)) {
-                        $validator->errors()->add('fbid', 'At least one of Facebook Pixel ID or Google Account ID is required.');
+                if (isset($fbid) || isset($googleid) || isset($tiktokid)) {
+                    if (empty($fbid) && empty($googleid) && empty($tiktokid)) {
+                        $validator->errors()->add('fbid', 'At least one of Facebook Pixel ID, Google Account ID, or TikTok Advertiser ID is required.');
                     }
                 }
             },

@@ -3,6 +3,7 @@
 namespace App\Services\Integrations\TikTok;
 
 use App\Enums\AdsType;
+use App\Models\Account;
 use Carbon\Carbon;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
@@ -63,6 +64,84 @@ class TikTokAdsService
         }
 
         return ['insights' => $insights, 'campaigns' => $campaigns];
+    }
+
+    /**
+     * Verify that a campaign exists on TikTok and return its data so the caller
+     * can persist it locally. Mirrors GoogleAdsService::verifyCampaign: because
+     * the TikTok API requires an advertiser_id, we probe each candidate
+     * advertiser (from the ads link's tracking ids) until the campaign is found.
+     * The owning advertiser account is created locally if missing. Returns null
+     * when the campaign is not found on any advertiser.
+     *
+     * @param  array<int, string>  $advertiserIds
+     * @return array<string, mixed>|null
+     */
+    public function verifyCampaign(string $campaignId, array $advertiserIds): ?array
+    {
+        foreach ($advertiserIds as $advertiserId) {
+            $advertiserId = trim((string) $advertiserId);
+            if ($advertiserId === '') {
+                continue;
+            }
+
+            try {
+                $response = $this->client()->get($this->baseUrl.self::CAMPAIGN_PATH, [
+                    'advertiser_id' => $advertiserId,
+                    'filtering' => json_encode(['campaign_ids' => [$campaignId]]),
+                    'fields' => json_encode([
+                        'campaign_id', 'campaign_name', 'budget', 'budget_mode',
+                        'operation_status', 'create_time', 'modify_time',
+                    ]),
+                    'page' => 1,
+                    'page_size' => 1,
+                ]);
+
+                $payload = $this->decode($response->json(), $advertiserId, 'verifyCampaign');
+                if ($payload === null) {
+                    continue;
+                }
+
+                $campaign = ($payload['list'] ?? [])[0] ?? null;
+                if (! $campaign) {
+                    continue;
+                }
+
+                $budgetMode = $campaign['budget_mode'] ?? null;
+                $budget = $this->toFloat($campaign['budget'] ?? null);
+
+                if (! Account::where('account_id', $advertiserId)->exists()) {
+                    Account::firstOrCreate(
+                        ['account_id' => $advertiserId],
+                        [
+                            'account_name' => $advertiserId,
+                            'ads_type' => AdsType::TIKTOK->value,
+                            'status' => 'ACTIVE',
+                        ],
+                    );
+                }
+
+                return [
+                    'account_id' => $advertiserId,
+                    'campaign_id' => (string) ($campaign['campaign_id'] ?? $campaignId),
+                    'name' => $campaign['campaign_name'] ?? null,
+                    'ads_type' => AdsType::TIKTOK->value,
+                    'daily_budget' => $budgetMode === 'BUDGET_MODE_DAY' ? $budget : null,
+                    'lifetime_budget' => $budgetMode === 'BUDGET_MODE_TOTAL' ? $budget : null,
+                    'status' => $this->mapStatus($campaign['operation_status'] ?? null),
+                    'start_time' => null,
+                    'stop_time' => null,
+                    'created_time' => $this->toDateTime($campaign['create_time'] ?? null),
+                    'updated_time' => $this->toDateTime($campaign['modify_time'] ?? null),
+                ];
+            } catch (Throwable $e) {
+                Log::error('[TikTokAdsService] verifyCampaign failed: '.$e->getMessage().' - '.$campaignId.' - '.$advertiserId);
+
+                continue;
+            }
+        }
+
+        return null;
     }
 
     /**

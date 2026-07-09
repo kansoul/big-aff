@@ -46,6 +46,14 @@ class UpdateAdsLinkAction
             }
         }
 
+        if (array_key_exists('tiktokid', $data)) {
+            if (! empty($data['tiktokid'])) {
+                $trackingIds['tiktokid'] = array_map('trim', explode(',', $data['tiktokid']));
+            } else {
+                unset($trackingIds['tiktokid']);
+            }
+        }
+
         $payload = [
             'tracking_ids' => $trackingIds,
             'updated_by' => Auth::id(),

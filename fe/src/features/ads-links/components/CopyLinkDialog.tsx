@@ -17,7 +17,12 @@ type CopyLinkDialogProps = {
 }
 
 export function CopyLinkDialog({ state, onClose }: CopyLinkDialogProps) {
-  const label = state.platform === 'facebook' ? 'Facebook' : 'Google'
+  const PLATFORM_LABELS: Record<CopyDialogState['platform'], string> = {
+    facebook: 'Facebook',
+    google: 'Google',
+    tiktok: 'TikTok',
+  }
+  const label = PLATFORM_LABELS[state.platform]
 
   async function handleCopy() {
     await copyToClipboard(state.link)

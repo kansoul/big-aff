@@ -48,8 +48,14 @@ type CopyLinkDialogProps = {
   onClose: () => void
 }
 
+const COPY_PLATFORM_LABELS: Record<CopyDialogState['platform'], string> = {
+  facebook: 'Facebook',
+  google: 'Google',
+  tiktok: 'TikTok',
+}
+
 function CopyLinkDialog({ state, onClose }: CopyLinkDialogProps) {
-  const label = state.platform === 'facebook' ? 'Facebook' : 'Google'
+  const label = COPY_PLATFORM_LABELS[state.platform]
 
   async function handleCopy() {
     await copyToClipboard(state.link)
@@ -165,6 +171,23 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
             >
               <Copy className="h-3 w-3 mr-1" />
               GG
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              title="Copy TikTok link"
+              onClick={() =>
+                onOpenCopyDialog({
+                  platform: 'tiktok',
+                  id: link.tiktokid ? link.tiktokid.join(',') : '',
+                  link: buildCopyLink(siteUrl, link.slug, 'tiktok'),
+                })
+              }
+            >
+              <Copy className="h-3 w-3 mr-1" />
+              TT
             </Button>
           </div>
         )
