@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Storage;
 class ImportPostsCommand extends Command
 {
     protected $signature = 'posts:import
-        {--input= : Absolute path to the bundle produced by posts:backup (default storage/app/backup/posts-bundle.json)}
+        {--input= : Absolute path to the bundle produced by posts:backup (default backup-new/posts-bundle.json)}
         {--files-dir= : Directory holding the media backup files (default the "files" folder next to the JSON)}
         {--owner-id=1 : User id to own every imported record (default 1 = admin, so only admin can see them)}
         {--overwrite-media : Overwrite media files already present on disk at the same path}';
@@ -394,7 +394,7 @@ class ImportPostsCommand extends Command
     {
         $input = (string) ($this->option('input') ?? '');
 
-        return trim($input) !== '' ? $input : storage_path('app/backup/posts-bundle.json');
+        return trim($input) !== '' ? $input : storage_path('app/backup-new/posts-bundle.json');
     }
 
     private function resolveFilesDir(string $inputPath, ?string $bundleFilesDir): string

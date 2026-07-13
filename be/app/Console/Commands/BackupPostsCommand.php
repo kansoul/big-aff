@@ -13,7 +13,7 @@ class BackupPostsCommand extends Command
     protected $signature = 'posts:backup
         {--ids= : Comma separated list of post ids to back up (e.g. 1,2,3)}
         {--ids-file= : Path to a JSON file with the list of post ids ([1,2,3] or {"post_ids":[1,2,3]})}
-        {--output= : Absolute path for the generated bundle JSON (default storage/app/backup/posts-bundle.json)}
+        {--output= : Absolute path for the generated bundle JSON (default backup-new/posts-bundle.json)}
         {--files-dir= : Directory where physical media files are copied (default a "files" folder next to the JSON)}
         {--without-media : Skip copying physical media files (metadata only)}';
 
@@ -53,23 +53,34 @@ class BackupPostsCommand extends Command
 
         /** @var array<string, array<string, mixed>> $files */
         $files = [];
+        /** @var array<int, string> $fileKeyBySourceId */
+        $fileKeyBySourceId = [];
         /** @var array<string, array<string, mixed>> $keywordSets */
         $keywordSets = [];
+        /** @var array<int, string> $keywordSetKeyBySourceId */
+        $keywordSetKeyBySourceId = [];
         /** @var array<string, array<string, mixed>> $categories */
         $categories = [];
+        /** @var array<int, string> $categoryKeyBySourceId */
+        $categoryKeyBySourceId = [];
         $missingMedia = 0;
         $copiedMedia = 0;
 
         $postRecords = [];
+        $postSeq = 0;
 
         foreach ($posts as $post) {
             $featureMediaKey = null;
             $featureMedia = $post->featureMedia;
 
             if ($featureMedia !== null) {
-                $featureMediaKey = 'file_'.$featureMedia->id;
+                $sourceFileId = (int) $featureMedia->id;
+                $featureMediaKey = $fileKeyBySourceId[$sourceFileId] ?? null;
 
-                if (! isset($files[$featureMediaKey])) {
+                if ($featureMediaKey === null) {
+                    $featureMediaKey = 'file_'.(count($files) + 1);
+                    $fileKeyBySourceId[$sourceFileId] = $featureMediaKey;
+
                     $disk = (string) $featureMedia->disk;
                     $path = (string) $featureMedia->path;
                     $backupRelativePath = $disk.'/'.ltrim($path, '/');
@@ -88,7 +99,7 @@ class BackupPostsCommand extends Command
 
                     $files[$featureMediaKey] = [
                         'backup_key' => $featureMediaKey,
-                        'original_id' => (int) $featureMedia->id,
+                        'original_id' => count($files) + 1,
                         'disk' => $disk,
                         'file_name' => (string) $featureMedia->file_name,
                         'original_name' => (string) $featureMedia->original_name,
@@ -103,28 +114,37 @@ class BackupPostsCommand extends Command
 
             $keywordSetKeys = [];
             foreach ($post->keywordSets as $keywordSet) {
-                $keywordSetKey = 'ks_'.$keywordSet->id;
-                $keywordSetKeys[] = $keywordSetKey;
+                $sourceKeywordSetId = (int) $keywordSet->id;
+                $keywordSetKey = $keywordSetKeyBySourceId[$sourceKeywordSetId] ?? null;
 
-                if (! isset($keywordSets[$keywordSetKey])) {
+                if ($keywordSetKey === null) {
+                    $keywordSetKey = 'ks_'.(count($keywordSets) + 1);
+                    $keywordSetKeyBySourceId[$sourceKeywordSetId] = $keywordSetKey;
+
                     $keywordSets[$keywordSetKey] = [
                         'backup_key' => $keywordSetKey,
-                        'original_id' => (int) $keywordSet->id,
+                        'original_id' => count($keywordSets) + 1,
                         'name' => (string) $keywordSet->name,
                         'keywords' => $keywordSet->keywords ?? [],
                     ];
                 }
+
+                $keywordSetKeys[] = $keywordSetKey;
             }
 
             $categoryKey = null;
             $category = $post->category;
             if ($category !== null) {
-                $categoryKey = 'cat_'.$category->id;
+                $sourceCategoryId = (int) $category->id;
+                $categoryKey = $categoryKeyBySourceId[$sourceCategoryId] ?? null;
 
-                if (! isset($categories[$categoryKey])) {
+                if ($categoryKey === null) {
+                    $categoryKey = 'cat_'.(count($categories) + 1);
+                    $categoryKeyBySourceId[$sourceCategoryId] = $categoryKey;
+
                     $categories[$categoryKey] = [
                         'backup_key' => $categoryKey,
-                        'original_id' => (int) $category->id,
+                        'original_id' => count($categories) + 1,
                         'name' => (string) $category->name,
                         'description' => $category->description,
                     ];
@@ -132,7 +152,7 @@ class BackupPostsCommand extends Command
             }
 
             $postRecords[] = [
-                'original_id' => (int) $post->id,
+                'original_id' => ++$postSeq,
                 'title' => $post->title,
                 'slug' => $post->slug,
                 'lang' => $post->lang,
@@ -249,7 +269,7 @@ class BackupPostsCommand extends Command
     {
         $output = (string) ($this->option('output') ?? '');
 
-        return trim($output) !== '' ? $output : storage_path('app/backup/posts-bundle.json');
+        return trim($output) !== '' ? $output : storage_path('app/backup-new/posts-bundle.json');
     }
 
     private function resolveFilesDir(string $outputPath): string
