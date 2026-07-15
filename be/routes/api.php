@@ -49,6 +49,7 @@ use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserParentChildController;
 use App\Http\Controllers\Api\UserTablePreferenceController;
+use App\Http\Controllers\TikTokOAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -79,6 +80,9 @@ Route::prefix('main-system')->group(function () {
     Route::post('insight-reports', [MainSystemSyncController::class, 'receiveInsightReports']);
     Route::post('channels', [MainSystemSyncController::class, 'receiveChannels']);
 });
+
+Route::post('/tiktok/oauth/exchange', TikTokOAuthController::class)
+    ->name('tiktok.oauth.exchange');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('main-teams')->middleware(['ensure.admin', 'ensure.main-system'])->group(function () {
