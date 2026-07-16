@@ -26,7 +26,11 @@ class TelegramService
         $chatId = $chatIdOverride ?? $this->chatId;
 
         if (empty($this->botToken) || empty($chatId)) {
-            Log::warning('Telegram bot token or chat ID is not configured.');
+            Log::channel('rule_tracking')->warning('[Telegram] Not sent: bot token or chat ID is not configured', [
+                'has_bot_token' => ! empty($this->botToken),
+                'chat_id' => $chatId ?: '(empty)',
+                'used_override' => $chatIdOverride !== null,
+            ]);
 
             return false;
         }
@@ -41,17 +45,23 @@ class TelegramService
             ]);
 
             if ($response->successful()) {
+                Log::channel('rule_tracking')->info('[Telegram] Message sent', [
+                    'chat_id' => $chatId,
+                ]);
+
                 return true;
             }
 
-            Log::error('Failed to send Telegram message', [
+            Log::channel('rule_tracking')->error('[Telegram] Failed to send message', [
+                'chat_id' => $chatId,
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
 
             return false;
         } catch (\Exception $e) {
-            Log::error('Error sending Telegram message', [
+            Log::channel('rule_tracking')->error('[Telegram] Error sending message', [
+                'chat_id' => $chatId,
                 'error' => $e->getMessage(),
             ]);
 
