@@ -57,6 +57,7 @@ class GetPostBySlugAction
             $trackingIds = is_array($adsLink->tracking_ids) ? $adsLink->tracking_ids : (json_decode($adsLink->tracking_ids ?? '{}', true) ?: []);
             $post->fbid = implode(',', $trackingIds['fbid'] ?? []);
             $post->ggid = implode(',', $trackingIds['googleid'] ?? []);
+            $post->ttid = implode(',', $trackingIds['tiktokid'] ?? []);
 
             $campaign = null;
             if ($campaignId) {
@@ -76,7 +77,6 @@ class GetPostBySlugAction
                     $post->traffic_type = TrafficType::GOOGLE->value;
                     $post->gtag = $this->gtagResolver->resolve($campaign->account_id);
                 } elseif ($trafficType === TrafficType::TIKTOK || $campaign->ads_type === AdsType::TIKTOK->value) {
-                    $post->account_id = $campaign->account_id;
                     $post->traffic_type = TrafficType::TIKTOK->value;
                 } else {
                     $post->traffic_type = TrafficType::FACEBOOK->value;

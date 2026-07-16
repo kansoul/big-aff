@@ -2,6 +2,7 @@
 
 namespace App\Services\Integrations\TikTok;
 
+use App\Models\TikTokOAuthToken;
 use App\Services\Integrations\Contracts\AdsAdsetProvider;
 use Carbon\Carbon;
 use Illuminate\Http\Client\PendingRequest;
@@ -46,7 +47,7 @@ class TikTokAdsAdsetService implements AdsAdsetProvider
     public function __construct()
     {
         $this->baseUrl = rtrim((string) config('tiktok.base_url'), '/');
-        $this->accessToken = config('tiktok.sync_tokens.access_token');
+        $this->accessToken = TikTokOAuthToken::getActiveToken()?->access_token;
     }
 
     /**

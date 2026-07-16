@@ -2,6 +2,7 @@
 
 namespace App\Services\Integrations\TikTok;
 
+use App\Models\TikTokOAuthToken;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -31,7 +32,7 @@ class TikTokAdsStatusService
     public function __construct()
     {
         $this->baseUrl = rtrim((string) config('tiktok.base_url'), '/');
-        $this->accessToken = config('tiktok.update_tokens.access_token');
+        $this->accessToken = TikTokOAuthToken::getActiveToken()?->access_token;
     }
 
     /**

@@ -37,6 +37,7 @@ class PostBySlugResource extends JsonResource
             'gtag' => $this->gtag ?? null,
             'ggid' => $this->ggid ?? null,
             'fbid' => $this->fbid ?? null,
+            'ttid' => $this->ttid ?? null,
             'traffic_type' => $this->traffic_type ?? null,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

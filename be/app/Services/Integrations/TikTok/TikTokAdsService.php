@@ -4,6 +4,7 @@ namespace App\Services\Integrations\TikTok;
 
 use App\Enums\AdsType;
 use App\Models\Account;
+use App\Models\TikTokOAuthToken;
 use Carbon\Carbon;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
@@ -33,7 +34,7 @@ class TikTokAdsService
     public function __construct()
     {
         $this->baseUrl = rtrim((string) config('tiktok.base_url'), '/');
-        $this->accessToken = config('tiktok.sync_tokens.access_token');
+        $this->accessToken = TikTokOAuthToken::getActiveToken()?->access_token;
     }
 
     /**
@@ -90,13 +91,17 @@ class TikTokAdsService
                     'advertiser_id' => $advertiserId,
                     'filtering' => json_encode(['campaign_ids' => [$campaignId]]),
                     'fields' => json_encode([
-                        'campaign_id', 'campaign_name', 'budget', 'budget_mode',
-                        'operation_status', 'create_time', 'modify_time',
+                        'campaign_id',
+                        'campaign_name',
+                        'budget',
+                        'budget_mode',
+                        'operation_status',
+                        'create_time',
+                        'modify_time',
                     ]),
                     'page' => 1,
                     'page_size' => 1,
                 ]);
-
                 $payload = $this->decode($response->json(), $advertiserId, 'verifyCampaign');
                 if ($payload === null) {
                     continue;
@@ -160,8 +165,16 @@ class TikTokAdsService
                     'data_level' => 'AUCTION_CAMPAIGN',
                     'dimensions' => json_encode(['campaign_id', 'stat_time_day']),
                     'metrics' => json_encode([
-                        'spend', 'impressions', 'clicks', 'ctr', 'cpc', 'cpm',
-                        'reach', 'frequency', 'conversion', 'cost_per_conversion',
+                        'spend',
+                        'impressions',
+                        'clicks',
+                        'ctr',
+                        'cpc',
+                        'cpm',
+                        'reach',
+                        'frequency',
+                        'conversion',
+                        'cost_per_conversion',
                     ]),
                     'start_date' => $start,
                     'end_date' => $end,
@@ -235,8 +248,13 @@ class TikTokAdsService
                     'advertiser_id' => $advertiserId,
                     'filtering' => json_encode(['campaign_ids' => $campaignIds]),
                     'fields' => json_encode([
-                        'campaign_id', 'campaign_name', 'budget', 'budget_mode',
-                        'operation_status', 'create_time', 'modify_time',
+                        'campaign_id',
+                        'campaign_name',
+                        'budget',
+                        'budget_mode',
+                        'operation_status',
+                        'create_time',
+                        'modify_time',
                     ]),
                     'page' => $page,
                     'page_size' => self::PAGE_SIZE,

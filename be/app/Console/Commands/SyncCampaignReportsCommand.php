@@ -6,7 +6,7 @@ use App\Models\AdClient;
 use App\Services\Integrations\Adsense\RevenueReportSyncService;
 use App\Services\Integrations\Facebook\FacebookCampaignSyncService;
 use App\Services\Integrations\Google\GoogleCampaignSyncService;
-use App\Services\Integrations\TikTok\TikTokCampaignSyncService;
+// use App\Services\Integrations\TikTok\TikTokCampaignSyncService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -99,6 +99,7 @@ class SyncCampaignReportsCommand extends Command
             $this->error('Exception syncing Google Ads campaigns: '.$e->getMessage());
         }
 
+        /*
         try {
             TikTokCampaignSyncService::sync([
                 'start_date' => $startDate,
@@ -110,6 +111,7 @@ class SyncCampaignReportsCommand extends Command
             ]);
             $this->error('Exception syncing TikTok campaigns: '.$e->getMessage());
         }
+        */
 
         try {
             FacebookCampaignSyncService::sync([
