@@ -1,12 +1,8 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { toast } from 'sonner'
 
 import { dashboardApi } from '@/features/dashboard/api'
 import { loginApi } from '@/features/auth/api'
-import { formatApiError } from '@/features/settings/components'
-import { tiktokOAuthApi } from '@/features/tiktok/api'
-import { consumeTikTokOAuth, stripTikTokOAuthQuery } from '@/features/tiktok/oauth'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { useSessionStore } from '@/hooks/useSessionStore'
 import { PATHS } from '@/constants/paths'
@@ -44,34 +40,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void initAuth()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    const captured = consumeTikTokOAuth()
-    if (!captured) {
-      return
-    }
-
-    stripTikTokOAuthQuery()
-
-    if (captured.error) {
-      toast.error(`TikTok authorization failed: ${captured.errorDescription ?? captured.error}`)
-      return
-    }
-
-    if (!captured.authCode) {
-      return
-    }
-
-    if (!useSessionStore.getState().getActiveToken()) {
-      toast.error('Please log in first, then reconnect TikTok.')
-      return
-    }
-
-    tiktokOAuthApi
-      .exchange({ auth_code: captured.authCode, state: captured.state })
-      .then((res) => toast.success(res.message || 'TikTok Ads connected successfully.'))
-      .catch((err) => toast.error(formatApiError(err)))
   }, [])
 
   useEffect(() => {
