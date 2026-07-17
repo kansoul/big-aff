@@ -22,27 +22,11 @@ class EvaluateCampaignRuleAction
 
     public function execute(Campaign $campaign, string $date): void
     {
-        Log::channel('rule_tracking')->info('[RuleEval] Start', [
-            'campaign_id' => $campaign->campaign_id,
-            'campaign_name' => $campaign->campaign_name,
-            'date' => $date,
-        ]);
-
         $metrics = $this->loadMetrics($campaign, $date);
 
         if ($metrics === null) {
-            Log::channel('rule_tracking')->warning('[RuleEval] No report/metrics for date — abort', [
-                'campaign_id' => $campaign->campaign_id,
-                'date' => $date,
-            ]);
-
             return;
         }
-
-        Log::channel('rule_tracking')->info('[RuleEval] Metrics loaded', [
-            'campaign_id' => $campaign->campaign_id,
-            'metrics' => $metrics,
-        ]);
 
         $now = Carbon::now();
 
@@ -70,18 +54,8 @@ class EvaluateCampaignRuleAction
             ->get();
 
         if ($rules->isEmpty()) {
-            Log::channel('rule_tracking')->warning('[RuleEval] No active applied rule for campaign — abort', [
-                'campaign_id' => $campaign->campaign_id,
-            ]);
-
             return;
         }
-
-        Log::channel('rule_tracking')->info('[RuleEval] Applied rules loaded', [
-            'campaign_id' => $campaign->campaign_id,
-            'rule_count' => $rules->count(),
-            'rule_ids' => $rules->pluck('id')->all(),
-        ]);
 
         $spend = $metrics['spend'];
         $revenue = $metrics['revenue'];
@@ -90,36 +64,14 @@ class EvaluateCampaignRuleAction
 
         foreach ($rules as $rule) {
             if ($spend < (float) ($rule->min_spend ?? 0)) {
-                Log::channel('rule_tracking')->info('[RuleEval] Rule skipped: spend below min_spend', [
-                    'campaign_id' => $campaign->campaign_id,
-                    'rule_id' => $rule->id,
-                    'spend' => $spend,
-                    'min_spend' => $rule->min_spend,
-                ]);
-
                 continue;
             }
 
             if ($revenue < (float) ($rule->min_revenue ?? 0)) {
-                Log::channel('rule_tracking')->info('[RuleEval] Rule skipped: revenue below min_revenue', [
-                    'campaign_id' => $campaign->campaign_id,
-                    'rule_id' => $rule->id,
-                    'revenue' => $revenue,
-                    'min_revenue' => $rule->min_revenue,
-                ]);
-
                 continue;
             }
 
             if (! $this->isWithinTimeWindow($rule, $now)) {
-                Log::channel('rule_tracking')->info('[RuleEval] Rule skipped: outside time window', [
-                    'campaign_id' => $campaign->campaign_id,
-                    'rule_id' => $rule->id,
-                    'now' => $now->format('H:i'),
-                    'start_hour' => $rule->start_hour,
-                    'end_hour' => $rule->end_hour,
-                ]);
-
                 continue;
             }
 
@@ -127,15 +79,6 @@ class EvaluateCampaignRuleAction
             $roiTriggered = $rule->min_roi !== null && $roi < (float) $rule->min_roi;
 
             if (! $profitTriggered && ! $roiTriggered) {
-                Log::channel('rule_tracking')->info('[RuleEval] Rule skipped: profit & ROI thresholds not breached', [
-                    'campaign_id' => $campaign->campaign_id,
-                    'rule_id' => $rule->id,
-                    'profit' => $profit,
-                    'min_profit' => $rule->min_profit,
-                    'roi' => $roi,
-                    'min_roi' => $rule->min_roi,
-                ]);
-
                 continue;
             }
 
@@ -145,21 +88,7 @@ class EvaluateCampaignRuleAction
 
             $telegramChatId = $rule->setting_telegram_chat_id ?? null;
 
-            Log::channel('rule_tracking')->info('[RuleEval] Rule TRIGGERED', [
-                'campaign_id' => $campaign->campaign_id,
-                'rule_id' => $rule->id,
-                'action_mode' => $actionMode->value,
-                'profit_triggered' => $profitTriggered,
-                'roi_triggered' => $roiTriggered,
-                'telegram_chat_id' => $telegramChatId ?? '(fallback to global config)',
-            ]);
-
             if ($actionMode === RuleActionMode::WARNING) {
-                Log::channel('rule_tracking')->info('[RuleEval] WARNING mode — sending notification only', [
-                    'campaign_id' => $campaign->campaign_id,
-                    'rule_id' => $rule->id,
-                ]);
-
                 $this->sendNotification($rule, $campaign, $metrics, $telegramChatId, '🐧 *Campaign lỏ cần xem lại*');
 
                 // WARNING: notify only, do NOT delete apply rule
@@ -168,11 +97,6 @@ class EvaluateCampaignRuleAction
 
             // PAUSE: call API first, then update DB
             try {
-                Log::channel('rule_tracking')->info('[RuleEval] PAUSE mode — calling ads API to pause campaign', [
-                    'campaign_id' => $campaign->campaign_id,
-                    'rule_id' => $rule->id,
-                ]);
-
                 $success = $this->adsStatusService->updateCampaignStatus(
                     (string) $campaign->campaign_id,
                     'PAUSED',
@@ -180,7 +104,7 @@ class EvaluateCampaignRuleAction
                 );
 
                 if (! $success) {
-                    Log::channel('rule_tracking')->warning('[RuleEval] PAUSE API failed — no notification sent', [
+                    Log::channel('tracking_events')->warning('[EvaluateCampaignRuleAction] API pause failed', [
                         'rule_id' => $rule->id,
                         'campaign_id' => $campaign->campaign_id,
                     ]);
@@ -188,30 +112,19 @@ class EvaluateCampaignRuleAction
                     break;
                 }
 
-                Log::channel('rule_tracking')->info('[RuleEval] PAUSE API success — updating DB & notifying', [
-                    'campaign_id' => $campaign->campaign_id,
-                    'rule_id' => $rule->id,
-                ]);
-
                 DB::transaction(function () use ($campaign, $rule, $metrics, $telegramChatId) {
                     $campaign->update(['status' => 'PAUSED']);
 
-                    $deleted = CampaignApplyRule::query()
+                    CampaignApplyRule::query()
                         ->where('sourceable_type', Campaign::class)
                         ->where('sourceable_id', (int) $campaign->campaign_id)
                         ->where('campaign_rule_id', $rule->id)
                         ->delete();
 
-                    Log::channel('rule_tracking')->info('[RuleEval] Campaign paused & apply-rule removed', [
-                        'campaign_id' => $campaign->campaign_id,
-                        'rule_id' => $rule->id,
-                        'apply_rules_deleted' => $deleted,
-                    ]);
-
                     $this->sendNotification($rule, $campaign, $metrics, $telegramChatId, '🐧 *Camp lỏ đã tắt*');
                 });
             } catch (Throwable $e) {
-                Log::channel('rule_tracking')->error('[RuleEval] Pause error', [
+                Log::channel('tracking_events')->error('[EvaluateCampaignRuleAction] Pause error', [
                     'rule_id' => $rule->id,
                     'campaign_id' => $campaign->campaign_id,
                     'error' => $e->getMessage(),
@@ -317,13 +230,6 @@ class EvaluateCampaignRuleAction
             $message .= str_pad('Revenue', $pad).str_pad('$'.$revenue, $pad).$ruleRev."\n";
             $message .= "```\n";
 
-            Log::channel('rule_tracking')->info('[RuleEval] Dispatching Telegram notification job', [
-                'campaign_id' => $campaign->campaign_id,
-                'rule_id' => $rule->id,
-                'telegram_chat_id' => $telegramChatId ?? '(fallback to global config)',
-                'title' => $title,
-            ]);
-
             SendTelegramWarningJob::dispatch(
                 $message,
                 (string) $campaign->campaign_id,
@@ -332,7 +238,7 @@ class EvaluateCampaignRuleAction
                 'Markdown',
             );
         } catch (Throwable $e) {
-            Log::channel('rule_tracking')->error('[RuleEval] Notification error', [
+            Log::channel('tracking_events')->error('[EvaluateCampaignRuleAction] Notification error', [
                 'rule_id' => $rule->id,
                 'campaign_id' => $campaign->campaign_id,
                 'error' => $e->getMessage(),
