@@ -152,12 +152,6 @@ class FacebookCampaignSyncService
             ->where('status', 'ACTIVE')
             ->get();
 
-        Log::channel('rule_tracking')->info('[RuleEval] Dispatching evaluation jobs after sync', [
-            'date' => $date,
-            'campaign_count' => $campaigns->count(),
-            'campaign_ids' => $campaigns->pluck('campaign_id')->all(),
-        ]);
-
         foreach ($campaigns as $campaign) {
             EvaluateCampaignRuleJob::dispatch($campaign, $date);
         }
