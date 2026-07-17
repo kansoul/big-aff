@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class SendTelegramWarningJob implements ShouldBeUnique, ShouldQueue
 {
@@ -47,6 +48,18 @@ class SendTelegramWarningJob implements ShouldBeUnique, ShouldQueue
      */
     public function handle(TelegramService $telegramService): void
     {
-        $telegramService->sendMessage($this->message, $this->chatIdOverride, $this->parseMode);
+        Log::channel('rule_tracking')->info('[Telegram][Job] Handling SendTelegramWarningJob', [
+            'campaign_id' => $this->campaignId,
+            'ads_link_id' => $this->adsLinkId,
+            'chat_id_override' => $this->chatIdOverride ?? '(fallback to global config)',
+            'parse_mode' => $this->parseMode,
+        ]);
+
+        $sent = $telegramService->sendMessage($this->message, $this->chatIdOverride, $this->parseMode);
+
+        Log::channel('rule_tracking')->info('[Telegram][Job] SendTelegramWarningJob finished', [
+            'campaign_id' => $this->campaignId,
+            'sent' => $sent,
+        ]);
     }
 }
