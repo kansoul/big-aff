@@ -96,6 +96,16 @@ class EvaluateCampaignRuleAction
             }
 
             // PAUSE: call API first, then update DB
+            Log::channel('rule_tracking')->info('[AutoOffCampaign] Rule triggered — attempting to auto-off campaign', [
+                'campaign_id' => $campaign->campaign_id,
+                'campaign_name' => $campaign->campaign_name,
+                'rule_id' => $rule->id,
+                'profit_triggered' => $profitTriggered,
+                'roi_triggered' => $roiTriggered,
+                'metrics' => $metrics,
+                'telegram_chat_id' => $telegramChatId ?? '(fallback to global config)',
+            ]);
+
             try {
                 $success = $this->adsStatusService->updateCampaignStatus(
                     (string) $campaign->campaign_id,
@@ -104,7 +114,7 @@ class EvaluateCampaignRuleAction
                 );
 
                 if (! $success) {
-                    Log::channel('tracking_events')->warning('[EvaluateCampaignRuleAction] API pause failed', [
+                    Log::channel('rule_tracking')->warning('[AutoOffCampaign] Pause API failed — campaign NOT turned off, no notification sent', [
                         'rule_id' => $rule->id,
                         'campaign_id' => $campaign->campaign_id,
                     ]);
@@ -112,19 +122,31 @@ class EvaluateCampaignRuleAction
                     break;
                 }
 
+                Log::channel('rule_tracking')->info('[AutoOffCampaign] Pause API success — updating DB & dispatching Telegram notification', [
+                    'rule_id' => $rule->id,
+                    'campaign_id' => $campaign->campaign_id,
+                ]);
+
                 DB::transaction(function () use ($campaign, $rule, $metrics, $telegramChatId) {
                     $campaign->update(['status' => 'PAUSED']);
 
-                    CampaignApplyRule::query()
+                    $deleted = CampaignApplyRule::query()
                         ->where('sourceable_type', Campaign::class)
                         ->where('sourceable_id', (int) $campaign->campaign_id)
                         ->where('campaign_rule_id', $rule->id)
                         ->delete();
 
                     $this->sendNotification($rule, $campaign, $metrics, $telegramChatId, '🐧 *Camp lỏ đã tắt*');
+
+                    Log::channel('rule_tracking')->info('[AutoOffCampaign] Campaign turned off & Telegram notification dispatched', [
+                        'rule_id' => $rule->id,
+                        'campaign_id' => $campaign->campaign_id,
+                        'apply_rules_deleted' => $deleted,
+                        'telegram_chat_id' => $telegramChatId ?? '(fallback to global config)',
+                    ]);
                 });
             } catch (Throwable $e) {
-                Log::channel('tracking_events')->error('[EvaluateCampaignRuleAction] Pause error', [
+                Log::channel('rule_tracking')->error('[AutoOffCampaign] Pause error', [
                     'rule_id' => $rule->id,
                     'campaign_id' => $campaign->campaign_id,
                     'error' => $e->getMessage(),
@@ -229,6 +251,11 @@ class EvaluateCampaignRuleAction
             $ruleRev = $rule->min_revenue ? " {$getOp($revenue, $rule->min_revenue)} \${$rule->min_revenue}" : '-';
             $message .= str_pad('Revenue', $pad).str_pad('$'.$revenue, $pad).$ruleRev."\n";
             $message .= "```\n";
+            Log::channel('rule_tracking')->info('[EvaluateCampaignRuleAction] Sending notification', [
+                'rule_id' => $rule->id,
+                'campaign_id' => $campaign->campaign_id,
+                'telegram_chat_id' => $telegramChatId ?? '(fallback to global config)',
+            ]);
 
             SendTelegramWarningJob::dispatch(
                 $message,
@@ -238,9 +265,10 @@ class EvaluateCampaignRuleAction
                 'Markdown',
             );
         } catch (Throwable $e) {
-            Log::channel('tracking_events')->error('[EvaluateCampaignRuleAction] Notification error', [
+            Log::channel('rule_tracking')->error('[EvaluateCampaignRuleAction] Notification error', [
                 'rule_id' => $rule->id,
                 'campaign_id' => $campaign->campaign_id,
+                'telegram_chat_id' => $telegramChatId ?? '(fallback to global config)',
                 'error' => $e->getMessage(),
             ]);
         }
