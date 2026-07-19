@@ -2,6 +2,7 @@
 
 namespace App\Services\Integrations;
 
+use App\Enums\AdsType;
 use App\Jobs\SendTelegramWarningJob;
 use App\Models\Campaign;
 use App\Models\CampaignReport;
@@ -305,6 +306,10 @@ class CampaignReportSyncService
         int $rConversion,
         int $sumRealtimeClickAdCount,
     ): void {
+        if ($insightReport->campaign?->ads_type == AdsType::GOOGLE->value) {
+            return;
+        }
+
         if (! Carbon::parse($date)->isToday()) {
             return;
         }
