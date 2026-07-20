@@ -200,10 +200,10 @@ class EvaluateCampaignRuleAction
             $pad = 10;
             $message = "{$title}\n\n";
             $message .= 'Time: '.now()->format('d/m/Y H:i:s')."\n";
-            $message .= "Rule: {$rule->title}\n";
+            $message .= 'Rule: '.$this->escapeMarkdown((string) $rule->title)."\n";
             $message .= "Campaign ID: {$campaign->campaign_id}\n";
             if ($campaign->campaign_name) {
-                $campaignName = str_replace('_', '\_', $campaign->campaign_name);
+                $campaignName = $this->escapeMarkdown((string) $campaign->campaign_name);
                 $message .= "Campaign Name: {$campaignName}\n";
             }
             $message .= "================\n\n";
@@ -244,5 +244,10 @@ class EvaluateCampaignRuleAction
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    private function escapeMarkdown(string $text): string
+    {
+        return str_replace(['_', '*', '`', '['], ['\_', '\*', '\`', '\['], $text);
     }
 }
