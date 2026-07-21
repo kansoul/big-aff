@@ -291,11 +291,11 @@ class EvaluateAdAdsetRuleAction
             $pad = 10;
             $message = "{$title}\n\n";
             $message .= 'Time: '.now()->format('d/m/Y H:i:s')."\n";
-            $message .= "Rule: {$rule->title}\n";
+            $message .= 'Rule: '.$this->escapeMarkdown((string) $rule->title)."\n";
             $message .= "{$prefix} ID: {$entityFbId}\n";
 
             if ($entityName) {
-                $safeName = str_replace('_', '\_', (string) $entityName);
+                $safeName = $this->escapeMarkdown((string) $entityName);
                 $message .= "{$prefix} Name: {$safeName}\n";
             }
 
@@ -339,5 +339,10 @@ class EvaluateAdAdsetRuleAction
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    private function escapeMarkdown(string $text): string
+    {
+        return str_replace(['_', '*', '`', '['], ['\_', '\*', '\`', '\['], $text);
     }
 }
