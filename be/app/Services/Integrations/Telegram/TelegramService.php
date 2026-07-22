@@ -19,18 +19,40 @@ class TelegramService
 
     /**
      * @param  ?string  $chatIdOverride  When set, sends to this chat instead of the default from config.
+     *                                   Accepts a single chat ID or a comma-separated list (e.g. "123,456").
      * @param  string  $parseMode  Telegram parse_mode, e.g. HTML or Markdown.
      */
     public function sendMessage(string $message, ?string $chatIdOverride = null, string $parseMode = 'Markdown'): bool
     {
-        $chatId = $chatIdOverride ?? $this->chatId;
+        $rawChatId = $chatIdOverride ?? $this->chatId;
 
-        if (empty($this->botToken) || empty($chatId)) {
+        $chatIds = array_values(array_filter(
+            array_map('trim', explode(',', (string) $rawChatId)),
+            fn (string $chatId): bool => $chatId !== '',
+        ));
+
+        if (empty($this->botToken) || empty($chatIds)) {
             Log::warning('Telegram bot token or chat ID is not configured.');
 
             return false;
         }
 
+        $allSucceeded = true;
+
+        foreach ($chatIds as $chatId) {
+            if (! $this->sendToChat($message, $chatId, $parseMode)) {
+                $allSucceeded = false;
+            }
+        }
+
+        return $allSucceeded;
+    }
+
+    /**
+     * Send the message to a single chat ID.
+     */
+    private function sendToChat(string $message, string $chatId, string $parseMode): bool
+    {
         try {
             $url = "https://api.telegram.org/bot{$this->botToken}/sendMessage";
 
@@ -45,6 +67,7 @@ class TelegramService
             }
 
             Log::error('Failed to send Telegram message', [
+                'chat_id' => $chatId,
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
@@ -52,6 +75,7 @@ class TelegramService
             return false;
         } catch (\Exception $e) {
             Log::error('Error sending Telegram message', [
+                'chat_id' => $chatId,
                 'error' => $e->getMessage(),
             ]);
 
