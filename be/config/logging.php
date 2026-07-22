@@ -158,16 +158,6 @@ return [
             'days' => env('LOG_TRACKING_EVENTS_DAYS', 30),
             'replace_placeholders' => true,
         ],
-
-        // TEMP: dedicated channel for debugging Telegram notifications.
-        // Remove this channel and revert the related Log::channel('rule_tracking') calls once done.
-        'rule_tracking' => [
-            'driver' => 'daily',
-            'path' => storage_path('logs/rule_tracking.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-            'days' => env('LOG_RULE_TRACKING_DAYS', 14),
-            'replace_placeholders' => true,
-        ],
     ],
 
 ];
