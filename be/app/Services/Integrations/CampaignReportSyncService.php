@@ -108,9 +108,7 @@ class CampaignReportSyncService
             DB::transaction(function () use ($date, &$syncedCount, $failedAdClientIds) {
 
                 $insightReportsQuery = InsightReport::with(['campaign', 'campaign.account'])
-                    ->whereDate('date_start', $date)
-                    // Temporarily disable syncing TikTok campaign reports.
-                    ->whereHas('campaign', fn ($query) => $query->where('ads_type', '!=', AdsType::TIKTOK->value));
+                    ->whereDate('date_start', $date);
 
                 self::applyMainTeamInsightScope($insightReportsQuery);
 

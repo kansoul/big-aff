@@ -127,6 +127,7 @@ function getRowArticleLink(row: TableRow): string | null {
   const adsTypeLower = (ads_type ?? '').toLowerCase()
   if (adsTypeLower === 'facebook') return buildCopyLink(site_url, slug, 'facebook')
   if (adsTypeLower === 'google') return buildCopyLink(site_url, slug, 'google')
+  if (adsTypeLower === 'tiktok') return buildCopyLink(site_url, slug, 'tiktok')
   return null
 }
 
@@ -1205,8 +1206,8 @@ function getColumns(
       Footer: undefined,
     },
     { ...ratio('a_cpm', 'CPM', 70, 2, 'blue'), Footer: undefined },
-    { ...ratio('a_frequency', 'FB Freq', 82, 2, 'blue'), Footer: undefined },
-    { ...ratio('a_ctr', 'FB CTR', 92, 2, 'blue'), Footer: undefined },
+    { ...ratio('a_frequency', 'A. Freq', 82, 2, 'blue'), Footer: undefined },
+    { ...ratio('a_ctr', 'A. CTR', 92, 2, 'blue'), Footer: undefined },
     {
       ...usd('daily_budget', 'A. Budget (Daily)', 100, 'blue'),
       Footer: undefined,
