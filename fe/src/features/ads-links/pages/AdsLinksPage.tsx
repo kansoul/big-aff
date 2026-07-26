@@ -98,6 +98,7 @@ const createDefaultValues: AdsLinkCreateFormValues = {
   fbid: '',
   googleid: '',
   tiktokid: '',
+  tiktok_pixel_id: '',
 }
 
 export function AdsLinksPage() {
@@ -151,6 +152,7 @@ export function AdsLinksPage() {
       fbid: '',
       googleid: '',
       tiktokid: '',
+      tiktok_pixel_id: '',
     },
   })
 
@@ -210,6 +212,7 @@ export function AdsLinksPage() {
         fbid: editRow.fbid?.join(',') ?? '',
         googleid: editRow.googleid?.join(',') ?? '',
         tiktokid: editRow.tiktokid?.join(',') ?? '',
+        tiktok_pixel_id: editRow.tiktok_pixel_id?.join(',') ?? '',
         note: editRow.note ?? '',
       })
     }
@@ -257,6 +260,7 @@ export function AdsLinksPage() {
         fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
         tiktokid: values.tiktokid ?? null,
+        tiktok_pixel_id: values.tiktok_pixel_id ?? null,
       })
       createForm.reset(
         options?.createAnother && values.post_id
@@ -290,6 +294,7 @@ export function AdsLinksPage() {
         fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
         tiktokid: values.tiktokid ?? null,
+        tiktok_pixel_id: values.tiktok_pixel_id ?? null,
         note: values.note ?? null,
       })
       setEditRow(null)

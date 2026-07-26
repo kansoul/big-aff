@@ -51,6 +51,15 @@ class UpdateAdsLinkAction
                 $trackingIds['tiktokid'] = array_map('trim', explode(',', $data['tiktokid']));
             } else {
                 unset($trackingIds['tiktokid']);
+                unset($trackingIds['tiktok_pixel_id']);
+            }
+        }
+
+        if (array_key_exists('tiktok_pixel_id', $data)) {
+            if (! empty($data['tiktok_pixel_id'])) {
+                $trackingIds['tiktok_pixel_id'] = array_map('trim', explode(',', $data['tiktok_pixel_id']));
+            } else {
+                unset($trackingIds['tiktok_pixel_id']);
             }
         }
 

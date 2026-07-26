@@ -29,6 +29,7 @@ export interface AdsLink {
   fbid: string[] | null
   googleid: string[] | null
   tiktokid: string[] | null
+  tiktok_pixel_id: string[] | null
   site: AdsLinkSite | null
   post: AdsLinkPost | null
   keyword_set: AdsLinkKeywordSet | null
@@ -65,6 +66,7 @@ export interface AdsLinkCreatePayload {
   fbid?: string | null
   googleid?: string | null
   tiktokid?: string | null
+  tiktok_pixel_id?: string | null
 }
 
 export interface AdsLinkUpdatePayload {
@@ -74,6 +76,7 @@ export interface AdsLinkUpdatePayload {
   fbid?: string | null
   googleid?: string | null
   tiktokid?: string | null
+  tiktok_pixel_id?: string | null
   note?: string | null
 }
 
@@ -128,6 +131,7 @@ export const adsLinkCreateSchema = z
     fbid: z.string().nullable().optional(),
     googleid: z.string().nullable().optional(),
     tiktokid: z.string().nullable().optional(),
+    tiktok_pixel_id: z.string().nullable().optional(),
   })
   .refine(
     (v) =>
@@ -140,6 +144,10 @@ export const adsLinkCreateSchema = z
       path: ['fbid'],
     },
   )
+  .refine((v) => (v.tiktokid?.trim() ?? '') === '' || (v.tiktok_pixel_id?.trim() ?? '') !== '', {
+    error: 'TikTok Pixel ID is required when TikTok Advertiser ID is provided',
+    path: ['tiktok_pixel_id'],
+  })
 
 export const adsLinkUpdateSchema = z
   .object({
@@ -149,6 +157,7 @@ export const adsLinkUpdateSchema = z
     fbid: z.string().nullable().optional(),
     googleid: z.string().nullable().optional(),
     tiktokid: z.string().nullable().optional(),
+    tiktok_pixel_id: z.string().nullable().optional(),
     note: z.string().nullable().optional(),
   })
   .refine(
@@ -162,6 +171,10 @@ export const adsLinkUpdateSchema = z
       path: ['fbid'],
     },
   )
+  .refine((v) => (v.tiktokid?.trim() ?? '') === '' || (v.tiktok_pixel_id?.trim() ?? '') !== '', {
+    error: 'TikTok Pixel ID is required when TikTok Advertiser ID is provided',
+    path: ['tiktok_pixel_id'],
+  })
 
 export type AdsLinkCreateFormValues = z.infer<typeof adsLinkCreateSchema>
 export type AdsLinkUpdateFormValues = z.infer<typeof adsLinkUpdateSchema>

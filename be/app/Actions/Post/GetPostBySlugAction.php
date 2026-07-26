@@ -57,7 +57,7 @@ class GetPostBySlugAction
             $trackingIds = is_array($adsLink->tracking_ids) ? $adsLink->tracking_ids : (json_decode($adsLink->tracking_ids ?? '{}', true) ?: []);
             $post->fbid = implode(',', $trackingIds['fbid'] ?? []);
             $post->ggid = implode(',', $trackingIds['googleid'] ?? []);
-            $post->ttid = implode(',', $trackingIds['tiktokid'] ?? []);
+            $post->ttid = implode(',', $trackingIds['tiktok_pixel_id'] ?? []);
 
             $campaign = null;
             if ($campaignId) {

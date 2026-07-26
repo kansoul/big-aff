@@ -52,6 +52,7 @@ class CreateAdsLinkAction
         }
         if (! empty($data['tiktokid'])) {
             $trackingIds['tiktokid'] = array_map('trim', explode(',', $data['tiktokid']));
+            $trackingIds['tiktok_pixel_id'] = array_map('trim', explode(',', $data['tiktok_pixel_id']));
         }
 
         try {
