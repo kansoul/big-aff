@@ -187,6 +187,42 @@ export function CreateAdsLinkDialog({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="tiktokid"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>TikTok Advertiser ID(s)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. 7012345678901234567"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="tiktok_pixel_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>TikTok Pixel ID(s)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. C1234567890ABCDEF,C0987654321FEDCBA"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {keywordSets.length > 0 ? (
               <FormField
                 control={form.control}
@@ -392,6 +428,42 @@ export function EditAdsLinkDialog({
                   <FormLabel>Google Account ID(s)</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. 123,456" {...field} value={field.value ?? ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="tiktokid"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>TikTok Advertiser ID(s)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. 7012345,7012346"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="tiktok_pixel_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>TikTok Pixel ID(s)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. C1234567890ABCDEF,C0987654321FEDCBA"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

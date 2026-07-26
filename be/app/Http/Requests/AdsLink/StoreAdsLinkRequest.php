@@ -26,6 +26,8 @@ class StoreAdsLinkRequest extends FormRequest
             'note' => ['nullable', 'string'],
             'fbid' => ['nullable', 'string'],
             'googleid' => ['nullable', 'string'],
+            'tiktokid' => ['nullable', 'string'],
+            'tiktok_pixel_id' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -35,9 +37,15 @@ class StoreAdsLinkRequest extends FormRequest
             function (Validator $validator): void {
                 $fbid = $this->input('fbid');
                 $googleid = $this->input('googleid');
+                $tiktokid = $this->input('tiktokid');
+                $tiktok_pixel_id = $this->input('tiktok_pixel_id');
 
-                if (empty($fbid) && empty($googleid)) {
-                    $validator->errors()->add('fbid', 'At least one of Facebook Pixel ID or Google Account ID is required.');
+                if (empty($fbid) && empty($googleid) && empty($tiktokid)) {
+                    $validator->errors()->add('fbid', 'At least one of Facebook Pixel ID, Google Account ID, or TikTok Advertiser ID is required.');
+                }
+
+                if (! empty($tiktokid) && empty($tiktok_pixel_id)) {
+                    $validator->errors()->add('tiktok_pixel_id', 'TikTok Pixel ID is required when TikTok Advertiser ID is provided.');
                 }
             },
         ];

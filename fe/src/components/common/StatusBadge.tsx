@@ -31,6 +31,7 @@ const DEFAULT_STATUS_MAP: Record<
   wordpress: { variant: 'success', label: 'WordPress' },
   facebook: { variant: 'success', label: 'Facebook' },
   google: { variant: 'warning', label: 'Google' },
+  tiktok: { variant: 'secondary', label: 'TikTok' },
   unknown: { variant: 'default', label: 'Unknown' },
 }
 

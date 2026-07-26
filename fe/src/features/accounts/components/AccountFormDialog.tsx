@@ -43,6 +43,7 @@ import { useAuthStore } from '@/hooks/useAuthStore'
 const ADS_TYPE_OPTIONS = [
   { value: 'facebook', label: 'Facebook' },
   { value: 'google', label: 'Google' },
+  { value: 'tiktok', label: 'TikTok' },
 ] as const
 
 function useUsers(): SearchableSelectOption[] {
@@ -519,7 +520,7 @@ export function EditAccountDialog({
       account_name: account?.account_name ?? null,
       ads_type: (account?.ads_type === 'unknown'
         ? 'facebook'
-        : (account?.ads_type ?? 'facebook')) as 'facebook' | 'google',
+        : (account?.ads_type ?? 'facebook')) as 'facebook' | 'google' | 'tiktok',
       business_center_id: account?.business_center_id ?? null,
       main_team_id: account?.main_team_id ?? null,
       user_id: account?.user_id ?? null,

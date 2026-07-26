@@ -19,7 +19,6 @@ trait TikTokOAuthTokenMethod
     {
         return static::where('is_active', true)
             ->whereNotNull('access_token')
-            ->whereNotNull('refresh_token')
             ->first();
     }
 

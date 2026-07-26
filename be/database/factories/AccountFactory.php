@@ -50,6 +50,14 @@ class AccountFactory extends Factory
         ]);
     }
 
+    public function tiktok(): static
+    {
+        return $this->state(fn () => [
+            'ads_type' => 'tiktok',
+            'account_id' => 'tt_'.fake()->unique()->numerify('##########'),
+        ]);
+    }
+
     public function active(): static
     {
         return $this->state(fn () => ['status' => 'ACTIVE']);

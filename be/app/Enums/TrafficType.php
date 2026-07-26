@@ -6,6 +6,7 @@ enum TrafficType: string
 {
     case GOOGLE = 'gg';
     case FACEBOOK = 'fb';
+    case TIKTOK = 'tt';
 
     /**
      * Get the values of the enum.

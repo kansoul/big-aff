@@ -2,8 +2,13 @@
 
 namespace App\Services\Integrations\Ads;
 
+use App\Enums\AdsType;
+use App\Models\Account;
+use App\Models\AdsetInsightsReport;
+use App\Models\AdsInsightsReport;
 use App\Models\Campaign;
 use App\Services\Integrations\Google\GoogleAdsService;
+use App\Services\Integrations\TikTok\TikTokAdsStatusService;
 use Exception;
 use FacebookAds\Api;
 use FacebookAds\Http\Exception\AuthorizationException;
@@ -22,6 +27,7 @@ class AdsStatusService
 
     public function __construct(
         public readonly GoogleAdsService $google,
+        public readonly TikTokAdsStatusService $tiktok,
     ) {
         $this->accessToken = config('facebook.facebook_ads_update.access_token');
         $this->appSecret = config('facebook.facebook_ads_update.app_secret');
@@ -36,6 +42,10 @@ class AdsStatusService
 
         if ($campaign && $campaign->ads_type === 'google' && $canChangeGoogle) {
             return $this->google->updateCampaignStatus($campaign->account_id, $campaignId, $status);
+        }
+
+        if ($campaign && $campaign->ads_type === AdsType::TIKTOK->value) {
+            return $this->tiktok->updateCampaignStatus((string) $campaign->account_id, [$campaignId], $status);
         }
 
         try {
@@ -75,6 +85,12 @@ class AdsStatusService
 
     public function updateAdsetStatus(string $adsetId, string $status): bool
     {
+        $accountId = AdsetInsightsReport::where('adset_id', $adsetId)->value('account_id');
+
+        if ($this->isTikTokAccount($accountId)) {
+            return $this->tiktok->updateAdgroupStatus((string) $accountId, [$adsetId], $status);
+        }
+
         try {
             $adset = new AdSet($adsetId);
             $adset->setData(['status' => $status]);
@@ -90,6 +106,12 @@ class AdsStatusService
 
     public function updateAdStatus(string $adId, string $status): bool
     {
+        $accountId = AdsInsightsReport::where('ad_id', $adId)->value('account_id');
+
+        if ($this->isTikTokAccount($accountId)) {
+            return $this->tiktok->updateAdStatus((string) $accountId, [$adId], $status);
+        }
+
         try {
             $ad = new Ad($adId);
             $ad->setData(['status' => $status]);
@@ -101,5 +123,18 @@ class AdsStatusService
 
             return false;
         }
+    }
+
+    /**
+     * Whether the given advertiser account belongs to TikTok, so status writes
+     * are routed to the TikTok API instead of the Facebook SDK default.
+     */
+    private function isTikTokAccount(?string $accountId): bool
+    {
+        if ($accountId === null || $accountId === '') {
+            return false;
+        }
+
+        return Account::where('account_id', $accountId)->value('ads_type') === AdsType::TIKTOK->value;
     }
 }

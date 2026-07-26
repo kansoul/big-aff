@@ -97,6 +97,8 @@ const createDefaultValues: AdsLinkCreateFormValues = {
   note: '',
   fbid: '',
   googleid: '',
+  tiktokid: '',
+  tiktok_pixel_id: '',
 }
 
 export function AdsLinksPage() {
@@ -143,7 +145,15 @@ export function AdsLinksPage() {
 
   const editForm = useForm<AdsLinkUpdateFormValues>({
     resolver: zodResolver(adsLinkUpdateSchema),
-    defaultValues: { rac: '', channel_code: null, keyword_set_id: null, fbid: '', googleid: '' },
+    defaultValues: {
+      rac: '',
+      channel_code: null,
+      keyword_set_id: null,
+      fbid: '',
+      googleid: '',
+      tiktokid: '',
+      tiktok_pixel_id: '',
+    },
   })
 
   const loadOptions = useCallback(async () => {
@@ -201,6 +211,8 @@ export function AdsLinksPage() {
         keyword_set_id: editRow.keyword_set?.id ?? null,
         fbid: editRow.fbid?.join(',') ?? '',
         googleid: editRow.googleid?.join(',') ?? '',
+        tiktokid: editRow.tiktokid?.join(',') ?? '',
+        tiktok_pixel_id: editRow.tiktok_pixel_id?.join(',') ?? '',
         note: editRow.note ?? '',
       })
     }
@@ -247,6 +259,8 @@ export function AdsLinksPage() {
         note: values.note ?? null,
         fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
+        tiktokid: values.tiktokid ?? null,
+        tiktok_pixel_id: values.tiktok_pixel_id ?? null,
       })
       createForm.reset(
         options?.createAnother && values.post_id
@@ -279,6 +293,8 @@ export function AdsLinksPage() {
         keyword_set_id: values.keyword_set_id ?? null,
         fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
+        tiktokid: values.tiktokid ?? null,
+        tiktok_pixel_id: values.tiktok_pixel_id ?? null,
         note: values.note ?? null,
       })
       setEditRow(null)

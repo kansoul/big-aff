@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\AdsReport;
 
+use App\Enums\AdsType;
 use App\Support\AdsReport\AdsReportAccess;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class GetAdsReportStatsRequest extends FormRequest
 {
@@ -58,7 +60,7 @@ class GetAdsReportStatsRequest extends FormRequest
             'main_team_ids' => ['nullable', 'array'],
             'main_team_ids.*' => ['integer', 'exists:main_teams,id'],
             'ads_types' => ['nullable', 'array'],
-            'ads_types.*' => ['string', 'in:facebook,google'],
+            'ads_types.*' => ['string', Rule::in(AdsType::values())],
             'account_ids' => ['nullable', 'array'],
             'account_ids.*' => ['string', 'exists:accounts,account_id'],
             'campaign_ids' => ['nullable', 'array'],

@@ -2,13 +2,14 @@
 
 namespace App\Services\Integrations\Facebook;
 
+use App\Services\Integrations\Contracts\AdsAdsetProvider;
 use Carbon\Carbon;
 use Exception;
 use FacebookAds\Api;
 use FacebookAds\Object\AdAccount;
 use Illuminate\Support\Facades\Log;
 
-class FacebookAdsAdsetService
+class FacebookAdsAdsetService implements AdsAdsetProvider
 {
     protected string $accessToken;
 

@@ -6,6 +6,7 @@ enum AdsType: string
 {
     case FACEBOOK = 'facebook';
     case GOOGLE = 'google';
+    case TIKTOK = 'tiktok';
 
     /**
      * @return array<string>

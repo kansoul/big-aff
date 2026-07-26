@@ -8,7 +8,9 @@ use App\Enums\EntityTypeEnum;
 use App\Models\Account;
 use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
+use App\Services\Integrations\Contracts\AdsAdsetProvider;
 use App\Services\Integrations\Facebook\FacebookAdsAdsetService;
+use App\Services\Integrations\TikTok\TikTokAdsAdsetService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -34,11 +36,12 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
         public readonly string $accountId,
         public readonly array $campaignIds,
         public readonly string $date,
+        public readonly string $adsType = AdsType::FACEBOOK->value,
     ) {
         $this->onQueue(config('queue.queues.fetch-ads-adsets'));
     }
 
-    public function handle(FacebookAdsAdsetService $facebookService, AutoMatchAdAdsetRulesAction $autoMatchAction): void
+    public function handle(AutoMatchAdAdsetRulesAction $autoMatchAction): void
     {
         if ($this->batch()?->cancelled()) {
             return;
@@ -48,7 +51,7 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
             return;
         }
 
-        $data = $facebookService->getAccountWithAdsAndAdsets($this->accountId, $this->campaignIds, $this->date);
+        $data = $this->provider()->getAccountWithAdsAndAdsets($this->accountId, $this->campaignIds, $this->date);
 
         if (! $data) {
             return;
@@ -75,6 +78,17 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
         $this->dispatchRuleEvaluationJobs($data);
     }
 
+    /**
+     * Resolve the provider-specific ads/adset service for this job's ads type.
+     */
+    private function provider(): AdsAdsetProvider
+    {
+        return match ($this->adsType) {
+            AdsType::TIKTOK->value => app(TikTokAdsAdsetService::class),
+            default => app(FacebookAdsAdsetService::class),
+        };
+    }
+
     private function shouldFetchAccount(): bool
     {
         if (! config('main_system.is_main')) {
@@ -84,7 +98,7 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
         $account = Account::query()
             ->with('mainTeam')
             ->where('account_id', $this->accountId)
-            ->where('ads_type', AdsType::FACEBOOK->value)
+            ->where('ads_type', $this->adsType)
             ->first();
 
         if (! $account || empty($account->main_team_id)) {

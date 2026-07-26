@@ -28,6 +28,8 @@ export interface AdsLink {
   style_name: string | null
   fbid: string[] | null
   googleid: string[] | null
+  tiktokid: string[] | null
+  tiktok_pixel_id: string[] | null
   site: AdsLinkSite | null
   post: AdsLinkPost | null
   keyword_set: AdsLinkKeywordSet | null
@@ -63,6 +65,8 @@ export interface AdsLinkCreatePayload {
   note?: string | null
   fbid?: string | null
   googleid?: string | null
+  tiktokid?: string | null
+  tiktok_pixel_id?: string | null
 }
 
 export interface AdsLinkUpdatePayload {
@@ -71,6 +75,8 @@ export interface AdsLinkUpdatePayload {
   keyword_set_id?: number | null
   fbid?: string | null
   googleid?: string | null
+  tiktokid?: string | null
+  tiktok_pixel_id?: string | null
   note?: string | null
 }
 
@@ -87,6 +93,7 @@ export interface AdsLinkFilterParams {
   created_by?: number | null
   pixel_id?: string | null
   googleid?: string | null
+  tiktokid?: string | null
   note?: string | null
   url?: string | null
   date_range?: { from: string | null; to: string | null } | null
@@ -106,7 +113,7 @@ export interface Pagination {
 
 export type CopyDialogState = {
   open: boolean
-  platform: 'facebook' | 'google'
+  platform: 'facebook' | 'google' | 'tiktok'
   id: string | string[]
   link: string
 }
@@ -123,10 +130,23 @@ export const adsLinkCreateSchema = z
     note: z.string().nullable().optional(),
     fbid: z.string().nullable().optional(),
     googleid: z.string().nullable().optional(),
+    tiktokid: z.string().nullable().optional(),
+    tiktok_pixel_id: z.string().nullable().optional(),
   })
-  .refine((v) => (v.fbid?.trim() ?? '') !== '' || (v.googleid?.trim() ?? '') !== '', {
-    error: 'At least one of Facebook Pixel ID or Google Account ID is required',
-    path: ['fbid'],
+  .refine(
+    (v) =>
+      (v.fbid?.trim() ?? '') !== '' ||
+      (v.googleid?.trim() ?? '') !== '' ||
+      (v.tiktokid?.trim() ?? '') !== '',
+    {
+      error:
+        'At least one of Facebook Pixel ID, Google Account ID, or TikTok Advertiser ID is required',
+      path: ['fbid'],
+    },
+  )
+  .refine((v) => (v.tiktokid?.trim() ?? '') === '' || (v.tiktok_pixel_id?.trim() ?? '') !== '', {
+    error: 'TikTok Pixel ID is required when TikTok Advertiser ID is provided',
+    path: ['tiktok_pixel_id'],
   })
 
 export const adsLinkUpdateSchema = z
@@ -136,11 +156,24 @@ export const adsLinkUpdateSchema = z
     keyword_set_id: z.number().nullable().optional(),
     fbid: z.string().nullable().optional(),
     googleid: z.string().nullable().optional(),
+    tiktokid: z.string().nullable().optional(),
+    tiktok_pixel_id: z.string().nullable().optional(),
     note: z.string().nullable().optional(),
   })
-  .refine((v) => (v.fbid?.trim() ?? '') !== '' || (v.googleid?.trim() ?? '') !== '', {
-    error: 'At least one of Facebook Pixel ID or Google Account ID is required',
-    path: ['fbid'],
+  .refine(
+    (v) =>
+      (v.fbid?.trim() ?? '') !== '' ||
+      (v.googleid?.trim() ?? '') !== '' ||
+      (v.tiktokid?.trim() ?? '') !== '',
+    {
+      error:
+        'At least one of Facebook Pixel ID, Google Account ID, or TikTok Advertiser ID is required',
+      path: ['fbid'],
+    },
+  )
+  .refine((v) => (v.tiktokid?.trim() ?? '') === '' || (v.tiktok_pixel_id?.trim() ?? '') !== '', {
+    error: 'TikTok Pixel ID is required when TikTok Advertiser ID is provided',
+    path: ['tiktok_pixel_id'],
   })
 
 export type AdsLinkCreateFormValues = z.infer<typeof adsLinkCreateSchema>

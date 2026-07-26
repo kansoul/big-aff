@@ -50,6 +50,10 @@ class CreateAdsLinkAction
         if (! empty($data['googleid'])) {
             $trackingIds['googleid'] = array_map('trim', explode(',', $data['googleid']));
         }
+        if (! empty($data['tiktokid'])) {
+            $trackingIds['tiktokid'] = array_map('trim', explode(',', $data['tiktokid']));
+            $trackingIds['tiktok_pixel_id'] = array_map('trim', explode(',', $data['tiktok_pixel_id']));
+        }
 
         try {
             return DB::transaction(function () use ($data, $styleCode, $baseSlug, $trackingIds, $user): AdsLink {
