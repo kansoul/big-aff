@@ -35,7 +35,7 @@ class RevenueChartReportFactory extends Factory
             : null;
 
         return [
-            'ad_client_id' => 'ca-pub-'.fake()->numerify('##############'),
+            'ad_client_id' => 'legacy-'.fake()->numerify('##############'),
             'style_code' => 'style_abc001',
             'style_name' => 'Blue Banner',
             'channel_code' => 'chan_tech',

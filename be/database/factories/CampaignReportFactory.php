@@ -32,7 +32,7 @@ class CampaignReportFactory extends Factory
         $searchViews = (int) ($articleViews * fake()->randomFloat(2, 0.3, 0.7));
         $frequency = $reach > 0 ? round($impressions / $reach, 4) : 1.0;
 
-        // — Revenue (adsense) side —
+        // Revenue side
         $rSearchViews = (int) ($searchViews * fake()->randomFloat(2, 0.8, 1.2));
         $rAdRequests = (int) ($rSearchViews * fake()->randomFloat(2, 0.9, 1.1));
         $rImpressions = (int) ($rAdRequests * fake()->randomFloat(2, 0.85, 1.0));

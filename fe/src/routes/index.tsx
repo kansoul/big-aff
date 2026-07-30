@@ -271,17 +271,6 @@ export const router = createBrowserRouter([
                 handle: { title: 'Manage Campaign Rule Settings' },
               },
               {
-                path: routeSegment(PATHS.adClients),
-                lazy: async () => {
-                  const { AdClientsPage } =
-                    await import('@/features/ad-clients/pages/AdClientsPage')
-                  return {
-                    Component: withPermission(AdClientsPage, PermissionSlugs.AdClientsView),
-                  }
-                },
-                handle: { title: 'Ad Clients' },
-              },
-              {
                 path: routeSegment(PATHS.adsReport),
                 lazy: async () => {
                   const { AdsReportPage } =
@@ -326,77 +315,6 @@ export const router = createBrowserRouter([
                   }
                 },
                 handle: { title: 'Gtags' },
-              },
-              {
-                path: routeSegment(PATHS.adx),
-                element: <Navigate to={PATHS.adxAccounts} replace />,
-                handle: { title: 'AdX Tracking' },
-              },
-              {
-                path: routeSegment(PATHS.adxAccounts),
-                lazy: async () => {
-                  const { AdxAccountsPage } = await import('@/features/adx/pages/AdxPage')
-                  return {
-                    Component: withPermission(AdxAccountsPage, PermissionSlugs.AdxAccountsView),
-                  }
-                },
-                handle: { title: 'AdX Accounts' },
-              },
-              {
-                path: routeSegment(PATHS.adxGames),
-                lazy: async () => {
-                  const { AdxGamesPage } = await import('@/features/adx/pages/AdxPage')
-                  return {
-                    Component: withPermission(AdxGamesPage, PermissionSlugs.AdxGamesView),
-                  }
-                },
-                handle: { title: 'AdX Games' },
-              },
-              {
-                path: routeSegment(PATHS.adxLinks),
-                lazy: async () => {
-                  const { AdxLinksPage } = await import('@/features/adx/pages/AdxPage')
-                  return {
-                    Component: withPermission(AdxLinksPage, PermissionSlugs.AdxLinksView),
-                  }
-                },
-                handle: { title: 'AdX Links' },
-              },
-              {
-                path: routeSegment(PATHS.adxCampaigns),
-                lazy: async () => {
-                  const { AdxCampaignsPage } = await import('@/features/adx/pages/AdxPage')
-                  return {
-                    Component: withPermission(AdxCampaignsPage, PermissionSlugs.AdxCampaignsView),
-                  }
-                },
-                handle: { title: 'AdX Campaigns' },
-              },
-              {
-                path: routeSegment(PATHS.adxCampaignReports),
-                lazy: async () => {
-                  const { AdxCampaignReportsPage } = await import('@/features/adx/pages/AdxPage')
-                  return {
-                    Component: withPermission(
-                      AdxCampaignReportsPage,
-                      PermissionSlugs.AdxCampaignReportsView,
-                    ),
-                  }
-                },
-                handle: { title: 'AdX Campaign Reports' },
-              },
-              {
-                path: routeSegment(PATHS.adxAccountConversions),
-                lazy: async () => {
-                  const { AdxAccountConversionsPage } = await import('@/features/adx/pages/AdxPage')
-                  return {
-                    Component: withPermission(
-                      AdxAccountConversionsPage,
-                      PermissionSlugs.AdxAccountConversionsView,
-                    ),
-                  }
-                },
-                handle: { title: 'AdX Conversion Mappings' },
               },
               {
                 path: routeSegment(PATHS.campaignReport),

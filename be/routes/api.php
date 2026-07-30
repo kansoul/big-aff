@@ -2,17 +2,9 @@
 
 use App\Enums\Permission;
 use App\Http\Controllers\Api\AccountController;
-use App\Http\Controllers\Api\AdClientController;
 use App\Http\Controllers\Api\AdsDeliveryEntitiesController;
 use App\Http\Controllers\Api\AdsLinkController;
 use App\Http\Controllers\Api\AdsReportController;
-use App\Http\Controllers\Api\AdxAccountController;
-use App\Http\Controllers\Api\AdxAccountConversionController;
-use App\Http\Controllers\Api\AdxCampaignController;
-use App\Http\Controllers\Api\AdxGameController;
-use App\Http\Controllers\Api\AdxLinkController;
-use App\Http\Controllers\Api\AdxReportController;
-use App\Http\Controllers\Api\AdxTrackingController;
 use App\Http\Controllers\Api\AnalyticsTrackingController;
 use App\Http\Controllers\Api\AssignController;
 use App\Http\Controllers\Api\Auth\AuthController;
@@ -65,7 +57,6 @@ Route::middleware('check.whitelist')->group(function () {
     Route::get('/posts/latest', [PostController::class, 'getLatestPosts']);
     Route::post('/tracking/log', [TrackingController::class, 'storeLog']);
     Route::post('/tracking/ads-conversion', [TrackingController::class, 'storeAdsConversion']);
-    Route::post('/adx/tracking/events', [AdxTrackingController::class, 'storeEvent']);
 
     Route::prefix('blog')->group(function (): void {
         Route::get('/posts', [BlogController::class, 'listPosts']);
@@ -239,91 +230,6 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::AdsLinksView->value);
     });
 
-    Route::prefix('adx')->group(function () {
-        Route::prefix('accounts')->group(function () {
-            Route::get('assign-options', [AdxAccountController::class, 'assignOptions'])
-                ->middleware('permission.scope:'.Permission::AdxAccountsAssign->value);
-            Route::get('user-assignments', [AdxAccountController::class, 'listUsersWithAccounts'])
-                ->middleware('permission.scope:'.Permission::AdxAccountsAssign->value);
-            Route::post('users/{user}/assign', [AdxAccountController::class, 'assignToUser'])
-                ->middleware('permission.scope:'.Permission::AdxAccountsAssign->value);
-            Route::get('/', [AdxAccountController::class, 'index'])
-                ->middleware('permission.scope:'.Permission::AdxAccountsView->value);
-            Route::post('/', [AdxAccountController::class, 'store'])
-                ->middleware('permission.scope:'.Permission::AdxAccountsCreate->value);
-            Route::post('bulk', [AdxAccountController::class, 'bulkStore'])
-                ->middleware('permission.scope:'.Permission::AdxAccountsCreate->value);
-            Route::get('{adxAccount}', [AdxAccountController::class, 'show'])
-                ->middleware('permission.scope:'.Permission::AdxAccountsView->value);
-            Route::match(['put', 'patch'], '{adxAccount}', [AdxAccountController::class, 'update'])
-                ->middleware('permission.scope:'.Permission::AdxAccountsUpdate->value);
-            Route::delete('{adxAccount}', [AdxAccountController::class, 'destroy'])
-                ->middleware('permission.scope:'.Permission::AdxAccountsDelete->value);
-        });
-
-        Route::prefix('games')->group(function () {
-            Route::get('/', [AdxGameController::class, 'index'])
-                ->middleware('permission.scope:'.Permission::AdxGamesView->value);
-            Route::post('/', [AdxGameController::class, 'store'])
-                ->middleware('permission.scope:'.Permission::AdxGamesCreate->value);
-            Route::get('users', [AdxGameController::class, 'listUsersWithGames'])
-                ->middleware('permission.scope:'.Permission::AdxGamesAssign->value);
-            Route::put('users/{user}/assign', [AdxGameController::class, 'assignToUser'])
-                ->middleware('permission.scope:'.Permission::AdxGamesAssign->value);
-            Route::get('{adxGame}', [AdxGameController::class, 'show'])
-                ->middleware('permission.scope:'.Permission::AdxGamesView->value);
-            Route::match(['put', 'patch'], '{adxGame}', [AdxGameController::class, 'update'])
-                ->middleware('permission.scope:'.Permission::AdxGamesUpdate->value);
-            Route::delete('{adxGame}', [AdxGameController::class, 'destroy'])
-                ->middleware('permission.scope:'.Permission::AdxGamesDelete->value);
-        });
-
-        Route::prefix('links')->group(function () {
-            Route::get('/', [AdxLinkController::class, 'index'])
-                ->middleware('permission.scope:'.Permission::AdxLinksView->value);
-            Route::post('/', [AdxLinkController::class, 'store'])
-                ->middleware('permission.scope:'.Permission::AdxLinksCreate->value);
-            Route::get('{adxLink}', [AdxLinkController::class, 'show'])
-                ->middleware('permission.scope:'.Permission::AdxLinksView->value);
-            Route::match(['put', 'patch'], '{adxLink}', [AdxLinkController::class, 'update'])
-                ->middleware('permission.scope:'.Permission::AdxLinksUpdate->value);
-            Route::delete('{adxLink}', [AdxLinkController::class, 'destroy'])
-                ->middleware('permission.scope:'.Permission::AdxLinksDelete->value);
-        });
-
-        Route::prefix('campaigns')->group(function () {
-            Route::get('/', [AdxCampaignController::class, 'campaigns'])
-                ->middleware('permission.scope:'.Permission::AdxCampaignsView->value);
-        });
-
-        Route::prefix('account-conversions')->group(function () {
-            Route::get('/', [AdxAccountConversionController::class, 'index'])
-                ->middleware('permission.scope:'.Permission::AdxAccountConversionsView->value);
-            Route::post('/', [AdxAccountConversionController::class, 'store'])
-                ->middleware('permission.scope:'.Permission::AdxAccountConversionsCreate->value);
-            Route::post('bulk-import', [AdxAccountConversionController::class, 'import'])
-                ->middleware('permission.scope:'.Permission::AdxAccountConversionsCreate->value);
-            Route::match(['put', 'patch'], '{adxAccountConversion}', [AdxAccountConversionController::class, 'update'])
-                ->middleware('permission.scope:'.Permission::AdxAccountConversionsUpdate->value);
-            Route::delete('{adxAccountConversion}', [AdxAccountConversionController::class, 'destroy'])
-                ->middleware('permission.scope:'.Permission::AdxAccountConversionsDelete->value);
-        });
-
-        Route::prefix('reports')
-            ->middleware('permission.scope:'.Permission::AdxReportsView->value)
-            ->group(function () {
-                Route::get('spend', [AdxReportController::class, 'spend']);
-                Route::get('revenue', [AdxReportController::class, 'revenue']);
-                Route::get('realtime', [AdxReportController::class, 'realtime']);
-                Route::get('conversions', [AdxReportController::class, 'conversions']);
-            });
-
-        Route::get('reports/campaigns/filters', [AdxReportController::class, 'campaignFilters'])
-            ->middleware('permission.scope:'.Permission::AdxCampaignReportsView->value);
-        Route::get('reports/campaigns', [AdxReportController::class, 'campaigns'])
-            ->middleware('permission.scope:'.Permission::AdxCampaignReportsView->value);
-    });
-
     Route::prefix('roles')->group(function () {
         $listBits = implode('|', [
             (string) Permission::SettingsRolesView->value,
@@ -405,19 +311,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('{team}/assign-users', [AssignController::class, 'assignUsersToTeam'])
             ->middleware('permission.scope:'.Permission::TeamsAssign->value);
         Route::get('{team}/parent-child-options', [UserParentChildController::class, 'teamMemberOptions']);
-    });
-
-    Route::prefix('ad-clients')->group(function () {
-        Route::get('/', [AdClientController::class, 'index'])
-            ->middleware('permission.scope:'.Permission::AdClientsView->value);
-        Route::post('/', [AdClientController::class, 'store'])
-            ->middleware('permission.scope:'.Permission::AdClientsCreate->value);
-        Route::get('{ad_client}', [AdClientController::class, 'show'])
-            ->middleware('permission.scope:'.Permission::AdClientsView->value);
-        Route::match(['put', 'patch'], '{ad_client}', [AdClientController::class, 'update'])
-            ->middleware('permission.scope:'.Permission::AdClientsUpdate->value);
-        Route::delete('{ad_client}', [AdClientController::class, 'destroy'])
-            ->middleware('permission.scope:'.Permission::AdClientsDelete->value);
     });
 
     Route::prefix('campaigns')->group(function () {

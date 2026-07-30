@@ -27,7 +27,6 @@ return new class extends Migration
                 'avatar_url',
                 'access',
                 'sync_at',
-                'sync_adsense_at',
                 'sync_facebook_at',
                 'parent_id',
             ]);
@@ -48,7 +47,6 @@ return new class extends Migration
             $table->string('avatar_url')->nullable();
             $table->json('access')->nullable();
             $table->timestamp('sync_at')->nullable();
-            $table->timestamp('sync_adsense_at')->nullable();
             $table->timestamp('sync_facebook_at')->nullable();
             $table->foreignId('parent_id')->nullable()->constrained('users')->nullOnDelete();
         });

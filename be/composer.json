@@ -13,10 +13,7 @@
         "aws/aws-sdk-php": "^3.322.9",
         "dedoc/scramble": "^0.13.17",
         "facebook/php-business-sdk": "^25.0",
-        "google/apiclient": "^2.19",
-        "googleads/ad-manager": "^0.7.0",
         "googleads/google-ads-php": "^32.3",
-        "googleads/googleads-php-lib": "^73.0",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
@@ -63,8 +60,7 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi",
-            "@php patches/apply.php"
+            "@php artisan package:discover --ansi"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"

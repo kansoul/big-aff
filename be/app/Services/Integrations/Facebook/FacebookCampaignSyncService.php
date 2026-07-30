@@ -96,12 +96,10 @@ class FacebookCampaignSyncService
 
         $startDate = $data['start_date'];
         $endDate = $data['end_date'];
-        $failedAdClientIds = $data['failed_ad_client_ids'] ?? false;
-
         Bus::batch($jobs)
             ->name('Facebook Campaign Sync - '.count($jobs).' batches')
             ->allowFailures()
-            ->finally(function () use ($startDate, $endDate, $isTest, $failedAdClientIds) {
+            ->finally(function () use ($startDate, $endDate, $isTest) {
                 if ($isTest) {
                     return;
                 }
@@ -109,7 +107,6 @@ class FacebookCampaignSyncService
                     $resp = CampaignReportSyncService::sync([
                         'start_date' => $startDate,
                         'end_date' => $endDate,
-                        'failed_ad_client_ids' => $failedAdClientIds,
                     ]);
 
                     if (! ($resp['success'] ?? false)) {

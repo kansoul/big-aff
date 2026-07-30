@@ -42,7 +42,7 @@ class RevenueReportFactory extends Factory
         $channelIndex = array_rand($channelCodes);
 
         return [
-            'ad_client_id' => 'ca-pub-'.fake()->numerify('##############'),
+            'ad_client_id' => 'legacy-'.fake()->numerify('##############'),
             'style_code' => $defaultStyleCodes[$styleIndex],
             'style_name' => $defaultStyleNames[$styleIndex],
             'channel_code' => $channelCodes[$channelIndex],

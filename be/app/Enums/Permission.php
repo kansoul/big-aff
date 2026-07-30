@@ -13,186 +13,157 @@ enum Permission: string
     public const FULL_ACCESS_SENTINEL = '-1';
 
     // —— Settings → Users ——
-    case SettingsUsersView = 'settings.users.view';          // bit 0  →  1
-    case SettingsUsersCreate = 'settings.users.create';      // bit 1  →  2
-    case SettingsUsersUpdate = 'settings.users.update';      // bit 2  →  4
-    case SettingsUsersDelete = 'settings.users.delete';      // bit 3  →  8
+    case SettingsUsersView = 'settings.users.view';
+    case SettingsUsersCreate = 'settings.users.create';
+    case SettingsUsersUpdate = 'settings.users.update';
+    case SettingsUsersDelete = 'settings.users.delete';
 
     // —— Settings → Roles ——
-    case SettingsRolesView = 'settings.roles.view';          // bit 4  →  16
-    case SettingsRolesCreate = 'settings.roles.create';      // bit 5  →  32
-    case SettingsRolesUpdate = 'settings.roles.update';      // bit 6  →  64
-    case SettingsRolesDelete = 'settings.roles.delete';      // bit 7  →  128
-    case SettingsRolesAssign = 'settings.roles.assign';      // bit 8  →  256
+    case SettingsRolesView = 'settings.roles.view';
+    case SettingsRolesCreate = 'settings.roles.create';
+    case SettingsRolesUpdate = 'settings.roles.update';
+    case SettingsRolesDelete = 'settings.roles.delete';
+    case SettingsRolesAssign = 'settings.roles.assign';
 
     // —— Settings → Sites ——
-    case SettingsSitesView = 'settings.sites.view';          // bit 9  →  512
-    case SettingsSitesCreate = 'settings.sites.create';      // bit 10 →  1024
-    case SettingsSitesUpdate = 'settings.sites.update';      // bit 11 →  2048
-    case SettingsSitesDelete = 'settings.sites.delete';      // bit 12 →  4096
-    case SettingsSitesAssign = 'settings.sites.assign';      // bit 13 →  8192
+    case SettingsSitesView = 'settings.sites.view';
+    case SettingsSitesCreate = 'settings.sites.create';
+    case SettingsSitesUpdate = 'settings.sites.update';
+    case SettingsSitesDelete = 'settings.sites.delete';
+    case SettingsSitesAssign = 'settings.sites.assign';
 
     // —— Posts ——
-    case PostsView = 'posts.view';                           // bit 14 →  16384
-    case PostsCreate = 'posts.create';                       // bit 15 →  32768
-    case PostsUpdate = 'posts.update';                       // bit 16 →  65536
-    case PostsDelete = 'posts.delete';                       // bit 17 →  131072
-    case PostsPublish = 'posts.publish';                     // bit 18 →  262144
+    case PostsView = 'posts.view';
+    case PostsCreate = 'posts.create';
+    case PostsUpdate = 'posts.update';
+    case PostsDelete = 'posts.delete';
+    case PostsPublish = 'posts.publish';
 
     // —— Categories ——
-    case CategoriesView = 'categories.view';                 // bit 19 →  524288
-    case CategoriesCreate = 'categories.create';             // bit 20 →  1048576
-    case CategoriesUpdate = 'categories.update';             // bit 21 →  2097152
-    case CategoriesDelete = 'categories.delete';             // bit 22 →  4194304
+    case CategoriesView = 'categories.view';
+    case CategoriesCreate = 'categories.create';
+    case CategoriesUpdate = 'categories.update';
+    case CategoriesDelete = 'categories.delete';
 
     // —— Styles ——
-    case StylesView = 'styles.view';                         // bit 23 →  8388608
-    case StylesCreate = 'styles.create';                     // bit 24 →  16777216
-    case StylesDelete = 'styles.delete';                     // bit 25 →  33554432
+    case StylesView = 'styles.view';
+    case StylesCreate = 'styles.create';
+    case StylesDelete = 'styles.delete';
 
     // —— Channels ——
-    case ChannelsView = 'channels.view';                     // bit 26 →  67108864
-    case ChannelsCreate = 'channels.create';                 // bit 27 →  134217728
-    case ChannelsDelete = 'channels.delete';                 // bit 28 →  268435456
-    case ChannelsAssign = 'channels.assign';                 // bit 83 →  9671406556917033397649408
+    case ChannelsView = 'channels.view';
+    case ChannelsCreate = 'channels.create';
+    case ChannelsDelete = 'channels.delete';
+    case ChannelsAssign = 'channels.assign';
 
     // —— Follows ——
-    case FollowsView = 'follows.view';                       // bit 29 →  536870912
-    case FollowsDelete = 'follows.delete';                   // bit 30 →  1073741824
+    case FollowsView = 'follows.view';
+    case FollowsDelete = 'follows.delete';
 
     // —— Ads Links ——
-    case AdsLinksView = 'ads-links.view';                    // bit 31 →  2147483648
-    case AdsLinksCreate = 'ads-links.create';                // bit 32 →  4294967296
-    case AdsLinksUpdate = 'ads-links.update';                // bit 33 →  8589934592
+    case AdsLinksView = 'ads-links.view';
+    case AdsLinksCreate = 'ads-links.create';
+    case AdsLinksUpdate = 'ads-links.update';
 
     // —— Keyword Sets ——
-    case KeywordSetsView = 'keyword-sets.view';              // bit 34 →  17179869184
-    case KeywordSetsCreate = 'keyword-sets.create';          // bit 35 →  34359738368
-    case KeywordSetsUpdate = 'keyword-sets.update';          // bit 36 →  68719476736
-    case KeywordSetsDelete = 'keyword-sets.delete';          // bit 37 →  137438953472
+    case KeywordSetsView = 'keyword-sets.view';
+    case KeywordSetsCreate = 'keyword-sets.create';
+    case KeywordSetsUpdate = 'keyword-sets.update';
+    case KeywordSetsDelete = 'keyword-sets.delete';
 
     // —— Business Centers ——
-    case BusinessCentersView = 'business-centers.view';      // bit 38 →  274877906944
-    case BusinessCentersCreate = 'business-centers.create';  // bit 39 →  549755813888
-    case BusinessCentersUpdate = 'business-centers.update';  // bit 40 →  1099511627776
-    case BusinessCentersDelete = 'business-centers.delete';  // bit 41 →  2199023255552
+    case BusinessCentersView = 'business-centers.view';
+    case BusinessCentersCreate = 'business-centers.create';
+    case BusinessCentersUpdate = 'business-centers.update';
+    case BusinessCentersDelete = 'business-centers.delete';
 
     // —— Accounts ——
-    case AccountsView = 'accounts.view';                     // bit 42 →  4398046511104
-    case AccountsCreate = 'accounts.create';                 // bit 43 →  8796093022208
-    case AccountsUpdate = 'accounts.update';                 // bit 44 →  17592186044416
-    case AccountsDelete = 'accounts.delete';                 // bit 45 →  35184372088832
-    case AccountsAssign = 'accounts.assign';                 // bit 46 →  70368744177664
+    case AccountsView = 'accounts.view';
+    case AccountsCreate = 'accounts.create';
+    case AccountsUpdate = 'accounts.update';
+    case AccountsDelete = 'accounts.delete';
+    case AccountsAssign = 'accounts.assign';
 
     // —— Teams ——
-    case TeamsView = 'teams.view';                           // bit 47 →  140737488355328
-    case TeamsCreate = 'teams.create';                       // bit 48 →  281474976710656
-    case TeamsUpdate = 'teams.update';                       // bit 49 →  562949953421312
-    case TeamsDelete = 'teams.delete';                       // bit 50 →  1125899906842624
-    case TeamsAssign = 'teams.assign';                       // bit 51 →  2251799813685248
-
-    // —— Ad Clients ——
-    case AdClientsView = 'ad-clients.view';                  // bit 52 →  4503599627370496
-    case AdClientsCreate = 'ad-clients.create';              // bit 53 →  9007199254740992
-    case AdClientsUpdate = 'ad-clients.update';              // bit 54 →  18014398509481984
-    case AdClientsDelete = 'ad-clients.delete';              // bit 55 →  36028797018963968
+    case TeamsView = 'teams.view';
+    case TeamsCreate = 'teams.create';
+    case TeamsUpdate = 'teams.update';
+    case TeamsDelete = 'teams.delete';
+    case TeamsAssign = 'teams.assign';
 
     // —— Campaigns ——
-    case CampaignsView = 'campaigns.view';                   // bit 56 →  72057594037927936
+    case CampaignsView = 'campaigns.view';
 
     // —— Campaign Rules ——
-    case CampaignRulesView = 'campaign-rules.view';          // bit 57 →  144115188075855872
-    case CampaignRulesCreate = 'campaign-rules.create';      // bit 58 →  288230376151711744
-    case CampaignRulesUpdate = 'campaign-rules.update';      // bit 59 →  576460752303423488
-    case CampaignRulesDelete = 'campaign-rules.delete';      // bit 60 →  1152921504606846976
+    case CampaignRulesView = 'campaign-rules.view';
+    case CampaignRulesCreate = 'campaign-rules.create';
+    case CampaignRulesUpdate = 'campaign-rules.update';
+    case CampaignRulesDelete = 'campaign-rules.delete';
 
     // —— Campaign Rule Settings ——
-    case CampaignRuleSettingsView = 'campaign-rule-settings.view';    // bit 61 →  2305843009213693952
-    case CampaignRuleSettingsUpdate = 'campaign-rule-settings.update'; // bit 62 →  4611686018427387904
+    case CampaignRuleSettingsView = 'campaign-rule-settings.view';
+    case CampaignRuleSettingsUpdate = 'campaign-rule-settings.update';
 
     // —— Campaign Schedules ——
-    case CampaignSchedulesView = 'campaign-schedules.view';    // bit 63 →  9223372036854775808
-    case CampaignSchedulesCreate = 'campaign-schedules.create'; // bit 64 →  18446744073709551616
-    case CampaignSchedulesUpdate = 'campaign-schedules.update'; // bit 65 →  36893488147419103232
-    case CampaignSchedulesDelete = 'campaign-schedules.delete'; // bit 66 →  73786976294838206464
+    case CampaignSchedulesView = 'campaign-schedules.view';
+    case CampaignSchedulesCreate = 'campaign-schedules.create';
+    case CampaignSchedulesUpdate = 'campaign-schedules.update';
+    case CampaignSchedulesDelete = 'campaign-schedules.delete';
 
     // —— Ads Report ——
-    case AdsReportView = 'ads-report.view';                    // bit 67 →  147573952589676412928
+    case AdsReportView = 'ads-report.view';
 
     // —— Revenue Reports ——
-    case RevenueReportsView = 'revenue-reports.view';          // bit 68 →  295147905179352825856
+    case RevenueReportsView = 'revenue-reports.view';
 
     // —— Revenue Stats ——
-    case RevenueStatsView = 'revenue-stats.view';              // bit 69 →  590295810358705651712
+    case RevenueStatsView = 'revenue-stats.view';
 
     // —— Revenue Chart Reports ——
-    case RevenueChartReportsView = 'revenue-chart-reports.view'; // bit 70 →  1180591620717411303424
+    case RevenueChartReportsView = 'revenue-chart-reports.view';
 
     // —— Campaign Reports ——
-    case CampaignReportsView = 'campaign-reports.view';        // bit 71 →  2361183241434822606848
+    case CampaignReportsView = 'campaign-reports.view';
 
     // —— Analytics Tracking ——
-    case AnalyticsTrackingView = 'analytics-tracking.view';    // bit 72 →  4722366482869645213696
+    case AnalyticsTrackingView = 'analytics-tracking.view';
 
     // —— Inactive Styles ——
-    case InactiveStylesView = 'inactive-styles.view';          // bit 73 →  9444732965739290427392
-    case InactiveStylesDelete = 'inactive-styles.delete';      // bit 74 →  18889465931478580854784
+    case InactiveStylesView = 'inactive-styles.view';
+    case InactiveStylesDelete = 'inactive-styles.delete';
 
     // —— Revenue Report Range ——
-    case RevenueReportRangeView = 'revenue-report-range.view';     // bit 75 →  37778931862957161709568
+    case RevenueReportRangeView = 'revenue-report-range.view';
 
     // —— Google Conversions ——
-    case GoogleConversionsView = 'google-conversions.view';    // bit 76 →  75557863725914323419136
-    case GoogleConversionsCreate = 'google-conversions.create'; // bit 77 →  151115727451828646838272
-    case GoogleConversionsUpdate = 'google-conversions.update'; // bit 78 →  302231454903657293676544
+    case GoogleConversionsView = 'google-conversions.view';
+    case GoogleConversionsCreate = 'google-conversions.create';
+    case GoogleConversionsUpdate = 'google-conversions.update';
 
     // —— User Table Preferences ——
-    case UserTablePreferencesView = 'user-table-preferences.view';     // bit 79 →  604462909807314587353088
-    case UserTablePreferencesUpdate = 'user-table-preferences.update'; // bit 80 →  1208925819615629174706176
+    case UserTablePreferencesView = 'user-table-preferences.view';
+    case UserTablePreferencesUpdate = 'user-table-preferences.update';
 
     // —— Logs ——
-    case LogsView = 'logs.view';                               // bit 81 →  2417851639231258349412352
+    case LogsView = 'logs.view';
 
     // —— Files ——
-    case FilesView = 'files.view';                             // bit 82 →  4835703278458516698824704
+    case FilesView = 'files.view';
 
     // —— Delivery Entities Reports ——
-    case DeliveryEntitiesReportsView = 'delivery-entities-reports.view'; // bit 83 →  9671406556917033397649408
-    case DeliveryEntitiesReportsUpdate = 'delivery-entities-reports.update'; // bit 84 →  19342813113834066795298816
+    case DeliveryEntitiesReportsView = 'delivery-entities-reports.view';
+    case DeliveryEntitiesReportsUpdate = 'delivery-entities-reports.update';
 
     // Dashboard
-    case DashboardStatView = 'dashboard.stats.view';     // bit 85 →  37778931862957161709568
+    case DashboardStatView = 'dashboard.stats.view';
 
     // —— Revenue Report Range ——
-    case DashboardTeamView = 'dashboard.teams.view';     // bit 86 →  75557863725914323419136
+    case DashboardTeamView = 'dashboard.teams.view';
 
     // —— Revenue Report Range ——
-    case DashboardUserView = 'dashboard.users.view';     // bit 87 →  151115727451828646838272
+    case DashboardUserView = 'dashboard.users.view';
 
-    case PostsAssign = 'posts.assign';                           // bit 88 →  309237645312422682265739264
-
-    // —— AdX / GAM Tracking ——
-    case AdxGamesView = 'adx.games.view';
-    case AdxGamesCreate = 'adx.games.create';
-    case AdxGamesUpdate = 'adx.games.update';
-    case AdxGamesDelete = 'adx.games.delete';
-    case AdxLinksView = 'adx.links.view';
-    case AdxLinksCreate = 'adx.links.create';
-    case AdxLinksUpdate = 'adx.links.update';
-    case AdxLinksDelete = 'adx.links.delete';
-    case AdxCampaignsView = 'adx.campaigns.view';
-    case AdxAccountConversionsView = 'adx.account-conversions.view';
-    case AdxAccountConversionsCreate = 'adx.account-conversions.create';
-    case AdxAccountConversionsUpdate = 'adx.account-conversions.update';
-    case AdxAccountConversionsDelete = 'adx.account-conversions.delete';
-    case AdxReportsView = 'adx.reports.view';
-    case AdxAccountsView = 'adx.accounts.view';
-    case AdxAccountsCreate = 'adx.accounts.create';
-    case AdxAccountsUpdate = 'adx.accounts.update';
-    case AdxAccountsDelete = 'adx.accounts.delete';
-    case AdxAccountsAssign = 'adx.accounts.assign';
-    case AdxCampaignReportsView = 'adx.campaign-reports.view';
-    case AdxGamesAssign = 'adx.games.assign';
+    case PostsAssign = 'posts.assign';
 
     // —— Gtags ——
     case GtagsView = 'gtags.view';

@@ -2,15 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\AdClient;
 use App\Models\Campaign;
 use App\Models\CampaignReport;
 use App\Models\Channel;
 use App\Models\InsightChartReport;
 use App\Models\InsightReport;
 use App\Models\LinkData;
-use App\Models\RevenueChartReport;
-use App\Models\RevenueReport;
 use App\Models\Style;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
@@ -25,9 +22,6 @@ use Illuminate\Support\Facades\DB;
  *   - campaign_reports.account_id          → accounts.account_id
  *   - campaign_reports.campaign_id / name  → campaigns.*
  *   - campaign_reports.style_code/channel_code → styles.code / channels.code
- *   - revenue_reports.style_code/channel_code  → styles.code / channels.code
- *   - revenue_reports.ad_client_id         → ad_clients.ad_client_id
- *   - revenue_chart_reports.*              → idem (hourly)
  *
  * Reports are idempotent — a table is only seeded if it's currently empty.
  */
@@ -50,108 +44,14 @@ class ReportsSeeder extends Seeder
 
         $styles = Style::query()->get();
         $channels = Channel::query()->get();
-        $adClients = AdClient::query()->get();
-
         $linkDataByCampaignId = LinkData::query()
             ->whereNotNull('campaign_id')
             ->get()
             ->keyBy('campaign_id');
 
-        $this->seedRevenueReports($styles, $channels, $adClients);
-        $this->seedRevenueChartReports($styles, $channels, $adClients);
         $this->seedInsightReports($campaigns);
         $this->seedInsightChartReports($campaigns);
         $this->seedCampaignReports($campaigns, $styles, $channels, $linkDataByCampaignId);
-    }
-
-    /**
-     * @param  Collection<int, Style>  $styles
-     * @param  Collection<int, Channel>  $channels
-     * @param  Collection<int, AdClient>  $adClients
-     */
-    private function seedRevenueReports(Collection $styles, Collection $channels, Collection $adClients): void
-    {
-        if (RevenueReport::query()->exists() || $styles->isEmpty() || $channels->isEmpty()) {
-            return;
-        }
-
-        $now = Carbon::now();
-        $rows = [];
-
-        foreach ($styles as $style) {
-            $channel = $channels->random();
-            $adClientId = $adClients->isNotEmpty() ? $adClients->random()->ad_client_id : 'ca-pub-'.fake()->numerify('##############');
-
-            for ($day = self::DAILY_DAYS; $day >= 0; $day--) {
-                $rows[] = RevenueReport::factory()->make([
-                    'ad_client_id' => $adClientId,
-                    'style_code' => $style->code,
-                    'style_name' => $style->name,
-                    'channel_code' => $channel->code,
-                    'channel_name' => $channel->name,
-                    'date' => $now->copy()->subDays($day)->toDateString(),
-                ])->toArray();
-
-                if (count($rows) >= self::CHUNK_SIZE) {
-                    DB::table('revenue_reports')->insert($rows);
-                    $rows = [];
-                }
-            }
-        }
-
-        if ($rows) {
-            DB::table('revenue_reports')->insert($rows);
-        }
-    }
-
-    /**
-     * @param  Collection<int, Style>  $styles
-     * @param  Collection<int, Channel>  $channels
-     * @param  Collection<int, AdClient>  $adClients
-     */
-    private function seedRevenueChartReports(Collection $styles, Collection $channels, Collection $adClients): void
-    {
-        if (RevenueChartReport::query()->exists() || $styles->isEmpty() || $channels->isEmpty()) {
-            return;
-        }
-
-        $now = Carbon::now();
-        $rows = [];
-        $seen = [];
-
-        foreach ($styles as $style) {
-            $channel = $channels->random();
-            $adClientId = $adClients->isNotEmpty() ? $adClients->random()->ad_client_id : 'ca-pub-'.fake()->numerify('##############');
-
-            for ($hoursAgo = 24 * self::CHART_DAYS; $hoursAgo >= 0; $hoursAgo--) {
-                $datetime = $now->copy()->subHours($hoursAgo)->startOfHour()->toDateTimeString();
-                $key = $style->code.'|'.$datetime;
-
-                if (isset($seen[$key])) {
-                    continue;
-                }
-
-                $seen[$key] = true;
-
-                $rows[] = RevenueChartReport::factory()->make([
-                    'ad_client_id' => $adClientId,
-                    'style_code' => $style->code,
-                    'style_name' => $style->name,
-                    'channel_code' => $channel->code,
-                    'channel_name' => $channel->name,
-                    'datetime' => $datetime,
-                ])->toArray();
-
-                if (count($rows) >= self::CHUNK_SIZE) {
-                    DB::table('revenue_chart_reports')->insert($rows);
-                    $rows = [];
-                }
-            }
-        }
-
-        if ($rows) {
-            DB::table('revenue_chart_reports')->insert($rows);
-        }
     }
 
     /**

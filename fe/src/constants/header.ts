@@ -3,12 +3,10 @@ import type { LucideIcon } from 'lucide-react'
 import { PATHS, type NavSectionId } from '@/constants/paths'
 import { PermissionSlugs } from '@/constants/permissions'
 import {
-  BarChart3,
   Building2,
   CircleDollarSign,
   FileText,
   FolderOpen,
-  Gamepad2,
   Globe,
   Images,
   LayoutDashboard,
@@ -142,12 +140,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     name: 'Ads',
     items: [
       {
-        name: 'Ad Clients',
-        href: PATHS.adClients,
-        icon: UserCog,
-        requiredPermission: PermissionSlugs.AdClientsView,
-      },
-      {
         name: 'Business Centers',
         href: PATHS.businessCenters,
         icon: Building2,
@@ -176,47 +168,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         href: PATHS.campaignRuleSettings,
         icon: SlidersHorizontal,
         requiredPermission: PermissionSlugs.CampaignRuleSettingsView,
-      },
-    ],
-  },
-  {
-    name: 'AdX Tracking',
-    items: [
-      {
-        name: 'Accounts',
-        href: PATHS.adxAccounts,
-        icon: Wallet,
-        requiredPermission: PermissionSlugs.AdxAccountsView,
-      },
-      {
-        name: 'Games',
-        href: PATHS.adxGames,
-        icon: Gamepad2,
-        requiredPermission: PermissionSlugs.AdxGamesView,
-      },
-      {
-        name: 'Links',
-        href: PATHS.adxLinks,
-        icon: Link2,
-        requiredPermission: PermissionSlugs.AdxLinksView,
-      },
-      {
-        name: 'Campaigns',
-        href: PATHS.adxCampaigns,
-        icon: Megaphone,
-        requiredPermission: PermissionSlugs.AdxCampaignsView,
-      },
-      {
-        name: 'Campaign Reports',
-        href: PATHS.adxCampaignReports,
-        icon: BarChart3,
-        requiredPermission: PermissionSlugs.AdxCampaignReportsView,
-      },
-      {
-        name: 'Conversion Mappings',
-        href: PATHS.adxAccountConversions,
-        icon: Repeat,
-        requiredPermission: PermissionSlugs.AdxAccountConversionsView,
       },
     ],
   },

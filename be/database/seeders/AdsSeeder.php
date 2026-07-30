@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Enums\TeamRole;
 use App\Models\Account;
-use App\Models\AdClient;
 use App\Models\AdsLink;
 use App\Models\BusinessCenter;
 use App\Models\Campaign;
@@ -41,8 +40,6 @@ class AdsSeeder extends Seeder
 
     private const CHANNEL_COUNT = 12;
 
-    private const AD_CLIENT_COUNT = 5;
-
     private const BUSINESS_CENTER_COUNT = 4;
 
     private const ACCOUNT_COUNT = 10;
@@ -67,7 +64,6 @@ class AdsSeeder extends Seeder
         $channels = $this->seedChannels($admin);
         $this->attachChannelsToLeaderAndMemberUsers($channels);
 
-        $adClients = $this->seedAdClients();
         $businessCenters = $this->seedBusinessCenters($admin, $teams);
 
         $accounts = $this->seedAccounts($admin, $managers, $teams, $businessCenters);
@@ -87,9 +83,7 @@ class AdsSeeder extends Seeder
 
         $this->seedFollows($sites, $posts, $adsLinks, $styles, $channels);
 
-        // Touch variables to help static analysers (and keep $adClients + $linkDataList
-        // intentionally available for downstream seeders via DB state).
-        unset($adClients, $linkDataList);
+        unset($linkDataList);
     }
 
     /**
@@ -170,22 +164,6 @@ class AdsSeeder extends Seeder
                 'channel_id' => $channel->id,
             ]);
         }
-    }
-
-    /**
-     * @return Collection<int, AdClient>
-     */
-    private function seedAdClients(): Collection
-    {
-        if (AdClient::query()->count() >= self::AD_CLIENT_COUNT) {
-            return AdClient::query()->limit(self::AD_CLIENT_COUNT)->get();
-        }
-
-        $missing = self::AD_CLIENT_COUNT - AdClient::query()->count();
-
-        AdClient::factory()->count($missing)->create();
-
-        return AdClient::query()->limit(self::AD_CLIENT_COUNT)->get();
     }
 
     /**

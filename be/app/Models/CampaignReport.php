@@ -29,7 +29,7 @@ class CampaignReport extends Model
         'lifetime_budget',
         'target_cpa',
         'bidding_strategy_type',
-        // adsense / revenue
+        // Revenue
         'style_code',
         'style_name',
         'channel_code',

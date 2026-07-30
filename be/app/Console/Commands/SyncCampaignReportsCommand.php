@@ -2,8 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\AdClient;
-use App\Services\Integrations\Adsense\RevenueReportSyncService;
 use App\Services\Integrations\Facebook\FacebookCampaignSyncService;
 use App\Services\Integrations\Google\GoogleCampaignSyncService;
 use App\Services\Integrations\TikTok\TikTokCampaignSyncService;
@@ -28,7 +26,7 @@ class SyncCampaignReportsCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Sync all reports from Adsense, Facebook, Google Ads, and TikTok';
+    protected $description = 'Sync all reports from Facebook, Google Ads, and TikTok';
 
     /**
      * Execute the console command.
@@ -43,49 +41,6 @@ class SyncCampaignReportsCommand extends Command
 
         $startDate = $this->argument('start_date') ? Carbon::parse($this->argument('start_date'))->toDateString() : Carbon::now()->subDay()->toDateString();
         $endDate = $this->argument('end_date') ? Carbon::parse($this->argument('end_date'))->toDateString() : Carbon::now()->toDateString();
-
-        $failedAdClientIds = false;
-
-        try {
-            $adClientIds = AdClient::query()
-                ->whereNotNull('ad_client_id')
-                ->pluck('ad_client_id')
-                ->filter(fn ($v) => trim((string) $v) !== '')
-                ->values();
-
-            foreach ($adClientIds as $adClientId) {
-                try {
-                    $this->line("Syncing AdSense client: {$adClientId}");
-
-                    $resp = RevenueReportSyncService::sync([
-                        'ad_client_id' => $adClientId,
-                        'start_date' => $startDate,
-                        'end_date' => $endDate,
-                    ]);
-
-                    if (! ($resp['success'] ?? false)) {
-                        $failedAdClientIds = true;
-                        $logger->error('[SyncAllReports][Adsense] Sync failed', [
-                            'ad_client_id' => $adClientId,
-                            'message' => $resp['message'] ?? null,
-                        ]);
-                        $this->error("Failed to sync AdSense client {$adClientId}: ".($resp['message'] ?? 'Unknown error'));
-                    }
-                } catch (Throwable $e) {
-                    $failedAdClientIds = true;
-                    $logger->error('[SyncAllReports][Adsense] Throwable', [
-                        'ad_client_id' => $adClientId,
-                        'error' => $e->getMessage(),
-                    ]);
-                    $this->error("Exception syncing AdSense client {$adClientId}: ".$e->getMessage());
-                }
-            }
-        } catch (Throwable $e) {
-            $logger->error('[SyncAllReports][Adsense] Fatal error', [
-                'error' => $e->getMessage(),
-            ]);
-            $this->error('Fatal error in AdSense sync: '.$e->getMessage());
-        }
 
         try {
             GoogleCampaignSyncService::sync([
@@ -115,7 +70,6 @@ class SyncCampaignReportsCommand extends Command
             FacebookCampaignSyncService::sync([
                 'start_date' => $startDate,
                 'end_date' => $endDate,
-                'failed_ad_client_ids' => $failedAdClientIds,
             ]);
         } catch (Throwable $e) {
             $logger->error('[SyncAllReports][Facebook] Throwable', [

@@ -24,7 +24,7 @@ return new class extends Migration
             $table->decimal('daily_budget', 15, 2)->nullable();
             $table->decimal('lifetime_budget', 15, 2)->nullable();
 
-            // adsense / revenue
+            // Revenue
             $table->string('style_code')->nullable();
             $table->string('style_name')->nullable();
             $table->string('channel_code')->nullable();

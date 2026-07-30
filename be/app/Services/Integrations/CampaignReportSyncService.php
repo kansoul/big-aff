@@ -63,8 +63,7 @@ class CampaignReportSyncService
                 $dateString = $currentDate->toDateString();
 
                 try {
-                    $failedAdClientIds = $options['failed_ad_client_ids'] ?? false;
-                    $result = self::syncDateData($dateString, $failedAdClientIds);
+                    $result = self::syncDateData($dateString);
 
                     $syncedCount += $result['synced_count'];
                     $errorCount += $result['error_count'];
@@ -100,12 +99,12 @@ class CampaignReportSyncService
         }
     }
 
-    private static function syncDateData(string $date, bool $failedAdClientIds): array
+    private static function syncDateData(string $date): array
     {
         $syncedCount = 0;
 
         try {
-            DB::transaction(function () use ($date, &$syncedCount, $failedAdClientIds) {
+            DB::transaction(function () use ($date, &$syncedCount) {
 
                 $insightReportsQuery = InsightReport::with(['campaign', 'campaign.account'])
                     ->whereDate('date_start', $date);
@@ -116,7 +115,7 @@ class CampaignReportSyncService
 
                 foreach ($insightReports as $insightReport) {
                     try {
-                        $reportData = self::buildReportData($date, $insightReport, $failedAdClientIds);
+                        $reportData = self::buildReportData($date, $insightReport);
 
                         if ($reportData === null) {
                             continue;
@@ -178,7 +177,7 @@ class CampaignReportSyncService
         });
     }
 
-    private static function buildReportData(string $date, InsightReport $insightReport, bool $failedAdClientIds): ?array
+    private static function buildReportData(string $date, InsightReport $insightReport): ?array
     {
         $linkData = LinkData::where('campaign_id', $insightReport->campaign_id)->first();
 
@@ -195,7 +194,7 @@ class CampaignReportSyncService
                 ->whereDate('event_time', $date)
                 ->first();
             $channelName = Channel::where('code', $linkData->channel_code)->value('name');
-            $revenueData = $failedAdClientIds ? [] : self::getRevenueData($date, $linkData->channel_code);
+            $revenueData = self::getRevenueData($date, $linkData->channel_code);
             $rConversion = (int) ($revenueData['clicks'] ?? 0);
             $sumRealtimeClickAdCount = self::sumRealtimeClickAdCount($date, $linkData->channel_code);
             $rCpa = $rConversion > 0 ? $spend / $rConversion : 0;
