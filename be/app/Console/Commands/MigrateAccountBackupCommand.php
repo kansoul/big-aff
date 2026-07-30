@@ -56,7 +56,7 @@ class MigrateAccountBackupCommand extends Command
                 'main_team_id' => 4,
                 'account_id' => $accountId,
                 'account_name' => isset($record['account_name']) ? mb_substr((string) $record['account_name'], 0, 255) : null,
-                'ads_type' => (string) ($record['ads_type'] ?? 'facebook'),
+                'ads_type' => (string) ($record['ads_type'] ?? 'google'),
                 'status' => isset($record['status']) ? mb_substr((string) $record['status'], 0, 50) : null,
                 'is_special' => (bool) ($record['is_special'] ?? false),
                 'sync_to_mcc' => (bool) ($record['sync_to_mcc'] ?? false),

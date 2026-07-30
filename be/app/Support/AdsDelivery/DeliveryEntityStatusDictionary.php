@@ -10,7 +10,7 @@ namespace App\Support\AdsDelivery;
 final class DeliveryEntityStatusDictionary
 {
     /**
-     * Facebook-style delivery statuses (value => label).
+     * provider-style delivery statuses (value => label).
      */
     public const OPTIONS = [
         'ACTIVE' => 'Active',

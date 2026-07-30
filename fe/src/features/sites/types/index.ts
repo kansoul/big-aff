@@ -31,7 +31,6 @@ export const siteCreateSchema = z.object({
   favicon: z.custom<MediaFile>().nullable().optional(),
   settings: z.object({
     gtm: z.string().max(255).optional(),
-    fb_pixel: z.string().max(255).optional(),
     theme: z.string().max(255).optional(),
     default_channel: z
       .string({ error: 'Default channel is required' })
@@ -59,7 +58,6 @@ export interface SiteDetail extends Site {
   favicon?: MediaFile | null
   settings?: {
     gtm?: string | null
-    fb_pixel?: string | null
     theme?: string | null
     default_channel?: string | null
     default_style?: string | null
@@ -94,7 +92,6 @@ export type SiteCreateApiParams = {
   favicon_id?: number | null
   settings: {
     gtm?: string | null
-    fb_pixel?: string | null
     theme?: string | null
     default_channel: string
     default_style: string

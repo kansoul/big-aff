@@ -9,32 +9,14 @@ use App\Models\AdsInsightsReport;
 use App\Models\Campaign;
 use App\Services\Integrations\Google\GoogleAdsService;
 use App\Services\Integrations\TikTok\TikTokAdsStatusService;
-use Exception;
-use FacebookAds\Api;
-use FacebookAds\Http\Exception\AuthorizationException;
-use FacebookAds\Object\Ad;
-use FacebookAds\Object\AdSet;
-use FacebookAds\Object\Campaign as FacebookCampaign;
 use Illuminate\Support\Facades\Log;
 
 class AdsStatusService
 {
-    protected string $accessToken;
-
-    protected string $appSecret;
-
-    protected string $appId;
-
     public function __construct(
         public readonly GoogleAdsService $google,
         public readonly TikTokAdsStatusService $tiktok,
-    ) {
-        $this->accessToken = config('facebook.facebook_ads_update.access_token');
-        $this->appSecret = config('facebook.facebook_ads_update.app_secret');
-        $this->appId = config('facebook.facebook_ads_update.app_id');
-
-        Api::init($this->appId, $this->appSecret, $this->accessToken);
-    }
+    ) {}
 
     public function updateCampaignStatus(string $campaignId, string $status, bool $canChangeGoogle = false): bool
     {
@@ -48,17 +30,9 @@ class AdsStatusService
             return $this->tiktok->updateCampaignStatus((string) $campaign->account_id, [$campaignId], $status);
         }
 
-        try {
-            $fbCampaign = new FacebookCampaign($campaignId);
-            $fbCampaign->setData(['status' => $status]);
-            $fbCampaign->update();
+        Log::warning('Unsupported campaign provider for status update', ['campaign_id' => $campaignId]);
 
-            return true;
-        } catch (Exception $e) {
-            Log::error('Error updating campaign status: '.$e->getMessage().' - '.$campaignId.' - '.$status);
-
-            return false;
-        }
+        return false;
     }
 
     /**
@@ -91,17 +65,9 @@ class AdsStatusService
             return $this->tiktok->updateAdgroupStatus((string) $accountId, [$adsetId], $status);
         }
 
-        try {
-            $adset = new AdSet($adsetId);
-            $adset->setData(['status' => $status]);
-            $adset->update();
+        Log::warning('Unsupported adset provider for status update', ['adset_id' => $adsetId]);
 
-            return true;
-        } catch (AuthorizationException $e) {
-            Log::error('Error updating adset status: '.$e->getMessage().' - '.$adsetId.' - '.$status.' - '.$e->getResponse()->getBody());
-
-            return false;
-        }
+        return false;
     }
 
     public function updateAdStatus(string $adId, string $status): bool
@@ -112,22 +78,13 @@ class AdsStatusService
             return $this->tiktok->updateAdStatus((string) $accountId, [$adId], $status);
         }
 
-        try {
-            $ad = new Ad($adId);
-            $ad->setData(['status' => $status]);
-            $ad->update();
+        Log::warning('Unsupported ad provider for status update', ['ad_id' => $adId]);
 
-            return true;
-        } catch (AuthorizationException $e) {
-            Log::error('Error updating ad status: '.$e->getMessage().' - '.$adId.' - '.$status.' - '.$e->getResponse()->getBody());
-
-            return false;
-        }
+        return false;
     }
 
     /**
-     * Whether the given advertiser account belongs to TikTok, so status writes
-     * are routed to the TikTok API instead of the Facebook SDK default.
+     * Whether the given advertiser account belongs to TikTok.
      */
     private function isTikTokAccount(?string $accountId): bool
     {

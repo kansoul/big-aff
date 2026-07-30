@@ -56,7 +56,7 @@ export function SiteFormDialog({
       status: 'active',
       logo: null,
       favicon: null,
-      settings: { gtm: '', fb_pixel: '', theme: '', default_channel: '', default_style: '' },
+      settings: { gtm: '', theme: '', default_channel: '', default_style: '' },
     },
   })
 
@@ -79,7 +79,6 @@ export function SiteFormDialog({
               favicon: site.favicon ?? null,
               settings: {
                 gtm: site.settings?.gtm ?? '',
-                fb_pixel: site.settings?.fb_pixel ?? '',
                 theme: site.settings?.theme ?? '',
                 default_channel: site.settings?.default_channel ?? '',
                 default_style: site.settings?.default_style ?? '',
@@ -101,7 +100,7 @@ export function SiteFormDialog({
           status: 'active',
           logo: null,
           favicon: null,
-          settings: { gtm: '', fb_pixel: '', theme: '', default_channel: '', default_style: '' },
+          settings: { gtm: '', theme: '', default_channel: '', default_style: '' },
         })
       }
     } else {

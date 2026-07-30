@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Integrations\Facebook\FacebookCampaignSyncService;
 use App\Services\Integrations\Google\GoogleCampaignSyncService;
 use App\Services\Integrations\TikTok\TikTokCampaignSyncService;
 use Carbon\Carbon;
@@ -26,7 +25,7 @@ class SyncCampaignReportsCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Sync all reports from Facebook, Google Ads, and TikTok';
+    protected $description = 'Sync all reports from Google Ads and TikTok';
 
     /**
      * Execute the console command.
@@ -64,18 +63,6 @@ class SyncCampaignReportsCommand extends Command
                 'error' => $e->getMessage(),
             ]);
             $this->error('Exception syncing TikTok campaigns: '.$e->getMessage());
-        }
-
-        try {
-            FacebookCampaignSyncService::sync([
-                'start_date' => $startDate,
-                'end_date' => $endDate,
-            ]);
-        } catch (Throwable $e) {
-            $logger->error('[SyncAllReports][Facebook] Throwable', [
-                'error' => $e->getMessage(),
-            ]);
-            $this->error('Exception syncing Facebook campaigns: '.$e->getMessage());
         }
 
         return Command::SUCCESS;

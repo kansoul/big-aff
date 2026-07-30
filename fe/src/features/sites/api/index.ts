@@ -34,7 +34,6 @@ export const sitesApi = {
       favicon_id: params.favicon_id ?? null,
       settings: {
         gtm: params.settings?.gtm ?? null,
-        fb_pixel: params.settings?.fb_pixel ?? null,
         theme: params.settings?.theme ?? null,
         default_channel: params.settings.default_channel,
         default_style: params.settings.default_style,
@@ -60,7 +59,6 @@ export const sitesApi = {
       favicon_id: params.favicon_id ?? null,
       settings: {
         gtm: params.settings?.gtm ?? null,
-        fb_pixel: params.settings?.fb_pixel ?? null,
         theme: params.settings?.theme ?? null,
         default_channel: params.settings.default_channel,
         default_style: params.settings.default_style,

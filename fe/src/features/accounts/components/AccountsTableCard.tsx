@@ -26,7 +26,6 @@ import { AssignUserAccountsDialog } from './AssignUserAccountsDialog'
 type ToggleField = 'is_special' | 'sync_to_mcc' | 'roas_enabled' | 'gtag_enabled'
 
 const ADS_TYPE_OPTIONS = [
-  { value: 'facebook', label: 'Facebook' },
   { value: 'google', label: 'Google' },
   { value: 'tiktok', label: 'TikTok' },
 ] as const
@@ -403,7 +402,6 @@ function AccountsTableCardInner({
       onFilterChange({
         query: typeof values.query === 'string' ? values.query : undefined,
         ads_type:
-          values.ads_type === 'facebook' ||
           values.ads_type === 'google' ||
           values.ads_type === 'tiktok'
             ? values.ads_type

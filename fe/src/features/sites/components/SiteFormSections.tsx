@@ -192,19 +192,6 @@ export function SiteFormSections({ control }: SiteFormSectionsProps) {
           />
           <FormField
             control={control}
-            name="settings.fb_pixel"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Facebook Pixel ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="1234567890" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
             name="settings.theme"
             render={({ field }) => (
               <FormItem>

@@ -29,7 +29,6 @@ const DEFAULT_STATUS_MAP: Record<
   normal: { variant: 'secondary', label: 'Normal' },
   ai: { variant: 'warning', label: 'AI' },
   wordpress: { variant: 'success', label: 'WordPress' },
-  facebook: { variant: 'success', label: 'Facebook' },
   google: { variant: 'warning', label: 'Google' },
   tiktok: { variant: 'secondary', label: 'TikTok' },
   unknown: { variant: 'default', label: 'Unknown' },

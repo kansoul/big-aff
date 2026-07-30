@@ -30,7 +30,6 @@ class UpdateSiteRequest extends FormRequest
             'settings' => ['nullable', 'array'],
             'status' => ['sometimes', 'string', Rule::in(SiteStatus::values())],
             'settings.gtm' => ['nullable', 'string', 'max:255'],
-            'settings.fb_pixel' => ['nullable', 'string', 'max:255'],
             'settings.theme' => ['nullable', 'string', 'max:255'],
             'settings.default_channel' => ['required', 'string', 'exists:channels,code'],
             'settings.default_style' => ['required', 'string', 'exists:styles,code'],

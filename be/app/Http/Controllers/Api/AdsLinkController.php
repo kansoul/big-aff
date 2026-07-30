@@ -48,7 +48,7 @@ class AdsLinkController extends BaseController
     }
 
     /**
-     * Update ads link (only rac, fbid, googleid)
+     * Update ads link (only RAC and provider IDs)
      */
     public function update(UpdateAdsLinkRequest $request, AdsLink $adsLink): JsonResponse
     {

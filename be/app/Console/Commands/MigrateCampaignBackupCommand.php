@@ -143,7 +143,7 @@ class MigrateCampaignBackupCommand extends Command
 
             $batch[] = [
                 'account_id' => $accountId,
-                'ads_type' => (string) ($record['ads_type'] ?? 'facebook'),
+                'ads_type' => (string) ($record['ads_type'] ?? 'google'),
                 'campaign_id' => $campaignId,
                 'campaign_name' => isset($record['campaign_name']) ? mb_substr((string) $record['campaign_name'], 0, 255) : null,
                 'daily_budget' => is_numeric($record['daily_budget'] ?? null) ? (float) $record['daily_budget'] : null,

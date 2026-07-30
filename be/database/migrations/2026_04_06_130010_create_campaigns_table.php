@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('campaigns', function (Blueprint $table) {
             $table->id();
             $table->string('account_id')->nullable();
-            $table->string('ads_type', 50); // 'facebook', 'google'
+            $table->string('ads_type', 50); // 'google', 'tiktok'
             $table->string('campaign_id')->unique();
             $table->string('campaign_name')->nullable();
             $table->decimal('daily_budget', 15, 2)->nullable();

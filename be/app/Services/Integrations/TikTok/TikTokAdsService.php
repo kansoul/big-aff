@@ -42,7 +42,7 @@ class TikTokAdsService
      * advertiser within a date range.
      *
      * Returns ['insights' => [...], 'campaigns' => [...]] where insight rows are
-     * already normalised to the insight_reports schema (Facebook-specific
+     * already normalised to the insight_reports schema (provider-specific
      * columns are null for TikTok). Returns null on API failure so the caller
      * can skip the advertiser.
      *
@@ -205,7 +205,7 @@ class TikTokAdsService
                         'cpm' => $this->toFloat($metrics['cpm'] ?? null),
                         'ctr' => $this->toFloat($metrics['ctr'] ?? null),
                         'frequency' => $this->toFloat($metrics['frequency'] ?? null),
-                        // Columns specific to Facebook insights — not available on TikTok.
+                        // Columns specific to provider insights — not available on TikTok.
                         'search_clicks' => null,
                         'ctr_link' => null,
                         'cpc_link' => null,

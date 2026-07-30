@@ -49,7 +49,7 @@ class EvaluateAdAdsetRuleAction
         $revenue = $realtimeClicks * $rpc;
         $profit = $revenue - $spend;
         $roi = $spend > 0 ? ($profit / $spend) * 100 : 0.0;
-        $fbSourceableId = $this->facebookNumericSourceableId($report, $entityType);
+        $fbSourceableId = $this->numericSourceableId($report, $entityType);
 
         $rules = $this->getActiveRules($entityType, $fbSourceableId, $now);
 
@@ -160,7 +160,7 @@ class EvaluateAdAdsetRuleAction
     /**
      * @param  class-string<AdsInsightsReport|AdsetInsightsReport>  $entityType
      */
-    private function facebookNumericSourceableId(Model $report, string $entityType): int
+    private function numericSourceableId(Model $report, string $entityType): int
     {
         $raw = $entityType === AdsInsightsReport::class
             ? (string) $report->ad_id

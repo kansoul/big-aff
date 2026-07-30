@@ -41,7 +41,6 @@ const DEFAULT_FILTERS: AdsLinkFilterParams = {
   post_id: null,
   channel_code: null,
   created_by: null,
-  pixel_id: null,
   googleid: null,
   date_range: null,
   is_hidden: 0,
@@ -58,7 +57,6 @@ function parseFilters(params: URLSearchParams): AdsLinkFilterParams {
     post_id: params.get('post_id') ? Number(params.get('post_id')) : null,
     channel_code: params.get('channel_code'),
     created_by: params.get('created_by') ? Number(params.get('created_by')) : null,
-    pixel_id: params.get('pixel_id'),
     googleid: params.get('googleid'),
     date_range: dateFrom || dateTo ? { from: dateFrom, to: dateTo } : null,
     is_hidden: params.get('is_hidden') !== null ? (Number(params.get('is_hidden')) as 0 | 1) : 0,
@@ -77,7 +75,6 @@ function buildParams(
   if (filters.post_id != null) params.set('post_id', String(filters.post_id))
   if (filters.channel_code) params.set('channel_code', filters.channel_code)
   if (filters.created_by != null) params.set('created_by', String(filters.created_by))
-  if (filters.pixel_id) params.set('pixel_id', filters.pixel_id)
   if (filters.googleid) params.set('googleid', filters.googleid)
   if (filters.date_range?.from) params.set('date_from', filters.date_range.from)
   if (filters.date_range?.to) params.set('date_to', filters.date_range.to)
@@ -95,7 +92,6 @@ const createDefaultValues: AdsLinkCreateFormValues = {
   rac: '',
   keyword_set_id: null,
   note: '',
-  fbid: '',
   googleid: '',
   tiktokid: '',
   tiktok_pixel_id: '',
@@ -149,7 +145,6 @@ export function AdsLinksPage() {
       rac: '',
       channel_code: null,
       keyword_set_id: null,
-      fbid: '',
       googleid: '',
       tiktokid: '',
       tiktok_pixel_id: '',
@@ -209,7 +204,6 @@ export function AdsLinksPage() {
         rac: editRow.rac,
         channel_code: editRow.channel_code ?? null,
         keyword_set_id: editRow.keyword_set?.id ?? null,
-        fbid: editRow.fbid?.join(',') ?? '',
         googleid: editRow.googleid?.join(',') ?? '',
         tiktokid: editRow.tiktokid?.join(',') ?? '',
         tiktok_pixel_id: editRow.tiktok_pixel_id?.join(',') ?? '',
@@ -257,7 +251,6 @@ export function AdsLinksPage() {
         rac: values.rac,
         keyword_set_id: values.keyword_set_id ?? null,
         note: values.note ?? null,
-        fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
         tiktokid: values.tiktokid ?? null,
         tiktok_pixel_id: values.tiktok_pixel_id ?? null,
@@ -291,7 +284,6 @@ export function AdsLinksPage() {
         rac: values.rac,
         channel_code: editRow.is_old ? (values.channel_code ?? editRow.channel_code) : undefined,
         keyword_set_id: values.keyword_set_id ?? null,
-        fbid: values.fbid ?? null,
         googleid: values.googleid ?? null,
         tiktokid: values.tiktokid ?? null,
         tiktok_pixel_id: values.tiktok_pixel_id ?? null,

@@ -31,7 +31,7 @@ class SiteController extends BaseController
      * @queryParam keyword string Search keyword (name or url). Example: example
      * @queryParam status string Filter by status. Enum: active, maintenance, suspended. Example: active
      *
-     * @response 200 {"data": [{"id": 1, "name": "Example Site", "url": "https://example.com", "description": "A site", "status": "active", "settings": {"gtm": null, "fb_pixel": null, "theme_name": null}, "logo": null, "favicon": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
+     * @response 200 {"data": [{"id": 1, "name": "Example Site", "url": "https://example.com", "description": "A site", "status": "active", "settings": {"gtm": null, "theme_name": null}, "logo": null, "favicon": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
      */
     public function index(ListSitesRequest $request): JsonResponse
     {
@@ -54,12 +54,12 @@ class SiteController extends BaseController
      * @bodyParam status string optional Site status. Enum: active, maintenance, suspended. Example: active
      * @bodyParam settings object optional Site settings object.
      * @bodyParam settings.gtm string optional Google Tag Manager ID. Example: GTM-XXXXXX
-     * @bodyParam settings.fb_pixel string optional Facebook Pixel ID. Example: 123456789
+     * @bodyParam
      * @bodyParam settings.theme string optional Theme name. Example: theme-1
      * @bodyParam logo_id int optional ID of uploaded file for logo (files table).
      * @bodyParam favicon_id int optional ID of uploaded file for favicon (files table).
      *
-     * @response 201 {"data": {"id": 1, "name": "My Site", "url": "https://mysite.com", "description": "A description", "status": "active", "settings": {"gtm": null, "fb_pixel": null, "theme_name": null}, "logo": null, "favicon": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
+     * @response 201 {"data": {"id": 1, "name": "My Site", "url": "https://mysite.com", "description": "A description", "status": "active", "settings": {"gtm": null, "theme_name": null}, "logo": null, "favicon": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
      * @response 422 {"message": "The name field is required.", "errors": {"name": ["The name field is required."]}}
      */
     public function store(StoreSiteRequest $request): JsonResponse
@@ -105,7 +105,7 @@ class SiteController extends BaseController
      * @bodyParam status string optional Site status. Enum: active, maintenance, suspended. Example: active
      * @bodyParam settings object optional Site settings object.
      * @bodyParam settings.gtm string optional Google Tag Manager ID. Example: GTM-XXXXXX
-     * @bodyParam settings.fb_pixel string optional Facebook Pixel ID. Example: 123456789
+     * @bodyParam
      * @bodyParam settings.theme string optional Theme name. Example: theme-1
      * @bodyParam logo_id int optional ID of uploaded file for logo (files table).
      * @bodyParam favicon_id int optional ID of uploaded file for favicon (files table).

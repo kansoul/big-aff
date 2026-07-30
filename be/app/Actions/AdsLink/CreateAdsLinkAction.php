@@ -44,9 +44,6 @@ class CreateAdsLinkAction
         $baseSlug = $post->slug;
 
         $trackingIds = [];
-        if (! empty($data['fbid'])) {
-            $trackingIds['fbid'] = array_map('trim', explode(',', $data['fbid']));
-        }
         if (! empty($data['googleid'])) {
             $trackingIds['googleid'] = array_map('trim', explode(',', $data['googleid']));
         }

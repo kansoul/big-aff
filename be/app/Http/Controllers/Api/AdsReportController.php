@@ -25,7 +25,7 @@ class AdsReportController extends BaseController
      * @queryParam date_to string End date (Y-m-d). Example: 2026-04-30
      * @queryParam team_ids[] integer[] Filter by team IDs. Example: 1
      * @queryParam main_team_ids[] integer[] Filter by main team IDs. Example: 1
-     * @queryParam ads_types[] string[] Filter by ads types (facebook|google). Example: facebook
+     * @queryParam ads_types[] string[] Filter by ads types (google|tiktok). Example: google
      * @queryParam account_ids[] string[] Filter by account IDs. Example: act_123456
      * @queryParam campaign_ids[] string[] Filter by campaign IDs.
      *

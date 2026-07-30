@@ -9,7 +9,6 @@ use App\Models\Account;
 use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
 use App\Services\Integrations\Contracts\AdsAdsetProvider;
-use App\Services\Integrations\Facebook\FacebookAdsAdsetService;
 use App\Services\Integrations\TikTok\TikTokAdsAdsetService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
@@ -20,6 +19,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use LogicException;
 use Throwable;
 
 class FetchAccountAdsAndAdsetsJob implements ShouldQueue
@@ -36,7 +36,7 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
         public readonly string $accountId,
         public readonly array $campaignIds,
         public readonly string $date,
-        public readonly string $adsType = AdsType::FACEBOOK->value,
+        public readonly string $adsType = AdsType::TIKTOK->value,
     ) {
         $this->onQueue(config('queue.queues.fetch-ads-adsets'));
     }
@@ -85,7 +85,7 @@ class FetchAccountAdsAndAdsetsJob implements ShouldQueue
     {
         return match ($this->adsType) {
             AdsType::TIKTOK->value => app(TikTokAdsAdsetService::class),
-            default => app(FacebookAdsAdsetService::class),
+            default => throw new LogicException("Unsupported ads provider: {$this->adsType}"),
         };
     }
 

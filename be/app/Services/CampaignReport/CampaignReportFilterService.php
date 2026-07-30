@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\DB;
 class CampaignReportFilterService
 {
     private const ADS_TYPES = [
-        ['value' => 'facebook', 'label' => 'Facebook'],
         ['value' => 'google', 'label' => 'Google'],
         ['value' => 'tiktok', 'label' => 'TikTok'],
     ];

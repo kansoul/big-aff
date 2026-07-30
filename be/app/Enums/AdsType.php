@@ -4,7 +4,6 @@ namespace App\Enums;
 
 enum AdsType: string
 {
-    case FACEBOOK = 'facebook';
     case GOOGLE = 'google';
     case TIKTOK = 'tiktok';
 

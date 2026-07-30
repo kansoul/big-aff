@@ -18,11 +18,11 @@ class CampaignFactory extends Factory
      */
     public function definition(): array
     {
-        $adsType = fake()->randomElement(['facebook', 'google']);
+        $adsType = fake()->randomElement(['google', 'tiktok']);
         $startTime = fake()->dateTimeBetween('-6 months', '-1 month');
 
         return [
-            'account_id' => ($adsType === 'facebook' ? 'act_' : 'goog_').fake()->numerify('##########'),
+            'account_id' => ($adsType === 'tiktok' ? 'tt_' : 'goog_').fake()->numerify('##########'),
             'campaign_id' => 'camp_'.fake()->unique()->numerify('##############'),
             'campaign_name' => ucfirst(fake()->words(fake()->numberBetween(3, 6), true)),
             'ads_type' => $adsType,

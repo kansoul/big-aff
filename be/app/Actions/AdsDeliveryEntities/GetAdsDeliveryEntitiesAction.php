@@ -51,12 +51,12 @@ class GetAdsDeliveryEntitiesAction
             MainTeamReportDataScope::excludeNonFetchableAccounts(
                 $adsetsQuery,
                 'adset_insights_reports.account_id',
-                AdsType::FACEBOOK->value,
+                AdsType::TIKTOK->value,
             );
             MainTeamReportDataScope::excludeNonFetchableAccounts(
                 $adsQuery,
                 'ads_insights_reports.account_id',
-                AdsType::FACEBOOK->value,
+                AdsType::TIKTOK->value,
             );
         }
 

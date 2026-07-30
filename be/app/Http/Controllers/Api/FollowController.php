@@ -52,7 +52,7 @@ class FollowController extends BaseController
      * @bodyParam post_id integer optional ID of the post the user came from. Example: 1
      * @bodyParam ads_link_id integer optional ID of the ads link the user came from. Example: 1
      * @bodyParam style_code string optional Style code snapshot. Example: style-a
-     * @bodyParam channel_code string optional Channel code snapshot. Example: facebook
+     * @bodyParam channel_code string optional Channel code snapshot. Example: google
      *
      * @response 200 {"data": {"id": 1, "email": "user@example.com", "site_id": 1, "post_id": null, "ads_link_id": null, "style_code": null, "channel_code": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
      * @response 422 {"message": "The email field is required.", "errors": {"email": ["The email field is required."]}}

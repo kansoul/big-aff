@@ -5,7 +5,6 @@ namespace App\Enums;
 enum TrafficType: string
 {
     case GOOGLE = 'gg';
-    case FACEBOOK = 'fb';
     case TIKTOK = 'tt';
 
     /**

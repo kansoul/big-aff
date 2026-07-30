@@ -44,9 +44,6 @@ class ListAdsLinksAction
             ->when(! empty($filters['post_id']), fn ($q) => $q->where('post_id', $filters['post_id']))
             ->when(! empty($filters['channel_code']), fn ($q) => $q->where('channel_code', $filters['channel_code']))
             ->when(! empty($filters['created_by']), fn ($q) => $q->where('created_by', $filters['created_by']))
-            ->when(! empty($filters['pixel_id']), function ($q) use ($filters) {
-                return $q->where('tracking_ids->fbid', 'LIKE', '%'.$filters['pixel_id'].'%');
-            })
             ->when(! empty($filters['googleid']), function ($q) use ($filters) {
                 return $q->where('tracking_ids->googleid', 'LIKE', '%'.$filters['googleid'].'%');
             })

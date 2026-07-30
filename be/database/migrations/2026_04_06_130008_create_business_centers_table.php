@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('bc_id')->nullable();
             $table->string('name');
-            $table->string('ads_type', 50); // 'facebook', 'google'
+            $table->string('ads_type', 50); // 'google', 'tiktok'
             $table->unsignedBigInteger('team_id')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();

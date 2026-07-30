@@ -41,7 +41,7 @@ async function copyToClipboard(text: string): Promise<void> {
   await navigator.clipboard.writeText(text)
 }
 
-const COPY_DIALOG_CLOSED: CopyDialogState = { open: false, platform: 'facebook', id: '', link: '' }
+const COPY_DIALOG_CLOSED: CopyDialogState = { open: false, platform: 'google', id: '', link: '' }
 
 type CopyLinkDialogProps = {
   state: CopyDialogState
@@ -49,7 +49,6 @@ type CopyLinkDialogProps = {
 }
 
 const COPY_PLATFORM_LABELS: Record<CopyDialogState['platform'], string> = {
-  facebook: 'Facebook',
   google: 'Google',
   tiktok: 'TikTok',
 }
@@ -138,23 +137,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
 
         return (
           <div className="flex gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              title="Copy Facebook link"
-              onClick={() =>
-                onOpenCopyDialog({
-                  platform: 'facebook',
-                  id: link.fbid ? link.fbid.join(',') : '',
-                  link: buildCopyLink(siteUrl, link.slug, 'facebook'),
-                })
-              }
-            >
-              <Copy className="h-3 w-3 mr-1" />
-              FB
-            </Button>
             <Button
               type="button"
               variant="outline"
@@ -541,13 +523,6 @@ function AdsLinksTableCardInner({
         options: users.map((u) => ({ label: u.name, value: String(u.id) })),
       },
       {
-        field: 'pixel_id',
-        label: 'Facebook Pixel ID',
-        type: 'input',
-        value: filters.pixel_id ?? null,
-        placeholder: 'Search Pixel ID…',
-      },
-      {
         field: 'googleid',
         label: 'Google ID',
         type: 'input',
@@ -619,13 +594,6 @@ function AdsLinksTableCardInner({
         key: 'created_by',
         label: 'Created by',
         displayValue: opt?.name ?? String(filters.created_by),
-      })
-    }
-    if (filters.pixel_id) {
-      chips.push({
-        key: 'pixel_id',
-        label: 'Facebook Pixel ID',
-        displayValue: filters.pixel_id,
       })
     }
     if (filters.googleid) {

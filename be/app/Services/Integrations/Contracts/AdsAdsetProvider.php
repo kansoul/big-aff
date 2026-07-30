@@ -6,7 +6,7 @@ namespace App\Services\Integrations\Contracts;
  * Contract for provider-specific services that fetch ad/adset (ad group)
  * delivery insights for an advertiser account on a single day.
  *
- * Facebook adsets map onto TikTok ad groups; both land in the shared
+ * ads platform ad sets map onto TikTok ad groups; both land in the shared
  * adset_insights_reports / ads_insights_reports tables, so implementations
  * must return rows already normalised to those schemas.
  */

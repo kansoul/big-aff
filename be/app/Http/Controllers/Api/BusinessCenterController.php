@@ -31,7 +31,7 @@ class BusinessCenterController extends BaseController
      * @queryParam per_page integer Items per page (max 100). Example: 15
      * @queryParam page integer Page number. Example: 1
      *
-     * @response 200 {"data": [{"id": 1, "bc_id": "123", "name": "My BC", "ads_type": "facebook", "team_id": null, "team": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
+     * @response 200 {"data": [{"id": 1, "bc_id": "123", "name": "My BC", "ads_type": "google", "team_id": null, "team": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
      */
     public function index(ListBusinessCentersRequest $request): JsonResponse
     {
@@ -50,10 +50,10 @@ class BusinessCenterController extends BaseController
      *
      * @bodyParam bc_id string optional External BC ID. Example: 123456
      * @bodyParam name string required Business center name (max 255). Example: My Business Center
-     * @bodyParam ads_type string required Ads platform type. Enum: facebook, google. Example: facebook
+     * @bodyParam ads_type string required Ads platform type. Enum: google, tiktok. Example: google
      * @bodyParam team_id integer optional Team ID. Example: 1
      *
-     * @response 201 {"data": {"id": 1, "bc_id": "123456", "name": "My Business Center", "ads_type": "facebook", "team_id": null, "team": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
+     * @response 201 {"data": {"id": 1, "bc_id": "123456", "name": "My Business Center", "ads_type": "google", "team_id": null, "team": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
      * @response 422 {"message": "The name field is required.", "errors": {"name": ["The name field is required."]}}
      */
     public function store(StoreBusinessCenterRequest $request): JsonResponse
@@ -74,7 +74,7 @@ class BusinessCenterController extends BaseController
      *
      * @urlParam businessCenter integer required The business center ID. Example: 1
      *
-     * @response 200 {"data": {"id": 1, "bc_id": "123456", "name": "My Business Center", "ads_type": "facebook", "team_id": null, "team": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
+     * @response 200 {"data": {"id": 1, "bc_id": "123456", "name": "My Business Center", "ads_type": "google", "team_id": null, "team": null, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
      * @response 404 {"message": "No query results for model [App\\Models\\BusinessCenter] 1"}
      */
     public function show(BusinessCenter $businessCenter): JsonResponse
@@ -95,7 +95,7 @@ class BusinessCenterController extends BaseController
      *
      * @bodyParam bc_id string optional External BC ID. Pass null to remove. Example: 123456
      * @bodyParam name string optional Business center name (max 255). Example: Updated BC
-     * @bodyParam ads_type string optional Ads platform type. Enum: facebook, google. Example: google
+     * @bodyParam ads_type string optional Ads platform type. Enum: google, tiktok. Example: google
      * @bodyParam team_id integer optional Team ID. Pass null to remove. Example: 1
      *
      * @response 200 {"data": {"id": 1, "bc_id": "123456", "name": "Updated BC", "ads_type": "google", "team_id": null, "team": null, "created_by": 1, "updated_by": 2, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-06-01T00:00:00+00:00"}}

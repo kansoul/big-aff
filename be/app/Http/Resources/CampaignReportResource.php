@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Models\CampaignReport;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,7 +14,7 @@ class CampaignReportResource extends JsonResource
     private function buildAdsManagerLink(): ?string
     {
         $adsType = strtolower((string) ($this->ads_type ?? ''));
-        if (! in_array($adsType, ['facebook', 'google'], true)) {
+        if ($adsType !== 'google') {
             return null;
         }
 
@@ -25,33 +24,7 @@ class CampaignReportResource extends JsonResource
             return null;
         }
 
-        if ($adsType === 'google') {
-            return 'https://ads.google.com/aw/campaigns?campaignId='.$campaignId;
-        }
-
-        $accountId = (string) ($this->account_id ?? '');
-        if ($accountId === '') {
-            return null;
-        }
-
-        $dateStart = $this->date_start?->toDateString();
-        if ($dateStart === null) {
-            return null;
-        }
-
-        $startDate = Carbon::parse($dateStart)->toDateString();
-        $endDate = Carbon::parse($dateStart)->addDay()->toDateString();
-
-        $base = 'https://adsmanager.facebook.com/adsmanager/manage/adsets';
-
-        return $base.
-            '?act='.$accountId.
-            '&date='.$startDate.'_'.$endDate.'%2Ctoday'.
-            '&comparison_date='.
-            '&insights_date='.$startDate.'_'.$endDate.'%2Ctoday'.
-            '&insights_comparison_date='.
-            '&selected_campaign_ids='.$campaignId.
-            '&nav_source=no_referrer';
+        return 'https://ads.google.com/aw/campaigns?campaignId='.$campaignId;
     }
 
     /**

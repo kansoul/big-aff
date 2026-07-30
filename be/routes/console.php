@@ -32,11 +32,6 @@ Schedule::command('reports:sync-all')
     ->name('sync-all-reports')
     ->withoutOverlapping(15);
 
-Schedule::command('reports:fetch-ads-adsets-by-facebook')
-    ->everyFiveMinutes()
-    ->name('fetch-ads-adsets-by-facebook')
-    ->withoutOverlapping(20);
-
 Schedule::command('reports:fetch-ads-adsets-by-tiktok')
     ->everyFiveMinutes()
     ->name('fetch-ads-adsets-by-tiktok')

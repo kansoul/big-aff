@@ -139,7 +139,7 @@ class GoogleAdsService
 
     /**
      * Get campaign insights for an account within a time range.
-     * The output format is a flat array, similar to the Facebook service.
+     * The output format is a flat array, similar to the other provider service.
      */
     public function getCampaignInsights(string $accountId, string $start, string $end): ?array
     {
@@ -181,7 +181,7 @@ class GoogleAdsService
                 $date = $row->getSegments()->getDate();
                 $metrics = $row->getMetrics();
                 $budget = $row->getCampaignBudget();
-                $dailyKey = $campaignId . '_' . $date;
+                $dailyKey = $campaignId.'_'.$date;
 
                 // Process Campaign Data (Deduplicate by ID)
                 if (! isset($campaignsData[$campaignId])) {
@@ -248,7 +248,7 @@ class GoogleAdsService
             foreach ($conversionResponse->iterateAllElements() as $row) {
                 $campaignId = $row->getCampaign()->getId();
                 $date = $row->getSegments()->getDate();
-                $dailyKey = $campaignId . '_' . $date;
+                $dailyKey = $campaignId.'_'.$date;
 
                 if (isset($aggregatedInsights[$dailyKey])) {
                     $actionName = $row->getSegments()->getConversionActionName();
@@ -285,7 +285,7 @@ class GoogleAdsService
                 'campaigns' => array_values($campaignsData),
             ];
         } catch (Exception $e) {
-            Log::error('Error fetching Google Ads insights: ' . $e->getMessage() . ' - ' . $accountId);
+            Log::error('Error fetching Google Ads insights: '.$e->getMessage().' - '.$accountId);
 
             return null;
         }
@@ -342,7 +342,7 @@ class GoogleAdsService
 
             return $campaigns;
         } catch (Exception $e) {
-            Log::error('Error fetching Google Ads campaigns: ' . $e->getMessage() . ' - ' . $accountId);
+            Log::error('Error fetching Google Ads campaigns: '.$e->getMessage().' - '.$accountId);
 
             return null;
         }
@@ -392,7 +392,7 @@ class GoogleAdsService
                 $date = $row->getSegments()->getDate();
                 $metrics = $row->getMetrics();
                 $budget = $row->getCampaignBudget();
-                $dailyKey = $campaignId . '_' . $date;
+                $dailyKey = $campaignId.'_'.$date;
 
                 if (! isset($campaignsData[$campaignId])) {
                     $campaignsData[$campaignId] = [
@@ -464,7 +464,7 @@ class GoogleAdsService
                 'campaigns' => array_values($campaignsData),
             ];
         } catch (Exception $e) {
-            Log::error('Error fetching Google Ads insights (without conversions): ' . $e->getMessage() . ' - ' . $accountId);
+            Log::error('Error fetching Google Ads insights (without conversions): '.$e->getMessage().' - '.$accountId);
 
             return null;
         }
@@ -504,7 +504,7 @@ class GoogleAdsService
             foreach ($conversionResponse->iterateAllElements() as $row) {
                 $campaignId = $row->getCampaign()->getId();
                 $date = $row->getSegments()->getDate();
-                $dailyKey = $campaignId . '_' . $date;
+                $dailyKey = $campaignId.'_'.$date;
 
                 if (! isset($aggregated[$dailyKey])) {
                     $aggregated[$dailyKey] = [
@@ -535,7 +535,7 @@ class GoogleAdsService
 
             return $results;
         } catch (Exception $e) {
-            Log::error('Error fetching Google Ads conversions: ' . $e->getMessage() . ' - ' . $accountId);
+            Log::error('Error fetching Google Ads conversions: '.$e->getMessage().' - '.$accountId);
 
             return null;
         }
@@ -607,7 +607,7 @@ class GoogleAdsService
 
             return true;
         } catch (Exception $e) {
-            Log::error('Error updating Google Ads campaign status: ' . $e->getMessage() . ' - Account: ' . $accountId . ' - Campaign: ' . $campaignId);
+            Log::error('Error updating Google Ads campaign status: '.$e->getMessage().' - Account: '.$accountId.' - Campaign: '.$campaignId);
 
             return false;
         }
@@ -651,7 +651,7 @@ class GoogleAdsService
                 $campaign->setMaximizeConversions(new MaximizeConversions([
                     'target_cpa_micros' => $micros,
                 ]));
-            } elseif (($strategyType === BiddingStrategyType::MAXIMIZE_CONVERSIONS && !$oldTargetCpa) || $strategyType === BiddingStrategyType::TARGET_CPA) {
+            } elseif (($strategyType === BiddingStrategyType::MAXIMIZE_CONVERSIONS && ! $oldTargetCpa) || $strategyType === BiddingStrategyType::TARGET_CPA) {
                 $campaign->setTargetCpa(new TargetCpa([
                     'target_cpa_micros' => $micros,
                 ]));
@@ -678,7 +678,7 @@ class GoogleAdsService
 
             return true;
         } catch (Exception $e) {
-            Log::error('Error updating Google Ads campaign target CPA: ' . $e->getMessage() . ' - Account: ' . $accountId . ' - Campaign: ' . $campaignId);
+            Log::error('Error updating Google Ads campaign target CPA: '.$e->getMessage().' - Account: '.$accountId.' - Campaign: '.$campaignId);
 
             return false;
         }

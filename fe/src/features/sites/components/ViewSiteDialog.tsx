@@ -200,7 +200,6 @@ export function ViewSiteDialog({
 
                 {/* Settings */}
                 {(detail.settings?.gtm ||
-                  detail.settings?.fb_pixel ||
                   detail.settings?.theme ||
                   detail.settings?.default_channel ||
                   detail.settings?.default_style) && (
@@ -214,12 +213,6 @@ export function ViewSiteDialog({
                         <div className="space-y-2">
                           <Label className="text-muted-foreground">GTM ID</Label>
                           <p className="font-mono text-sm">{detail.settings.gtm}</p>
-                        </div>
-                      )}
-                      {detail.settings?.fb_pixel && (
-                        <div className="space-y-2">
-                          <Label className="text-muted-foreground">FB Pixel</Label>
-                          <p className="font-mono text-sm">{detail.settings.fb_pixel}</p>
                         </div>
                       )}
                       {detail.settings?.default_channel && (

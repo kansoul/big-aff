@@ -1,13 +1,13 @@
 import { z } from 'zod'
 
-export type AdsType = 'facebook' | 'google' | 'tiktok' | 'unknown'
+export type AdsType = 'google' | 'tiktok' | 'unknown'
 export type BusinessCenterOrderBy = 'id' | 'name'
 export type BusinessCenterOrder = 'asc' | 'desc'
 
 export const businessCenterCreateSchema = z.object({
   bc_id: z.string().min(1, 'BC ID is required').max(255),
   name: z.string().min(1, 'Name is required').max(255),
-  ads_type: z.enum(['facebook', 'google', 'tiktok', 'unknown'], {
+  ads_type: z.enum(['google', 'tiktok', 'unknown'], {
     error: 'Ads type is required',
   }),
   team_id: z.number().int().nullable().optional(),

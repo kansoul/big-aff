@@ -6,8 +6,8 @@ export const ACCOUNT_STATUS_OPTIONS = [
   { value: 'die', label: 'Die' },
 ] as const
 
-/** Values accepted by the BE AdsType enum (facebook | google | tiktok) */
-export type AdsTypeFilterValue = 'facebook' | 'google' | 'tiktok'
+/** Values accepted by the BE AdsType enum. */
+export type AdsTypeFilterValue = 'google' | 'tiktok'
 /** Full display type – includes 'unknown' for legacy data */
 export type AccountAdsType = AdsTypeFilterValue | 'unknown'
 export type AccountOrderBy =
@@ -85,7 +85,7 @@ export interface AccountFilterParams {
 }
 
 export const accountCreateSchema = z.object({
-  ads_type: z.enum(['facebook', 'google', 'tiktok'], {
+  ads_type: z.enum(['google', 'tiktok'], {
     error: 'Ads type is required',
   }),
   business_center_id: z.number().int().nullable().optional(),
@@ -102,7 +102,7 @@ export const accountCreateSchema = z.object({
 export const accountUpdateSchema = z.object({
   account_id: z.string().min(1, 'Account ID is required').max(255),
   account_name: z.string().max(255).nullable().optional(),
-  ads_type: z.enum(['facebook', 'google', 'tiktok'], {
+  ads_type: z.enum(['google', 'tiktok'], {
     error: 'Ads type is required',
   }),
   business_center_id: z.number().int().nullable().optional(),

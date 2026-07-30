@@ -101,7 +101,6 @@ export function BusinessCenterFormSections({ control }: BusinessCenterFormSectio
                   value={field.value ?? ''}
                   onValueChange={field.onChange}
                   options={[
-                    { value: 'facebook', label: 'Facebook' },
                     { value: 'google', label: 'Google' },
                     { value: 'tiktok', label: 'TikTok' },
                   ]}

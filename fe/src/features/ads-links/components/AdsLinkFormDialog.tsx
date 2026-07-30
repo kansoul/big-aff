@@ -159,22 +159,6 @@ export function CreateAdsLinkDialog({
 
             <FormField
               control={form.control}
-              name="fbid"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Facebook Pixel ID(s) <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 12313123312" {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="googleid"
               render={({ field }) => (
                 <FormItem>
@@ -405,20 +389,6 @@ export function EditAdsLinkDialog({
                 )}
               />
             ) : null}
-
-            <FormField
-              control={form.control}
-              name="fbid"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Facebook Pixel ID(s)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 12313,123312" {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}

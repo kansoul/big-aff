@@ -46,7 +46,7 @@ class ListAdsetSelectorAction
             MainTeamReportDataScope::excludeNonFetchableAccounts(
                 $query,
                 'adset_insights_reports.account_id',
-                AdsType::FACEBOOK->value,
+                AdsType::TIKTOK->value,
             );
         }
 

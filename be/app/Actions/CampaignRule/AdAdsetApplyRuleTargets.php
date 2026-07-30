@@ -6,7 +6,7 @@ use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
 
 /**
- * Resolves mixed Ad / Adset Facebook IDs into polymorphic apply-rule rows,
+ * Resolves mixed Ad / Adset provider IDs into polymorphic apply-rule rows,
  * mirroring tracking-afs {@see ManageCampaignRules::syncAdAdset()}.
  */
 final class AdAdsetApplyRuleTargets
@@ -59,8 +59,8 @@ final class AdAdsetApplyRuleTargets
         return $rows;
     }
 
-    private static function toNumericSourceableId(string $fbId): int
+    private static function toNumericSourceableId(string $sourceId): int
     {
-        return (int) $fbId;
+        return (int) $sourceId;
     }
 }

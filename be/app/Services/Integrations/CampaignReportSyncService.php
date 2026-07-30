@@ -552,11 +552,8 @@ class CampaignReportSyncService
         $fullAccountName = $accountName.' ('.$campaign->account_id.')';
         $safeAccountName = str_replace('_', '\_', $fullAccountName);
 
-        $dateRange = $date ? "{$date}_{$date}%2Ctoday" : 'today%2Ctoday';
-        $link = "https://adsmanager.facebook.com/adsmanager/manage/adsets?act={$campaign->account_id}&date={$dateRange}&insights_date={$dateRange}&selected_campaign_ids={$campaign->campaign_id}&nav_source=no_referrer";
-
         $message .= "*🏦 Account:* {$safeAccountName}\n";
-        $message .= "*🏷 Campaign:* [{$campaign->campaign_name}]({$link})\n";
+        $message .= "*🏷 Campaign:* {$campaign->campaign_name}\n";
         $message .= "*🆔 Campaign ID:* {$campaign->campaign_id}\n";
         $message .= "➖➖➖➖➖➖➖➖➖➖\n\n";
 

@@ -165,7 +165,7 @@ class TeamController extends BaseController
      *
      * Return teams with their accounts for ads report filters.
      *
-     * @response 200 {"data": {"show_team_filter": true, "teams": [{"id": 1, "name": "Marketing", "accounts": [{"id": 1, "account_id": "123456", "account_name": "My Account", "ads_type": "facebook", "team_id": 1}]}]}}
+     * @response 200 {"data": {"show_team_filter": true, "teams": [{"id": 1, "name": "Marketing", "accounts": [{"id": 1, "account_id": "123456", "account_name": "My Account", "ads_type": "google", "team_id": 1}]}]}}
      */
     public function accountOptions(): JsonResponse
     {

@@ -45,7 +45,7 @@ class CampaignReportFactory extends Factory
         $rImpRpm = $rImpressions > 0 ? round($rRevenue / $rImpressions * 1000, 4) : 0.0;
         $rFunnelRpm = $rFunnelImps > 0 ? round($rRevenue / $rFunnelImps * 1000, 4) : 0.0;
 
-        $adsType = fake()->randomElement(['facebook', 'google']);
+        $adsType = fake()->randomElement(['google', 'tiktok']);
 
         return [
             'realtime_report_id' => null,

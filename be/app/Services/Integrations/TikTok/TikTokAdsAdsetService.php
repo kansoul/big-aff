@@ -14,10 +14,10 @@ use Throwable;
  * Fetches TikTok ad group (adset) and ad delivery insights for an advertiser
  * on a single day.
  *
- * Mirrors FacebookAdsAdsetService: a single getAccountWithAdsAndAdsets() call
+ * Mirrors another ads provider: a single getAccountWithAdsAndAdsets() call
  * returns both the ad group and ad rows, already normalised to the
  * adset_insights_reports / ads_insights_reports schemas. TikTok ad groups map
- * onto Facebook adsets. Metrics come from the integrated report; names,
+ * onto ads platform ad sets. Metrics come from the integrated report; names,
  * budgets and statuses come from the /adgroup/get/ and /ad/get/ metadata
  * endpoints, keyed back onto the report rows.
  *
@@ -121,7 +121,7 @@ class TikTokAdsAdsetService implements AdsAdsetProvider
                 'ctr' => $row['ctr'],
                 'cpa' => $row['cpa'],
                 'ad_clicks' => $row['clicks'],
-                // Columns specific to Facebook insights — not available on TikTok.
+                // Columns specific to provider insights — not available on TikTok.
                 'article_views' => null,
                 'search_views' => null,
                 'search_click' => null,
@@ -187,7 +187,7 @@ class TikTokAdsAdsetService implements AdsAdsetProvider
                 'ctr' => $row['ctr'],
                 'cpa' => $row['cpa'],
                 'ad_clicks' => $row['clicks'],
-                // Columns specific to Facebook insights — not available on TikTok.
+                // Columns specific to provider insights — not available on TikTok.
                 'article_views' => null,
                 'search_views' => null,
                 'search_click' => null,
@@ -330,7 +330,7 @@ class TikTokAdsAdsetService implements AdsAdsetProvider
 
     /**
      * Keep only rows that belong to the requested campaigns and actually spent,
-     * mirroring FacebookAdsAdsetService's spend > 0 filter. Passing an empty
+     * mirroring another ads provider's spend > 0 filter. Passing an empty
      * $campaignIds list disables the campaign filter.
      *
      * @param  array<int, array<string, mixed>>  $rows

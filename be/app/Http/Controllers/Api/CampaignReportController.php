@@ -38,7 +38,7 @@ class CampaignReportController extends BaseController
      * @queryParam keyword string Search campaign, account, channel, style, or link fields. Example: summer
      * @queryParam user_ids integer[] Filter by users assigned to the account.
      * @queryParam account_ids integer[] Filter by `accounts.id`.
-     * @queryParam ads_type string Filter by ads type. Enum: facebook, google. Example: facebook
+     * @queryParam ads_type string Filter by ads type. Enum: google, tiktok. Example: google
      * @queryParam campaign_ids string[] Filter by campaign IDs.
      * @queryParam style_codes string[] Filter by style codes.
      * @queryParam channel_codes string[] Filter by channel codes.

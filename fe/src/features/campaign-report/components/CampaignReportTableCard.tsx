@@ -125,7 +125,6 @@ function getRowArticleLink(row: TableRow): string | null {
   const { site_url, slug, ads_type } = row
   if (!site_url || !slug) return null
   const adsTypeLower = (ads_type ?? '').toLowerCase()
-  if (adsTypeLower === 'facebook') return buildCopyLink(site_url, slug, 'facebook')
   if (adsTypeLower === 'google') return buildCopyLink(site_url, slug, 'google')
   if (adsTypeLower === 'tiktok') return buildCopyLink(site_url, slug, 'tiktok')
   return null

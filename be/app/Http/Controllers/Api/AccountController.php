@@ -31,7 +31,7 @@ class AccountController extends BaseController
      * Return paginated list of accounts.
      *
      * @queryParam query string Search by account_id or account_name. Example: acc-123
-     * @queryParam ads_type string Filter by ads type. Enum: facebook, google. Example: facebook
+     * @queryParam ads_type string Filter by ads type. Enum: google, tiktok. Example: google
      * @queryParam business_center_id integer Filter by business center. Example: 1
      * @queryParam team_id integer Filter by team. Example: 1
      * @queryParam status string Filter by status. Example: active
@@ -40,7 +40,7 @@ class AccountController extends BaseController
      * @queryParam per_page integer Items per page (max 100). Example: 15
      * @queryParam page integer Page number. Example: 1
      *
-     * @response 200 {"data": [{"id": 1, "business_center_id": 1, "business_center": {"id": 1, "name": "My BC"}, "team_id": null, "team": null, "account_id": "123456", "account_name": "My Account", "ads_type": "facebook", "status": "active", "is_special": false, "sync_to_mcc": false, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
+     * @response 200 {"data": [{"id": 1, "business_center_id": 1, "business_center": {"id": 1, "name": "My BC"}, "team_id": null, "team": null, "account_id": "123456", "account_name": "My Account", "ads_type": "google", "status": "active", "is_special": false, "sync_to_mcc": false, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
      */
     public function index(ListAccountsRequest $request): JsonResponse
     {
@@ -58,7 +58,7 @@ class AccountController extends BaseController
      * Create one or more accounts at once. Shared fields (ads_type, business_center_id, etc.)
      * are applied to every account in the array.
      *
-     * @bodyParam ads_type string required Ads platform type. Enum: facebook, google. Example: facebook
+     * @bodyParam ads_type string required Ads platform type. Enum: google, tiktok. Example: google
      * @bodyParam business_center_id integer optional Business center ID. Example: 1
      * @bodyParam main_team_id integer optional Main team ID, only on main system for admin. Example: 1
      * @bodyParam team_id integer optional Team ID. Example: 1
@@ -67,7 +67,7 @@ class AccountController extends BaseController
      * @bodyParam sync_to_mcc boolean optional Whether to sync to MCC. Example: false
      * @bodyParam lines string required List of accounts formatted as account_id|account_name separated by new lines. Example: 123|My Account\n456|Second Account
      *
-     * @response 201 {"data": [{"id": 1, "business_center_id": 1, "business_center": null, "team_id": null, "team": null, "account_id": "acc-123", "account_name": "My Account", "ads_type": "facebook", "status": "active", "is_special": false, "sync_to_mcc": false, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "errors": []}
+     * @response 201 {"data": [{"id": 1, "business_center_id": 1, "business_center": null, "team_id": null, "team": null, "account_id": "acc-123", "account_name": "My Account", "ads_type": "google", "status": "active", "is_special": false, "sync_to_mcc": false, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}], "errors": []}
      * @response 422 {"message": "Please provide at least one account in the format: account_id|account_name", "errors": {"lines": ["Please provide at least one account in the format: account_id|account_name"]}}
      */
     public function store(StoreAccountRequest $request): JsonResponse
@@ -92,7 +92,7 @@ class AccountController extends BaseController
      *
      * @urlParam account integer required The account ID. Example: 1
      *
-     * @response 200 {"data": {"id": 1, "business_center_id": 1, "business_center": {"id": 1, "name": "My BC"}, "team_id": null, "team": null, "account_id": "123456", "account_name": "My Account", "ads_type": "facebook", "status": "active", "is_special": false, "sync_to_mcc": false, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
+     * @response 200 {"data": {"id": 1, "business_center_id": 1, "business_center": {"id": 1, "name": "My BC"}, "team_id": null, "team": null, "account_id": "123456", "account_name": "My Account", "ads_type": "google", "status": "active", "is_special": false, "sync_to_mcc": false, "created_by": 1, "updated_by": null, "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00"}}
      * @response 404 {"message": "No query results for model [App\\Models\\Account] 1"}
      */
     public function show(Account $account): JsonResponse
@@ -113,7 +113,7 @@ class AccountController extends BaseController
      *
      * @bodyParam account_id string optional External account ID (unique, max 255). Example: acc-456
      * @bodyParam account_name string optional Account display name (max 255). Example: Updated Account
-     * @bodyParam ads_type string optional Ads platform type. Enum: facebook, google. Example: google
+     * @bodyParam ads_type string optional Ads platform type. Enum: google, tiktok. Example: google
      * @bodyParam business_center_id integer optional Business center ID. Pass null to remove. Example: 1
      * @bodyParam main_team_id integer optional Main team ID, only on main system for admin. Pass null to remove. Example: 1
      * @bodyParam team_id integer optional Team ID. Pass null to remove. Example: 1

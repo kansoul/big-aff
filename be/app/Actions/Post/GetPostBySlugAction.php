@@ -9,7 +9,6 @@ use App\Models\AdsLink;
 use App\Models\Campaign;
 use App\Models\LinkData;
 use App\Models\Post;
-use App\Services\Integrations\Facebook\FacebookAdsService;
 use App\Services\Integrations\Google\GoogleAdsService;
 use App\Services\Integrations\TikTok\TikTokAdsService;
 use App\Support\Gtag\GtagResolver;
@@ -55,7 +54,6 @@ class GetPostBySlugAction
             $post->channel = $adsLink->channel_code;
 
             $trackingIds = is_array($adsLink->tracking_ids) ? $adsLink->tracking_ids : (json_decode($adsLink->tracking_ids ?? '{}', true) ?: []);
-            $post->fbid = implode(',', $trackingIds['fbid'] ?? []);
             $post->ggid = implode(',', $trackingIds['googleid'] ?? []);
             $post->ttid = implode(',', $trackingIds['tiktok_pixel_id'] ?? []);
 
@@ -78,8 +76,6 @@ class GetPostBySlugAction
                     $post->gtag = $this->gtagResolver->resolve($campaign->account_id);
                 } elseif ($trafficType === TrafficType::TIKTOK || $campaign->ads_type === AdsType::TIKTOK->value) {
                     $post->traffic_type = TrafficType::TIKTOK->value;
-                } else {
-                    $post->traffic_type = TrafficType::FACEBOOK->value;
                 }
             }
 
@@ -118,9 +114,6 @@ class GetPostBySlugAction
             } else {
                 return null;
             }
-        } elseif ($trafficType === TrafficType::FACEBOOK) {
-            $facebookAdsService = app(FacebookAdsService::class);
-            $campaignData = $facebookAdsService->verifyCampaign($campaignId, true, $adsLink);
         } elseif ($trafficType === TrafficType::TIKTOK) {
             $tiktokIds = $trackingIds['tiktokid'] ?? [];
             if (! empty($tiktokIds)) {
@@ -130,15 +123,10 @@ class GetPostBySlugAction
                 return null;
             }
         } elseif ($trafficType === null && $adsLink->is_old) {
-            $facebookAdsService = app(FacebookAdsService::class);
-            $campaignData = $facebookAdsService->verifyCampaign($campaignId, true, $adsLink);
-
-            if (! $campaignData) {
-                $googleIds = $trackingIds['googleid'] ?? [];
-                if (! empty($googleIds)) {
-                    $googleAdsService = app(GoogleAdsService::class);
-                    $campaignData = $googleAdsService->verifyCampaign($campaignId, $googleIds);
-                }
+            $googleIds = $trackingIds['googleid'] ?? [];
+            if (! empty($googleIds)) {
+                $googleAdsService = app(GoogleAdsService::class);
+                $campaignData = $googleAdsService->verifyCampaign($campaignId, $googleIds);
             }
         }
 

@@ -30,7 +30,6 @@ return new class extends Migration
             $table->foreignId('role_id')->nullable()->constrained('roles')->nullOnDelete();
             $table->json('access')->nullable();
             $table->timestamp('sync_at')->nullable();
-            $table->timestamp('sync_facebook_at')->nullable();
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();

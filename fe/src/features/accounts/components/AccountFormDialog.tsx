@@ -41,7 +41,6 @@ import { usersApi } from '@/features/users/api/users'
 import { useAuthStore } from '@/hooks/useAuthStore'
 
 const ADS_TYPE_OPTIONS = [
-  { value: 'facebook', label: 'Facebook' },
   { value: 'google', label: 'Google' },
   { value: 'tiktok', label: 'TikTok' },
 ] as const
@@ -129,7 +128,7 @@ export function CreateAccountDialog({
   const form = useForm<AccountCreateFormValues>({
     resolver: zodResolver(accountCreateSchema),
     defaultValues: {
-      ads_type: 'facebook',
+      ads_type: 'google',
       business_center_id: null,
       main_team_id: null,
       user_id: null,
@@ -146,7 +145,7 @@ export function CreateAccountDialog({
     if (!open) return
     setFormError(null)
     form.reset({
-      ads_type: 'facebook',
+      ads_type: 'google',
       business_center_id: null,
       main_team_id: null,
       user_id: null,
@@ -181,7 +180,7 @@ export function CreateAccountDialog({
       toast.success('Account created successfully')
       if (options?.createAnother) {
         form.reset({
-          ads_type: 'facebook',
+          ads_type: 'google',
           business_center_id: null,
           main_team_id: null,
           user_id: null,
@@ -502,7 +501,7 @@ export function EditAccountDialog({
     defaultValues: {
       account_id: '',
       account_name: null,
-      ads_type: 'facebook',
+      ads_type: 'google',
       business_center_id: null,
       main_team_id: null,
       user_id: null,
@@ -519,8 +518,8 @@ export function EditAccountDialog({
       account_id: account?.account_id ?? '',
       account_name: account?.account_name ?? null,
       ads_type: (account?.ads_type === 'unknown'
-        ? 'facebook'
-        : (account?.ads_type ?? 'facebook')) as 'facebook' | 'google' | 'tiktok',
+        ? 'google'
+        : (account?.ads_type ?? 'google')) as 'google' | 'tiktok',
       business_center_id: account?.business_center_id ?? null,
       main_team_id: account?.main_team_id ?? null,
       user_id: account?.user_id ?? null,

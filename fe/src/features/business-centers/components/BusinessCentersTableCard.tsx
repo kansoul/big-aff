@@ -29,7 +29,6 @@ type ActionMeta = {
 }
 
 const ADS_TYPE_LABELS: Record<string, string> = {
-  facebook: 'Facebook',
   google: 'Google',
   tiktok: 'TikTok',
   unknown: 'Unknown',

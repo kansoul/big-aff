@@ -26,7 +26,6 @@ export interface AdsLink {
   channel_name: string | null
   style_code: string | null
   style_name: string | null
-  fbid: string[] | null
   googleid: string[] | null
   tiktokid: string[] | null
   tiktok_pixel_id: string[] | null
@@ -63,7 +62,6 @@ export interface AdsLinkCreatePayload {
   rac: string
   keyword_set_id?: number | null
   note?: string | null
-  fbid?: string | null
   googleid?: string | null
   tiktokid?: string | null
   tiktok_pixel_id?: string | null
@@ -73,7 +71,6 @@ export interface AdsLinkUpdatePayload {
   rac?: string
   channel_code?: string | null
   keyword_set_id?: number | null
-  fbid?: string | null
   googleid?: string | null
   tiktokid?: string | null
   tiktok_pixel_id?: string | null
@@ -91,7 +88,6 @@ export interface AdsLinkFilterParams {
   post_id?: number | null
   channel_code?: string | null
   created_by?: number | null
-  pixel_id?: string | null
   googleid?: string | null
   tiktokid?: string | null
   note?: string | null
@@ -113,7 +109,7 @@ export interface Pagination {
 
 export type CopyDialogState = {
   open: boolean
-  platform: 'facebook' | 'google' | 'tiktok'
+  platform: 'google' | 'tiktok'
   id: string | string[]
   link: string
 }
@@ -128,20 +124,17 @@ export const adsLinkCreateSchema = z
     rac: z.string().min(1, 'RAC is required'),
     keyword_set_id: z.number().nullable().optional(),
     note: z.string().nullable().optional(),
-    fbid: z.string().nullable().optional(),
     googleid: z.string().nullable().optional(),
     tiktokid: z.string().nullable().optional(),
     tiktok_pixel_id: z.string().nullable().optional(),
   })
   .refine(
     (v) =>
-      (v.fbid?.trim() ?? '') !== '' ||
       (v.googleid?.trim() ?? '') !== '' ||
       (v.tiktokid?.trim() ?? '') !== '',
     {
-      error:
-        'At least one of Facebook Pixel ID, Google Account ID, or TikTok Advertiser ID is required',
-      path: ['fbid'],
+      error: 'At least one of Google Account ID or TikTok Advertiser ID is required',
+      path: ['googleid'],
     },
   )
   .refine((v) => (v.tiktokid?.trim() ?? '') === '' || (v.tiktok_pixel_id?.trim() ?? '') !== '', {
@@ -154,7 +147,6 @@ export const adsLinkUpdateSchema = z
     rac: z.string().min(1, 'RAC is required'),
     channel_code: z.string().nullable().optional(),
     keyword_set_id: z.number().nullable().optional(),
-    fbid: z.string().nullable().optional(),
     googleid: z.string().nullable().optional(),
     tiktokid: z.string().nullable().optional(),
     tiktok_pixel_id: z.string().nullable().optional(),
@@ -162,13 +154,11 @@ export const adsLinkUpdateSchema = z
   })
   .refine(
     (v) =>
-      (v.fbid?.trim() ?? '') !== '' ||
       (v.googleid?.trim() ?? '') !== '' ||
       (v.tiktokid?.trim() ?? '') !== '',
     {
-      error:
-        'At least one of Facebook Pixel ID, Google Account ID, or TikTok Advertiser ID is required',
-      path: ['fbid'],
+      error: 'At least one of Google Account ID or TikTok Advertiser ID is required',
+      path: ['googleid'],
     },
   )
   .refine((v) => (v.tiktokid?.trim() ?? '') === '' || (v.tiktok_pixel_id?.trim() ?? '') !== '', {

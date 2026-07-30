@@ -226,9 +226,9 @@ class AdsSeeder extends Seeder
                 ]);
             });
 
-        // One admin-owned, team-less Facebook account (edge case).
-        if (! Account::query()->where('ads_type', 'facebook')->whereNull('team_id')->exists()) {
-            Account::factory()->facebook()->active()->create([
+        // One admin-owned, team-less Google account (edge case).
+        if (! Account::query()->where('ads_type', 'google')->whereNull('team_id')->exists()) {
+            Account::factory()->google()->active()->create([
                 'team_id' => null,
                 'business_center_id' => null,
                 'created_by' => $admin->id,

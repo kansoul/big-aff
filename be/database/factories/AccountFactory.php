@@ -18,10 +18,10 @@ class AccountFactory extends Factory
      */
     public function definition(): array
     {
-        $adsType = fake()->randomElement(['facebook', 'google']);
+        $adsType = fake()->randomElement(['google', 'tiktok']);
 
         return [
-            'account_id' => ($adsType === 'facebook' ? 'act_' : 'goog_').fake()->unique()->numerify('##########'),
+            'account_id' => ($adsType === 'tiktok' ? 'tt_' : 'goog_').fake()->unique()->numerify('##########'),
             'account_name' => fake()->company().' Ads',
             'ads_type' => $adsType,
             'status' => fake()->randomElement(['ACTIVE', 'ACTIVE', 'ACTIVE', 'PENDING', 'DIE']),
@@ -32,14 +32,6 @@ class AccountFactory extends Factory
             'created_by' => User::factory(),
             'updated_by' => null,
         ];
-    }
-
-    public function facebook(): static
-    {
-        return $this->state(fn () => [
-            'ads_type' => 'facebook',
-            'account_id' => 'act_'.fake()->unique()->numerify('##########'),
-        ]);
     }
 
     public function google(): static

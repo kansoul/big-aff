@@ -26,7 +26,7 @@ class BusinessCenterFactory extends Factory
         return [
             'bc_id' => fake()->optional(0.7)->bothify('bc_##########'),
             'name' => fake()->company(),
-            'ads_type' => fake()->randomElement(['facebook', 'google']),
+            'ads_type' => fake()->randomElement(['google', 'tiktok']),
             'team_id' => Team::factory(),
             'created_by' => $owner,
             'updated_by' => null,

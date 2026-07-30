@@ -18,7 +18,6 @@ type CopyLinkDialogProps = {
 
 export function CopyLinkDialog({ state, onClose }: CopyLinkDialogProps) {
   const PLATFORM_LABELS: Record<CopyDialogState['platform'], string> = {
-    facebook: 'Facebook',
     google: 'Google',
     tiktok: 'TikTok',
   }

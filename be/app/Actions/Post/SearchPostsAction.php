@@ -42,7 +42,6 @@ class SearchPostsAction
             'campaign_id' => $campaignId,
             'style' => $linkData->style_code ?? null,
             'channel' => $linkData->channel_code ?? null,
-            'fbid' => implode(',', $linkData->adsLink->tracking_ids['fbid'] ?? []),
             'account_id' => $campaign->account_id ?? null,
             'gtag' => $this->gtagResolver->resolve($campaign->account_id ?? null),
         ] : []);

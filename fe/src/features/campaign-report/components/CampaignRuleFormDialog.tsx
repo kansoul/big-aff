@@ -315,7 +315,7 @@ export function CampaignRuleFormDialog({
                   <FormControl>
                     <Input
                       autoComplete="off"
-                      placeholder="Morning Facebook rule"
+                      placeholder="Morning campaign rule"
                       disabled={submitting}
                       {...field}
                     />
