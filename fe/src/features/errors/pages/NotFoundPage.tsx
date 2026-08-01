@@ -39,7 +39,7 @@ export function NotFoundPage() {
         <Button
           size="lg"
           className="min-w-36 gap-2 font-semibold"
-          onClick={() => void navigate(PATHS.dashboard)}
+          onClick={() => void navigate(PATHS.root)}
         >
           Go to Dashboard
         </Button>

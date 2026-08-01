@@ -38,14 +38,6 @@ export const PermissionSlugs = {
 
   // Styles
   StylesView: 'styles.view',
-  StylesCreate: 'styles.create',
-  StylesDelete: 'styles.delete',
-
-  // Channels
-  ChannelsView: 'channels.view',
-  ChannelsCreate: 'channels.create',
-  ChannelsDelete: 'channels.delete',
-  ChannelsAssign: 'channels.assign',
 
   // Follows
   FollowsView: 'follows.view',
@@ -61,12 +53,6 @@ export const PermissionSlugs = {
   KeywordSetsCreate: 'keyword-sets.create',
   KeywordSetsUpdate: 'keyword-sets.update',
   KeywordSetsDelete: 'keyword-sets.delete',
-
-  // Business Centers
-  BusinessCentersView: 'business-centers.view',
-  BusinessCentersCreate: 'business-centers.create',
-  BusinessCentersUpdate: 'business-centers.update',
-  BusinessCentersDelete: 'business-centers.delete',
 
   // Accounts
   AccountsView: 'accounts.view',
@@ -109,20 +95,9 @@ export const PermissionSlugs = {
   CampaignReportsView: 'campaign-reports.view',
   DeliveryEntitiesReportsView: 'delivery-entities-reports.view',
   DeliveryEntitiesReportsUpdate: 'delivery-entities-reports.update',
-  AnalyticsTrackingView: 'analytics-tracking.view',
   InactiveStylesView: 'inactive-styles.view',
   InactiveStylesDelete: 'inactive-styles.delete',
   RevenueReportRangeView: 'revenue-report-range.view',
-
-  // Google Conversions
-  GoogleConversionsView: 'google-conversions.view',
-  GoogleConversionsCreate: 'google-conversions.create',
-  GoogleConversionsUpdate: 'google-conversions.update',
-
-  // Gtags
-  GtagsView: 'gtags.view',
-  GtagsCreate: 'gtags.create',
-  GtagsUpdate: 'gtags.update',
 
   // System
   UserTablePreferencesView: 'user-table-preferences.view',
@@ -131,11 +106,6 @@ export const PermissionSlugs = {
 
   // Files
   FilesView: 'files.view',
-
-  // Dashboard
-  DashboardStatView: 'dashboard.stats.view',
-  DashboardTeamView: 'dashboard.teams.view',
-  DashboardUserView: 'dashboard.users.view',
 } as const
 
 export function allPermissionSlugs(): string[] {
@@ -313,37 +283,6 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
     ],
   },
   {
-    id: 'styles',
-    label: 'Styles',
-    screens: [
-      {
-        id: 'styles',
-        label: 'Styles',
-        permissions: [
-          { key: 'StylesView', slug: PermissionSlugs.StylesView, label: 'View' },
-          { key: 'StylesCreate', slug: PermissionSlugs.StylesCreate, label: 'Create' },
-          { key: 'StylesDelete', slug: PermissionSlugs.StylesDelete, label: 'Delete' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'channels',
-    label: 'Channels',
-    screens: [
-      {
-        id: 'channels',
-        label: 'Channels',
-        permissions: [
-          { key: 'ChannelsView', slug: PermissionSlugs.ChannelsView, label: 'View' },
-          { key: 'ChannelsCreate', slug: PermissionSlugs.ChannelsCreate, label: 'Create' },
-          { key: 'ChannelsDelete', slug: PermissionSlugs.ChannelsDelete, label: 'Delete' },
-          { key: 'ChannelsAssign', slug: PermissionSlugs.ChannelsAssign, label: 'Assign users' },
-        ],
-      },
-    ],
-  },
-  {
     id: 'follows',
     label: 'Follows',
     screens: [
@@ -384,34 +323,6 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           { key: 'KeywordSetsCreate', slug: PermissionSlugs.KeywordSetsCreate, label: 'Create' },
           { key: 'KeywordSetsUpdate', slug: PermissionSlugs.KeywordSetsUpdate, label: 'Update' },
           { key: 'KeywordSetsDelete', slug: PermissionSlugs.KeywordSetsDelete, label: 'Delete' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'business-centers',
-    label: 'Business Centers',
-    screens: [
-      {
-        id: 'business-centers',
-        label: 'Business Centers',
-        permissions: [
-          { key: 'BusinessCentersView', slug: PermissionSlugs.BusinessCentersView, label: 'View' },
-          {
-            key: 'BusinessCentersCreate',
-            slug: PermissionSlugs.BusinessCentersCreate,
-            label: 'Create',
-          },
-          {
-            key: 'BusinessCentersUpdate',
-            slug: PermissionSlugs.BusinessCentersUpdate,
-            label: 'Update',
-          },
-          {
-            key: 'BusinessCentersDelete',
-            slug: PermissionSlugs.BusinessCentersDelete,
-            label: 'Delete',
-          },
         ],
       },
     ],
@@ -573,76 +484,10 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
             label: 'Revenue Range View',
           },
           {
-            key: 'AnalyticsTrackingView',
-            slug: PermissionSlugs.AnalyticsTrackingView,
-            label: 'Analytics Tracking View',
-          },
-          {
             key: 'RevenueChartReportsView',
             slug: PermissionSlugs.RevenueChartReportsView,
             label: 'Revenue Chart View',
           },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'dashboard-report',
-    label: 'Dashboard Report',
-    screens: [
-      {
-        id: 'dashboard',
-        label: 'Dashboard',
-        permissions: [
-          {
-            key: 'DashboardStatView',
-            slug: PermissionSlugs.DashboardStatView,
-            label: 'Stats View',
-          },
-          { key: 'DashboardTeamView', slug: PermissionSlugs.DashboardTeamView, label: 'Team View' },
-          { key: 'DashboardUserView', slug: PermissionSlugs.DashboardUserView, label: 'User View' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'google-conversions',
-    label: 'Google Conversions',
-    screens: [
-      {
-        id: 'google-conversions',
-        label: 'Google Conversions',
-        permissions: [
-          {
-            key: 'GoogleConversionsView',
-            slug: PermissionSlugs.GoogleConversionsView,
-            label: 'View',
-          },
-          {
-            key: 'GoogleConversionsCreate',
-            slug: PermissionSlugs.GoogleConversionsCreate,
-            label: 'Create',
-          },
-          {
-            key: 'GoogleConversionsUpdate',
-            slug: PermissionSlugs.GoogleConversionsUpdate,
-            label: 'Update',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'gtags',
-    label: 'Gtags',
-    screens: [
-      {
-        id: 'gtags',
-        label: 'Gtags',
-        permissions: [
-          { key: 'GtagsView', slug: PermissionSlugs.GtagsView, label: 'View' },
-          { key: 'GtagsCreate', slug: PermissionSlugs.GtagsCreate, label: 'Create' },
-          { key: 'GtagsUpdate', slug: PermissionSlugs.GtagsUpdate, label: 'Update' },
         ],
       },
     ],

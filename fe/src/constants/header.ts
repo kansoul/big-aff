@@ -3,21 +3,15 @@ import type { LucideIcon } from 'lucide-react'
 import { PATHS, type NavSectionId } from '@/constants/paths'
 import { PermissionSlugs } from '@/constants/permissions'
 import {
-  Building2,
   CircleDollarSign,
   FileText,
   FolderOpen,
   Globe,
   Images,
-  LayoutDashboard,
   Link2,
   LogsIcon,
   Megaphone,
-  Palette,
-  Radio,
-  Repeat,
   SlidersHorizontal,
-  Tag,
   Target,
   UserCheck,
   UserCog,
@@ -48,7 +42,6 @@ export type NavItem = {
 }
 
 export const NAVIGATION_ITEMS: NavItem[] = [
-  { name: 'Dashboard', href: PATHS.dashboard, icon: LayoutDashboard },
   {
     name: 'Content',
     items: [
@@ -87,18 +80,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
   {
     name: 'Marketing',
     items: [
-      {
-        name: 'Channels',
-        href: PATHS.channels,
-        icon: Radio,
-        requiredPermission: PermissionSlugs.ChannelsView,
-      },
-      {
-        name: 'Styles',
-        href: PATHS.styles,
-        icon: Palette,
-        requiredPermission: PermissionSlugs.StylesView,
-      },
       {
         name: 'Ads Links',
         href: PATHS.adsLinks,
@@ -140,28 +121,10 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     name: 'Ads',
     items: [
       {
-        name: 'Business Centers',
-        href: PATHS.businessCenters,
-        icon: Building2,
-        requiredPermission: PermissionSlugs.BusinessCentersView,
-      },
-      {
         name: 'Accounts',
         href: PATHS.accounts,
         icon: Wallet,
         requiredPermission: PermissionSlugs.AccountsView,
-      },
-      {
-        name: 'Google Conversions',
-        href: PATHS.googleConversions,
-        icon: Repeat,
-        requiredPermission: PermissionSlugs.GoogleConversionsView,
-      },
-      {
-        name: 'Gtags',
-        href: PATHS.gtags,
-        icon: Tag,
-        requiredPermission: PermissionSlugs.GtagsView,
       },
       {
         name: 'Campaign Rules',

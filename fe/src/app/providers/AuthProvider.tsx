@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 
-import { dashboardApi } from '@/features/dashboard/api'
 import { loginApi } from '@/features/auth/api'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { useSessionStore } from '@/hooks/useSessionStore'
@@ -26,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        const user = await dashboardApi.getMe()
+        const user = await loginApi.getMe()
         setUser(user)
       } catch (err: unknown) {
         const status = (err as { response?: { status?: number } })?.response?.status
@@ -58,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .switchAccount(nextSession.token)
             .then((user) => {
               setUser(user)
-              window.location.href = PATHS.dashboard
+              window.location.href = PATHS.root
             })
             .catch(() => {
               logout()

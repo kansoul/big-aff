@@ -26,15 +26,10 @@ import type {
   DeliveryEntitiesFilterParams,
   DeliveryEntitiesListResponse,
   DeliveryEntityStatusOptionsResponse,
-  AnalyticsTrackingFilterOptionsResponse,
-  KeywordTrackingFilterParams,
-  KeywordTrackingListResponse,
   RevenueReportRangeQueryPayload,
   RevenueReportRangeQueryResponse,
   ToggleAdsetStatusResponse,
   ToggleAdStatusResponse,
-  TrackingAnalyticsFilterParams,
-  TrackingAnalyticsResponse,
 } from '../types'
 
 function buildListParams(filters: CampaignReportFilterParams) {
@@ -78,34 +73,6 @@ export const campaignReportApi = {
 
   queryRange: (payload: RevenueReportRangeQueryPayload) =>
     axiosInstance.post<RevenueReportRangeQueryResponse>('/style-report-range/query', payload),
-
-  analyticsTrackingFilterOptions: () =>
-    axiosInstance.get<AnalyticsTrackingFilterOptionsResponse>('/analytics-tracking/filter-options'),
-
-  trackingAnalyticsStats: (filters: TrackingAnalyticsFilterParams) =>
-    axiosInstance.get<TrackingAnalyticsResponse>('/analytics-tracking/stats', {
-      params: {
-        ...(filters.ads_link_id ? { ads_link_id: filters.ads_link_id } : {}),
-        ...(filters.campaign_id ? { campaign_id: filters.campaign_id } : {}),
-        ...(filters.date_from ? { date_from: filters.date_from } : {}),
-        ...(filters.date_to ? { date_to: filters.date_to } : {}),
-      },
-    }),
-
-  listKeywords: (filters: KeywordTrackingFilterParams) =>
-    axiosInstance.get<KeywordTrackingListResponse>('/analytics-tracking/keywords', {
-      params: {
-        page: filters.page ?? 1,
-        per_page: filters.per_page ?? 30,
-        ...(filters.ads_link_id ? { ads_link_id: filters.ads_link_id } : {}),
-        ...(filters.campaign_id ? { campaign_id: filters.campaign_id } : {}),
-        ...(filters.date_from ? { date_from: filters.date_from } : {}),
-        ...(filters.date_to ? { date_to: filters.date_to } : {}),
-        ...(filters.keyword ? { keyword: filters.keyword } : {}),
-        ...(filters.order_by ? { order_by: filters.order_by } : {}),
-        ...(filters.order ? { order: filters.order } : {}),
-      },
-    }),
 
   listCampaignSchedules: (filters: CampaignScheduleFilterParams) =>
     axiosInstance.get<CampaignScheduleListResponse>('/campaign-schedules', {

@@ -40,7 +40,7 @@ import type {
   CampaignSelectorOrderBy,
   CampaignSelectorRow,
 } from '@/features/campaign-report/types'
-import { stylesApi } from '@/features/styles/api'
+import { optionsApi } from '@/shared/api/options'
 import { cn, getPageNumbers } from '@/lib/utils'
 import { AdsSelectorTab } from './AdsSelectorTab'
 import { AdsetsSelectorTab } from './AdsetsSelectorTab'
@@ -319,12 +319,12 @@ function CampaignIdSelectorInner({ filterOptions, trigger, role }: CampaignIdSel
     if (!open) return
     let cancelled = false
 
-    stylesApi
-      .options()
-      .then((styleRes) => {
+    optionsApi
+      .styles()
+      .then((styleOptions) => {
         if (cancelled) return
 
-        const styles: SelectOption[] = styleRes.data.map((style) => ({
+        const styles: SelectOption[] = styleOptions.map((style) => ({
           value: style.code,
           label: style.name ? `${style.name} (${style.code})` : style.code,
         }))

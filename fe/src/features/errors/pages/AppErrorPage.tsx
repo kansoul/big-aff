@@ -78,7 +78,7 @@ export function AppErrorPage() {
             variant="outline"
             className="min-w-44 gap-2 font-semibold"
             onClick={() => {
-              window.location.href = PATHS.dashboard
+              window.location.href = PATHS.root
             }}
             disabled={reloading}
           >

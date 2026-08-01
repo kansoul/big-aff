@@ -14,7 +14,7 @@ export function RequirePermission({
 }) {
   const user = useAuthStore((s) => s.user)
   if (!hasPermission(user?.permissions, permission)) {
-    return <Navigate to={PATHS.dashboard} replace />
+    return <Navigate to={PATHS.root} replace />
   }
   return <>{children}</>
 }

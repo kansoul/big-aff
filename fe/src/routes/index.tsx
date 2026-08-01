@@ -1,5 +1,5 @@
 import { lazy, type ComponentType } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 
 import { AppErrorPage } from '@/features/errors/pages/AppErrorPage'
 import { RequirePermission } from '@/app/router/RequirePermission'
@@ -9,6 +9,7 @@ import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { NAV_SECTIONS, PATHS, routeSegment } from '@/constants/paths'
 import { PermissionSlugs } from '@/constants/permissions'
 import { PageLoader } from '@/components/common/PageLoader'
+import { DefaultRoute } from '@/app/router/DefaultRoute'
 
 const AuthLayout = lazy(() => import('@/layouts/AuthLayout'))
 const LoginPage = lazy(() =>
@@ -31,10 +32,6 @@ export const router = createBrowserRouter([
   {
     errorElement: <AppErrorPage />,
     children: [
-      {
-        path: PATHS.root,
-        element: <Navigate to={PATHS.dashboard} replace />,
-      },
       {
         path: PATHS.root,
         element: <AuthLayout />,
@@ -63,12 +60,8 @@ export const router = createBrowserRouter([
             element: <DashboardLayout />,
             children: [
               {
-                path: routeSegment(PATHS.dashboard),
-                lazy: async () => {
-                  const { DashboardPage } = await import('@/features/dashboard/pages/DashboardPage')
-                  return { Component: DashboardPage }
-                },
-                handle: { title: 'Dashboard', navSection: NAV_SECTIONS.dashboard },
+                index: true,
+                element: <DefaultRoute />,
               },
               {
                 path: routeSegment(PATHS.media),
@@ -170,26 +163,6 @@ export const router = createBrowserRouter([
                 handle: { title: 'Main Teams' },
               },
               {
-                path: routeSegment(PATHS.channels),
-                lazy: async () => {
-                  const { ChannelsPage } = await import('@/features/channels/pages/ChannelsPage')
-                  return {
-                    Component: withPermission(ChannelsPage, PermissionSlugs.ChannelsView),
-                  }
-                },
-                handle: { title: 'Channels' },
-              },
-              {
-                path: routeSegment(PATHS.styles),
-                lazy: async () => {
-                  const { StylesPage } = await import('@/features/styles/pages/StylesPage')
-                  return {
-                    Component: withPermission(StylesPage, PermissionSlugs.StylesView),
-                  }
-                },
-                handle: { title: 'Styles' },
-              },
-              {
                 path: routeSegment(PATHS.adsLinks),
                 lazy: async () => {
                   const { AdsLinksPage } = await import('@/features/ads-links/pages/AdsLinksPage')
@@ -232,20 +205,6 @@ export const router = createBrowserRouter([
                 handle: { title: 'Sites', navSection: NAV_SECTIONS.settings },
               },
 
-              {
-                path: routeSegment(PATHS.businessCenters),
-                lazy: async () => {
-                  const { BusinessCentersPage } =
-                    await import('@/features/business-centers/pages/BusinessCentersPage')
-                  return {
-                    Component: withPermission(
-                      BusinessCentersPage,
-                      PermissionSlugs.BusinessCentersView,
-                    ),
-                  }
-                },
-                handle: { title: 'Business Centers' },
-              },
               {
                 path: routeSegment(PATHS.accounts),
                 lazy: async () => {
@@ -291,30 +250,6 @@ export const router = createBrowserRouter([
                   }
                 },
                 handle: { title: 'Team Report' },
-              },
-              {
-                path: routeSegment(PATHS.googleConversions),
-                lazy: async () => {
-                  const { GoogleConversionsPage } =
-                    await import('@/features/google-conversions/pages/GoogleConversionsPage')
-                  return {
-                    Component: withPermission(
-                      GoogleConversionsPage,
-                      PermissionSlugs.GoogleConversionsView,
-                    ),
-                  }
-                },
-                handle: { title: 'Google Conversions' },
-              },
-              {
-                path: routeSegment(PATHS.gtags),
-                lazy: async () => {
-                  const { GtagsPage } = await import('@/features/gtags/pages/GtagsPage')
-                  return {
-                    Component: withPermission(GtagsPage, PermissionSlugs.GtagsView),
-                  }
-                },
-                handle: { title: 'Gtags' },
               },
               {
                 path: routeSegment(PATHS.campaignReport),

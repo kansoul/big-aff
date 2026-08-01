@@ -7,8 +7,8 @@ import { toast } from 'sonner'
 import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { rolesApi } from '@/features/settings/api/roles'
 import { formatApiError } from '@/features/settings/components'
-import { stylesApi } from '@/features/styles/api'
-import type { StyleOption } from '@/features/styles/types'
+import { optionsApi } from '@/shared/api/options'
+import type { StyleOption } from '@/shared/types/options'
 import { teamsApi } from '@/features/teams/api'
 import { usersApi } from '@/features/users/api/users'
 import {
@@ -141,7 +141,7 @@ export function SettingsUsersPage() {
         const [usersRes, roleOptionsRes, styleOptionsRes, teamOptionsRes] = await Promise.all([
           usersApi.list(pagination.pageIndex + 1, pagination.pageSize, filters),
           rolesApi.listOptions(),
-          canViewStyles ? stylesApi.options() : Promise.resolve(null),
+          canViewStyles ? optionsApi.styles() : Promise.resolve(null),
           teamsApi.listOptions(),
         ])
         if (!ignore) {
@@ -149,7 +149,7 @@ export function SettingsUsersPage() {
           setRowCount(usersRes.data.pagination.total)
           setRoles(normalizeRoleOptions(roleOptionsRes.data.data))
           if (styleOptionsRes) {
-            setStyleOptions(styleOptionsRes.data)
+            setStyleOptions(styleOptionsRes)
           }
           if (teamOptionsRes) {
             setTeamOptions(teamOptionsRes.data.data)

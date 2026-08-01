@@ -1,6 +1,5 @@
 export interface RevenueReportFilterParams {
   style_codes?: string[]
-  channel_codes?: string[]
   date_from?: string | null
   date_to?: string | null
   order_by?: RevenueReportOrderBy | null
@@ -12,7 +11,6 @@ export type RevenueReportOrderBy =
   | 'id'
   | 'date'
   | 'style_code'
-  | 'channel_code'
   | 'page_views'
   | 'clicks'
   | 'estimated_earnings'
@@ -37,8 +35,6 @@ export interface RevenueReportRow {
   ad_client_id: string
   style_code: string
   style_name: string
-  channel_code: string
-  channel_name: string
   date: string
   page_views: number
   clicks: number

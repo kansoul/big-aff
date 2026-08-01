@@ -312,7 +312,7 @@ export const Header = React.memo(function Header() {
             <Menu className="size-5" />
           </Button>
 
-          <Link to={PATHS.dashboard}>
+          <Link to={PATHS.root}>
             <HeaderLogo theme={theme} showTripLogo={showTripLogo} />
           </Link>
 
@@ -388,7 +388,7 @@ export const Header = React.memo(function Header() {
             className="flex w-[min(100%,20rem)] flex-col gap-0 overflow-y-auto p-0 sm:max-w-sm"
           >
             <SheetHeader className="border-b border-border/60 px-4 py-4 text-left">
-              <Link to={PATHS.dashboard}>
+              <Link to={PATHS.root}>
                 <HeaderLogo theme={theme} showTripLogo={showTripLogo} />
               </Link>
               <SheetDescription className="sr-only">

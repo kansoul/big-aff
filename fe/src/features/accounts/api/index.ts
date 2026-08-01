@@ -11,6 +11,9 @@ import type {
 import type { UserWithAccounts } from '@/features/accounts/types/userAccountAssignments'
 
 export const accountsApi = {
+  businessCenterOptions: () =>
+    axiosInstance.get<{ data: { id: number; name: string }[] }>('/options/business-centers'),
+
   listUserAssignOptions: async (userId: number): Promise<AccountOptionForAssign[]> => {
     const response = await axiosInstance.get<{ data: AccountOptionForAssign[] }>(
       '/options/accounts',

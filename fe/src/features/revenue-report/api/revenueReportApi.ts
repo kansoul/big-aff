@@ -8,7 +8,6 @@ export const revenueReportApi = {
         page: filters.page ?? 1,
         per_page: filters.per_page ?? 15,
         ...(filters.style_codes?.length ? { 'style_codes[]': filters.style_codes } : {}),
-        ...(filters.channel_codes?.length ? { 'channel_codes[]': filters.channel_codes } : {}),
         ...(filters.date_from ? { date_from: filters.date_from } : {}),
         ...(filters.date_to ? { date_to: filters.date_to } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),

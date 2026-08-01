@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { LoginForm } from '@/features/auth/components/LoginForm'
 import { loginApi } from '@/features/auth/api'
-import { dashboardApi } from '@/features/dashboard/api'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { useSessionStore } from '@/hooks/useSessionStore'
 import { PATHS } from '@/constants/paths'
@@ -58,7 +57,7 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
         switchTo(userId)
         setUser(user)
         window.dispatchEvent(new Event('account-switched'))
-        void navigate(PATHS.dashboard)
+        void navigate(PATHS.root)
         window.location.reload()
       } catch (err: unknown) {
         const status = (err as { response?: { status?: number } })?.response?.status
@@ -72,7 +71,7 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
 
   const handleLogout = React.useCallback(async () => {
     try {
-      await dashboardApi.logout()
+      await loginApi.logout()
     } catch {
       // token already expired — proceed anyway
     }
@@ -82,7 +81,7 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
     const remaining = Object.values(useSessionStore.getState().sessions)
     if (remaining.length > 0) {
       setUser(remaining[0].user)
-      void navigate(PATHS.dashboard)
+      void navigate(PATHS.root)
     } else {
       logout()
       void navigate(PATHS.login)
@@ -105,7 +104,7 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
     if (!pendingFile) return
     setAvatarUploading(true)
     try {
-      const updatedUser = await dashboardApi.uploadAvatar(pendingFile)
+      const updatedUser = await loginApi.uploadAvatar(pendingFile)
       setUser(updatedUser)
       updateSessionUser(updatedUser)
       setPreviewUrl(null)
@@ -134,7 +133,7 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
       addSession(newUser, token)
       setUser(newUser)
       setAddOpen(false)
-      void navigate(PATHS.dashboard)
+      void navigate(PATHS.root)
     },
     [addSession, setUser, navigate],
   )
