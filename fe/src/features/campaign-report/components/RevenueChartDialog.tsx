@@ -36,8 +36,8 @@ import {
   YAxis,
 } from 'recharts'
 
-import { channelsApi } from '@/features/channels/api'
-import type { ChannelOption } from '@/features/channels/types'
+import { optionsApi } from '@/shared/api/options'
+import type { ChannelOption } from '@/shared/types/options'
 import { axiosInstance } from '@/shared/api/axios'
 import { Button } from '@/components/ui/button'
 import {
@@ -374,9 +374,9 @@ export function RevenueChartDialog({
     if (!open) return
     if (fetchedChannelsRef.current) return
     fetchedChannelsRef.current = true
-    channelsApi
-      .options()
-      .then((res) => setChannelOptions(res.data))
+    optionsApi
+      .channels()
+      .then(setChannelOptions)
       .catch(() => toast.error('Failed to fetch channel options'))
   }, [open])
 

@@ -3,7 +3,6 @@ import { toast } from 'sonner'
 
 import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { accountsApi } from '@/features/accounts/api'
-import { businessCentersApi } from '@/features/business-centers/api'
 import {
   AccountsTableCard,
   CreateAccountDialog,
@@ -99,7 +98,8 @@ export function AccountsPage() {
   const [updatingToggleKeys, setUpdatingToggleKeys] = useState<Set<string>>(new Set())
 
   const getToggleKey = useCallback(
-    (id: number, field: 'is_special' | 'sync_to_mcc' | 'roas_enabled' | 'gtag_enabled') => `${id}:${field}`,
+    (id: number, field: 'is_special' | 'sync_to_mcc' | 'roas_enabled' | 'gtag_enabled') =>
+      `${id}:${field}`,
     [],
   )
 
@@ -134,7 +134,7 @@ export function AccountsPage() {
 
   const loadBusinessCenterOptions = useCallback(async () => {
     try {
-      const { data } = await businessCentersApi.listOptions()
+      const { data } = await accountsApi.businessCenterOptions()
 
       setBusinessCenterOptions(
         data.data.map((businessCenter) => ({

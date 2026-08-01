@@ -17,8 +17,8 @@ import type {
   RevenueReportRangeItem,
   RevenueReportRangeRow,
 } from '@/features/campaign-report/types'
-import { channelsApi } from '@/features/channels/api'
-import type { ChannelOption } from '@/features/channels/types'
+import { optionsApi } from '@/shared/api/options'
+import type { ChannelOption } from '@/shared/types/options'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { SearchableSelect } from '@/components/common/SearchableSelect'
@@ -564,9 +564,9 @@ export function RevenueReportRangeDialog({
     if (!open) return
     if (fetchedRef.current) return
     fetchedRef.current = true
-    channelsApi
-      .options()
-      .then((res) => setChannelOptions(res.data))
+    optionsApi
+      .channels()
+      .then(setChannelOptions)
       .catch(() => {
         toast.error('Failed to fetch channel options')
       })

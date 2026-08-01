@@ -8,7 +8,7 @@ export function RequireMainSystemAdmin({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user)
 
   if (!user?.is_admin || !user?.is_main_system) {
-    return <Navigate to={PATHS.dashboard} replace />
+    return <Navigate to={PATHS.root} replace />
   }
 
   return <>{children}</>

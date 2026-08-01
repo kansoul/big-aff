@@ -53,13 +53,13 @@ export function LoginPage() {
   const activeUserId = useSessionStore((s) => s.activeUserId)
 
   if (activeUserId !== null) {
-    return <Navigate to={PATHS.dashboard} replace />
+    return <Navigate to={PATHS.root} replace />
   }
 
   const handleSuccess = (user: User, token: string) => {
     addSession(user, token)
     setUser(user)
-    void navigate(PATHS.dashboard)
+    void navigate(PATHS.root)
   }
 
   return (

@@ -2,11 +2,36 @@ import type { LoginCredentials } from '../types/login'
 
 import { apiURL } from '@/config'
 import { axiosInstance } from '@/shared/api/axios'
-import type { User } from '@/shared/types'
+import type { ApiResponse, User } from '@/shared/types'
 
 export const loginApi = {
+  async getMe(): Promise<User> {
+    const response = await axiosInstance.get<ApiResponse<User>>('/auth/me')
+    const user = response.data.data
+
+    return {
+      ...user,
+      permissions: Array.isArray(user.permissions) ? user.permissions : [],
+      is_main_system: Boolean(user.is_main_system),
+    }
+  },
+
+  async logout(): Promise<void> {
+    await axiosInstance.post('/auth/logout')
+  },
+
+  async uploadAvatar(file: File): Promise<User> {
+    const form = new FormData()
+    form.append('avatar', file)
+    const response = await axiosInstance.post<ApiResponse<User>>('/auth/avatar', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+
+    return response.data.data
+  },
+
   async getCsrfCookie() {
-    const baseURL = apiURL.replace(/\/api$/, '')
+    const baseURL = String(apiURL).replace(/\/api$/, '')
     return axiosInstance.get(`${baseURL}/sanctum/csrf-cookie`)
   },
 

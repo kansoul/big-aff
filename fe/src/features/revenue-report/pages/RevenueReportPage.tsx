@@ -14,10 +14,8 @@ import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { Badge } from '@/components/ui/badge'
-import { channelsApi } from '@/features/channels/api'
-import type { ChannelOption } from '@/features/channels/types'
-import { stylesApi } from '@/features/styles/api'
-import type { StyleOption } from '@/features/styles/types'
+import { optionsApi } from '@/shared/api/options'
+import type { StyleOption } from '@/shared/types/options'
 import type { RevenueReportRow, RevenueReportFilterParams, RevenueReportOrderBy } from '../types'
 import { revenueReportApi } from '../api/revenueReportApi'
 import { useTableUrlState } from '@/hooks/useTableUrlState'
@@ -31,12 +29,10 @@ import type { TablePaginationState } from '@/lib/utils'
 const DEFAULT_FILTERS: RevenueReportFilterParams = {}
 
 function parseFilters(params: URLSearchParams): RevenueReportFilterParams {
-  const channelCodes = params.getAll('channel_codes[]')
   const styleCodes = params.getAll('style_codes[]')
   return {
     date_from: params.get('date_from') ?? undefined,
     date_to: params.get('date_to') ?? undefined,
-    channel_codes: channelCodes.length ? channelCodes : undefined,
     style_codes: styleCodes.length ? styleCodes : undefined,
     order_by: (params.get('order_by') as RevenueReportOrderBy) ?? undefined,
     order: (params.get('order') as 'asc' | 'desc') ?? undefined,
@@ -50,7 +46,6 @@ function buildParams(
   const params = new URLSearchParams()
   if (filters.date_from) params.set('date_from', filters.date_from)
   if (filters.date_to) params.set('date_to', filters.date_to)
-  ;(filters.channel_codes ?? []).forEach((c) => params.append('channel_codes[]', c))
   ;(filters.style_codes ?? []).forEach((s) => params.append('style_codes[]', s))
   if (filters.order_by) params.set('order_by', filters.order_by)
   if (filters.order) params.set('order', filters.order)
@@ -63,7 +58,6 @@ export function RevenueReportPage() {
   const [summary, setSummary] = useState<Partial<RevenueReportRow>>({})
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([])
   const [styleOptions, setStyleOptions] = useState<StyleOption[]>([])
 
   const { filters, pagination, setPagination, onFilterChange, onFilterReset } =
@@ -75,16 +69,9 @@ export function RevenueReportPage() {
     })
 
   useEffect(() => {
-    channelsApi
-      .options()
-      .then((res) => setChannelOptions(res.data))
-      .catch(() => toast.error('Failed to load channel options'))
-  }, [])
-
-  useEffect(() => {
-    stylesApi
-      .options()
-      .then((res) => setStyleOptions(res.data))
+    optionsApi
+      .styles()
+      .then(setStyleOptions)
       .catch(() => toast.error('Failed to load style options'))
   }, [])
 
@@ -121,9 +108,6 @@ export function RevenueReportPage() {
       onFilterChange({
         date_from: dateRange?.from ?? null,
         date_to: dateRange?.to ?? null,
-        channel_codes: Array.isArray(values.channel_codes)
-          ? (values.channel_codes as string[])
-          : [],
         style_codes: Array.isArray(values.style_codes) ? (values.style_codes as string[]) : [],
       })
     },
@@ -141,15 +125,8 @@ export function RevenueReportPage() {
             ? { from: filters.date_from ?? null, to: filters.date_to ?? null }
             : null,
       },
-      {
-        field: 'channel_codes',
-        label: 'Channels',
-        type: 'multiselect',
-        value: filters.channel_codes ?? [],
-        options: channelOptions.map((c) => ({ label: c.name, value: c.code })),
-      },
     ],
-    [filters.date_from, filters.date_to, filters.channel_codes, channelOptions],
+    [filters.date_from, filters.date_to],
   )
 
   const activeChips = useMemo<ActiveFilterChip[]>(() => {
@@ -160,20 +137,6 @@ export function RevenueReportPage() {
         key: 'date_range',
         label: 'Date',
         displayValue: `${filters.date_from ?? '…'} -> ${filters.date_to ?? '…'}`,
-      })
-    }
-    if ((filters.channel_codes?.length ?? 0) > 0) {
-      const labels = (filters.channel_codes ?? []).map((code) => {
-        const option = channelOptions.find((channel) => channel.code === code)
-        return option?.name ?? code
-      })
-      chips.push({
-        key: 'channel_codes',
-        label: 'Channels',
-        displayValue:
-          labels.length <= 2
-            ? labels.join(', ')
-            : `${labels.slice(0, 2).join(', ')} +${labels.length - 2}`,
       })
     }
     if ((filters.style_codes?.length ?? 0) > 0) {
@@ -192,20 +155,11 @@ export function RevenueReportPage() {
     }
 
     return chips
-  }, [
-    filters.date_from,
-    filters.date_to,
-    filters.channel_codes,
-    filters.style_codes,
-    channelOptions,
-    styleOptions,
-  ])
+  }, [filters.date_from, filters.date_to, filters.style_codes, styleOptions])
 
   function handleRemoveChip(key: string) {
     if (key === 'date_range') {
       onFilterChange({ date_from: null, date_to: null })
-    } else if (key === 'channel_codes') {
-      onFilterChange({ channel_codes: [] })
     } else if (key === 'style_codes') {
       onFilterChange({ style_codes: [] })
     }
@@ -228,21 +182,6 @@ export function RevenueReportPage() {
         size: 150,
         enableSorting: true,
         Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.date}</span>,
-      },
-      {
-        accessorKey: 'channel_name',
-        id: 'channel_code',
-        header: 'Channel',
-        size: 160,
-        enableSorting: true,
-        Cell: ({ row }) => (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-muted-foreground">{row.original.channel_name}</span>
-            <span className="inline-block w-fit rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 font-mono text-[11px]">
-              {row.original.channel_code}
-            </span>
-          </div>
-        ),
       },
       {
         accessorKey: 'page_views',

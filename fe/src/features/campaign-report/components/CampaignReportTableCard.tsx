@@ -36,7 +36,6 @@ import {
   RevenueChartDialog,
   RevenueReportRangeDialog,
   TargetCpaFormDialog,
-  TrackingAnalyticsDialog,
 } from '@/features/campaign-report/components'
 import { Button } from '@/components/ui'
 import type { RBACRole } from '@/shared/types'
@@ -403,7 +402,6 @@ function getColumns(
   groupBy: CampaignReportGroupBy,
   toggling: Record<string, boolean>,
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void,
-  onOpenTrackingAnalytics: (row: CampaignReportRow) => void,
   onOpenAdsAdsetReport: (row: CampaignReportRow) => void,
   onOpenTargetCpa: (row: CampaignReportRow) => void,
   canViewDeliveryReports: boolean,
@@ -628,29 +626,6 @@ function getColumns(
         >
           {link}
         </a>
-      )
-    },
-  }
-
-  const colTrackingAnalytic: MRT_ColumnDef<TableRow> = {
-    id: 'tracking_analytic',
-    header: 'Tracking',
-    Header: <HeaderLabel>Tracking</HeaderLabel>,
-    size: 80,
-    enableSorting: false,
-    Cell: ({ row }) => {
-      if (isGroupRow(row.original)) return null
-      const r = row.original
-      return (
-        <p
-          className="cursor-pointer text-red-400"
-          onClick={(e) => {
-            e.stopPropagation()
-            onOpenTrackingAnalytics(r)
-          }}
-        >
-          View Analytics
-        </p>
       )
     },
   }
@@ -1081,7 +1056,6 @@ function getColumns(
     colCampaignId,
     colAccountName,
     colUserEmail,
-    colTrackingAnalytic,
     colAdsAdsetReport,
     colCampaignStatus,
     colCampaignOnOff,
@@ -1263,8 +1237,6 @@ function CampaignReportTableCardInner({
 }: Props) {
   const grouped = Boolean(filters.group_by)
   const isMobile = useIsMobile()
-  const [trackingDialogOpen, setTrackingDialogOpen] = useState(false)
-  const [trackingDialogTarget, setTrackingDialogTarget] = useState<CampaignReportRow | null>(null)
   const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false)
   const [deliveryDialogTarget, setDeliveryDialogTarget] = useState<CampaignReportRow | null>(null)
   const [revenueRangeOpen, setRevenueRangeOpen] = useState(false)
@@ -1306,7 +1278,6 @@ function CampaignReportTableCardInner({
     if (effectiveSummaryOnly) {
       base.account_name = false
       base.user_email = false
-      base.tracking_analytic = false
       base.ads_adset_report = false
       base.campaign_id = false
       base.campaign_name = false
@@ -1325,19 +1296,9 @@ function CampaignReportTableCardInner({
     [userColumnVisibility, forcedColumnVisibility],
   )
 
-  const openTrackingAnalytics = useCallback((row: CampaignReportRow) => {
-    setTrackingDialogTarget(row)
-    setTrackingDialogOpen(true)
-  }, [])
-
   const openDeliveryReport = useCallback((row: CampaignReportRow) => {
     setDeliveryDialogTarget(row)
     setDeliveryDialogOpen(true)
-  }, [])
-
-  const onTrackingDialogOpenChange = useCallback((next: boolean) => {
-    setTrackingDialogOpen(next)
-    if (!next) setTrackingDialogTarget(null)
   }, [])
 
   const onDeliveryDialogOpenChange = useCallback((next: boolean) => {
@@ -1397,7 +1358,6 @@ function CampaignReportTableCardInner({
         filters.group_by ?? '',
         toggling,
         onToggleCampaignStatus,
-        openTrackingAnalytics,
         openDeliveryReport,
         openTargetCpa,
         canViewDeliveryReports,
@@ -1413,7 +1373,6 @@ function CampaignReportTableCardInner({
       filters.date_to,
       grouped,
       onToggleCampaignStatus,
-      openTrackingAnalytics,
       openDeliveryReport,
       openTargetCpa,
       canViewDeliveryReports,
@@ -1688,16 +1647,6 @@ function CampaignReportTableCardInner({
   return (
     <>
       <MantineReactTable table={table} />
-
-      {trackingDialogTarget && (
-        <TrackingAnalyticsDialog
-          open={trackingDialogOpen}
-          onOpenChange={onTrackingDialogOpenChange}
-          initialDate={trackingDialogTarget.date_start ?? undefined}
-          initialCampaignId={trackingDialogTarget.campaign_id ?? undefined}
-          initialAdsLinkId={trackingDialogTarget.realtime_report?.ads_link_id ?? null}
-        />
-      )}
 
       {deliveryDialogTarget && (
         <AdsAdsetDeliveryReportDialog
