@@ -136,6 +136,12 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         requiredPermission: PermissionSlugs.GtagsView,
       },
       {
+        name: 'Pixels',
+        href: PATHS.pixels,
+        icon: Tag,
+        requiredPermission: PermissionSlugs.PixelsView,
+      },
+      {
         name: 'Campaign Rules',
         href: PATHS.campaignRuleSettings,
         icon: SlidersHorizontal,

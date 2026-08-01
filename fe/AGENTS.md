@@ -29,3 +29,4 @@ Use this file with **Cursor** / **Claude** when working in the Vite + React app.
 ## Verification
 
 - After substantive edits: **`pnpm lint`** (from `fe/`).
+- Do not create or modify test files unless the user explicitly requests tests. Existing tests may still be run when useful for verification.

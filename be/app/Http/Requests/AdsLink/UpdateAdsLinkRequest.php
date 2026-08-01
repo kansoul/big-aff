@@ -19,6 +19,8 @@ class UpdateAdsLinkRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'account_id' => ['nullable', 'integer', 'exists:accounts,id', 'required_with:pixel_id'],
+            'pixel_id' => ['nullable', 'integer', 'exists:pixels,id', 'required_with:account_id'],
             'rac' => ['nullable', 'string'],
             'googleid' => ['nullable', 'string'],
             'tiktokid' => ['nullable', 'string'],
@@ -36,7 +38,7 @@ class UpdateAdsLinkRequest extends FormRequest
                 $tiktok_pixel_id = $this->input('tiktok_pixel_id');
 
                 if (isset($googleid) || isset($tiktokid)) {
-                    if (empty($googleid) && empty($tiktokid)) {
+                    if (empty($googleid) && empty($tiktokid) && ! $this->filled('pixel_id')) {
                         $validator->errors()->add('googleid', 'At least one of Google Account ID or TikTok Advertiser ID is required.');
                     }
                 }
@@ -55,7 +57,20 @@ class UpdateAdsLinkRequest extends FormRequest
                     && empty($finalTiktokPixelId)) {
                     $validator->errors()->add('tiktok_pixel_id', 'TikTok Pixel ID is required when TikTok Advertiser ID is provided.');
                 }
+
+                if (! empty($finalTiktokId) && ! empty($finalTiktokPixelId)
+                    && count($this->csvValues($finalTiktokId)) !== count($this->csvValues($finalTiktokPixelId))) {
+                    $validator->errors()->add('tiktok_pixel_id', 'Each TikTok Advertiser ID must have one corresponding Pixel ID.');
+                }
             },
         ];
+    }
+
+    /** @return array<int, string> */
+    private function csvValues(string|array $value): array
+    {
+        $values = is_array($value) ? $value : explode(',', $value);
+
+        return array_values(array_filter(array_map('trim', $values)));
     }
 }

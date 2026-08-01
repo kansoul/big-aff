@@ -41,6 +41,13 @@ class TrackingController extends BaseController
         }
     }
 
+    public function config(string $trackingCode): JsonResponse
+    {
+        return $this->sendResponse([
+            'data' => $this->trackingService->config($trackingCode),
+        ]);
+    }
+
     /**
      * Store ads conversion
      *

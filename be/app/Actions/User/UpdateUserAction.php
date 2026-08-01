@@ -75,7 +75,7 @@ class UpdateUserAction
             $this->invalidateUserRemoteSessions->execute($user->fresh(), $exceptSessionId);
         }
 
-        $user->load(['role', 'style', 'assignedParentLink.parentUser']);
+        $user->load(['role', 'assignedParentLink.parentUser']);
 
         return $user->fresh();
     }

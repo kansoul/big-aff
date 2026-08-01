@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\MainSystemSyncController;
 use App\Http\Controllers\Api\MainTeamController;
 use App\Http\Controllers\Api\OptionController;
+use App\Http\Controllers\Api\PixelController;
 use App\Http\Controllers\Api\RevenueChartReportController;
 use App\Http\Controllers\Api\RevenueReportController;
 use App\Http\Controllers\Api\RevenueReportRangeController;
@@ -47,6 +48,8 @@ Route::middleware('check.whitelist')->group(function () {
     });
     Route::get('/site/config', [SiteController::class, 'config']);
     Route::post('/tracking/log', [TrackingController::class, 'storeLog']);
+    Route::get('/tracking/config/{trackingCode}', [TrackingController::class, 'config'])
+        ->whereAlphaNumeric('trackingCode');
     Route::post('/tracking/ads-conversion', [TrackingController::class, 'storeAdsConversion']);
 
 });
@@ -79,6 +82,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('users', [OptionController::class, 'users']);
         Route::get('sites', [OptionController::class, 'sites']);
         Route::get('accounts', [OptionController::class, 'accounts']);
+        Route::get('pixels', [OptionController::class, 'pixels']);
         Route::get('teams', [OptionController::class, 'teams']);
         Route::get('business-centers', [OptionController::class, 'businessCenters']);
         Route::get('ads-report', [OptionController::class, 'adsReport'])
@@ -329,6 +333,13 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::GtagsUpdate->value);
         Route::post('bulk-import', [GtagController::class, 'import'])
             ->middleware('permission.scope:'.Permission::GtagsCreate->value);
+    });
+
+    Route::prefix('pixels')->group(function () {
+        Route::get('/', [PixelController::class, 'index'])->middleware('permission.scope:'.Permission::PixelsView->value);
+        Route::post('/', [PixelController::class, 'store'])->middleware('permission.scope:'.Permission::PixelsCreate->value);
+        Route::match(['put', 'patch'], '{pixel}', [PixelController::class, 'update'])->middleware('permission.scope:'.Permission::PixelsUpdate->value);
+        Route::delete('{pixel}', [PixelController::class, 'destroy'])->middleware('permission.scope:'.Permission::PixelsDelete->value);
     });
 
     Route::prefix('analytics-tracking')

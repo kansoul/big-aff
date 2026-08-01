@@ -26,6 +26,8 @@ import type {
   AdsLinkCreateFormValues,
   AdsLinkUpdateFormValues,
   SiteOption,
+  AccountOption,
+  PixelOption,
 } from '@/features/ads-links/types'
 
 // ——— Create dialog ———
@@ -36,6 +38,9 @@ type CreateAdsLinkDialogProps = {
   formError: string | null
   form: UseFormReturn<AdsLinkCreateFormValues>
   sites: SiteOption[]
+  accounts: AccountOption[]
+  pixels: PixelOption[]
+  onAccountChange: (accountId: number) => void
   submitting: boolean
   onSubmit: (
     values: AdsLinkCreateFormValues,
@@ -51,6 +56,9 @@ export function CreateAdsLinkDialog({
   formError,
   form,
   sites,
+  accounts,
+  pixels,
+  onAccountChange,
   submitting,
   onSubmit,
 }: CreateAdsLinkDialogProps) {
@@ -119,17 +127,24 @@ export function CreateAdsLinkDialog({
 
             <FormField
               control={form.control}
-              name="tiktokid"
+              name="account_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>TikTok Advertiser ID(s)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g. 7012345678901234567"
-                      {...field}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
+                  <FormLabel>TikTok Account</FormLabel>
+                  <SearchableSelect
+                    value={field.value ? String(field.value) : undefined}
+                    onValueChange={(value) => {
+                      const id = Number(value)
+                      field.onChange(id)
+                      form.setValue('pixel_id', null)
+                      onAccountChange(id)
+                    }}
+                    options={accounts.map((a) => ({
+                      value: String(a.id),
+                      label: `${a.account_name ?? a.account_id} (${a.account_id})`,
+                    }))}
+                    placeholder="Select TikTok account"
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -137,17 +152,19 @@ export function CreateAdsLinkDialog({
 
             <FormField
               control={form.control}
-              name="tiktok_pixel_id"
+              name="pixel_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>TikTok Pixel ID(s)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g. C1234567890ABCDEF,C0987654321FEDCBA"
-                      {...field}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
+                  <FormLabel>Pixel</FormLabel>
+                  <SearchableSelect
+                    value={field.value ? String(field.value) : undefined}
+                    onValueChange={(value) => field.onChange(Number(value))}
+                    options={pixels.map((p) => ({
+                      value: String(p.id),
+                      label: p.name ? `${p.name} (${p.pixel_id})` : p.pixel_id,
+                    }))}
+                    placeholder="Select pixel"
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -221,6 +238,9 @@ type EditAdsLinkDialogProps = {
   formError: string | null
   form: UseFormReturn<AdsLinkUpdateFormValues>
   submitting: boolean
+  accounts: AccountOption[]
+  pixels: PixelOption[]
+  onAccountChange: (accountId: number) => void
   onSubmit: (values: AdsLinkUpdateFormValues) => void | Promise<void>
 }
 
@@ -230,6 +250,9 @@ export function EditAdsLinkDialog({
   formError,
   form,
   submitting,
+  accounts,
+  pixels,
+  onAccountChange,
   onSubmit,
 }: EditAdsLinkDialogProps) {
   const open = adsLink !== null
@@ -280,17 +303,24 @@ export function EditAdsLinkDialog({
 
             <FormField
               control={form.control}
-              name="tiktokid"
+              name="account_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>TikTok Advertiser ID(s)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g. 7012345,7012346"
-                      {...field}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
+                  <FormLabel>TikTok Account</FormLabel>
+                  <SearchableSelect
+                    value={field.value ? String(field.value) : undefined}
+                    onValueChange={(value) => {
+                      const id = Number(value)
+                      field.onChange(id)
+                      form.setValue('pixel_id', null)
+                      onAccountChange(id)
+                    }}
+                    options={accounts.map((a) => ({
+                      value: String(a.id),
+                      label: `${a.account_name ?? a.account_id} (${a.account_id})`,
+                    }))}
+                    placeholder="Select TikTok account"
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -298,17 +328,19 @@ export function EditAdsLinkDialog({
 
             <FormField
               control={form.control}
-              name="tiktok_pixel_id"
+              name="pixel_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>TikTok Pixel ID(s)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g. C1234567890ABCDEF,C0987654321FEDCBA"
-                      {...field}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
+                  <FormLabel>Pixel</FormLabel>
+                  <SearchableSelect
+                    value={field.value ? String(field.value) : undefined}
+                    onValueChange={(value) => field.onChange(Number(value))}
+                    options={pixels.map((p) => ({
+                      value: String(p.id),
+                      label: p.name ? `${p.name} (${p.pixel_id})` : p.pixel_id,
+                    }))}
+                    placeholder="Select pixel"
+                  />
                   <FormMessage />
                 </FormItem>
               )}

@@ -1,5 +1,10 @@
 # GitHub Copilot Instructions
 
+## Tests
+
+- Do not create or modify test files unless the user explicitly requests tests.
+- Running relevant existing tests for verification is allowed, but adding tests is not required for implementation tasks.
+
 ## Backend — Laravel (`be/`)
 
 ### List Actions & Requests

@@ -30,7 +30,7 @@ class ListUsersAction
      */
     public function execute(array $filters): LengthAwarePaginator
     {
-        $query = User::query()->with(['role', 'style', 'assignedParentLink.parentUser', 'accounts.businessCenter', 'accounts.team']);
+        $query = User::query()->with(['role', 'assignedParentLink.parentUser', 'accounts.businessCenter', 'accounts.team']);
 
         (new UserOwnerResource)->applyTo($query);
 

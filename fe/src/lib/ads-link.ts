@@ -9,8 +9,9 @@ const URL_PARAMS: Record<'google' | 'tiktok', string> = {
 export function buildCopyLink(
   siteUrl: string,
   slug: string,
+  trackingCode: string,
   platform: 'google' | 'tiktok',
 ): string {
   const base = siteUrl.replace(/\/$/, '')
-  return `${base}/articles/${slug}${URL_PARAMS[platform]}`
+  return `${base}/articles/${slug}${URL_PARAMS[platform]}&tracking_code=${encodeURIComponent(trackingCode)}`
 }

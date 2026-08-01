@@ -7,6 +7,8 @@ alwaysApply: false
 
 # Frontend (`fe/`): skills và convention
 
+Không tạo hoặc sửa file test nếu người dùng không yêu cầu rõ ràng. Có thể chạy test hiện có để xác minh, nhưng task triển khai không bắt buộc phải bổ sung test.
+
 Khi chỉnh sửa, review hoặc viết code trong **`fe/`**, luôn áp dụng theo thứ tự sau. Bản canonical của skill nằm trong **`.agents/skills/`**; một số skill được mirror tại **`.claude/skills/`** (đồng bộ với `.agents`).
 
 ## 1. Bắt buộc: cấu trúc & vị trí file

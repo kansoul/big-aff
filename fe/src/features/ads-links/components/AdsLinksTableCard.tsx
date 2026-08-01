@@ -78,6 +78,16 @@ function CopyLinkDialog({ state, onClose }: CopyLinkDialogProps) {
               </span>
             </div>
           </div>
+          {state.platform === 'tiktok' ? (
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-muted-foreground">TikTok Pixel ID</label>
+              <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 font-mono text-xs">
+                <span className="flex-1 break-all">
+                  {Array.isArray(state.pixelId) ? state.pixelId.join(', ') : state.pixelId || '—'}
+                </span>
+              </div>
+            </div>
+          ) : null}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-muted-foreground">Link for {label}</label>
             <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 font-mono text-xs">
@@ -139,11 +149,12 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
               size="sm"
               className="h-7 px-2 text-xs"
               title="Copy Google link"
+              disabled={!link.googleid?.length}
               onClick={() =>
                 onOpenCopyDialog({
                   platform: 'google',
                   id: link.googleid ? link.googleid.join(',') : '',
-                  link: buildCopyLink(siteUrl, link.slug, 'google'),
+                  link: buildCopyLink(siteUrl, link.slug, link.tracking_code, 'google'),
                 })
               }
             >
@@ -156,11 +167,13 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
               size="sm"
               className="h-7 px-2 text-xs"
               title="Copy TikTok link"
+              disabled={!link.tiktokid?.length || !link.tiktok_pixel_id?.length}
               onClick={() =>
                 onOpenCopyDialog({
                   platform: 'tiktok',
                   id: link.tiktokid ? link.tiktokid.join(',') : '',
-                  link: buildCopyLink(siteUrl, link.slug, 'tiktok'),
+                  pixelId: link.tiktok_pixel_id ?? [],
+                  link: buildCopyLink(siteUrl, link.slug, link.tracking_code, 'tiktok'),
                 })
               }
             >
@@ -459,6 +472,20 @@ function AdsLinksTableCardInner({
         placeholder: 'Search Google ID…',
       },
       {
+        field: 'tiktokid',
+        label: 'TikTok Advertiser ID',
+        type: 'input',
+        value: filters.tiktokid ?? null,
+        placeholder: 'Search TikTok Advertiser ID…',
+      },
+      {
+        field: 'pixel_id',
+        label: 'TikTok Pixel ID',
+        type: 'input',
+        value: filters.pixel_id ?? null,
+        placeholder: 'Search TikTok Pixel ID…',
+      },
+      {
         field: 'note',
         label: 'Note',
         type: 'input',
@@ -511,6 +538,16 @@ function AdsLinksTableCardInner({
     }
     if (filters.googleid) {
       chips.push({ key: 'googleid', label: 'Google ID', displayValue: filters.googleid })
+    }
+    if (filters.tiktokid) {
+      chips.push({
+        key: 'tiktokid',
+        label: 'TikTok Advertiser ID',
+        displayValue: filters.tiktokid,
+      })
+    }
+    if (filters.pixel_id) {
+      chips.push({ key: 'pixel_id', label: 'TikTok Pixel ID', displayValue: filters.pixel_id })
     }
     if (filters.note) {
       chips.push({ key: 'note', label: 'Note', displayValue: filters.note })

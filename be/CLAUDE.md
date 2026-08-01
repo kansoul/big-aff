@@ -33,7 +33,9 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 ## Verification Scripts
 
-- Do not create verification scripts or tinker when tests cover that functionality and prove they work. Unit and feature tests are more important.
+- Do not create or modify test files unless the user explicitly requests tests.
+- Running relevant existing tests is allowed for verification, but adding tests is not required for implementation tasks.
+- Do not create ad-hoc verification scripts when an existing command or test already covers the functionality.
 
 ## Application Structure & Architecture
 
@@ -87,7 +89,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 ## Tinker
 
-- Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
+- Execute PHP in app context for debugging when needed. Do not create model records without user approval. Prefer existing read-only Artisan commands over custom tinker code.
 - Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
   - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
 
@@ -124,9 +126,8 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 ## Testing
 
-- When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
-- Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
-- When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
+- Do not create or modify tests unless the user explicitly asks for test work.
+- If tests are explicitly requested, use existing factories and factory states before manually setting up models, follow the project's Faker convention, and prefer feature tests unless a unit test is more appropriate.
 
 ## Vite Error
 

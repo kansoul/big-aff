@@ -44,6 +44,9 @@ class ListAdsLinksAction
             ->when(! empty($filters['tiktokid']), function ($q) use ($filters) {
                 return $q->where('tracking_ids->tiktokid', 'LIKE', '%'.$filters['tiktokid'].'%');
             })
+            ->when(! empty($filters['pixel_id']), function ($q) use ($filters) {
+                return $q->where('tracking_ids->tiktok_pixel_id', 'LIKE', '%'.$filters['pixel_id'].'%');
+            })
             ->when(! empty($filters['note']), fn ($q) => $q->where('note', 'LIKE', '%'.$filters['note'].'%'))
             ->when(! empty($filters['url']), function ($q) use ($filters): void {
                 $raw = $filters['url'];

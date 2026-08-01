@@ -43,7 +43,7 @@ class CreateUserAction
 
             $this->autoAssignTeam($user, $teamId);
 
-            $user->load(['role', 'style', 'assignedParentLink.parentUser']);
+            $user->load(['role', 'assignedParentLink.parentUser']);
 
             return $user;
         });

@@ -1,11 +1,11 @@
 ---
 name: laravel-crud
-description: "Use this skill whenever implementing CRUD (Create/Read/Update/Delete) endpoints in this repo's Laravel backend. Follows the project's current conventions: API controllers extend App\\Http\\Controllers\\API\\BaseController (sendResponse/sendError), validation via FormRequest, transformation via JsonResource, and business logic placed in Services/ + optional Actions/. Includes route patterns (routes/api.php), Sanctum middleware usage, pagination, filtering, and PHPUnit feature tests."
+description: "Use this skill whenever implementing CRUD (Create/Read/Update/Delete) endpoints in this repo's Laravel backend. Follows the project's current conventions: API controllers extend App\\Http\\Controllers\\API\\BaseController (sendResponse/sendError), validation via FormRequest, transformation via JsonResource, and business logic placed in Services/ + optional Actions/. Includes route patterns (routes/api.php), Sanctum middleware usage, pagination, and filtering."
 license: MIT
 metadata:
     author: big-ticollab
     domain: backend
-    triggers: CRUD, create endpoint, update endpoint, delete endpoint, list endpoint, apiResource, controller, form request, json resource, feature test, phpunit, sanctum
+    triggers: CRUD, create endpoint, update endpoint, delete endpoint, list endpoint, apiResource, controller, form request, json resource, sanctum
     role: specialist
     scope: implementation
     output-format: code
@@ -32,7 +32,8 @@ For folder locations (`routes/`, `app/Http/Controllers/Api/`, `app/Models/Traits
     - Put model behavior in traits under `App\Models\Traits\...` (for example relationship/scope/attribute/method/observer traits).
     - When adding or changing model functionality, create or edit the corresponding trait and only wire it in the model via `use`.
 - **Routes**: API routes live in `be/routes/api.php`. Use `Route::middleware('auth:sanctum')` for endpoints that require authentication.
-- **Best practices (required)**: when building CRUD, you must follow the `be/.agents/skills/laravel-best-practices` skill (performance, security, validation, routing, testing, architecture). If there is a minor conflict between a "CRUD template" and best practices, prefer **best practices + conventions already present in the codebase**.
+- **Tests**: do not create or modify test files unless the user explicitly requests test work. Running relevant existing tests is allowed for verification.
+- **Best practices (required)**: when building CRUD, you must follow the `be/.agents/skills/laravel-best-practices` skill (performance, security, validation, routing, architecture). If there is a minor conflict between a "CRUD template" and best practices, prefer **best practices + conventions already present in the codebase**.
 
 ## CRUD blueprint (no new table by default)
 
@@ -122,7 +123,7 @@ Create these only when the user asks or the table/model does not exist yet:
     - Declare `$fillable` or `$guarded`.
     - Declare `$casts`.
     - Define relationships; eager-load at the query call site to avoid N+1.
-- **Factory**: add a factory to support tests.
+- **Factory**: add one only when the application needs it outside tests or the user explicitly requests test support.
 
 ## Response shape (must match BaseController)
 

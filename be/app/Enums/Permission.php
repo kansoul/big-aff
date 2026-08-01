@@ -140,6 +140,12 @@ enum Permission: string
     case GtagsCreate = 'gtags.create';
     case GtagsUpdate = 'gtags.update';
 
+    // —— Pixels ——
+    case PixelsView = 'pixels.view';
+    case PixelsCreate = 'pixels.create';
+    case PixelsUpdate = 'pixels.update';
+    case PixelsDelete = 'pixels.delete';
+
     /**
      * Bit value for this permission as a decimal string (2^index).
      * Uses GMP to support arbitrarily large bit positions.

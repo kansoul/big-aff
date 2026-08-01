@@ -43,11 +43,16 @@ class RevalidateObserver
     protected function revalidateUrl(string $url, string $secret, Model $model): void
     {
         try {
-            Http::retry(3, 250)
+            $request = Http::retry(3, 250)
                 ->connectTimeout(5)
                 ->timeout(10)
-                ->withHeaders(['X-Internal-Secret' => $secret])
-                ->get($url);
+                ->withHeaders(['X-Internal-Secret' => $secret]);
+
+            if (! app()->isProduction()) {
+                $request->withoutVerifying();
+            }
+
+            $request->get($url);
         } catch (ConnectionException $exception) {
             Log::warning('Failed to revalidate site URL.', [
                 'url' => $url,
@@ -68,7 +73,7 @@ class RevalidateObserver
             $domain = preg_replace('/^https?:\/\//', '', $domain);
             $domain = rtrim($domain, '/');
 
-            return [$model->url.'/api/ran?re-tag='.$domain];
+            return [$this->buildRevalidateUrl($model->url, $domain)];
         }
 
         if ($model instanceof AdsLink) {
@@ -78,10 +83,15 @@ class RevalidateObserver
                 return [];
             }
 
-            return [$siteUrl.'/api/ran?re-tag='.$model->slug];
+            return [$this->buildRevalidateUrl($siteUrl, $model->slug)];
         }
 
         return [];
+    }
+
+    protected function buildRevalidateUrl(string $baseUrl, string $tag): string
+    {
+        return rtrim($baseUrl, '/').'/api/ran?re-tag='.urlencode($tag);
     }
 
     protected function shouldRevalidate(Model $model): bool

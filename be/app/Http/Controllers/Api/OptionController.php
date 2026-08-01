@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Option\PixelOptionsRequest;
 use App\Services\Option\OptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,6 +52,13 @@ class OptionController extends BaseController
         $userId = $request->integer('user_id') ?: null;
 
         return $this->sendResponse(['data' => $this->optionService->accounts($userId)]);
+    }
+
+    public function pixels(PixelOptionsRequest $request): JsonResponse
+    {
+        return $this->sendResponse([
+            'data' => $this->optionService->pixels((int) $request->validated('account_id')),
+        ]);
     }
 
     /**

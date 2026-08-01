@@ -463,7 +463,7 @@ class CampaignReportSyncService
         $siteUrl = rtrim((string) ($adsLink->site?->url ?? ''), '/');
 
         return $siteUrl !== ''
-            ? "{$siteUrl}/articles/{$adsLink->slug}"
+            ? "{$siteUrl}/articles/{$adsLink->slug}?tracking_code={$adsLink->tracking_code}"
             : $adsLink->slug;
     }
 

@@ -81,3 +81,8 @@ OwnershipFilter::forAuthUser()->authorize($record->created_by);
 - After editing PHP files: `cd be && vendor/bin/pint --dirty`
 - Models stay thin; logic goes in `app/Models/Traits/*`
 - Business logic in `app/Actions/*` only
+
+### Tests
+
+- Do not create or modify test files unless the user explicitly requests tests.
+- Running relevant existing tests for verification is allowed, but adding tests is not required for implementation tasks.

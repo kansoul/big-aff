@@ -97,6 +97,12 @@ export const PermissionSlugs = {
   GtagsCreate: 'gtags.create',
   GtagsUpdate: 'gtags.update',
 
+  // Pixels
+  PixelsView: 'pixels.view',
+  PixelsCreate: 'pixels.create',
+  PixelsUpdate: 'pixels.update',
+  PixelsDelete: 'pixels.delete',
+
   // System
   UserTablePreferencesView: 'user-table-preferences.view',
   UserTablePreferencesUpdate: 'user-table-preferences.update',
@@ -551,6 +557,22 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           { key: 'GtagsView', slug: PermissionSlugs.GtagsView, label: 'View' },
           { key: 'GtagsCreate', slug: PermissionSlugs.GtagsCreate, label: 'Create' },
           { key: 'GtagsUpdate', slug: PermissionSlugs.GtagsUpdate, label: 'Update' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'pixels',
+    label: 'Pixels',
+    screens: [
+      {
+        id: 'pixels',
+        label: 'Pixels',
+        permissions: [
+          { key: 'PixelsView', slug: PermissionSlugs.PixelsView, label: 'View' },
+          { key: 'PixelsCreate', slug: PermissionSlugs.PixelsCreate, label: 'Create' },
+          { key: 'PixelsUpdate', slug: PermissionSlugs.PixelsUpdate, label: 'Update' },
+          { key: 'PixelsDelete', slug: PermissionSlugs.PixelsDelete, label: 'Delete' },
         ],
       },
     ],

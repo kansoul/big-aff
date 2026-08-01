@@ -7,6 +7,8 @@ import type {
   Pagination,
   SiteOption,
   UserOption,
+  AccountOption,
+  PixelOption,
 } from '@/features/ads-links/types'
 
 interface ListResponse {
@@ -54,5 +56,21 @@ export const userOptionsApi = {
   async list(): Promise<UserOption[]> {
     const res = await axiosInstance.get<{ data: UserOption[] }>('/options/users')
     return res.data.data
+  },
+}
+
+export const accountOptionsApi = {
+  async list(): Promise<AccountOption[]> {
+    return (await axiosInstance.get<{ data: AccountOption[] }>('/options/accounts')).data.data
+  },
+}
+
+export const pixelOptionsApi = {
+  async list(accountId: number): Promise<PixelOption[]> {
+    return (
+      await axiosInstance.get<{ data: PixelOption[] }>('/options/pixels', {
+        params: { account_id: accountId },
+      })
+    ).data.data
   },
 }

@@ -2,15 +2,22 @@
 
 namespace App\Actions\AdsLink;
 
+use App\Actions\Pixel\SyncPixelsAction;
 use App\Models\AdsLink;
+use App\Models\Pixel;
 use App\Services\AdsLink\RACValidationService;
 use App\Support\OwnerResource\AdsLinkOwnerResource;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class UpdateAdsLinkAction
 {
-    public function __construct(private readonly RACValidationService $racValidationService) {}
+    public function __construct(
+        private readonly RACValidationService $racValidationService,
+        private readonly SyncPixelsAction $syncPixelsAction,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -29,10 +36,19 @@ class UpdateAdsLinkAction
         }
 
         $trackingIds = $adsLink->tracking_ids ?? [];
+        if (! empty($data['pixel_id'])) {
+            $pixel = Pixel::query()->with('account')->findOrFail($data['pixel_id']);
+            if ($pixel->account_id !== (int) $data['account_id']) {
+                throw ValidationException::withMessages(['pixel_id' => ['Pixel does not belong to the selected account.']]);
+            }
+            OwnershipFilter::forAuthUser()->authorizeAccount($pixel->account);
+            $trackingIds['tiktokid'] = [$pixel->account->account_id];
+            $trackingIds['tiktok_pixel_id'] = [$pixel->pixel_id];
+        }
 
         if (array_key_exists('googleid', $data)) {
             if (! empty($data['googleid'])) {
-                $trackingIds['googleid'] = array_map('trim', explode(',', $data['googleid']));
+                $trackingIds['googleid'] = $this->csvValues($data['googleid']);
             } else {
                 unset($trackingIds['googleid']);
             }
@@ -40,7 +56,7 @@ class UpdateAdsLinkAction
 
         if (array_key_exists('tiktokid', $data)) {
             if (! empty($data['tiktokid'])) {
-                $trackingIds['tiktokid'] = array_map('trim', explode(',', $data['tiktokid']));
+                $trackingIds['tiktokid'] = $this->csvValues($data['tiktokid']);
             } else {
                 unset($trackingIds['tiktokid']);
                 unset($trackingIds['tiktok_pixel_id']);
@@ -49,7 +65,7 @@ class UpdateAdsLinkAction
 
         if (array_key_exists('tiktok_pixel_id', $data)) {
             if (! empty($data['tiktok_pixel_id'])) {
-                $trackingIds['tiktok_pixel_id'] = array_map('trim', explode(',', $data['tiktok_pixel_id']));
+                $trackingIds['tiktok_pixel_id'] = $this->csvValues($data['tiktok_pixel_id']);
             } else {
                 unset($trackingIds['tiktok_pixel_id']);
             }
@@ -59,6 +75,12 @@ class UpdateAdsLinkAction
             'tracking_ids' => $trackingIds,
             'updated_by' => Auth::id(),
         ];
+        if (array_key_exists('account_id', $data)) {
+            $payload['account_id'] = $data['account_id'];
+        }
+        if (array_key_exists('pixel_id', $data)) {
+            $payload['pixel_id'] = $data['pixel_id'];
+        }
 
         if (array_key_exists('rac', $data) && $data['rac'] !== null) {
             $payload['rac'] = $data['rac'];
@@ -68,8 +90,17 @@ class UpdateAdsLinkAction
             $payload['note'] = $data['note'];
         }
 
-        $adsLink->update($payload);
+        DB::transaction(function () use ($adsLink, $payload, $trackingIds): void {
+            $this->syncPixelsAction->execute($trackingIds);
+            $adsLink->update($payload);
+        });
 
         return $adsLink->fresh();
+    }
+
+    /** @return array<int, string> */
+    private function csvValues(string $value): array
+    {
+        return array_values(array_filter(array_map('trim', explode(',', $value))));
     }
 }

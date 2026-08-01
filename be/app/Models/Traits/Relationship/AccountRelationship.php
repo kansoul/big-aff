@@ -7,6 +7,7 @@ use App\Models\Campaign;
 use App\Models\Conversion;
 use App\Models\Gtag;
 use App\Models\MainTeam;
+use App\Models\Pixel;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -87,5 +88,11 @@ trait AccountRelationship
     public function gtag(): HasOne
     {
         return $this->hasOne(Gtag::class, 'account_id', 'account_id');
+    }
+
+    /** @return HasMany<Pixel, $this> */
+    public function pixels(): HasMany
+    {
+        return $this->hasMany(Pixel::class);
     }
 }

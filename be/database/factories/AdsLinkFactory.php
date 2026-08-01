@@ -18,6 +18,7 @@ class AdsLinkFactory extends Factory
         return [
             'site_id' => null,
             'slug' => Str::random(10).'-'.fake()->numerify('####'),
+            'tracking_code' => Str::random(32),
             'rac' => fake()->url(),
             'note' => fake()->optional(0.4)->sentence(),
             'is_hidden' => false,

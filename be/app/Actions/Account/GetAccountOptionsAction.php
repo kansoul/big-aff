@@ -17,7 +17,7 @@ class GetAccountOptionsAction
     public function execute(?int $userId = null): Collection
     {
         $query = Account::query()
-            ->select(['id', 'account_id', 'account_name', 'team_id'])
+            ->select(['id', 'account_id', 'account_name', 'ads_type', 'team_id'])
             ->orderBy('account_name');
         if (! AccountsAccess::canViewUnscoped(Auth::user())) {
             (new AccountOwnerResource)->applyTo($query);

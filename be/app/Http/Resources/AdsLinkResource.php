@@ -21,6 +21,9 @@ class AdsLinkResource extends JsonResource
         return [
             'id' => $this->id,
             'slug' => $this->slug,
+            'tracking_code' => $this->tracking_code,
+            'account_id' => $this->account_id,
+            'pixel_id' => $this->pixel_id,
             'rac' => $this->rac,
             'note' => $this->note,
             'is_hidden' => $this->is_hidden,

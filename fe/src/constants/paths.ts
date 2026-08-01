@@ -24,6 +24,7 @@ export const PATHS = {
   campaignRuleSettings: '/campaign-rule-settings',
   googleConversions: '/google-conversions',
   gtags: '/gtags',
+  pixels: '/pixels',
   campaignReport: '/campaign-report',
   revenueReport: '/revenue-report',
   logs: '/logs',

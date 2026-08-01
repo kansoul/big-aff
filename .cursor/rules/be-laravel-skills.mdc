@@ -14,9 +14,14 @@ Khi làm việc trong **`be/`** (Laravel API), kích hoạt skill phù hợp **t
 | Skill                      | Đường dẫn                                                                                                                      | Khi nào dùng                                                                                                            |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | **laravel-best-practices** | **`be/.agents/skills/laravel-best-practices/SKILL.md`** (và bản symlink **`/.agents/skills/laravel-best-practices/SKILL.md`**) | Mọi thay đổi PHP Laravel: controller, model, migration, Form Request, policy, job, query Eloquent, bảo mật, cache, v.v. |
-| **laravel-crud**           | **`be/.agents/skills/laravel-crud/SKILL.md`**                                                                                  | CRUD API: FormRequest, Resource, service/controller pattern, `routes/api.php`, Sanctum, PHPUnit.                        |
+| **laravel-crud**           | **`be/.agents/skills/laravel-crud/SKILL.md`**                                                                                  | CRUD API: FormRequest, Resource, service/controller pattern, `routes/api.php`, Sanctum.                                |
 
 Chi tiết rule bổ sung nằm trong **`be/.agents/skills/laravel-best-practices/rules/`**.
+
+## Tests
+
+- Không tạo hoặc sửa file test nếu người dùng không yêu cầu rõ ràng.
+- Có thể chạy test hiện có để xác minh, nhưng task triển khai không bắt buộc phải bổ sung test.
 
 ## 1. Bắt buộc: cấu trúc & vị trí file (đọc trước khi tạo file mới)
 

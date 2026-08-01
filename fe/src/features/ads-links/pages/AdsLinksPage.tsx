@@ -4,7 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 
 import { formatApiError } from '@/features/settings/components'
-import { adsLinksApi, siteOptionsApi, userOptionsApi } from '@/features/ads-links/api'
+import {
+  accountOptionsApi,
+  adsLinksApi,
+  pixelOptionsApi,
+  siteOptionsApi,
+  userOptionsApi,
+} from '@/features/ads-links/api'
 import {
   AdsLinksTableCard,
   CreateAdsLinkDialog,
@@ -19,6 +25,8 @@ import {
   type AdsLinkUpdateFormValues,
   type SiteOption,
   type UserOption,
+  type AccountOption,
+  type PixelOption,
 } from '@/features/ads-links/types'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
 import { useAuthStore } from '@/hooks/useAuthStore'
@@ -31,6 +39,8 @@ const DEFAULT_FILTERS: AdsLinkFilterParams = {
   site_id: null,
   created_by: null,
   googleid: null,
+  tiktokid: null,
+  pixel_id: null,
   date_range: null,
   is_hidden: 0,
   order_by: null,
@@ -45,6 +55,8 @@ function parseFilters(params: URLSearchParams): AdsLinkFilterParams {
     site_id: params.get('site_id') ? Number(params.get('site_id')) : null,
     created_by: params.get('created_by') ? Number(params.get('created_by')) : null,
     googleid: params.get('googleid'),
+    tiktokid: params.get('tiktokid'),
+    pixel_id: params.get('pixel_id'),
     date_range: dateFrom || dateTo ? { from: dateFrom, to: dateTo } : null,
     is_hidden: params.get('is_hidden') !== null ? (Number(params.get('is_hidden')) as 0 | 1) : 0,
     order_by: params.get('order_by'),
@@ -61,6 +73,8 @@ function buildParams(
   if (filters.site_id != null) params.set('site_id', String(filters.site_id))
   if (filters.created_by != null) params.set('created_by', String(filters.created_by))
   if (filters.googleid) params.set('googleid', filters.googleid)
+  if (filters.tiktokid) params.set('tiktokid', filters.tiktokid)
+  if (filters.pixel_id) params.set('pixel_id', filters.pixel_id)
   if (filters.date_range?.from) params.set('date_from', filters.date_range.from)
   if (filters.date_range?.to) params.set('date_to', filters.date_range.to)
   if (filters.is_hidden != null) params.set('is_hidden', String(filters.is_hidden))
@@ -72,6 +86,8 @@ function buildParams(
 
 const createDefaultValues: AdsLinkCreateFormValues = {
   site_id: 0,
+  account_id: null,
+  pixel_id: null,
   rac: '',
   note: '',
   googleid: '',
@@ -91,6 +107,9 @@ export function AdsLinksPage() {
   const [totalRows, setTotalRows] = useState(0)
   const [sites, setSites] = useState<SiteOption[]>([])
   const [users, setUsers] = useState<UserOption[]>([])
+  const [accounts, setAccounts] = useState<AccountOption[]>([])
+  const [createPixels, setCreatePixels] = useState<PixelOption[]>([])
+  const [editPixels, setEditPixels] = useState<PixelOption[]>([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
 
@@ -115,6 +134,8 @@ export function AdsLinksPage() {
     resolver: zodResolver(adsLinkUpdateSchema),
     defaultValues: {
       rac: '',
+      account_id: null,
+      pixel_id: null,
       googleid: '',
       tiktokid: '',
       tiktok_pixel_id: '',
@@ -122,9 +143,14 @@ export function AdsLinksPage() {
   })
 
   const loadOptions = useCallback(async () => {
-    const [siteList, userList] = await Promise.all([siteOptionsApi.list(), userOptionsApi.list()])
+    const [siteList, userList, accountList] = await Promise.all([
+      siteOptionsApi.list(),
+      userOptionsApi.list(),
+      accountOptionsApi.list(),
+    ])
     setSites(siteList)
     setUsers(userList)
+    setAccounts(accountList.filter((account) => account.ads_type === 'tiktok'))
   }, [])
 
   const [refreshSignal, setRefreshSignal] = useState(0)
@@ -165,11 +191,14 @@ export function AdsLinksPage() {
     if (editRow) {
       editForm.reset({
         rac: editRow.rac,
+        account_id: editRow.account_id,
+        pixel_id: editRow.pixel_id,
         googleid: editRow.googleid?.join(',') ?? '',
         tiktokid: editRow.tiktokid?.join(',') ?? '',
         tiktok_pixel_id: editRow.tiktok_pixel_id?.join(',') ?? '',
         note: editRow.note ?? '',
       })
+      if (editRow.account_id) void pixelOptionsApi.list(editRow.account_id).then(setEditPixels)
     }
   }, [editRow, editForm])
 
@@ -197,6 +226,8 @@ export function AdsLinksPage() {
       setSubmitting(true)
       await adsLinksApi.create({
         site_id: values.site_id,
+        account_id: values.account_id ?? null,
+        pixel_id: values.pixel_id ?? null,
         rac: values.rac,
         note: values.note ?? null,
         googleid: values.googleid ?? null,
@@ -226,6 +257,8 @@ export function AdsLinksPage() {
       setSubmitting(true)
       await adsLinksApi.update(editRow.id, {
         rac: values.rac,
+        account_id: values.account_id ?? null,
+        pixel_id: values.pixel_id ?? null,
         googleid: values.googleid ?? null,
         tiktokid: values.tiktokid ?? null,
         tiktok_pixel_id: values.tiktok_pixel_id ?? null,
@@ -330,6 +363,9 @@ export function AdsLinksPage() {
         form={createForm}
         sites={sites}
         submitting={submitting}
+        accounts={accounts}
+        pixels={createPixels}
+        onAccountChange={(id) => void pixelOptionsApi.list(id).then(setCreatePixels)}
         onSubmit={onCreateSubmit}
       />
       <EditAdsLinkDialog
@@ -338,6 +374,9 @@ export function AdsLinksPage() {
         formError={formError}
         form={editForm}
         submitting={submitting}
+        accounts={accounts}
+        pixels={editPixels}
+        onAccountChange={(id) => void pixelOptionsApi.list(id).then(setEditPixels)}
         onSubmit={onEditSubmit}
       />
     </div>

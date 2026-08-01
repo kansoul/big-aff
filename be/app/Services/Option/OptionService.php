@@ -8,6 +8,7 @@ use App\Actions\Option\GetAdsReportOptionsAction;
 use App\Actions\Option\GetSiteOptionsAction;
 use App\Actions\Option\GetTeamOptionsAction;
 use App\Actions\Option\GetUserOptionsAction;
+use App\Actions\Pixel\ListPixelOptionsAction;
 use Illuminate\Support\Collection;
 
 class OptionService
@@ -19,6 +20,7 @@ class OptionService
         private readonly GetTeamOptionsAction $getTeamOptions,
         private readonly GetBusinessCenterOptionsAction $getBusinessCenterOptions,
         private readonly GetAdsReportOptionsAction $getAdsReportOptions,
+        private readonly ListPixelOptionsAction $listPixelOptions,
     ) {}
 
     /** @return Collection<int, array{id: int, name: string, email: string}> */
@@ -49,6 +51,11 @@ class OptionService
     public function businessCenters(): Collection
     {
         return $this->getBusinessCenterOptions->execute();
+    }
+
+    public function pixels(int $accountId): Collection
+    {
+        return $this->listPixelOptions->execute($accountId);
     }
 
     /** @return array{can_view_unscoped: bool, show_team_filter: bool, main_teams: Collection, accounts: Collection, teams: Collection, campaigns: Collection} */

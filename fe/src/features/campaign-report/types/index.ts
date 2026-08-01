@@ -68,6 +68,7 @@ export interface CampaignReportRow {
   ads_type: string | null
   site_url?: string | null
   slug?: string | null
+  tracking_code?: string | null
   ads_manager_link?: string | null
   daily_budget: string | number | null
   lifetime_budget: string | number | null

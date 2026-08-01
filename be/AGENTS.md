@@ -33,7 +33,9 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 ## Verification Scripts
 
-- Do not create verification scripts or tinker when tests cover that functionality and prove they work. Unit and feature tests are more important.
+- Do not create or modify test files unless the user explicitly requests tests.
+- Running relevant existing tests is allowed for verification, but adding tests is not required for implementation tasks.
+- Do not create ad-hoc verification scripts when an existing command or test already covers the functionality.
 
 ## Application Structure & Architecture
 
@@ -87,7 +89,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 ## Tinker
 
-- Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
+- Execute PHP in app context for debugging when needed. Do not create model records without user approval. Prefer existing read-only Artisan commands over custom tinker code.
 - Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
   - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
 
@@ -124,9 +126,8 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 ## Testing
 
-- When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
-- Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
-- When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
+- Do not create or modify tests unless the user explicitly asks for test work.
+- If tests are explicitly requested, use existing factories and factory states before manually setting up models, follow the project's Faker convention, and prefer feature tests unless a unit test is more appropriate.
 
 ## Vite Error
 
@@ -143,16 +144,14 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 # PHPUnit
 
-- This application uses PHPUnit for testing. All tests must be written as PHPUnit classes. Use `php artisan make:test --phpunit {name}` to create a new test.
-- If you see a test using "Pest", convert it to PHPUnit.
-- Every time a test has been updated, run that singular test.
-- When the tests relating to your feature are passing, ask the user if they would like to also run the entire test suite to make sure everything is still passing.
-- Tests should cover all happy paths, failure paths, and edge cases.
+- Do not create, expand, or refactor tests unless the user explicitly requests it.
+- When test work is explicitly requested, use PHPUnit classes and `php artisan make:test --phpunit {name}`; do not introduce Pest.
+- When an existing test has been explicitly updated, run that specific test.
 - You must not remove any tests or test files from the tests directory without approval. These are not temporary or helper files; these are core to the application.
 
 ## Running Tests
 
-- Run the minimal number of tests, using an appropriate filter, before finalizing.
+- Running relevant existing tests is optional verification and does not imply creating new tests. Prefer the smallest relevant test scope.
 - To run all tests: `php artisan test --compact`.
 - To run all tests in a file: `php artisan test --compact tests/Feature/ExampleTest.php`.
 - To filter on a particular test name: `php artisan test --compact --filter=testName` (recommended after making a change to a related file).

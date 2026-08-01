@@ -57,6 +57,7 @@ class CampaignReportResource extends JsonResource
             'ads_type' => $this->ads_type,
             'site_url' => $this->realtimeReport?->linkData?->adsLink?->site?->url,
             'slug' => $this->realtimeReport?->linkData?->adsLink?->slug,
+            'tracking_code' => $this->realtimeReport?->linkData?->adsLink?->tracking_code,
             // Ads manager link (previous behavior)
             'ads_manager_link' => $this->buildAdsManagerLink(),
             'daily_budget' => $this->daily_budget,

@@ -1,5 +1,10 @@
 # Project Conventions
 
+## Tests
+
+- Do not create or modify test files unless the user explicitly requests tests.
+- Running relevant existing tests for verification is allowed, but adding tests is not required for implementation tasks.
+
 ## List Actions & Requests Pattern
 
 All list endpoints follow a consistent three-part pattern across both the FormRequest and the Action class.

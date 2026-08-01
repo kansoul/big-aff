@@ -122,11 +122,11 @@ function getRowAdsManagerLink(row: TableRow): string | null {
 
 function getRowArticleLink(row: TableRow): string | null {
   if (isGroupRow(row)) return null
-  const { site_url, slug, ads_type } = row
-  if (!site_url || !slug) return null
+  const { site_url, slug, tracking_code, ads_type } = row
+  if (!site_url || !slug || !tracking_code) return null
   const adsTypeLower = (ads_type ?? '').toLowerCase()
-  if (adsTypeLower === 'google') return buildCopyLink(site_url, slug, 'google')
-  if (adsTypeLower === 'tiktok') return buildCopyLink(site_url, slug, 'tiktok')
+  if (adsTypeLower === 'google') return buildCopyLink(site_url, slug, tracking_code, 'google')
+  if (adsTypeLower === 'tiktok') return buildCopyLink(site_url, slug, tracking_code, 'tiktok')
   return null
 }
 
