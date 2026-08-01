@@ -32,12 +32,6 @@ export const siteCreateSchema = z.object({
   settings: z.object({
     gtm: z.string().max(255).optional(),
     theme: z.string().max(255).optional(),
-    default_channel: z
-      .string({ error: 'Default channel is required' })
-      .min(1, 'Default channel is required'),
-    default_style: z
-      .string({ error: 'Default style is required' })
-      .min(1, 'Default style is required'),
   }),
 })
 
@@ -59,8 +53,6 @@ export interface SiteDetail extends Site {
   settings?: {
     gtm?: string | null
     theme?: string | null
-    default_channel?: string | null
-    default_style?: string | null
   } | null
 }
 
@@ -93,8 +85,6 @@ export type SiteCreateApiParams = {
   settings: {
     gtm?: string | null
     theme?: string | null
-    default_channel: string
-    default_style: string
   }
 }
 

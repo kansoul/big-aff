@@ -199,10 +199,7 @@ export function ViewSiteDialog({
                 )}
 
                 {/* Settings */}
-                {(detail.settings?.gtm ||
-                  detail.settings?.theme ||
-                  detail.settings?.default_channel ||
-                  detail.settings?.default_style) && (
+                {(detail.settings?.gtm || detail.settings?.theme) && (
                   <>
                     <div className="h-px bg-border" />
                     <div className="grid gap-6 sm:grid-cols-2">
@@ -213,18 +210,6 @@ export function ViewSiteDialog({
                         <div className="space-y-2">
                           <Label className="text-muted-foreground">GTM ID</Label>
                           <p className="font-mono text-sm">{detail.settings.gtm}</p>
-                        </div>
-                      )}
-                      {detail.settings?.default_channel && (
-                        <div className="space-y-2">
-                          <Label className="text-muted-foreground">Default Channel</Label>
-                          <p className="font-mono text-sm">{detail.settings.default_channel}</p>
-                        </div>
-                      )}
-                      {detail.settings?.default_style && (
-                        <div className="space-y-2">
-                          <Label className="text-muted-foreground">Default Style</Label>
-                          <p className="font-mono text-sm">{detail.settings.default_style}</p>
                         </div>
                       )}
                       {detail.settings?.theme && (

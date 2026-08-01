@@ -25,8 +25,6 @@ import type {
   AdsLink,
   AdsLinkCreateFormValues,
   AdsLinkUpdateFormValues,
-  ChannelOption,
-  PostOption,
   SiteOption,
 } from '@/features/ads-links/types'
 
@@ -38,8 +36,6 @@ type CreateAdsLinkDialogProps = {
   formError: string | null
   form: UseFormReturn<AdsLinkCreateFormValues>
   sites: SiteOption[]
-  posts: PostOption[]
-  channels: ChannelOption[]
   submitting: boolean
   onSubmit: (
     values: AdsLinkCreateFormValues,
@@ -55,15 +51,9 @@ export function CreateAdsLinkDialog({
   formError,
   form,
   sites,
-  posts,
-  channels,
   submitting,
   onSubmit,
 }: CreateAdsLinkDialogProps) {
-  const selectedPostId = form.watch('post_id')
-  const selectedPost = posts.find((p) => p.id === selectedPostId)
-  const keywordSets = selectedPost?.keyword_sets ?? []
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[92vh] overflow-y-auto">
@@ -91,50 +81,6 @@ export function CreateAdsLinkDialog({
                     onValueChange={(v) => field.onChange(Number(v))}
                     options={sites.map((s) => ({ label: s.name, value: String(s.id) }))}
                     placeholder="Select site"
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="post_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Post <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <SearchableSelect
-                    value={field.value ? String(field.value) : undefined}
-                    onValueChange={(v) => {
-                      field.onChange(Number(v))
-                      form.setValue('keyword_set_id', null)
-                    }}
-                    options={posts.map((p) => ({
-                      label: `${p.id} - ${p.title}`,
-                      value: String(p.id),
-                    }))}
-                    placeholder="Select post"
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="channel_code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Channel <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <SearchableSelect
-                    value={field.value ?? undefined}
-                    onValueChange={field.onChange}
-                    options={channels.map((c) => ({ label: c.name, value: c.code }))}
-                    placeholder="Select channel"
                   />
                   <FormMessage />
                 </FormItem>
@@ -207,28 +153,6 @@ export function CreateAdsLinkDialog({
               )}
             />
 
-            {keywordSets.length > 0 ? (
-              <FormField
-                control={form.control}
-                name="keyword_set_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Keyword Set</FormLabel>
-                    <SearchableSelect
-                      value={field.value ? String(field.value) : '__none__'}
-                      onValueChange={(v) => field.onChange(v === '__none__' ? null : Number(v))}
-                      options={[
-                        { label: 'None', value: '__none__' },
-                        ...keywordSets.map((ks) => ({ label: ks.name, value: String(ks.id) })),
-                      ]}
-                      placeholder="None"
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ) : null}
-
             <FormField
               control={form.control}
               name="note"
@@ -293,8 +217,6 @@ export function CreateAdsLinkDialog({
 
 type EditAdsLinkDialogProps = {
   adsLink: AdsLink | null
-  posts: PostOption[]
-  channels: ChannelOption[]
   onOpenChange: (open: boolean) => void
   formError: string | null
   form: UseFormReturn<AdsLinkUpdateFormValues>
@@ -304,8 +226,6 @@ type EditAdsLinkDialogProps = {
 
 export function EditAdsLinkDialog({
   adsLink,
-  posts,
-  channels,
   onOpenChange,
   formError,
   form,
@@ -313,10 +233,6 @@ export function EditAdsLinkDialog({
   onSubmit,
 }: EditAdsLinkDialogProps) {
   const open = adsLink !== null
-
-  const selectedPost = posts.find((p) => p.id === adsLink?.post?.id)
-  const keywordSets =
-    selectedPost?.keyword_sets ?? (adsLink?.keyword_set ? [adsLink.keyword_set] : [])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -347,48 +263,6 @@ export function EditAdsLinkDialog({
                 </FormItem>
               )}
             />
-
-            {adsLink?.is_old ? (
-              <FormField
-                control={form.control}
-                name="channel_code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Channel</FormLabel>
-                    <SearchableSelect
-                      value={field.value ?? undefined}
-                      onValueChange={field.onChange}
-                      options={channels.map((c) => ({ label: c.name, value: c.code }))}
-                      placeholder="Select channel"
-                      disabled
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ) : null}
-
-            {keywordSets.length > 0 ? (
-              <FormField
-                control={form.control}
-                name="keyword_set_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Keyword Set</FormLabel>
-                    <SearchableSelect
-                      value={field.value ? String(field.value) : '__none__'}
-                      onValueChange={(v) => field.onChange(v === '__none__' ? null : Number(v))}
-                      options={[
-                        { label: 'None', value: '__none__' },
-                        ...keywordSets.map((ks) => ({ label: ks.name, value: String(ks.id) })),
-                      ]}
-                      placeholder="None"
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ) : null}
 
             <FormField
               control={form.control}

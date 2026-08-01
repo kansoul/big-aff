@@ -4,17 +4,6 @@ export interface AdsLinkSite {
   url: string
 }
 
-export interface AdsLinkPost {
-  id: number
-  title: string
-  slug: string
-}
-
-export interface AdsLinkKeywordSet {
-  id: number
-  name: string
-}
-
 export interface AdsLink {
   id: number
   slug: string
@@ -22,32 +11,14 @@ export interface AdsLink {
   note: string | null
   is_hidden: boolean
   is_old: boolean
-  channel_code: string | null
-  channel_name: string | null
-  style_code: string | null
-  style_name: string | null
   googleid: string[] | null
   tiktokid: string[] | null
   tiktok_pixel_id: string[] | null
   site: AdsLinkSite | null
-  post: AdsLinkPost | null
-  keyword_set: AdsLinkKeywordSet | null
   created_by: number | null
   updated_by: number | null
   created_at: string | null
   updated_at: string | null
-}
-
-export interface PostOption {
-  id: number
-  title: string
-  slug: string
-  keyword_sets: { id: number; name: string }[]
-}
-
-export interface ChannelOption {
-  code: string
-  name: string
 }
 
 export interface SiteOption {
@@ -57,10 +28,7 @@ export interface SiteOption {
 
 export interface AdsLinkCreatePayload {
   site_id: number
-  post_id: number
-  channel_code: string
   rac: string
-  keyword_set_id?: number | null
   note?: string | null
   googleid?: string | null
   tiktokid?: string | null
@@ -69,8 +37,6 @@ export interface AdsLinkCreatePayload {
 
 export interface AdsLinkUpdatePayload {
   rac?: string
-  channel_code?: string | null
-  keyword_set_id?: number | null
   googleid?: string | null
   tiktokid?: string | null
   tiktok_pixel_id?: string | null
@@ -85,8 +51,6 @@ export interface UserOption {
 export interface AdsLinkFilterParams {
   keyword?: string | null
   site_id?: number | null
-  post_id?: number | null
-  channel_code?: string | null
   created_by?: number | null
   googleid?: string | null
   tiktokid?: string | null
@@ -119,24 +83,16 @@ import { z } from 'zod'
 export const adsLinkCreateSchema = z
   .object({
     site_id: z.number({ error: 'Site is required' }).min(1, 'Site is required'),
-    post_id: z.number({ error: 'Post is required' }).min(1, 'Post is required'),
-    channel_code: z.string().min(1, 'Channel is required'),
     rac: z.string().min(1, 'RAC is required'),
-    keyword_set_id: z.number().nullable().optional(),
     note: z.string().nullable().optional(),
     googleid: z.string().nullable().optional(),
     tiktokid: z.string().nullable().optional(),
     tiktok_pixel_id: z.string().nullable().optional(),
   })
-  .refine(
-    (v) =>
-      (v.googleid?.trim() ?? '') !== '' ||
-      (v.tiktokid?.trim() ?? '') !== '',
-    {
-      error: 'At least one of Google Account ID or TikTok Advertiser ID is required',
-      path: ['googleid'],
-    },
-  )
+  .refine((v) => (v.googleid?.trim() ?? '') !== '' || (v.tiktokid?.trim() ?? '') !== '', {
+    error: 'At least one of Google Account ID or TikTok Advertiser ID is required',
+    path: ['googleid'],
+  })
   .refine((v) => (v.tiktokid?.trim() ?? '') === '' || (v.tiktok_pixel_id?.trim() ?? '') !== '', {
     error: 'TikTok Pixel ID is required when TikTok Advertiser ID is provided',
     path: ['tiktok_pixel_id'],
@@ -145,22 +101,15 @@ export const adsLinkCreateSchema = z
 export const adsLinkUpdateSchema = z
   .object({
     rac: z.string().min(1, 'RAC is required'),
-    channel_code: z.string().nullable().optional(),
-    keyword_set_id: z.number().nullable().optional(),
     googleid: z.string().nullable().optional(),
     tiktokid: z.string().nullable().optional(),
     tiktok_pixel_id: z.string().nullable().optional(),
     note: z.string().nullable().optional(),
   })
-  .refine(
-    (v) =>
-      (v.googleid?.trim() ?? '') !== '' ||
-      (v.tiktokid?.trim() ?? '') !== '',
-    {
-      error: 'At least one of Google Account ID or TikTok Advertiser ID is required',
-      path: ['googleid'],
-    },
-  )
+  .refine((v) => (v.googleid?.trim() ?? '') !== '' || (v.tiktokid?.trim() ?? '') !== '', {
+    error: 'At least one of Google Account ID or TikTok Advertiser ID is required',
+    path: ['googleid'],
+  })
   .refine((v) => (v.tiktokid?.trim() ?? '') === '' || (v.tiktok_pixel_id?.trim() ?? '') !== '', {
     error: 'TikTok Pixel ID is required when TikTok Advertiser ID is provided',
     path: ['tiktok_pixel_id'],

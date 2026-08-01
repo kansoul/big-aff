@@ -4,9 +4,7 @@ import type {
   AdsLinkCreatePayload,
   AdsLinkFilterParams,
   AdsLinkUpdatePayload,
-  ChannelOption,
   Pagination,
-  PostOption,
   SiteOption,
   UserOption,
 } from '@/features/ads-links/types'
@@ -41,20 +39,6 @@ export const adsLinksApi = {
 
   async toggleHide(id: number): Promise<AdsLink> {
     const res = await axiosInstance.post<{ data: AdsLink }>(`/ads-links/${id}/toggle-hide`)
-    return res.data.data
-  },
-}
-
-export const postOptionsApi = {
-  async list(): Promise<PostOption[]> {
-    const res = await axiosInstance.get<{ data: PostOption[] }>('/options/posts')
-    return res.data.data
-  },
-}
-
-export const channelOptionsApi = {
-  async list(): Promise<ChannelOption[]> {
-    const res = await axiosInstance.get<{ data: ChannelOption[] }>('/options/channels')
     return res.data.data
   },
 }

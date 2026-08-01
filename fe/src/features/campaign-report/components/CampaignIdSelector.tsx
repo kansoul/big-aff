@@ -40,7 +40,6 @@ import type {
   CampaignSelectorOrderBy,
   CampaignSelectorRow,
 } from '@/features/campaign-report/types'
-import { stylesApi } from '@/features/styles/api'
 import { cn, getPageNumbers } from '@/lib/utils'
 import { AdsSelectorTab } from './AdsSelectorTab'
 import { AdsetsSelectorTab } from './AdsetsSelectorTab'
@@ -311,34 +310,8 @@ function CampaignIdSelectorInner({ filterOptions, trigger, role }: CampaignIdSel
   const [data, setData] = useState<CampaignSelectorRow[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [fetching, setFetching] = useState(false)
-  const [styleOptions, setStyleOptions] = useState<SelectOption[]>([])
   const [adsResetSignal, setAdsResetSignal] = useState(0)
   const [adsetsResetSignal, setAdsetsResetSignal] = useState(0)
-
-  useEffect(() => {
-    if (!open) return
-    let cancelled = false
-
-    stylesApi
-      .options()
-      .then((styleRes) => {
-        if (cancelled) return
-
-        const styles: SelectOption[] = styleRes.data.map((style) => ({
-          value: style.code,
-          label: style.name ? `${style.name} (${style.code})` : style.code,
-        }))
-
-        setStyleOptions(styles)
-      })
-      .catch(() => {
-        toast.error('Failed to load style options')
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [open])
 
   const loadData = useCallback(async (activeFilters: CampaignSelectorFilterParams) => {
     try {
@@ -479,7 +452,6 @@ function CampaignIdSelectorInner({ filterOptions, trigger, role }: CampaignIdSel
       ...prev,
       account_id: parseStringOrNull(values.account_id),
       user_id: parseIntegerOrNull(values.user_id),
-      style_code: parseStringOrNull(values.style_code),
       min_spend: parseNonNegativeNumberOrNull(values.min_spend),
       min_revenue: parseNonNegativeNumberOrNull(values.min_revenue),
       min_profit: parseNonNegativeNumberOrNull(values.min_profit),
@@ -529,14 +501,6 @@ function CampaignIdSelectorInner({ filterOptions, trigger, role }: CampaignIdSel
         hidden: role.isMember,
       },
       {
-        field: 'style_code',
-        label: 'Style',
-        type: 'select',
-        value: filters.style_code ?? null,
-        options: styleOptions,
-        placeholder: 'All styles',
-      },
-      {
         field: 'min_spend',
         label: 'Min Spend',
         type: 'input',
@@ -561,13 +525,11 @@ function CampaignIdSelectorInner({ filterOptions, trigger, role }: CampaignIdSel
     [
       filters.account_id,
       filters.user_id,
-      filters.style_code,
       filters.min_spend,
       filters.min_revenue,
       filters.min_profit,
       accountOptions,
       userOptions,
-      styleOptions,
       role,
     ],
   )

@@ -17,7 +17,6 @@ export interface ManagedUser {
   name: string
   email: string
   role_id: number | null
-  style_id: number | null
   role: {
     id: number
     name: string
@@ -33,7 +32,6 @@ export interface ManagedUser {
     id: number
     name: string
   } | null
-  assigned_post_ids?: number[]
   created_at: string | null
   updated_at: string | null
 }

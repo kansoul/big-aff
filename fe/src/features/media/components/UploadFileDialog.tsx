@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/input'
 import { SearchableSelect } from '@/components/common/SearchableSelect'
 import { RoleFormErrorAlert } from '@/features/settings/components/RoleFormErrorAlert'
 
-const DIRECTORY_OPTIONS = ['media', 'media/site', 'media/posts'] as const
+const DIRECTORY_OPTIONS = ['media', 'media/site'] as const
 
 const uploadFormSchema = z.object({
   directory: z.enum(DIRECTORY_OPTIONS).or(z.literal('')).optional(),
@@ -33,7 +33,7 @@ const uploadFormSchema = z.object({
 
 type UploadFormValues = z.infer<typeof uploadFormSchema>
 
-const USER_DEFAULT_DIRECTORY = 'media/posts'
+const USER_DEFAULT_DIRECTORY = 'media'
 
 type UploadFileDialogProps = {
   open: boolean
@@ -44,7 +44,7 @@ type UploadFileDialogProps = {
   isAdmin?: boolean
   onSubmit: (
     file: File,
-    options: { directory?: 'media' | 'media/site' | 'media/posts'; alt_text?: string | null },
+    options: { directory?: 'media' | 'media/site'; alt_text?: string | null },
   ) => Promise<void>
 }
 

@@ -10,7 +10,6 @@ export const followsApi = {
         per_page: filters.per_page ?? 15,
         ...(filters.query ? { query: filters.query } : {}),
         ...(!isNil(filters.site_id) ? { site_id: filters.site_id } : {}),
-        ...(!isNil(filters.post_id) ? { post_id: filters.post_id } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),
         ...(filters.order ? { order: filters.order } : {}),
       },

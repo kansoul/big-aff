@@ -53,47 +53,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Follow>[] {
       ),
     },
     {
-      accessorKey: 'post_id',
-      header: 'Post ID',
-      size: 100,
-      enableSorting: true,
-      Cell: ({ row }) => {
-        const val = row.original.post_id
-        if (val == null) return <span className="text-muted-foreground/50">—</span>
-        return <span className="text-muted-foreground">{val}</span>
-      },
-    },
-    {
-      accessorKey: 'style_code',
-      header: 'Style',
-      size: 120,
-      enableSorting: false,
-      Cell: ({ row }) => {
-        const val = row.original.style_code
-        if (!val) return <span className="text-muted-foreground/50">—</span>
-        return (
-          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
-            {val}
-          </span>
-        )
-      },
-    },
-    {
-      accessorKey: 'channel_code',
-      header: 'Channel',
-      size: 120,
-      enableSorting: false,
-      Cell: ({ row }) => {
-        const val = row.original.channel_code
-        if (!val) return <span className="text-muted-foreground/50">—</span>
-        return (
-          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
-            {val}
-          </span>
-        )
-      },
-    },
-    {
       accessorKey: 'created_at',
       header: 'Created At',
       size: 160,

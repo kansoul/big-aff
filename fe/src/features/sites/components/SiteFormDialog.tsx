@@ -56,7 +56,7 @@ export function SiteFormDialog({
       status: 'active',
       logo: null,
       favicon: null,
-      settings: { gtm: '', theme: '', default_channel: '', default_style: '' },
+      settings: { gtm: '', theme: '' },
     },
   })
 
@@ -80,8 +80,6 @@ export function SiteFormDialog({
               settings: {
                 gtm: site.settings?.gtm ?? '',
                 theme: site.settings?.theme ?? '',
-                default_channel: site.settings?.default_channel ?? '',
-                default_style: site.settings?.default_style ?? '',
               },
             })
           })
@@ -100,7 +98,7 @@ export function SiteFormDialog({
           status: 'active',
           logo: null,
           favicon: null,
-          settings: { gtm: '', theme: '', default_channel: '', default_style: '' },
+          settings: { gtm: '', theme: '' },
         })
       }
     } else {

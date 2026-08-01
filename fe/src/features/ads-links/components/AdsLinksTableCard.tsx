@@ -23,9 +23,7 @@ import { StatusBadge } from '@/components/common/StatusBadge'
 import type {
   AdsLink,
   AdsLinkFilterParams,
-  ChannelOption,
   CopyDialogState,
-  PostOption,
   SiteOption,
   UserOption,
 } from '@/features/ads-links/types'
@@ -33,8 +31,6 @@ import type {
 import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { buildCopyLink } from '@/lib/ads-link'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { postViewPath } from '@/constants/paths'
-import { Link } from 'react-router-dom'
 import type { RBACRole } from '@/shared/types'
 
 async function copyToClipboard(text: string): Promise<void> {
@@ -197,32 +193,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
       },
     },
     {
-      accessorKey: 'post',
-      header: 'Post',
-      size: 180,
-      Cell: ({ row }) => {
-        const post = row.original.post
-        if (!post?.title) return <span className="text-muted-foreground">—</span>
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to={postViewPath(post.id)}
-                  className="truncate block text-xs text-primary hover:underline max-w-full"
-                >
-                  {post.title.length > 30 ? post.title.slice(0, 30) + '...' : post.title}
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs wrap-break-word text-xs">
-                {post.title}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )
-      },
-    },
-    {
       accessorKey: 'rac',
       header: 'RAC',
       size: 100,
@@ -273,29 +243,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<AdsLink>[] {
           </TooltipProvider>
         )
       },
-    },
-    {
-      accessorKey: 'channel_code',
-      header: 'Channel',
-      size: 140,
-      Cell: ({ row }) => {
-        const { channel_code: code, channel_name: name } = row.original
-        if (!code) return <span className="text-muted-foreground">—</span>
-        return (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs text-foreground truncate">{name ?? code}</span>
-            <span className="font-mono text-[11px] text-muted-foreground">{code}</span>
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: 'style_code',
-      header: 'Style',
-      size: 80,
-      Cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.style_code ?? '—'}</span>
-      ),
     },
     {
       accessorKey: 'is_hidden',
@@ -415,8 +362,6 @@ type AdsLinksTableCardProps = {
   canUpdate: boolean
   filters: AdsLinkFilterParams
   sites: SiteOption[]
-  posts: PostOption[]
-  channels: ChannelOption[]
   users: UserOption[]
   onFilterChange: (patch: Partial<AdsLinkFilterParams>) => void
   onFilterReset: () => void
@@ -437,8 +382,6 @@ function AdsLinksTableCardInner({
   canUpdate,
   filters,
   sites,
-  posts,
-  channels,
   users,
   onFilterChange,
   onFilterReset,
@@ -472,25 +415,11 @@ function AdsLinksTableCardInner({
   const filterFields = useMemo<FilterFieldDef[]>(
     () => [
       {
-        field: 'post_id',
-        label: 'Post',
-        type: 'select',
-        value: filters.post_id ? String(filters.post_id) : null,
-        options: posts.map((p) => ({ label: p.title, value: String(p.id) })),
-      },
-      {
         field: 'site_id',
         label: 'Site',
         type: 'select',
         value: filters.site_id ? String(filters.site_id) : null,
         options: sites.map((s) => ({ label: s.name, value: String(s.id) })),
-      },
-      {
-        field: 'channel_code',
-        label: 'Channel',
-        type: 'select',
-        value: filters.channel_code ?? null,
-        options: channels.map((c) => ({ label: c.name, value: c.code })),
       },
       {
         field: 'is_hidden',
@@ -544,34 +473,18 @@ function AdsLinksTableCardInner({
         placeholder: 'Paste URL or type slug…',
       },
     ],
-    [filters, posts, sites, channels, users, role],
+    [filters, sites, users, role],
   )
 
   const activeChips = useMemo<ActiveFilterChip[]>(() => {
     const chips: ActiveFilterChip[] = []
 
-    if (filters.post_id) {
-      const opt = posts.find((post) => post.id === filters.post_id)
-      chips.push({
-        key: 'post_id',
-        label: 'Post',
-        displayValue: opt?.title ?? String(filters.post_id),
-      })
-    }
     if (filters.site_id) {
       const opt = sites.find((site) => site.id === filters.site_id)
       chips.push({
         key: 'site_id',
         label: 'Site',
         displayValue: opt?.name ?? String(filters.site_id),
-      })
-    }
-    if (filters.channel_code) {
-      const opt = channels.find((channel) => channel.code === filters.channel_code)
-      chips.push({
-        key: 'channel_code',
-        label: 'Channel',
-        displayValue: opt?.name ?? filters.channel_code,
       })
     }
     if (filters.is_hidden === 0 || filters.is_hidden === 1) {
@@ -607,7 +520,7 @@ function AdsLinksTableCardInner({
     }
 
     return chips
-  }, [filters, posts, sites, channels, users, role])
+  }, [filters, sites, users, role])
 
   function handleRemoveChip(key: string) {
     if (key === 'date_range') {

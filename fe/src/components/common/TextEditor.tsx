@@ -139,7 +139,7 @@ export type TextEditorProps = {
   className?: string
   /** Minimum height of the content area. Defaults to 240px. */
   minHeight?: string
-  directory: 'media' | 'media/site' | 'media/posts'
+  directory: 'media' | 'media/site'
 }
 
 export const TextEditor = memo(function TextEditor({
@@ -595,7 +595,7 @@ type TextEditorFieldProps<T extends FieldValues> = {
   placeholder?: string
   description?: string
   minHeight?: string
-  directory: 'media' | 'media/site' | 'media/posts'
+  directory: 'media' | 'media/site'
 }
 
 export function TextEditorField<T extends FieldValues>({

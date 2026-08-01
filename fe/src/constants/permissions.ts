@@ -22,31 +22,6 @@ export const PermissionSlugs = {
   SettingsSitesDelete: 'settings.sites.delete',
   SettingsSitesAssign: 'settings.sites.assign',
 
-  // Posts
-  PostsView: 'posts.view',
-  PostsCreate: 'posts.create',
-  PostsUpdate: 'posts.update',
-  PostsDelete: 'posts.delete',
-  PostsPublish: 'posts.publish',
-  PostsAssign: 'posts.assign',
-
-  // Categories
-  CategoriesView: 'categories.view',
-  CategoriesCreate: 'categories.create',
-  CategoriesUpdate: 'categories.update',
-  CategoriesDelete: 'categories.delete',
-
-  // Styles
-  StylesView: 'styles.view',
-  StylesCreate: 'styles.create',
-  StylesDelete: 'styles.delete',
-
-  // Channels
-  ChannelsView: 'channels.view',
-  ChannelsCreate: 'channels.create',
-  ChannelsDelete: 'channels.delete',
-  ChannelsAssign: 'channels.assign',
-
   // Follows
   FollowsView: 'follows.view',
   FollowsDelete: 'follows.delete',
@@ -110,8 +85,6 @@ export const PermissionSlugs = {
   DeliveryEntitiesReportsView: 'delivery-entities-reports.view',
   DeliveryEntitiesReportsUpdate: 'delivery-entities-reports.update',
   AnalyticsTrackingView: 'analytics-tracking.view',
-  InactiveStylesView: 'inactive-styles.view',
-  InactiveStylesDelete: 'inactive-styles.delete',
   RevenueReportRangeView: 'revenue-report-range.view',
 
   // Google Conversions
@@ -274,71 +247,6 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
             slug: PermissionSlugs.SettingsSitesAssign,
             label: 'Assign users',
           },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'posts',
-    label: 'Posts',
-    screens: [
-      {
-        id: 'posts',
-        label: 'Posts',
-        permissions: [
-          { key: 'PostsView', slug: PermissionSlugs.PostsView, label: 'View' },
-          { key: 'PostsCreate', slug: PermissionSlugs.PostsCreate, label: 'Create' },
-          { key: 'PostsUpdate', slug: PermissionSlugs.PostsUpdate, label: 'Update' },
-          { key: 'PostsDelete', slug: PermissionSlugs.PostsDelete, label: 'Delete' },
-          { key: 'PostsPublish', slug: PermissionSlugs.PostsPublish, label: 'Publish' },
-          { key: 'PostsAssign', slug: PermissionSlugs.PostsAssign, label: 'Assign' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'categories',
-    label: 'Categories',
-    screens: [
-      {
-        id: 'categories',
-        label: 'Categories',
-        permissions: [
-          { key: 'CategoriesView', slug: PermissionSlugs.CategoriesView, label: 'View' },
-          { key: 'CategoriesCreate', slug: PermissionSlugs.CategoriesCreate, label: 'Create' },
-          { key: 'CategoriesUpdate', slug: PermissionSlugs.CategoriesUpdate, label: 'Update' },
-          { key: 'CategoriesDelete', slug: PermissionSlugs.CategoriesDelete, label: 'Delete' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'styles',
-    label: 'Styles',
-    screens: [
-      {
-        id: 'styles',
-        label: 'Styles',
-        permissions: [
-          { key: 'StylesView', slug: PermissionSlugs.StylesView, label: 'View' },
-          { key: 'StylesCreate', slug: PermissionSlugs.StylesCreate, label: 'Create' },
-          { key: 'StylesDelete', slug: PermissionSlugs.StylesDelete, label: 'Delete' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'channels',
-    label: 'Channels',
-    screens: [
-      {
-        id: 'channels',
-        label: 'Channels',
-        permissions: [
-          { key: 'ChannelsView', slug: PermissionSlugs.ChannelsView, label: 'View' },
-          { key: 'ChannelsCreate', slug: PermissionSlugs.ChannelsCreate, label: 'Create' },
-          { key: 'ChannelsDelete', slug: PermissionSlugs.ChannelsDelete, label: 'Delete' },
-          { key: 'ChannelsAssign', slug: PermissionSlugs.ChannelsAssign, label: 'Assign users' },
         ],
       },
     ],

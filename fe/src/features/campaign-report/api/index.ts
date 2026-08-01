@@ -127,7 +127,6 @@ export const campaignReportApi = {
         per_page: filters.per_page ?? 30,
         ...(filters.account_id ? { account_id: filters.account_id } : {}),
         ...(filters.user_id != null ? { user_id: filters.user_id } : {}),
-        ...(filters.style_code ? { style_code: filters.style_code } : {}),
         ...(filters.min_spend != null ? { min_spend: filters.min_spend } : {}),
         ...(filters.min_revenue != null ? { min_revenue: filters.min_revenue } : {}),
         ...(filters.min_profit != null ? { min_profit: filters.min_profit } : {}),

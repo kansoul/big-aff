@@ -36,8 +36,7 @@ import {
   YAxis,
 } from 'recharts'
 
-import { channelsApi } from '@/features/channels/api'
-import type { ChannelOption } from '@/features/channels/types'
+import { campaignReportApi } from '@/features/campaign-report/api'
 import { axiosInstance } from '@/shared/api/axios'
 import { Button } from '@/components/ui/button'
 import {
@@ -81,6 +80,7 @@ type ChartApiData = {
 }
 
 type DateRange = { from: string | null; to: string | null }
+type ChannelOption = { code: string; name: string | null }
 
 type ChartFilters = {
   channel_codes: string[]
@@ -374,9 +374,9 @@ export function RevenueChartDialog({
     if (!open) return
     if (fetchedChannelsRef.current) return
     fetchedChannelsRef.current = true
-    channelsApi
-      .options()
-      .then((res) => setChannelOptions(res.data))
+    campaignReportApi
+      .filters()
+      .then((res) => setChannelOptions(res.data.data.channels))
       .catch(() => toast.error('Failed to fetch channel options'))
   }, [open])
 
@@ -441,7 +441,7 @@ export function RevenueChartDialog({
         label: 'Channels',
         type: 'multiselect',
         value: filters.channel_codes,
-        options: channelOptions.map((c) => ({ label: c.name, value: c.code })),
+        options: channelOptions.map((c) => ({ label: c.name ?? c.code, value: c.code })),
       },
       {
         field: 'date_range',

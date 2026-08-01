@@ -44,7 +44,6 @@ const DEFAULT_VALUES: MainTeamFormValues = {
   description: null,
   sync_campaign_reports: false,
   account_ids_text: '',
-  channel_codes_text: '',
 }
 
 function parseLines(value?: string): string[] {
@@ -76,11 +75,6 @@ export function MainTeamFormDialog({
     () => joinLines(mainTeam?.accounts?.map((account) => account.account_id)),
     [mainTeam],
   )
-  const channelCodesText = useMemo(
-    () => joinLines(mainTeam?.channels?.map((channel) => channel.code)),
-    [mainTeam],
-  )
-
   const form = useForm<MainTeamFormValues>({
     resolver: zodResolver(mainTeamFormSchema),
     defaultValues: DEFAULT_VALUES,
@@ -96,13 +90,12 @@ export function MainTeamFormDialog({
         description: mainTeam.description ?? null,
         sync_campaign_reports: mainTeam.sync_campaign_reports,
         account_ids_text: accountIdsText,
-        channel_codes_text: channelCodesText,
       })
       return
     }
 
     form.reset(DEFAULT_VALUES)
-  }, [accountIdsText, channelCodesText, form, mainTeam, open])
+  }, [accountIdsText, form, mainTeam, open])
 
   const onSubmit = async (values: MainTeamFormValues) => {
     try {
@@ -114,7 +107,6 @@ export function MainTeamFormDialog({
         description: values.description ?? null,
         sync_campaign_reports: values.sync_campaign_reports,
         account_ids: parseLines(values.account_ids_text),
-        channel_codes: parseLines(values.channel_codes_text),
       }
 
       if (isEdit && mainTeam) {
@@ -212,24 +204,6 @@ export function MainTeamFormDialog({
                     <FormControl>
                       <Textarea
                         placeholder="act_123&#10;act_456"
-                        className="min-h-36 font-mono text-xs"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="channel_codes_text"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Channel Codes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="channel_a&#10;channel_b"
                         className="min-h-36 font-mono text-xs"
                         {...field}
                       />

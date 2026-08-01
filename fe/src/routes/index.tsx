@@ -81,57 +81,6 @@ export const router = createBrowserRouter([
                 handle: { title: 'Media' },
               },
               {
-                path: routeSegment(PATHS.posts),
-                lazy: async () => {
-                  const { PostsPage } = await import('@/features/posts/pages/PostsPage')
-                  return {
-                    Component: withPermission(PostsPage, PermissionSlugs.PostsView),
-                  }
-                },
-                handle: { title: 'Posts' },
-              },
-              {
-                path: routeSegment(PATHS.postsCreate),
-                lazy: async () => {
-                  const { CreatePostPage } = await import('@/features/posts/pages/CreatePostPage')
-                  return {
-                    Component: withPermission(CreatePostPage, PermissionSlugs.PostsCreate),
-                  }
-                },
-                handle: { title: 'Create Post' },
-              },
-              {
-                path: routeSegment(PATHS.postsView),
-                lazy: async () => {
-                  const { ViewPostPage } = await import('@/features/posts/pages/ViewPostPage')
-                  return {
-                    Component: withPermission(ViewPostPage, PermissionSlugs.PostsView),
-                  }
-                },
-                handle: { title: 'View Post' },
-              },
-              {
-                path: routeSegment(PATHS.postsEdit),
-                lazy: async () => {
-                  const { EditPostPage } = await import('@/features/posts/pages/EditPostPage')
-                  return {
-                    Component: withPermission(EditPostPage, PermissionSlugs.PostsUpdate),
-                  }
-                },
-                handle: { title: 'Edit Post' },
-              },
-              {
-                path: routeSegment(PATHS.categories),
-                lazy: async () => {
-                  const { CategoriesPage } =
-                    await import('@/features/categories/pages/CategoriesPage')
-                  return {
-                    Component: withPermission(CategoriesPage, PermissionSlugs.CategoriesView),
-                  }
-                },
-                handle: { title: 'Categories' },
-              },
-              {
                 path: routeSegment(PATHS.settingsUsers),
                 lazy: async () => {
                   const { SettingsUsersPage } =
@@ -168,26 +117,6 @@ export const router = createBrowserRouter([
                   }
                 },
                 handle: { title: 'Main Teams' },
-              },
-              {
-                path: routeSegment(PATHS.channels),
-                lazy: async () => {
-                  const { ChannelsPage } = await import('@/features/channels/pages/ChannelsPage')
-                  return {
-                    Component: withPermission(ChannelsPage, PermissionSlugs.ChannelsView),
-                  }
-                },
-                handle: { title: 'Channels' },
-              },
-              {
-                path: routeSegment(PATHS.styles),
-                lazy: async () => {
-                  const { StylesPage } = await import('@/features/styles/pages/StylesPage')
-                  return {
-                    Component: withPermission(StylesPage, PermissionSlugs.StylesView),
-                  }
-                },
-                handle: { title: 'Styles' },
               },
               {
                 path: routeSegment(PATHS.adsLinks),

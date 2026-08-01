@@ -62,23 +62,5 @@ export const usersApi = {
     return response.data
   },
 
-  async assignPosts(userId: number, postIds: number[]): Promise<void> {
-    await axiosInstance.post(`/users/${userId}/assign-posts`, { post_ids: postIds })
-  },
-
-  listPostAssignments: (page: number, perPage: number, query?: string | null) =>
-    axiosInstance.get<{
-      data: Array<{ id: number; name: string; email: string; assigned_post_ids: number[] }>
-      pagination: { total: number }
-    }>('/users/post-assignments', {
-      params: {
-        page,
-        per_page: perPage,
-        order_by: 'name',
-        order: 'asc',
-        ...(query ? { query } : {}),
-      },
-    }),
-
   listOptions: () => axiosInstance.get<{ data: { id: number; name: string }[] }>('/options/users'),
 }

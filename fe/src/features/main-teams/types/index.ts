@@ -11,22 +11,13 @@ export interface MainTeamAccount {
   status: string | null
 }
 
-export interface MainTeamChannel {
-  id: number
-  code: string
-  name: string
-  is_active: boolean
-}
-
 export interface MainTeam {
   id: number
   name: string
   description: string | null
   sync_campaign_reports: boolean
   accounts_count?: number
-  channels_count?: number
   accounts?: MainTeamAccount[]
-  channels?: MainTeamChannel[]
   created_at: string | null
   updated_at: string | null
 }
@@ -62,7 +53,6 @@ export const mainTeamFormSchema = z.object({
   description: z.string().nullable().optional(),
   sync_campaign_reports: z.boolean(),
   account_ids_text: z.string().optional(),
-  channel_codes_text: z.string().optional(),
 })
 
 export type MainTeamFormValues = z.infer<typeof mainTeamFormSchema>
@@ -72,7 +62,6 @@ export type MainTeamCreatePayload = {
   description?: string | null
   sync_campaign_reports?: boolean
   account_ids?: string[]
-  channel_codes?: string[]
 }
 
 export type MainTeamUpdatePayload = Partial<MainTeamCreatePayload>

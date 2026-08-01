@@ -527,7 +527,6 @@ export interface CampaignSelectorRow {
 export interface CampaignSelectorFilterParams {
   account_id?: string | null
   user_id?: number | null
-  style_code?: string | null
   min_profit?: number | null
   min_revenue?: number | null
   min_spend?: number | null

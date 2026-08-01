@@ -26,7 +26,6 @@ export const mainTeamsApi = {
       description: !isNil(payload.description) ? payload.description : null,
       sync_campaign_reports: Boolean(payload.sync_campaign_reports),
       account_ids: payload.account_ids ?? [],
-      channel_codes: payload.channel_codes ?? [],
     }),
 
   update: (id: number, payload: MainTeamUpdatePayload) =>
@@ -37,7 +36,6 @@ export const mainTeamsApi = {
         ? { sync_campaign_reports: payload.sync_campaign_reports }
         : {}),
       ...(payload.account_ids ? { account_ids: payload.account_ids } : {}),
-      ...(payload.channel_codes ? { channel_codes: payload.channel_codes } : {}),
     }),
 
   remove: (id: number) => axiosInstance.delete(`/main-teams/${id}`),

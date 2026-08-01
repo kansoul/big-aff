@@ -14,10 +14,7 @@ import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { Badge } from '@/components/ui/badge'
-import { channelsApi } from '@/features/channels/api'
-import type { ChannelOption } from '@/features/channels/types'
-import { stylesApi } from '@/features/styles/api'
-import type { StyleOption } from '@/features/styles/types'
+import { campaignReportApi } from '@/features/campaign-report/api'
 import type { RevenueReportRow, RevenueReportFilterParams, RevenueReportOrderBy } from '../types'
 import { revenueReportApi } from '../api/revenueReportApi'
 import { useTableUrlState } from '@/hooks/useTableUrlState'
@@ -29,6 +26,7 @@ import type { TablePaginationState } from '@/lib/utils'
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const DEFAULT_FILTERS: RevenueReportFilterParams = {}
+type ChannelOption = { code: string; name: string | null }
 
 function parseFilters(params: URLSearchParams): RevenueReportFilterParams {
   const channelCodes = params.getAll('channel_codes[]')
@@ -64,7 +62,6 @@ export function RevenueReportPage() {
   const [rowCount, setRowCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([])
-  const [styleOptions, setStyleOptions] = useState<StyleOption[]>([])
 
   const { filters, pagination, setPagination, onFilterChange, onFilterReset } =
     useTableUrlState<RevenueReportFilterParams>({
@@ -75,17 +72,10 @@ export function RevenueReportPage() {
     })
 
   useEffect(() => {
-    channelsApi
-      .options()
-      .then((res) => setChannelOptions(res.data))
+    campaignReportApi
+      .filters()
+      .then((res) => setChannelOptions(res.data.data.channels))
       .catch(() => toast.error('Failed to load channel options'))
-  }, [])
-
-  useEffect(() => {
-    stylesApi
-      .options()
-      .then((res) => setStyleOptions(res.data))
-      .catch(() => toast.error('Failed to load style options'))
   }, [])
 
   const loadData = useCallback(
@@ -146,7 +136,7 @@ export function RevenueReportPage() {
         label: 'Channels',
         type: 'multiselect',
         value: filters.channel_codes ?? [],
-        options: channelOptions.map((c) => ({ label: c.name, value: c.code })),
+        options: channelOptions.map((c) => ({ label: c.name ?? c.code, value: c.code })),
       },
     ],
     [filters.date_from, filters.date_to, filters.channel_codes, channelOptions],
@@ -177,10 +167,7 @@ export function RevenueReportPage() {
       })
     }
     if ((filters.style_codes?.length ?? 0) > 0) {
-      const labels = (filters.style_codes ?? []).map((code) => {
-        const option = styleOptions.find((s) => s.code === code)
-        return option ? `${option.name} (${option.code})` : code
-      })
+      const labels = filters.style_codes ?? []
       chips.push({
         key: 'style_codes',
         label: 'Styles',
@@ -198,7 +185,6 @@ export function RevenueReportPage() {
     filters.channel_codes,
     filters.style_codes,
     channelOptions,
-    styleOptions,
   ])
 
   function handleRemoveChip(key: string) {

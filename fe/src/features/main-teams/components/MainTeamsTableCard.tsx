@@ -82,16 +82,6 @@ function getColumns({ onEditRow, onDeleteRow }: ActionMeta): MRT_ColumnDef<MainT
       ),
     },
     {
-      accessorKey: 'channels_count',
-      header: 'Channels',
-      size: 110,
-      Cell: ({ row }) => (
-        <span className="font-semibold tabular-nums">
-          {(row.original.channels_count ?? row.original.channels?.length ?? 0).toLocaleString()}
-        </span>
-      ),
-    },
-    {
       accessorKey: 'created_at',
       header: 'Created At',
       size: 170,

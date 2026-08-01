@@ -1,17 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { useSearchParams } from 'react-router-dom'
 
 import { formatApiError } from '@/features/settings/components'
-import {
-  adsLinksApi,
-  channelOptionsApi,
-  postOptionsApi,
-  siteOptionsApi,
-  userOptionsApi,
-} from '@/features/ads-links/api'
+import { adsLinksApi, siteOptionsApi, userOptionsApi } from '@/features/ads-links/api'
 import {
   AdsLinksTableCard,
   CreateAdsLinkDialog,
@@ -24,8 +17,6 @@ import {
   type AdsLinkCreateFormValues,
   type AdsLinkFilterParams,
   type AdsLinkUpdateFormValues,
-  type ChannelOption,
-  type PostOption,
   type SiteOption,
   type UserOption,
 } from '@/features/ads-links/types'
@@ -38,8 +29,6 @@ import { getUserRole } from '@/constants/role'
 const DEFAULT_FILTERS: AdsLinkFilterParams = {
   keyword: null,
   site_id: null,
-  post_id: null,
-  channel_code: null,
   created_by: null,
   googleid: null,
   date_range: null,
@@ -54,8 +43,6 @@ function parseFilters(params: URLSearchParams): AdsLinkFilterParams {
   return {
     keyword: params.get('keyword'),
     site_id: params.get('site_id') ? Number(params.get('site_id')) : null,
-    post_id: params.get('post_id') ? Number(params.get('post_id')) : null,
-    channel_code: params.get('channel_code'),
     created_by: params.get('created_by') ? Number(params.get('created_by')) : null,
     googleid: params.get('googleid'),
     date_range: dateFrom || dateTo ? { from: dateFrom, to: dateTo } : null,
@@ -72,8 +59,6 @@ function buildParams(
   const params = new URLSearchParams()
   if (filters.keyword) params.set('keyword', filters.keyword)
   if (filters.site_id != null) params.set('site_id', String(filters.site_id))
-  if (filters.post_id != null) params.set('post_id', String(filters.post_id))
-  if (filters.channel_code) params.set('channel_code', filters.channel_code)
   if (filters.created_by != null) params.set('created_by', String(filters.created_by))
   if (filters.googleid) params.set('googleid', filters.googleid)
   if (filters.date_range?.from) params.set('date_from', filters.date_range.from)
@@ -87,10 +72,7 @@ function buildParams(
 
 const createDefaultValues: AdsLinkCreateFormValues = {
   site_id: 0,
-  post_id: 0,
-  channel_code: '',
   rac: '',
-  keyword_set_id: null,
   note: '',
   googleid: '',
   tiktokid: '',
@@ -98,7 +80,6 @@ const createDefaultValues: AdsLinkCreateFormValues = {
 }
 
 export function AdsLinksPage() {
-  const [searchParams] = useSearchParams()
   const user = useAuthStore((s) => s.user)
   const perms = useMemo(() => user?.permissions ?? [], [user?.permissions])
   const role = getUserRole(user?.roles ?? [], !!user?.is_admin)
@@ -109,8 +90,6 @@ export function AdsLinksPage() {
   const [adsLinks, setAdsLinks] = useState<AdsLink[]>([])
   const [totalRows, setTotalRows] = useState(0)
   const [sites, setSites] = useState<SiteOption[]>([])
-  const [posts, setPosts] = useState<PostOption[]>([])
-  const [channels, setChannels] = useState<ChannelOption[]>([])
   const [users, setUsers] = useState<UserOption[]>([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
@@ -126,13 +105,6 @@ export function AdsLinksPage() {
   const [editRow, setEditRow] = useState<AdsLink | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const handledCreatePostIdRef = useRef<number | null>(null)
-
-  const requestedCreatePostId = useMemo(() => {
-    if (searchParams.get('create') !== '1') return null
-    const postId = Number(searchParams.get('post_id'))
-    return Number.isFinite(postId) && postId > 0 ? postId : null
-  }, [searchParams])
 
   const createForm = useForm<AdsLinkCreateFormValues>({
     resolver: zodResolver(adsLinkCreateSchema),
@@ -143,8 +115,6 @@ export function AdsLinksPage() {
     resolver: zodResolver(adsLinkUpdateSchema),
     defaultValues: {
       rac: '',
-      channel_code: null,
-      keyword_set_id: null,
       googleid: '',
       tiktokid: '',
       tiktok_pixel_id: '',
@@ -152,15 +122,8 @@ export function AdsLinksPage() {
   })
 
   const loadOptions = useCallback(async () => {
-    const [siteList, postList, channelList, userList] = await Promise.all([
-      siteOptionsApi.list(),
-      postOptionsApi.list(),
-      channelOptionsApi.list(),
-      userOptionsApi.list(),
-    ])
+    const [siteList, userList] = await Promise.all([siteOptionsApi.list(), userOptionsApi.list()])
     setSites(siteList)
-    setPosts(postList)
-    setChannels(channelList)
     setUsers(userList)
   }, [])
 
@@ -202,8 +165,6 @@ export function AdsLinksPage() {
     if (editRow) {
       editForm.reset({
         rac: editRow.rac,
-        channel_code: editRow.channel_code ?? null,
-        keyword_set_id: editRow.keyword_set?.id ?? null,
         googleid: editRow.googleid?.join(',') ?? '',
         tiktokid: editRow.tiktokid?.join(',') ?? '',
         tiktok_pixel_id: editRow.tiktok_pixel_id?.join(',') ?? '',
@@ -211,16 +172,6 @@ export function AdsLinksPage() {
       })
     }
   }, [editRow, editForm])
-
-  useEffect(() => {
-    if (!canCreate || requestedCreatePostId === null) return
-    if (handledCreatePostIdRef.current === requestedCreatePostId) return
-
-    handledCreatePostIdRef.current = requestedCreatePostId
-    setFormError(null)
-    createForm.reset({ ...createDefaultValues, post_id: requestedCreatePostId })
-    setCreateOpen(true)
-  }, [canCreate, createForm, requestedCreatePostId])
 
   const onCreateOpenChange = useCallback(
     (open: boolean) => {
@@ -246,20 +197,13 @@ export function AdsLinksPage() {
       setSubmitting(true)
       await adsLinksApi.create({
         site_id: values.site_id,
-        post_id: values.post_id,
-        channel_code: values.channel_code,
         rac: values.rac,
-        keyword_set_id: values.keyword_set_id ?? null,
         note: values.note ?? null,
         googleid: values.googleid ?? null,
         tiktokid: values.tiktokid ?? null,
         tiktok_pixel_id: values.tiktok_pixel_id ?? null,
       })
-      createForm.reset(
-        options?.createAnother && values.post_id
-          ? { ...createDefaultValues, post_id: values.post_id }
-          : createDefaultValues,
-      )
+      createForm.reset(createDefaultValues)
       if (!options?.createAnother) {
         setCreateOpen(false)
       }
@@ -282,8 +226,6 @@ export function AdsLinksPage() {
       setSubmitting(true)
       await adsLinksApi.update(editRow.id, {
         rac: values.rac,
-        channel_code: editRow.is_old ? (values.channel_code ?? editRow.channel_code) : undefined,
-        keyword_set_id: values.keyword_set_id ?? null,
         googleid: values.googleid ?? null,
         tiktokid: values.tiktokid ?? null,
         tiktok_pixel_id: values.tiktok_pixel_id ?? null,
@@ -369,8 +311,6 @@ export function AdsLinksPage() {
         canUpdate={canUpdate}
         filters={{ ...filters, page: pagination.pageIndex + 1, per_page: pagination.pageSize }}
         sites={sites}
-        posts={posts}
-        channels={channels}
         users={users}
         onFilterChange={onFilterChange}
         onFilterReset={onFilterReset}
@@ -389,15 +329,11 @@ export function AdsLinksPage() {
         formError={formError}
         form={createForm}
         sites={sites}
-        posts={posts}
-        channels={channels}
         submitting={submitting}
         onSubmit={onCreateSubmit}
       />
       <EditAdsLinkDialog
         adsLink={editRow}
-        posts={posts}
-        channels={channels}
         onOpenChange={onEditOpenChange}
         formError={formError}
         form={editForm}

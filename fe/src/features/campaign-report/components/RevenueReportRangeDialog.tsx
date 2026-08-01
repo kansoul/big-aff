@@ -17,8 +17,6 @@ import type {
   RevenueReportRangeItem,
   RevenueReportRangeRow,
 } from '@/features/campaign-report/types'
-import { channelsApi } from '@/features/channels/api'
-import type { ChannelOption } from '@/features/channels/types'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { SearchableSelect } from '@/components/common/SearchableSelect'
@@ -57,6 +55,7 @@ function generateTimeOptions() {
 }
 
 const TIME_OPTIONS = generateTimeOptions()
+type ChannelOption = { code: string; name: string | null }
 
 type TimeSelectProps = {
   value: string
@@ -90,7 +89,7 @@ function ChannelsSelect({ value, onChange, options }: ChannelsSelectProps) {
   const filtered = search.trim()
     ? options.filter(
         (o) =>
-          o.name.toLowerCase().includes(search.toLowerCase()) ||
+          (o.name ?? o.code).toLowerCase().includes(search.toLowerCase()) ||
           o.code.toLowerCase().includes(search.toLowerCase()),
       )
     : options
@@ -564,9 +563,9 @@ export function RevenueReportRangeDialog({
     if (!open) return
     if (fetchedRef.current) return
     fetchedRef.current = true
-    channelsApi
-      .options()
-      .then((res) => setChannelOptions(res.data))
+    campaignReportApi
+      .filters()
+      .then((res) => setChannelOptions(res.data.data.channels))
       .catch(() => {
         toast.error('Failed to fetch channel options')
       })

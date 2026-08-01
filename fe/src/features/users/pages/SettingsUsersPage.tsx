@@ -7,8 +7,6 @@ import { toast } from 'sonner'
 import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { rolesApi } from '@/features/settings/api/roles'
 import { formatApiError } from '@/features/settings/components'
-import { stylesApi } from '@/features/styles/api'
-import type { StyleOption } from '@/features/styles/types'
 import { teamsApi } from '@/features/teams/api'
 import { usersApi } from '@/features/users/api/users'
 import {
@@ -78,12 +76,10 @@ export function SettingsUsersPage() {
     () => hasPermission(perms, PermissionSlugs.SettingsUsersDelete),
     [perms],
   )
-  const canViewStyles = useMemo(() => hasPermission(perms, PermissionSlugs.StylesView), [perms])
 
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [rowCount, setRowCount] = useState(0)
   const [roles, setRoles] = useState<RoleOption[]>([])
-  const [styleOptions, setStyleOptions] = useState<StyleOption[]>([])
   const [teamOptions, setTeamOptions] = useState<{ id: number; name: string }[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -110,7 +106,6 @@ export function SettingsUsersPage() {
       email: '',
       password: '',
       role_id: 0,
-      style_id: null,
       team_id: null,
     },
   })
@@ -122,7 +117,6 @@ export function SettingsUsersPage() {
       email: '',
       password: '',
       role_id: 0,
-      style_id: null,
       team_id: null,
     },
   })
@@ -138,19 +132,15 @@ export function SettingsUsersPage() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const [usersRes, roleOptionsRes, styleOptionsRes, teamOptionsRes] = await Promise.all([
+        const [usersRes, roleOptionsRes, teamOptionsRes] = await Promise.all([
           usersApi.list(pagination.pageIndex + 1, pagination.pageSize, filters),
           rolesApi.listOptions(),
-          canViewStyles ? stylesApi.options() : Promise.resolve(null),
           teamsApi.listOptions(),
         ])
         if (!ignore) {
           setUsers(usersRes.data.data)
           setRowCount(usersRes.data.pagination.total)
           setRoles(normalizeRoleOptions(roleOptionsRes.data.data))
-          if (styleOptionsRes) {
-            setStyleOptions(styleOptionsRes.data)
-          }
           if (teamOptionsRes) {
             setTeamOptions(teamOptionsRes.data.data)
           }
@@ -171,7 +161,7 @@ export function SettingsUsersPage() {
     return () => {
       ignore = true
     }
-  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal, canViewStyles])
+  }, [pagination.pageIndex, pagination.pageSize, filters, refreshSignal])
 
   const onSortingChange = useCallback(
     (sorting: MRT_SortingState) => {
@@ -197,7 +187,6 @@ export function SettingsUsersPage() {
           email: '',
           password: '',
           role_id: firstRoleId,
-          style_id: null,
           team_id: null,
         })
       } else {
@@ -214,7 +203,6 @@ export function SettingsUsersPage() {
         email: editUser.email,
         password: '',
         role_id: editUser.role_id ?? roles[0]?.id ?? 0,
-        style_id: editUser.style_id ?? null,
         team_id: null, // Reset for edit as we don't necessarily show it on edit if already assigned
       })
     }
@@ -234,7 +222,6 @@ export function SettingsUsersPage() {
         email: values.email,
         password: values.password,
         role_id: values.role_id,
-        ...(canViewStyles ? { style_id: values.style_id ?? null } : {}),
         team_id: values.team_id ?? null,
       })
       const firstRoleId = roles[0]?.id ?? 0
@@ -243,7 +230,6 @@ export function SettingsUsersPage() {
         email: '',
         password: '',
         role_id: firstRoleId,
-        style_id: null,
         team_id: null,
       })
       if (!options?.createAnother) {
@@ -268,7 +254,6 @@ export function SettingsUsersPage() {
         name: values.name,
         email: values.email,
         role_id: values.role_id,
-        ...(canViewStyles ? { style_id: values.style_id ?? null } : {}),
       }
       if (values.password.length > 0) {
         payload.password = values.password
@@ -398,7 +383,6 @@ export function SettingsUsersPage() {
         formError={formError}
         form={createForm}
         roles={roles}
-        styleOptions={canViewStyles ? styleOptions : undefined}
         teamOptions={teamOptions}
         submitting={submitting}
         onSubmit={onCreateSubmit}
@@ -410,7 +394,6 @@ export function SettingsUsersPage() {
         formError={formError}
         form={editForm}
         roles={roles}
-        styleOptions={canViewStyles ? styleOptions : undefined}
         teamOptions={teamOptions}
         submitting={submitting}
         onSubmit={onEditSubmit}

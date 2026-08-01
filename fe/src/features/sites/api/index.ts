@@ -35,8 +35,6 @@ export const sitesApi = {
       settings: {
         gtm: params.settings?.gtm ?? null,
         theme: params.settings?.theme ?? null,
-        default_channel: params.settings.default_channel,
-        default_style: params.settings.default_style,
       },
     }),
 
@@ -60,8 +58,6 @@ export const sitesApi = {
       settings: {
         gtm: params.settings?.gtm ?? null,
         theme: params.settings?.theme ?? null,
-        default_channel: params.settings.default_channel,
-        default_style: params.settings.default_style,
       },
     }),
 }

@@ -5,16 +5,12 @@ import { PermissionSlugs } from '@/constants/permissions'
 import {
   Building2,
   CircleDollarSign,
-  FileText,
-  FolderOpen,
   Globe,
   Images,
   LayoutDashboard,
   Link2,
   LogsIcon,
   Megaphone,
-  Palette,
-  Radio,
   Repeat,
   SlidersHorizontal,
   Tag,
@@ -53,18 +49,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     name: 'Content',
     items: [
       {
-        name: 'Posts',
-        href: PATHS.posts,
-        icon: FileText,
-        requiredPermission: PermissionSlugs.PostsView,
-      },
-      {
-        name: 'Categories',
-        href: PATHS.categories,
-        icon: FolderOpen,
-        requiredPermission: PermissionSlugs.CategoriesView,
-      },
-      {
         name: 'Media',
         href: PATHS.media,
         icon: Images,
@@ -87,18 +71,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
   {
     name: 'Marketing',
     items: [
-      {
-        name: 'Channels',
-        href: PATHS.channels,
-        icon: Radio,
-        requiredPermission: PermissionSlugs.ChannelsView,
-      },
-      {
-        name: 'Styles',
-        href: PATHS.styles,
-        icon: Palette,
-        requiredPermission: PermissionSlugs.StylesView,
-      },
       {
         name: 'Ads Links',
         href: PATHS.adsLinks,

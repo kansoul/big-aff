@@ -14,7 +14,6 @@ import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
 const DEFAULT_FILTERS: FollowFilterParams = {
   query: null,
   site_id: null,
-  post_id: null,
   order_by: null,
   order: null,
 }
@@ -23,7 +22,6 @@ function parseFilters(params: URLSearchParams): FollowFilterParams {
   return {
     query: params.get('query'),
     site_id: params.get('site_id') ? Number(params.get('site_id')) : null,
-    post_id: params.get('post_id') ? Number(params.get('post_id')) : null,
     order_by: params.get('order_by') as FollowFilterParams['order_by'],
     order: params.get('order') as FollowFilterParams['order'],
   }
@@ -36,7 +34,6 @@ function buildParams(
   const params = new URLSearchParams()
   if (filters.query) params.set('query', filters.query)
   if (filters.site_id != null) params.set('site_id', String(filters.site_id))
-  if (filters.post_id != null) params.set('post_id', String(filters.post_id))
   if (filters.order_by) params.set('order_by', filters.order_by)
   if (filters.order) params.set('order', filters.order)
   setPaginationInParams(params, pagination)

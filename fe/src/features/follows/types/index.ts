@@ -1,12 +1,10 @@
-export type FollowOrderBy = 'id' | 'email' | 'site_id' | 'post_id' | 'created_at'
+export type FollowOrderBy = 'id' | 'email' | 'site_id' | 'created_at'
 export type FollowOrder = 'asc' | 'desc'
 
 export interface Follow {
   id: number
   email: string
-  post_id: number | null
   style_code: string | null
-  channel_code: string | null
   created_at: string | null
   updated_at: string | null
 }
@@ -32,7 +30,6 @@ export interface FollowListResponse {
 export interface FollowFilterParams {
   query?: string | null
   site_id?: number | null
-  post_id?: number | null
   order_by?: FollowOrderBy | null
   order?: FollowOrder | null
   page?: number

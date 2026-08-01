@@ -5,7 +5,6 @@ export const userCreateSchema = z.object({
   email: z.string().email('Invalid email'),
   password: z.string().min(8, 'At least 8 characters'),
   role_id: z.number().min(1, 'Select a role'),
-  style_id: z.number().nullable().optional(),
   team_id: z.number().nullable().optional(),
 })
 
@@ -16,7 +15,6 @@ export const userUpdateSchema = z.object({
   email: z.string().email('Invalid email'),
   password: z.union([z.string().min(8, 'At least 8 characters'), z.literal('')]),
   role_id: z.number().min(1, 'Select a role'),
-  style_id: z.number().nullable().optional(),
   team_id: z.number().nullable().optional(),
 })
 
@@ -27,7 +25,6 @@ export type UserCreatePayload = {
   email: string
   password: string
   role_id: number
-  style_id?: number | null
   team_id?: number | null
 }
 
@@ -36,7 +33,6 @@ export type UserUpdatePayload = {
   email?: string
   password?: string
   role_id?: number
-  style_id?: number | null
   team_id?: number | null
 }
 

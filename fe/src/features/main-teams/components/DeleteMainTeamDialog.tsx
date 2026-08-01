@@ -36,8 +36,8 @@ export function DeleteMainTeamDialog({
           <AlertDialogTitle>Delete main team</AlertDialogTitle>
           <AlertDialogDescription>
             Are you sure you want to delete{' '}
-            <span className="font-medium text-foreground">{mainTeam?.name}</span>? Account and
-            channel mappings will be cleared.
+            <span className="font-medium text-foreground">{mainTeam?.name}</span>? Account mappings
+            will be cleared.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
