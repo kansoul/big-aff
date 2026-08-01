@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Add ownership marker columns so revenue/spend can be attributed to the user
      * (and main team) that owned the channel/account at sync time, without joining
-     * the channel_user / account_user pivots at read time.
+     * assignment pivots at read time.
      *
      * No FK constraints are added, matching the existing report-table convention
      * (these high-throughput sync tables intentionally avoid foreign keys).

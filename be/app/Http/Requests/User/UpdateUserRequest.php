@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\User;
 
-use App\Enums\Permission;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -33,10 +32,6 @@ class UpdateUserRequest extends FormRequest
             'role_id' => ['sometimes', 'integer', 'exists:roles,id'],
             'parent_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
         ];
-
-        if ($auth && ($auth->is_admin || $auth->hasPermissionFlag(Permission::StylesView))) {
-            $rules['style_id'] = ['sometimes', 'nullable', 'integer', 'exists:styles,id'];
-        }
 
         return $rules;
     }

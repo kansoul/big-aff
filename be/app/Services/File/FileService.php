@@ -45,7 +45,7 @@ class FileService
     {
         $path = ltrim($file->path, '/');
 
-        return $path === config('filesystems.uploads.directories.posts') || str_starts_with($path, config('filesystems.uploads.directories.posts').'/');
+        return $path === config('filesystems.uploads.directories.media') || str_starts_with($path, config('filesystems.uploads.directories.media').'/');
     }
 
     /**

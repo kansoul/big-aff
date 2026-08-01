@@ -44,7 +44,6 @@ class MigrateUserBackupCommand extends Command
         }
 
         $validRoleIds = $this->buildValidIdLookup('roles');
-        $validStyleIds = $this->buildValidIdLookup('styles');
         $existingEmails = DB::table('users')->pluck('email')->flip()->all();
 
         $now = now();
@@ -63,7 +62,6 @@ class MigrateUserBackupCommand extends Command
 
             $batch[] = [
                 'role_id' => $this->normalizeForeignId($record['role_id'] ?? null, $validRoleIds),
-                'style_id' => $this->normalizeForeignId($record['style_id'] ?? null, $validStyleIds),
                 'name' => mb_substr((string) ($record['name'] ?? ''), 0, 255),
                 'email' => $email,
                 'email_verified_at' => isset($record['email_verified_at']) ? date('Y-m-d H:i:s', strtotime($record['email_verified_at'])) : null,

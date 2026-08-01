@@ -131,7 +131,6 @@ class ListCampaignReportsAction
                 'campaign_reports.account_id',
                 adsTypeColumn: 'campaign_reports.ads_type',
             );
-            MainTeamReportDataScope::excludeNonFetchableChannels($query, 'campaign_reports.channel_code');
         }
 
         if (! empty($filters['user_ids'])) {

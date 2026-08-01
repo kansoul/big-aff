@@ -42,7 +42,7 @@ class MainTeamController extends BaseController
 
     public function show(MainTeam $mainTeam): JsonResponse
     {
-        $mainTeam->load(['accounts', 'channels'])->loadCount(['accounts', 'channels']);
+        $mainTeam->load('accounts')->loadCount('accounts');
 
         return $this->sendResponse(['data' => new MainTeamResource($mainTeam)]);
     }

@@ -28,7 +28,7 @@ return new class extends Migration
     {
         Schema::table('follows', function (Blueprint $table) {
             $table->foreignId('site_id')->after('email')->constrained('sites')->cascadeOnDelete();
-            $table->foreignId('ads_link_id')->nullable()->after('post_id')->constrained('ads_links')->nullOnDelete();
+            $table->foreignId('ads_link_id')->nullable()->constrained('ads_links')->nullOnDelete();
 
             $table->unique(['site_id', 'email']);
             $table->index(['site_id', 'email']);

@@ -6,7 +6,6 @@ use App\Enums\AdsType;
 use App\Jobs\SendTelegramWarningJob;
 use App\Models\Campaign;
 use App\Models\CampaignReport;
-use App\Models\Channel;
 use App\Models\InsightReport;
 use App\Models\LinkData;
 use App\Models\RealtimeReport;
@@ -181,10 +180,6 @@ class CampaignReportSyncService
     {
         $linkData = LinkData::where('campaign_id', $insightReport->campaign_id)->first();
 
-        if (! self::shouldSyncChannel($linkData?->channel_code)) {
-            return null;
-        }
-
         $data = [];
         $spend = (float) ($insightReport->spend ?? 0);
         $campaign = $insightReport->campaign;
@@ -193,7 +188,6 @@ class CampaignReportSyncService
             $realtimeReport = RealtimeReport::where('link_data_id', $linkData->id)
                 ->whereDate('event_time', $date)
                 ->first();
-            $channelName = Channel::where('code', $linkData->channel_code)->value('name');
             $revenueData = self::getRevenueData($date, $linkData->channel_code);
             $rConversion = (int) ($revenueData['clicks'] ?? 0);
             $sumRealtimeClickAdCount = self::sumRealtimeClickAdCount($date, $linkData->channel_code);
@@ -223,7 +217,7 @@ class CampaignReportSyncService
                 // Style/Channel info
                 'style_code' => $linkData->style_code,
                 'channel_code' => $linkData->channel_code,
-                'channel_name' => $channelName,
+                'channel_name' => $revenueData['channel_name'] ?? $linkData->channel_code,
                 // Revenue fields (r_*) from RevenueReport
                 'r_search_views' => (int) ($revenueData['page_views'] ?? 0),
                 'r_conversion' => $rConversion,
@@ -283,18 +277,6 @@ class CampaignReportSyncService
             'a_frequency' => (float) ($insightReport->frequency ?? 0),
             'a_clicks' => (int) ($insightReport->clicks ?? 0),
         ];
-    }
-
-    private static function shouldSyncChannel(?string $channelCode): bool
-    {
-        if (! config('main_system.is_main') || blank($channelCode)) {
-            return true;
-        }
-
-        return ! Channel::query()
-            ->where('code', $channelCode)
-            ->whereHas('mainTeam', fn ($mainTeamQuery) => $mainTeamQuery->where('sync_campaign_reports', false))
-            ->exists();
     }
 
     private static function sendHighCtrAlertIfNeeded(

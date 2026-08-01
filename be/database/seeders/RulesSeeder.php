@@ -139,19 +139,21 @@ class RulesSeeder extends Seeder
             return;
         }
 
-        /** @var Collection<int, string> $accountIds */
-        $accountIds = Account::query()->pluck('account_id');
-        if ($accountIds->isEmpty()) {
+        $campaigns = Campaign::query()->get(['account_id', 'campaign_id']);
+        if ($campaigns->isEmpty()) {
             return;
         }
 
         AdsConversion::factory()
             ->count(self::ADS_CONVERSION_COUNT)
-            ->state(fn () => [
-                // Reuse the same business account_id so dashboards joining by account_id
-                // stay consistent between the two conversion sources.
-                'account_id' => $accountIds->random(),
-            ])
+            ->state(function () use ($campaigns): array {
+                $campaign = $campaigns->random();
+
+                return [
+                    'account_id' => $campaign->account_id,
+                    'campaign_id' => $campaign->campaign_id,
+                ];
+            })
             ->create();
     }
 

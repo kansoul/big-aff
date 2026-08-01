@@ -3,7 +3,6 @@
 namespace App\Actions\MainTeam;
 
 use App\Models\Account;
-use App\Models\Channel;
 use App\Models\MainTeam;
 use Illuminate\Support\Facades\DB;
 
@@ -16,8 +15,7 @@ class CreateMainTeamAction
     {
         return DB::transaction(function () use ($data): MainTeam {
             $accountIds = $data['account_ids'] ?? null;
-            $channelCodes = $data['channel_codes'] ?? null;
-            unset($data['account_ids'], $data['channel_codes']);
+            unset($data['account_ids']);
 
             $mainTeam = MainTeam::query()->create($data);
 
@@ -27,13 +25,7 @@ class CreateMainTeamAction
                     ->update(['main_team_id' => $mainTeam->id]);
             }
 
-            if (is_array($channelCodes)) {
-                Channel::query()
-                    ->whereIn('code', $channelCodes)
-                    ->update(['main_team_id' => $mainTeam->id]);
-            }
-
-            return $mainTeam->load(['accounts', 'channels'])->loadCount(['accounts', 'channels']);
+            return $mainTeam->load('accounts')->loadCount('accounts');
         });
     }
 }

@@ -10,8 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('event_ad_loads', function (Blueprint $table) {
-            $table->bigIncrements('id');
+        $isMysql = DB::getDriverName() === 'mysql';
+
+        Schema::create('event_ad_loads', function (Blueprint $table) use ($isMysql) {
+            $isMysql ? $table->unsignedBigInteger('id')->autoIncrement() : $table->id();
             $table->uuid('session_id')->nullable()->index();
             $table->unsignedBigInteger('link_data_id')->nullable();
             $table->string('campaign_id')->nullable();
@@ -26,10 +28,13 @@ return new class extends Migration
 
             $table->index(['link_data_id', 'created_at'], 'idx_event_ad_loads_link_date');
 
-            $table->primary(['id', 'created_at']);
+            if ($isMysql) {
+                $table->primary(['id', 'created_at']);
+            }
         });
 
-        DB::statement("
+        if ($isMysql) {
+            DB::statement("
             ALTER TABLE `event_ad_loads`
             PARTITION BY RANGE (UNIX_TIMESTAMP(`created_at`)) (
                 PARTITION p202601 VALUES LESS THAN (UNIX_TIMESTAMP('2026-02-01 00:00:00')),
@@ -46,7 +51,8 @@ return new class extends Migration
                 PARTITION p202612 VALUES LESS THAN (UNIX_TIMESTAMP('2027-01-01 00:00:00')),
                 PARTITION p_future VALUES LESS THAN MAXVALUE
             )
-        ");
+            ");
+        }
     }
 
     public function down(): void

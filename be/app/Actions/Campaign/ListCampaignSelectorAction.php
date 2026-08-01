@@ -48,7 +48,6 @@ class ListCampaignSelectorAction
                 'campaign_reports.account_id',
                 adsTypeColumn: 'campaign_reports.ads_type',
             );
-            MainTeamReportDataScope::excludeNonFetchableChannels($query, 'campaign_reports.channel_code');
         }
 
         if (! $resource->isAdmin()) {
@@ -64,10 +63,6 @@ class ListCampaignSelectorAction
 
         if (! empty($filters['user_id'])) {
             $query->whereIn('campaign_id', Campaign::where('created_by', $filters['user_id'])->select('campaign_id'));
-        }
-
-        if (! empty($filters['style_code'])) {
-            $query->where('style_code', $filters['style_code']);
         }
 
         if (! empty($filters['search'])) {

@@ -14,12 +14,11 @@ class ListFollowsAction
         'id',
         'email',
         'site_id',
-        'post_id',
         'created_at',
     ];
 
     /**
-     * @param  array{query?: string|null, site_id?: int|null, post_id?: int|null, per_page?: int|null, page?: int|null}  $filters
+     * @param  array{query?: string|null, site_id?: int|null, per_page?: int|null, page?: int|null}  $filters
      */
     public function execute(array $filters): LengthAwarePaginator
     {
@@ -32,10 +31,6 @@ class ListFollowsAction
 
         if (! empty($filters['site_id'])) {
             $query->where('site_id', $filters['site_id']);
-        }
-
-        if (! empty($filters['post_id'])) {
-            $query->where('post_id', $filters['post_id']);
         }
 
         SortInput::fromValidatedArray(

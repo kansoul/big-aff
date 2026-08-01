@@ -2,7 +2,6 @@
 
 namespace App\Services\User;
 
-use App\Actions\Post\AssignUserPostsAction;
 use App\Actions\User\CreateUserAction;
 use App\Actions\User\DeleteUserAction;
 use App\Actions\User\ListUsersAction;
@@ -17,7 +16,6 @@ class UserService
         private readonly CreateUserAction $createUserAction,
         private readonly UpdateUserAction $updateUserAction,
         private readonly DeleteUserAction $deleteUserAction,
-        private readonly AssignUserPostsAction $assignUserPostsAction,
     ) {}
 
     /**
@@ -47,13 +45,5 @@ class UserService
     public function delete(User $user): void
     {
         $this->deleteUserAction->execute($user);
-    }
-
-    /**
-     * @param  array<int>  $postIds
-     */
-    public function assignPosts(User $user, array $postIds): void
-    {
-        $this->assignUserPostsAction->execute($user, $postIds);
     }
 }

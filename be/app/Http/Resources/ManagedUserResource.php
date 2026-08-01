@@ -25,7 +25,6 @@ class ManagedUserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'role_id' => $this->role_id,
-            'style_id' => $this->style_id,
             'role' => $this->whenLoaded('role', function () {
                 if ($this->role === null) {
                     return null;

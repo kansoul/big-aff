@@ -16,7 +16,7 @@ class LinkDataFactory extends Factory
     {
         return [
             'ads_link_id' => null,
-            'campaign_id' => 'camp_'.fake()->numerify('##############'),
+            'campaign_id' => fake()->numerify('##############'),
             'style_code' => null,
             'channel_code' => null,
         ];

@@ -111,7 +111,7 @@ class GetAnalyticsStatsAction
         $query = LinkData::query();
 
         if (! $ownership->isAdmin()) {
-            $ownership->applyThroughChannel($query);
+            $ownership->applyTo($query);
         }
 
         $query->when($adsLinkId, fn ($q) => $q->where('ads_link_id', $adsLinkId));

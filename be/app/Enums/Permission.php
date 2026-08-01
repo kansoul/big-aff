@@ -32,30 +32,6 @@ enum Permission: string
     case SettingsSitesDelete = 'settings.sites.delete';
     case SettingsSitesAssign = 'settings.sites.assign';
 
-    // —— Posts ——
-    case PostsView = 'posts.view';
-    case PostsCreate = 'posts.create';
-    case PostsUpdate = 'posts.update';
-    case PostsDelete = 'posts.delete';
-    case PostsPublish = 'posts.publish';
-
-    // —— Categories ——
-    case CategoriesView = 'categories.view';
-    case CategoriesCreate = 'categories.create';
-    case CategoriesUpdate = 'categories.update';
-    case CategoriesDelete = 'categories.delete';
-
-    // —— Styles ——
-    case StylesView = 'styles.view';
-    case StylesCreate = 'styles.create';
-    case StylesDelete = 'styles.delete';
-
-    // —— Channels ——
-    case ChannelsView = 'channels.view';
-    case ChannelsCreate = 'channels.create';
-    case ChannelsDelete = 'channels.delete';
-    case ChannelsAssign = 'channels.assign';
-
     // —— Follows ——
     case FollowsView = 'follows.view';
     case FollowsDelete = 'follows.delete';
@@ -128,10 +104,6 @@ enum Permission: string
     // —— Analytics Tracking ——
     case AnalyticsTrackingView = 'analytics-tracking.view';
 
-    // —— Inactive Styles ——
-    case InactiveStylesView = 'inactive-styles.view';
-    case InactiveStylesDelete = 'inactive-styles.delete';
-
     // —— Revenue Report Range ——
     case RevenueReportRangeView = 'revenue-report-range.view';
 
@@ -162,8 +134,6 @@ enum Permission: string
 
     // —— Revenue Report Range ——
     case DashboardUserView = 'dashboard.users.view';
-
-    case PostsAssign = 'posts.assign';
 
     // —— Gtags ——
     case GtagsView = 'gtags.view';

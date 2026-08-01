@@ -2,7 +2,6 @@
 
 namespace App\Actions\RevenueReportRange;
 
-use App\Models\Channel;
 use App\Models\RevenueChartReport;
 use App\Models\RevenueReport;
 use App\Support\OwnershipFilter\OwnershipFilter;
@@ -20,11 +19,10 @@ class GetRevenueReportRangeAction
 
         $allowedChannelCodes = null;
         if (! $ownership->isAdmin()) {
-            $allowedChannelCodes = Channel::join('channel_user', 'channel_user.channel_id', '=', 'channels.id')
-                ->whereIn('channel_user.user_id', $ownership->allowedUserIds())
-                ->whereNull('channel_user.deleted_at')
+            $allowedChannelCodes = RevenueReport::query()
+                ->whereIn('owner_user_id', $ownership->allowedUserIds())
                 ->distinct()
-                ->pluck('channels.code')
+                ->pluck('channel_code')
                 ->all();
         }
 
@@ -70,8 +68,6 @@ class GetRevenueReportRangeAction
                 ->get()
                 ->keyBy('channel_code');
 
-            $channels = Channel::whereIn('code', $channelCodes)->pluck('name', 'code');
-
             foreach ($channelCodes as $channelCode) {
                 $startRecord = $startRecords->get($channelCode);
                 $endRecord = $endRecords->get($channelCode);
@@ -108,7 +104,7 @@ class GetRevenueReportRangeAction
                 $data[] = [
                     'range_label' => $label,
                     'channel_code' => $channelCode,
-                    'channel_name' => $channels->get($channelCode, $channelCode),
+                    'channel_name' => $revenueReport?->channel_name ?? $channelCode,
                     'revenue_start' => $revenueStart,
                     'revenue_end' => $revenueEnd,
                     'real_revenue' => $realRevenue !== null ? round($realRevenue, 4) : null,

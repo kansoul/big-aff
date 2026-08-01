@@ -90,7 +90,6 @@ return [
         'directories' => [
             'media' => 'media',
             'site' => 'media/site',
-            'posts' => 'media/posts',
         ],
     ],
 

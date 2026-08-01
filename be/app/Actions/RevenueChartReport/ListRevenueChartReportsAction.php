@@ -3,7 +3,8 @@
 namespace App\Actions\RevenueChartReport;
 
 use App\Models\RevenueChartReport;
-use App\Support\OwnerResource\ChannelLinkedOwnerResource;
+use App\Models\RevenueReport;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Carbon\Carbon;
@@ -28,7 +29,13 @@ class ListRevenueChartReportsAction
 
         $baseQuery = RevenueChartReport::query();
 
-        (new ChannelLinkedOwnerResource)->applyTo($baseQuery);
+        OwnershipFilter::forAuthUser()->applyThrough(
+            $baseQuery,
+            'channel_code',
+            fn (array $ids) => RevenueReport::query()
+                ->whereIn('owner_user_id', $ids)
+                ->select('channel_code'),
+        );
 
         $baseQuery->where('channel_code', $channelCode);
 

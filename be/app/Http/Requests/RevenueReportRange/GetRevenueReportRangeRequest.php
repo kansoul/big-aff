@@ -20,7 +20,7 @@ class GetRevenueReportRangeRequest extends FormRequest
             'ranges.*.end_date' => ['required', 'date_format:Y-m-d'],
             'ranges.*.end_time' => ['required', 'date_format:H:i'],
             'ranges.*.channel_codes' => ['required', 'array', 'min:1'],
-            'ranges.*.channel_codes.*' => ['required', 'string', 'exists:channels,code'],
+            'ranges.*.channel_codes.*' => ['required', 'string'],
         ];
     }
 

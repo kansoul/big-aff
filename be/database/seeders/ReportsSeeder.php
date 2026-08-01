@@ -4,11 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Campaign;
 use App\Models\CampaignReport;
-use App\Models\Channel;
 use App\Models\InsightChartReport;
 use App\Models\InsightReport;
 use App\Models\LinkData;
-use App\Models\Style;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -21,7 +19,7 @@ use Illuminate\Support\Facades\DB;
  *   - insight_chart_reports.*              → idem
  *   - campaign_reports.account_id          → accounts.account_id
  *   - campaign_reports.campaign_id / name  → campaigns.*
- *   - campaign_reports.style_code/channel_code → styles.code / channels.code
+ *   - campaign_reports.style_code/channel_code → report snapshots
  *
  * Reports are idempotent — a table is only seeded if it's currently empty.
  */
@@ -42,8 +40,6 @@ class ReportsSeeder extends Seeder
             return;
         }
 
-        $styles = Style::query()->get();
-        $channels = Channel::query()->get();
         $linkDataByCampaignId = LinkData::query()
             ->whereNotNull('campaign_id')
             ->get()
@@ -51,7 +47,7 @@ class ReportsSeeder extends Seeder
 
         $this->seedInsightReports($campaigns);
         $this->seedInsightChartReports($campaigns);
-        $this->seedCampaignReports($campaigns, $styles, $channels, $linkDataByCampaignId);
+        $this->seedCampaignReports($campaigns, $linkDataByCampaignId);
     }
 
     /**
@@ -68,12 +64,15 @@ class ReportsSeeder extends Seeder
 
         foreach ($campaigns as $campaign) {
             for ($day = self::DAILY_DAYS; $day >= 0; $day--) {
-                $rows[] = InsightReport::factory()->make([
+                $date = $now->copy()->subDays($day)->toDateString();
+                $row = InsightReport::factory()->make([
                     'account_id' => $campaign->account_id,
                     'campaign_id' => $campaign->campaign_id,
-                    'date_start' => $now->copy()->subDays($day)->toDateString(),
+                    'date_start' => $date,
                     'spend_type' => 'USD',
-                ])->toArray();
+                ])->getAttributes();
+                $row['date_start'] = $date;
+                $rows[] = $row;
 
                 if (count($rows) >= self::CHUNK_SIZE) {
                     DB::table('insight_reports')->insert($rows);
@@ -105,7 +104,7 @@ class ReportsSeeder extends Seeder
                     'account_id' => $campaign->account_id,
                     'campaign_id' => $campaign->campaign_id,
                     'datetime_start' => $now->copy()->subDays($day)->startOfDay()->toDateTimeString(),
-                ])->toArray();
+                ])->getAttributes();
 
                 if (count($rows) >= self::CHUNK_SIZE) {
                     DB::table('insight_chart_reports')->insert($rows);
@@ -121,14 +120,10 @@ class ReportsSeeder extends Seeder
 
     /**
      * @param  \Illuminate\Database\Eloquent\Collection<int, Campaign>  $campaigns
-     * @param  Collection<int, Style>  $styles
-     * @param  Collection<int, Channel>  $channels
      * @param  Collection<string, LinkData>  $linkDataByCampaignId
      */
     private function seedCampaignReports(
         \Illuminate\Database\Eloquent\Collection $campaigns,
-        Collection $styles,
-        Collection $channels,
         Collection $linkDataByCampaignId,
     ): void {
         if (CampaignReport::query()->exists()) {
@@ -144,14 +139,12 @@ class ReportsSeeder extends Seeder
 
         foreach ($campaigns as $campaign) {
             $linkData = $linkDataByCampaignId->get($campaign->campaign_id);
-            $style = $styles->firstWhere('code', $linkData?->style_code) ?? ($styles->isNotEmpty() ? $styles->random() : null);
-            $channel = $channels->firstWhere('code', $linkData?->channel_code) ?? ($channels->isNotEmpty() ? $channels->random() : null);
 
             for ($day = self::CAMPAIGN_REPORT_DAYS; $day >= 0; $day--) {
                 $date = $now->copy()->subDays($day)->toDateString();
                 $realtimeId = $linkData ? ($realtimeMap[$linkData->id.'|'.$date] ?? null) : null;
 
-                $rows[] = CampaignReport::factory()->make([
+                $row = CampaignReport::factory()->make([
                     'realtime_report_id' => $realtimeId,
                     'date_start' => $date,
                     'account_id' => $campaign->account_id,
@@ -162,11 +155,13 @@ class ReportsSeeder extends Seeder
                     'ads_type' => $campaign->ads_type,
                     'daily_budget' => $campaign->daily_budget,
                     'lifetime_budget' => $campaign->lifetime_budget,
-                    'style_code' => $style?->code,
-                    'style_name' => $style?->name,
-                    'channel_code' => $channel?->code,
-                    'channel_name' => $channel?->name,
-                ])->toArray();
+                    'style_code' => $linkData?->style_code,
+                    'style_name' => $linkData?->style_code,
+                    'channel_code' => $linkData?->channel_code,
+                    'channel_name' => $linkData?->channel_code,
+                ])->getAttributes();
+                $row['date_start'] = $date;
+                $rows[] = $row;
 
                 if (count($rows) >= self::CHUNK_SIZE) {
                     DB::table('campaign_reports')->insert($rows);

@@ -35,15 +35,4 @@ final class MainTeamReportDataScope
                 ->where('main_teams.sync_campaign_reports', false);
         });
     }
-
-    public static function excludeNonFetchableChannels(Builder $query, string $channelColumn = 'channel_code'): void
-    {
-        $query->whereNotIn($channelColumn, function ($subquery): void {
-            $subquery->select('channels.code')
-                ->from('channels')
-                ->join('main_teams', 'main_teams.id', '=', 'channels.main_team_id')
-                ->whereNotNull('channels.code')
-                ->where('main_teams.sync_campaign_reports', false);
-        });
-    }
 }

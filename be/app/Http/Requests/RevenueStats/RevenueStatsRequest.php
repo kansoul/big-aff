@@ -40,7 +40,7 @@ class RevenueStatsRequest extends FormRequest
             'account_ids' => ['nullable', 'array'],
             'account_ids.*' => ['integer', 'exists:accounts,id'],
             'channel_codes' => ['nullable', 'array'],
-            'channel_codes.*' => ['string', 'exists:channels,code'],
+            'channel_codes.*' => ['string'],
         ];
     }
 

@@ -27,7 +27,6 @@ class ListFollowsRequest extends FormRequest
             $this->sortRules(ListFollowsAction::ORDERABLE_COLUMNS),
             'query' => ['nullable', 'string', 'max:255'],
             'site_id' => ['nullable', 'integer', 'exists:sites,id'],
-            'post_id' => ['nullable', 'integer', 'exists:posts,id'],
         ];
     }
 }

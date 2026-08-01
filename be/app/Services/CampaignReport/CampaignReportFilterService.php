@@ -4,8 +4,8 @@ namespace App\Services\CampaignReport;
 
 use App\Models\Account;
 use App\Models\CampaignReport;
-use App\Models\Channel;
 use App\Models\LinkData;
+use App\Models\RevenueReport;
 use App\Models\User;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,10 +39,57 @@ class CampaignReportFilterService
             'users' => $this->users($ownership),
             'accounts' => $this->accounts($ownership),
             'campaigns' => $this->campaigns($ownership),
-            'channels' => $this->channels($ownership),
+            'styles' => $this->reportStyles($ownership),
+            'channels' => $this->reportChannels($ownership),
             'link_data_ids' => $this->linkDataIds($ownership),
             'ads_types' => self::ADS_TYPES,
         ];
+    }
+
+    /**
+     * Historical style snapshots from revenue reports; no Style entity is involved.
+     *
+     * @return array<int, array{code: string, name: string|null}>
+     */
+    private function reportStyles(OwnershipFilter $ownership): array
+    {
+        $query = RevenueReport::query()
+            ->select(['style_code', 'style_name'])
+            ->whereNotNull('style_code')
+            ->groupBy('style_code', 'style_name')
+            ->orderBy('style_code');
+
+        $ownership->applyTo($query, 'owner_user_id');
+
+        return $query->get()
+            ->map(fn (RevenueReport $report) => [
+                'code' => (string) $report->style_code,
+                'name' => $report->style_name,
+            ])
+            ->all();
+    }
+
+    /**
+     * Historical channel snapshots from revenue reports; no Channel entity is involved.
+     *
+     * @return array<int, array{code: string, name: string|null}>
+     */
+    private function reportChannels(OwnershipFilter $ownership): array
+    {
+        $query = RevenueReport::query()
+            ->select(['channel_code', 'channel_name'])
+            ->whereNotNull('channel_code')
+            ->groupBy('channel_code', 'channel_name')
+            ->orderBy('channel_code');
+
+        $ownership->applyTo($query, 'owner_user_id');
+
+        return $query->get()
+            ->map(fn (RevenueReport $report) => [
+                'code' => (string) $report->channel_code,
+                'name' => $report->channel_name,
+            ])
+            ->all();
     }
 
     /**
@@ -110,27 +157,6 @@ class CampaignReportFilterService
                 'campaign_name' => $r->campaign_name,
                 'ads_type' => $r->ads_type,
                 'account_id' => $r->account_id !== null ? (string) $r->account_id : null,
-            ])
-            ->all();
-    }
-
-    /**
-     * @return array<int, array{code: string, name: string|null}>
-     */
-    private function channels(OwnershipFilter $ownership): array
-    {
-        $query = Channel::query()
-            ->select(['code', 'name'])
-            ->whereNotNull('code')
-            ->groupBy('code', 'name')
-            ->orderBy('code');
-
-        $ownership->applyThroughChannel($query, 'code');
-
-        return $query->get()
-            ->map(fn (Channel $c) => [
-                'code' => (string) $c->code,
-                'name' => $c->name,
             ])
             ->all();
     }

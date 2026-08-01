@@ -19,10 +19,7 @@ class StoreAdsLinkRequest extends FormRequest
     {
         return [
             'site_id' => ['required', 'integer', 'exists:sites,id'],
-            'post_id' => ['required', 'integer', 'exists:posts,id'],
-            'channel_code' => ['required', 'string', 'exists:channels,code'],
             'rac' => ['required', 'string'],
-            'keyword_set_id' => ['nullable', 'integer', 'exists:keyword_sets,id'],
             'note' => ['nullable', 'string'],
             'googleid' => ['nullable', 'string'],
             'tiktokid' => ['nullable', 'string'],

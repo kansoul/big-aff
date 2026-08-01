@@ -2,21 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Enums\TeamRole;
 use App\Models\Account;
 use App\Models\AdsLink;
 use App\Models\BusinessCenter;
 use App\Models\Campaign;
-use App\Models\Channel;
-use App\Models\ChannelUser;
 use App\Models\Follow;
-use App\Models\KeywordSet;
 use App\Models\LinkData;
-use App\Models\Post;
-use App\Models\Site;
-use App\Models\Style;
 use App\Models\Team;
-use App\Models\TeamUser;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -24,22 +16,12 @@ use Illuminate\Support\Collection;
 /**
  * Seeds the advertising domain. All cross-table IDs are guaranteed to be consistent:
  *   - `campaigns.account_id`          → `accounts.account_id` (business string)
- *   - `ads_links.channel_code`        → `channels.code`
- *   - `ads_links.style_code`          → `styles.code`
  *   - `link_datas.campaign_id`        → `campaigns.campaign_id`
- *   - `link_datas.channel_code`       → `channels.code`
- *   - `link_datas.style_code`         → `styles.code`
- *   - `follows.style_code/channel_code` → real style/channel codes
- *
- * `channel_user` is only populated for users who are **leader** or **member** on a team so
- * revenue rollups (which join through `channel_user`) exclude admin and managers.
+ *   - `link_datas.channel_code`       → historical reporting snapshot
+ *   - `link_datas.style_code`         → historical reporting snapshot
  */
 class AdsSeeder extends Seeder
 {
-    private const STYLE_COUNT = 10;
-
-    private const CHANNEL_COUNT = 12;
-
     private const BUSINESS_CENTER_COUNT = 4;
 
     private const ACCOUNT_COUNT = 10;
@@ -56,14 +38,6 @@ class AdsSeeder extends Seeder
             ->get();
 
         $teams = Team::query()->get();
-        $sites = Site::query()->limit(10)->get();
-        $posts = Post::query()->limit(30)->get();
-        $keywordSets = KeywordSet::query()->limit(15)->get();
-
-        $styles = $this->seedStyles($admin);
-        $channels = $this->seedChannels($admin);
-        $this->attachChannelsToLeaderAndMemberUsers($channels);
-
         $businessCenters = $this->seedBusinessCenters($admin, $teams);
 
         $accounts = $this->seedAccounts($admin, $managers, $teams, $businessCenters);
@@ -71,99 +45,11 @@ class AdsSeeder extends Seeder
 
         $campaigns = $this->seedCampaigns($accounts, $admin);
 
-        [$adsLinks, $linkDataList] = $this->seedAdsLinksAndLinkData(
-            $campaigns,
-            $styles,
-            $channels,
-            $keywordSets,
-            $sites,
-            $posts,
-            $admin,
-        );
+        [, $linkDataList] = $this->seedAdsLinksAndLinkData($campaigns, $admin);
 
-        $this->seedFollows($sites, $posts, $adsLinks, $styles, $channels);
+        $this->seedFollows();
 
         unset($linkDataList);
-    }
-
-    /**
-     * @return Collection<int, Style>
-     */
-    private function seedStyles(User $admin): Collection
-    {
-        if (Style::query()->count() >= self::STYLE_COUNT) {
-            return Style::query()->limit(self::STYLE_COUNT)->get();
-        }
-
-        $missing = self::STYLE_COUNT - Style::query()->count();
-
-        Style::factory()
-            ->count($missing)
-            ->create()
-            ->each(function (Style $style) use ($admin): void {
-                $style->update(['created_by' => $admin->id, 'updated_by' => $admin->id]);
-            });
-
-        return Style::query()->limit(self::STYLE_COUNT)->get();
-    }
-
-    /**
-     * @return Collection<int, Channel>
-     */
-    private function seedChannels(User $admin): Collection
-    {
-        if (Channel::query()->count() >= self::CHANNEL_COUNT) {
-            return Channel::query()->limit(self::CHANNEL_COUNT)->get();
-        }
-
-        $missing = self::CHANNEL_COUNT - Channel::query()->count();
-
-        Channel::factory()
-            ->count($missing)
-            ->create()
-            ->each(function (Channel $channel) use ($admin): void {
-                $channel->update(['created_by' => $admin->id, 'updated_by' => $admin->id]);
-            });
-
-        return Channel::query()->limit(self::CHANNEL_COUNT)->get();
-    }
-
-    /**
-     * Enforce the domain rule **1 channel = 1 user**:
-     * each channel is owned by exactly one leader/member user, distributed round-robin
-     * across all leader/member users so dashboard revenue attributes cleanly per team.
-     *
-     * @param  Collection<int, Channel>  $channels
-     */
-    private function attachChannelsToLeaderAndMemberUsers(Collection $channels): void
-    {
-        if ($channels->isEmpty()) {
-            return;
-        }
-
-        $revenueUserIds = TeamUser::query()
-            ->whereIn('team_role', [TeamRole::LEADER, TeamRole::MEMBER])
-            ->pluck('user_id')
-            ->unique()
-            ->values()
-            ->all();
-
-        if ($revenueUserIds === []) {
-            return;
-        }
-
-        // Reset the pivot (hard delete — unique index on (user_id, channel_id) ignores soft-deletes)
-        // so the 1-channel-per-user rule is applied idempotently.
-        ChannelUser::query()->whereIn('channel_id', $channels->pluck('id'))->forceDelete();
-
-        foreach ($channels->values() as $index => $channel) {
-            $userId = $revenueUserIds[$index % count($revenueUserIds)];
-
-            ChannelUser::query()->create([
-                'user_id' => $userId,
-                'channel_id' => $channel->id,
-            ]);
-        }
     }
 
     /**
@@ -298,20 +184,10 @@ class AdsSeeder extends Seeder
      * campaign_id / style_code / channel_code without orphan rows.
      *
      * @param  Collection<int, Campaign>  $campaigns
-     * @param  Collection<int, Style>  $styles
-     * @param  Collection<int, Channel>  $channels
-     * @param  Collection<int, KeywordSet>  $keywordSets
-     * @param  Collection<int, Site>  $sites
-     * @param  Collection<int, Post>  $posts
      * @return array{0: Collection<int, AdsLink>, 1: Collection<int, LinkData>}
      */
     private function seedAdsLinksAndLinkData(
         Collection $campaigns,
-        Collection $styles,
-        Collection $channels,
-        Collection $keywordSets,
-        Collection $sites,
-        Collection $posts,
         User $admin,
     ): array {
         $adsLinks = collect();
@@ -326,24 +202,17 @@ class AdsSeeder extends Seeder
                 continue;
             }
 
-            $style = $styles->random();
-            $channel = $channels->random();
-            $keywordSet = $keywordSets->isNotEmpty() ? $keywordSets->random() : null;
-            $site = $sites->isNotEmpty() ? $sites->random() : null;
-            $post = $posts->isNotEmpty() ? $posts->random() : null;
-
             $adsLink = AdsLink::factory()->create([
-                'site_id' => $site?->id,
-                'post_id' => $post?->id,
                 'rac' => 'https://example.com/redirect/'.$campaign->campaign_id,
                 'note' => 'Seed link for '.$campaign->campaign_name,
-                'style_code' => $style->code,
-                'channel_code' => $channel->code,
-                'keyword_set_id' => $keywordSet?->id,
-                'tracking_ids' => [
-                    'fb_id' => fake()->numerify('##########'),
-                    'customer_id' => fake()->numerify('##########'),
-                ],
+                'tracking_ids' => $campaign->ads_type === 'tiktok'
+                    ? [
+                        'tiktokid' => [fake()->numerify('###################')],
+                        'tiktok_pixel_id' => [fake()->bothify('C??????????????????')],
+                    ]
+                    : [
+                        'googleid' => [fake()->numerify('##########')],
+                    ],
                 'created_by' => $campaign->created_by ?? $admin->id,
                 'updated_by' => $campaign->updated_by ?? $admin->id,
             ]);
@@ -352,8 +221,8 @@ class AdsSeeder extends Seeder
                 'ads_link_id' => $adsLink->id,
                 // campaign_id references campaigns.campaign_id (business string), unique.
                 'campaign_id' => $campaign->campaign_id,
-                'style_code' => $style->code,
-                'channel_code' => $channel->code,
+                'style_code' => 'report-style-'.$campaign->campaign_id,
+                'channel_code' => 'report-'.$campaign->campaign_id,
                 'created_by' => $campaign->created_by ?? $admin->id,
                 'updated_by' => $campaign->updated_by ?? $admin->id,
             ]);
@@ -365,37 +234,16 @@ class AdsSeeder extends Seeder
         return [$adsLinks, $linkData];
     }
 
-    /**
-     * @param  Collection<int, Site>  $sites
-     * @param  Collection<int, Post>  $posts
-     * @param  Collection<int, AdsLink>  $adsLinks
-     * @param  Collection<int, Style>  $styles
-     * @param  Collection<int, Channel>  $channels
-     */
-    private function seedFollows(
-        Collection $sites,
-        Collection $posts,
-        Collection $adsLinks,
-        Collection $styles,
-        Collection $channels,
-    ): void {
+    private function seedFollows(): void
+    {
         if (Follow::query()->count() >= self::FOLLOW_COUNT) {
             return;
         }
-
-        // Unused $sites/$adsLinks reference — site_id and ads_link_id were removed by the
-        // 2026_04_14 migration, so follows only carry email/post_id/style/channel snapshots.
-        unset($sites, $adsLinks);
 
         $missing = self::FOLLOW_COUNT - Follow::query()->count();
 
         Follow::factory()
             ->count($missing)
-            ->state(fn () => [
-                'post_id' => $posts->isNotEmpty() ? $posts->random()->id : null,
-                'style_code' => $styles->isNotEmpty() ? $styles->random()->code : null,
-                'channel_code' => $channels->isNotEmpty() ? $channels->random()->code : null,
-            ])
             ->create();
     }
 }

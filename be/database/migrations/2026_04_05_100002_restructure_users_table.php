@@ -10,7 +10,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('style_id')->nullable()->constrained('styles')->nullOnDelete();
             $table->unsignedBigInteger('avatar_id')->nullable();
             $table->enum('status', UserStatus::values())->default(UserStatus::Active->value);
             $table->text('description')->nullable();
@@ -50,13 +49,11 @@ return new class extends Migration
         });
 
         Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['style_id']);
             $table->dropForeign(['created_by']);
         });
 
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn([
-                'style_id',
                 'avatar_id',
                 'status',
                 'description',

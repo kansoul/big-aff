@@ -17,6 +17,7 @@ class InsightReportFactory extends Factory
      */
     public function definition(): array
     {
+        $accountPrefix = fake()->randomElement(['goog_', 'tt_']);
         $reach = fake()->numberBetween(500, 50_000);
         $impressions = (int) ($reach * fake()->randomFloat(2, 1.0, 2.5));
         $clicks = (int) ($impressions * fake()->randomFloat(4, 0.005, 0.05));
@@ -32,8 +33,8 @@ class InsightReportFactory extends Factory
         $searchClicks = (int) ($searchViews * fake()->randomFloat(4, 0.01, 0.1));
 
         return [
-            'account_id' => 'act_'.fake()->numerify('##########'),
-            'campaign_id' => 'camp_'.fake()->numerify('##############'),
+            'account_id' => $accountPrefix.fake()->numerify('##########'),
+            'campaign_id' => fake()->numerify('##############'),
             'date_start' => fake()->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),
             'impressions' => $impressions,
             'reach' => $reach,

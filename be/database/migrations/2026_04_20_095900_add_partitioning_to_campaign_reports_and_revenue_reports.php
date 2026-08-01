@@ -17,6 +17,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         // ── campaign_reports ─────────────────────────────────────────────
         // 1. Drop existing unique (campaign_id, date_start) — will re-add after PK change.
         // 2. Drop auto-increment PK and re-create as composite (id, date_start).
@@ -96,6 +100,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         // ── campaign_reports — remove partitioning, restore original PK ──
         DB::statement('ALTER TABLE `campaign_reports` REMOVE PARTITIONING');
         DB::statement('ALTER TABLE `campaign_reports` DROP INDEX `campaign_reports_campaign_id_date_start_unique`');

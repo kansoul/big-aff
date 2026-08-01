@@ -3,12 +3,9 @@
 namespace App\Models\Traits\Relationship;
 
 use App\Models\Account;
-use App\Models\Channel;
 use App\Models\File;
-use App\Models\Post;
 use App\Models\Role;
 use App\Models\Site;
-use App\Models\Style;
 use App\Models\Team;
 use App\Models\TeamUser;
 use App\Models\User;
@@ -27,11 +24,6 @@ trait UserRelationship
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
-    }
-
-    public function style(): BelongsTo
-    {
-        return $this->belongsTo(Style::class);
     }
 
     public function avatar(): BelongsTo
@@ -105,16 +97,6 @@ trait UserRelationship
     }
 
     /**
-     * Posts assigned to this user (view-only access).
-     *
-     * @return BelongsToMany<Post, $this>
-     */
-    public function assignedPosts(): BelongsToMany
-    {
-        return $this->belongsToMany(Post::class, 'post_user')->withTimestamps();
-    }
-
-    /**
      * Accounts assigned to this user.
      *
      * @return BelongsToMany<Account, $this>
@@ -123,18 +105,5 @@ trait UserRelationship
     {
         return $this->belongsToMany(Account::class)
             ->withTimestamps();
-    }
-
-    /**
-     * Channels assigned to this user.
-     *
-     * @return BelongsToMany<Channel, $this>
-     */
-    public function channels(): BelongsToMany
-    {
-        return $this->belongsToMany(Channel::class, 'channel_user')
-            ->withTimestamps()
-            ->withPivot('deleted_at')
-            ->wherePivotNull('deleted_at');
     }
 }

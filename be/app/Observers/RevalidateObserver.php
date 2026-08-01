@@ -2,10 +2,7 @@
 
 namespace App\Observers;
 
-use App\Enums\PostStatus;
-use App\Enums\PostType;
 use App\Models\AdsLink;
-use App\Models\Post;
 use App\Models\Site;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Client\ConnectionException;
@@ -66,16 +63,6 @@ class RevalidateObserver
      */
     protected function resolveUrls(Model $model): array
     {
-        if ($model instanceof Post) {
-            return Site::query()
-                ->pluck('url')
-                ->filter()
-                ->unique()
-                ->map(fn (string $siteUrl) => $siteUrl.'/api/ran?re-tag='.$model->slug)
-                ->values()
-                ->all();
-        }
-
         if ($model instanceof Site) {
             $domain = parse_url($model->url, PHP_URL_HOST) ?: $model->url;
             $domain = preg_replace('/^https?:\/\//', '', $domain);
@@ -99,14 +86,6 @@ class RevalidateObserver
 
     protected function shouldRevalidate(Model $model): bool
     {
-        if ($model instanceof Post) {
-            return match ($model->type) {
-                PostType::AI => in_array($model->status, [PostStatus::DRAFT, PostStatus::PUBLISHED], true),
-                PostType::NORMAL, PostType::WORDPRESS => $model->status === PostStatus::PUBLISHED,
-                default => false,
-            };
-        }
-
         return true;
     }
 }

@@ -22,8 +22,6 @@ class StoreMainTeamRequest extends FormRequest
             'sync_campaign_reports' => ['nullable', 'boolean'],
             'account_ids' => ['sometimes', 'array'],
             'account_ids.*' => ['string', 'max:255'],
-            'channel_codes' => ['sometimes', 'array'],
-            'channel_codes.*' => ['string', 'max:100'],
         ];
     }
 }

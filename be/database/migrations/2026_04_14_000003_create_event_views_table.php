@@ -9,10 +9,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('event_views', function (Blueprint $table) {
+        $isMysql = DB::getDriverName() === 'mysql';
+
+        Schema::create('event_views', function (Blueprint $table) use ($isMysql) {
             // Composite PK (id, created_at) is required by MySQL RANGE partitioning —
             // the partition column must be part of every unique/primary key.
-            $table->bigIncrements('id');
+            $isMysql ? $table->unsignedBigInteger('id')->autoIncrement() : $table->id();
             $table->uuid('session_id')->nullable()->index();
             $table->unsignedBigInteger('link_data_id')->nullable();
             $table->string('campaign_id')->nullable();
@@ -29,7 +31,9 @@ return new class extends Migration
             $table->index(['link_data_id', 'created_at'], 'idx_event_views_link_date');
 
             // Widen primary key to include partition column
-            $table->primary(['id', 'created_at']);
+            if ($isMysql) {
+                $table->primary(['id', 'created_at']);
+            }
         });
 
         // FK constraints are intentionally omitted — they are incompatible with MySQL
@@ -38,7 +42,8 @@ return new class extends Migration
 
         // RANGE partitioning by month — allows the query planner to prune irrelevant
         // partitions and lets old months be dropped cheaply via DROP PARTITION.
-        DB::statement("
+        if ($isMysql) {
+            DB::statement("
             ALTER TABLE `event_views`
             PARTITION BY RANGE (UNIX_TIMESTAMP(`created_at`)) (
                 PARTITION p202601 VALUES LESS THAN (UNIX_TIMESTAMP('2026-02-01 00:00:00')),
@@ -55,7 +60,8 @@ return new class extends Migration
                 PARTITION p202612 VALUES LESS THAN (UNIX_TIMESTAMP('2027-01-01 00:00:00')),
                 PARTITION p_future VALUES LESS THAN MAXVALUE
             )
-        ");
+            ");
+        }
     }
 
     public function down(): void

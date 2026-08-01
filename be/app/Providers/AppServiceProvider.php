@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Models\AdsLink;
-use App\Models\Post;
 use App\Models\Site;
 use App\Observers\RevalidateObserver;
 use App\Services\Storage\StorageService;
@@ -29,7 +28,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Post::observe(RevalidateObserver::class);
         Site::observe(RevalidateObserver::class);
         AdsLink::observe(RevalidateObserver::class);
 

@@ -3,15 +3,14 @@
 namespace App\Actions\AdsLink;
 
 use App\Models\AdsLink;
-use App\Models\Post;
 use App\Models\Site;
 use App\Services\AdsLink\RACValidationService;
-use App\Support\OwnerResource\PostOwnerResource;
 use App\Support\OwnerResource\SiteOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CreateAdsLinkAction
@@ -30,9 +29,6 @@ class CreateAdsLinkAction
         $site = Site::query()->findOrFail($data['site_id']);
         (new SiteOwnerResource)->authorize($site);
 
-        $post = Post::query()->findOrFail($data['post_id']);
-        (new PostOwnerResource)->authorize($post);
-
         $racValidation = $this->racValidationService->validateRAC($data['rac'] ?? '');
         if (! $racValidation['is_valid']) {
             throw ValidationException::withMessages([
@@ -40,8 +36,7 @@ class CreateAdsLinkAction
             ]);
         }
 
-        $styleCode = $user?->style?->style_code ?? $site->settings['default_style'] ?? null;
-        $baseSlug = $post->slug;
+        $baseSlug = Str::slug($site->name ?: 'ads-link');
 
         $trackingIds = [];
         if (! empty($data['googleid'])) {
@@ -53,19 +48,15 @@ class CreateAdsLinkAction
         }
 
         try {
-            return DB::transaction(function () use ($data, $styleCode, $baseSlug, $trackingIds, $user): AdsLink {
+            return DB::transaction(function () use ($data, $baseSlug, $trackingIds, $user): AdsLink {
                 $slug = $this->generateUniqueSlug($baseSlug);
 
                 return AdsLink::query()->create([
                     'site_id' => $data['site_id'],
-                    'post_id' => $data['post_id'],
                     'slug' => $slug,
                     'rac' => $data['rac'],
                     'note' => $data['note'] ?? null,
                     'is_hidden' => false,
-                    'channel_code' => $data['channel_code'],
-                    'style_code' => $styleCode,
-                    'keyword_set_id' => $data['keyword_set_id'] ?? null,
                     'tracking_ids' => $trackingIds,
                     'created_by' => $user?->id,
                     'updated_by' => $user?->id,

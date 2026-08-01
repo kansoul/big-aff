@@ -16,9 +16,7 @@ class SubscribeFollowAction
                 'email' => $data['email'],
             ],
             [
-                'post_id' => $data['post_id'] ?? null,
                 'style_code' => $data['style'] ?? null,
-                'channel_code' => $data['channel'] ?? null,
             ]
         );
     }

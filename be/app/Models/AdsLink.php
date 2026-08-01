@@ -13,14 +13,10 @@ class AdsLink extends Model
 
     protected $fillable = [
         'site_id',
-        'post_id',
         'slug',
         'rac',
         'note',
         'is_hidden',
-        'channel_code',
-        'style_code',
-        'keyword_set_id',
         'tracking_ids',
         'is_old',
         'created_by',

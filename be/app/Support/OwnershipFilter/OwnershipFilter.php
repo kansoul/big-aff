@@ -5,8 +5,6 @@ namespace App\Support\OwnershipFilter;
 use App\Enums\TeamRole;
 use App\Models\Account;
 use App\Models\BusinessCenter;
-use App\Models\Channel;
-use App\Models\Post;
 use App\Models\Site;
 use App\Models\Team;
 use App\Models\TeamUser;
@@ -140,8 +138,7 @@ final readonly class OwnershipFilter
      *
      * The subquery returns `accounts.account_id` (the string business ID used by
      * `insight_reports`, `campaign_reports`, etc.) to match the `account_id` column
-     * convention on report tables, mirroring how `applyThroughChannel` returns
-     * `channels.code`.
+     * convention on report tables.
      *
      * @template TModel of \Illuminate\Database\Eloquent\Model
      *
@@ -156,28 +153,6 @@ final readonly class OwnershipFilter
             fn (array $ids) => Account::join('account_user', 'account_user.account_id', '=', 'accounts.id')
                 ->whereIn('account_user.user_id', $ids)
                 ->select('accounts.account_id'),
-        );
-    }
-
-    /**
-     * Apply ownership through the `channel_user` pivot table.
-     * Ownership is determined by which channels the allowed users have access to,
-     * not by `channels.created_by`.
-     *
-     * @template TModel of \Illuminate\Database\Eloquent\Model
-     *
-     * @param  Builder<TModel>  $query
-     * @param  string  $column  Foreign key column on the current model (default: 'channel_code')
-     */
-    public function applyThroughChannel(Builder $query, string $column = 'channel_code'): void
-    {
-        $this->applyThrough(
-            $query,
-            $column,
-            fn (array $ids) => Channel::join('channel_user', 'channel_user.channel_id', '=', 'channels.id')
-                ->whereIn('channel_user.user_id', $ids)
-                ->whereNull('channel_user.deleted_at')
-                ->select('channels.code'),
         );
     }
 

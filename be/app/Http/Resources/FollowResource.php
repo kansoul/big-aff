@@ -20,10 +20,7 @@ class FollowResource extends JsonResource
             'id' => $this->id,
             'email' => $this->email,
             'site_id' => $this->site_id,
-            'post_id' => $this->post_id,
             'ads_link_id' => $this->ads_link_id,
-            'style_code' => $this->style_code,
-            'channel_code' => $this->channel_code,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

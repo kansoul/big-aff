@@ -25,21 +25,10 @@ return new class extends Migration
                 ->nullOnDelete();
         });
 
-        Schema::table('channels', function (Blueprint $table) {
-            $table->foreignId('main_team_id')
-                ->nullable()
-                ->after('id')
-                ->constrained('main_teams')
-                ->nullOnDelete();
-        });
     }
 
     public function down(): void
     {
-        Schema::table('channels', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('main_team_id');
-        });
-
         Schema::table('accounts', function (Blueprint $table) {
             $table->dropConstrainedForeignId('main_team_id');
         });

@@ -3,7 +3,8 @@
 namespace App\Actions\RevenueChartReport;
 
 use App\Models\RevenueChartReport;
-use App\Support\OwnerResource\ChannelLinkedOwnerResource;
+use App\Models\RevenueReport;
+use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -58,7 +59,13 @@ class GetRevenueChartReportAction
             ->groupBy('datetime')
             ->orderBy('datetime');
 
-        (new ChannelLinkedOwnerResource)->applyTo($query);
+        OwnershipFilter::forAuthUser()->applyThrough(
+            $query,
+            'channel_code',
+            fn (array $ids) => RevenueReport::query()
+                ->whereIn('owner_user_id', $ids)
+                ->select('channel_code'),
+        );
 
         if (! empty($filters['channel_codes'])) {
             $query->whereIn('channel_code', $filters['channel_codes']);

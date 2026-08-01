@@ -19,7 +19,7 @@ class GetAnalyticsTrackingFilterOptionsAction
             ->whereNotNull('ads_link_id');
 
         if (! $ownership->isAdmin()) {
-            $ownership->applyThroughChannel($linkDataQuery);
+            $ownership->applyTo($linkDataQuery);
         }
 
         $linkDatas = $linkDataQuery

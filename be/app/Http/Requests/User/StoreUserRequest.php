@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\User;
 
-use App\Enums\Permission;
 use App\Enums\TeamRole;
 use App\Models\TeamUser;
 use App\Models\User;
@@ -32,10 +31,6 @@ class StoreUserRequest extends FormRequest
             'role_id' => ['required', 'integer', 'exists:roles,id'],
             'team_id' => ['nullable', 'integer', 'exists:teams,id'],
         ];
-
-        if ($auth && ($auth->is_admin || $auth->hasPermissionFlag(Permission::StylesView))) {
-            $rules['style_id'] = ['nullable', 'integer', 'exists:styles,id'];
-        }
 
         return $rules;
     }

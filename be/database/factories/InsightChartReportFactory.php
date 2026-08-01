@@ -19,14 +19,15 @@ class InsightChartReportFactory extends Factory
      */
     public function definition(): array
     {
+        $accountPrefix = fake()->randomElement(['goog_', 'tt_']);
         $impressions = fake()->numberBetween(100, 200_000);
         $reach = (int) max(1, round($impressions / fake()->randomFloat(2, 1.1, 2.5)));
         $clicks = (int) max(0, round($impressions * fake()->randomFloat(4, 0.002, 0.08)));
         $spend = round($clicks * fake()->randomFloat(2, 0.05, 1.2), 2);
 
         return [
-            'account_id' => fake()->bothify('act_##########'),
-            'campaign_id' => fake()->bothify('camp_############'),
+            'account_id' => fake()->bothify($accountPrefix.'##########'),
+            'campaign_id' => fake()->numerify('##############'),
             'datetime_start' => fake()->dateTimeBetween('-7 days', 'now'),
             'impressions' => $impressions,
             'reach' => $reach,

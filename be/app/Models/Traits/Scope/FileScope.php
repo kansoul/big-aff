@@ -13,12 +13,12 @@ trait FileScope
             return $query;
         }
 
-        $postsDirectoryPrefix = trim((string) config('filesystems.uploads.directories.posts', 'media/posts'), '/');
+        $mediaDirectoryPrefix = trim((string) config('filesystems.uploads.directories.media', 'media'), '/');
 
-        return $query->where(function (Builder $directoryQuery) use ($postsDirectoryPrefix): void {
+        return $query->where(function (Builder $directoryQuery) use ($mediaDirectoryPrefix): void {
             $directoryQuery
-                ->where('path', $postsDirectoryPrefix)
-                ->orWhere('path', 'like', $postsDirectoryPrefix.'/%');
+                ->where('path', $mediaDirectoryPrefix)
+                ->orWhere('path', 'like', $mediaDirectoryPrefix.'/%');
         });
     }
 }

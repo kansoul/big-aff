@@ -52,7 +52,7 @@ class CampaignReportFactory extends Factory
             'date_start' => fake()->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),
             'account_id' => null, // override in seeder
             'account_name' => fake()->company().' Ads',
-            'campaign_id' => 'camp_'.fake()->unique()->numerify('##############'),
+            'campaign_id' => fake()->unique()->numerify('##############'),
             'campaign_name' => ucfirst(fake()->words(fake()->numberBetween(3, 5), true)),
             'campaign_status' => fake()->randomElement(['ACTIVE', 'ACTIVE', 'PAUSED', 'ARCHIVED']),
             'ads_type' => $adsType,

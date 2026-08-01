@@ -20,8 +20,6 @@ class UpdateAdsLinkRequest extends FormRequest
     {
         return [
             'rac' => ['nullable', 'string'],
-            'channel_code' => ['nullable', 'string'],
-            'keyword_set_id' => ['nullable', 'integer', 'exists:keyword_sets,id'],
             'googleid' => ['nullable', 'string'],
             'tiktokid' => ['nullable', 'string'],
             'tiktok_pixel_id' => ['nullable', 'string', 'max:255'],

@@ -23,7 +23,7 @@ class CampaignFactory extends Factory
 
         return [
             'account_id' => ($adsType === 'tiktok' ? 'tt_' : 'goog_').fake()->numerify('##########'),
-            'campaign_id' => 'camp_'.fake()->unique()->numerify('##############'),
+            'campaign_id' => fake()->unique()->numerify('##############'),
             'campaign_name' => ucfirst(fake()->words(fake()->numberBetween(3, 6), true)),
             'ads_type' => $adsType,
             'daily_budget' => fake()->optional(0.7)->randomFloat(2, 10, 1000),

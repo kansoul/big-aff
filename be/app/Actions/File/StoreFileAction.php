@@ -25,7 +25,7 @@ class StoreFileAction
         /** @var UploadedFile $uploadedFile */
         $uploadedFile = $data['file'];
 
-        $directory = isset($data['directory']) ? $data['directory'] : config('filesystems.uploads.directories.posts');
+        $directory = isset($data['directory']) ? $data['directory'] : config('filesystems.uploads.directories.media');
         $extension = $uploadedFile->getClientOriginalExtension();
         $fileName = Str::uuid().'.'.$extension;
 

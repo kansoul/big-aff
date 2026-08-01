@@ -27,7 +27,6 @@ class ListAdsLinksRequest extends FormRequest
             ...$this->sortRules(ListAdsLinksAction::ORDERABLE_COLUMNS),
             'keyword' => ['nullable', 'string', 'max:255'],
             'site_id' => ['nullable', 'integer'],
-            'channel_code' => ['nullable', 'string'],
             'created_by' => ['nullable', 'integer'],
             'pixel_id' => ['nullable', 'string', 'max:255'],
             'googleid' => ['nullable', 'string', 'max:255'],
@@ -37,7 +36,6 @@ class ListAdsLinksRequest extends FormRequest
             'date_range.from' => ['nullable', 'date'],
             'date_range.to' => ['nullable', 'date'],
             'is_hidden' => ['nullable', 'boolean'],
-            'post_id' => ['nullable', 'integer'],
         ];
     }
 }

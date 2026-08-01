@@ -2,16 +2,13 @@
 
 namespace App\Services\MainSystem;
 
-use App\Actions\MainSystem\ReceiveMainSystemChannelsAction;
 use App\Actions\MainSystem\ReceiveMainSystemInsightReportsAction;
-use App\Jobs\SendMainSystemChannelsJob;
 use App\Jobs\SendMainSystemInsightReportsJob;
 
 class MainSystemSyncService
 {
     public function __construct(
         private readonly ReceiveMainSystemInsightReportsAction $receiveInsightReportsAction,
-        private readonly ReceiveMainSystemChannelsAction $receiveChannelsAction,
         private readonly MainSystemHttpClient $mainSystemHttpClient,
     ) {}
 
@@ -21,14 +18,6 @@ class MainSystemSyncService
     public function receiveInsightReports(array $payload, ?string $token): void
     {
         $this->receiveInsightReportsAction->execute($payload, $token);
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     */
-    public function receiveChannels(array $payload, ?string $token): void
-    {
-        $this->receiveChannelsAction->execute($payload, $token);
     }
 
     /**
@@ -43,16 +32,6 @@ class MainSystemSyncService
         }
 
         SendMainSystemInsightReportsJob::dispatch($accounts, $campaigns, $insights)
-            ->onQueue(config('queue.queues.main-system-sync'));
-    }
-
-    public function dispatchChannels(): void
-    {
-        if (! $this->mainSystemHttpClient->shouldPush()) {
-            return;
-        }
-
-        SendMainSystemChannelsJob::dispatch()
             ->onQueue(config('queue.queues.main-system-sync'));
     }
 }

@@ -22,7 +22,7 @@ class ListMainTeamsAction
     public function execute(array $filters): LengthAwarePaginator
     {
         $query = MainTeam::query()
-            ->withCount(['accounts', 'channels']);
+            ->withCount('accounts');
 
         OwnershipFilter::forAuthUser()->applyTo($query);
 

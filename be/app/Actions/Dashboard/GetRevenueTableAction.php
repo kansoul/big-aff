@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
  * Attribution rules (to guarantee totals match GetInsightChartAction regardless
  * of how many users share an account or channel in the pivot tables):
  *   - Each account is attributed to a single "primary" user = MIN(user_id) on account_user.
- *   - Each channel is attributed to a single "primary" user = MIN(user_id) on channel_user.
+ *   - Revenue is attributed using the owner snapshot stored on each report row.
  *   - Each user is attributed to a single "primary" team by role priority:
  *     leader > member > manager. Users not in any team → "(No team)".
  */

@@ -8,34 +8,28 @@ use App\Http\Controllers\Api\AdsReportController;
 use App\Http\Controllers\Api\AnalyticsTrackingController;
 use App\Http\Controllers\Api\AssignController;
 use App\Http\Controllers\Api\Auth\AuthController;
-use App\Http\Controllers\Api\BlogController;
 use App\Http\Controllers\Api\BusinessCenterController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\CampaignReportController;
 use App\Http\Controllers\Api\CampaignRuleController;
 use App\Http\Controllers\Api\CampaignRuleSettingController;
 use App\Http\Controllers\Api\CampaignScheduleController;
-use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\GoogleConversionController;
 use App\Http\Controllers\Api\GtagController;
-use App\Http\Controllers\Api\InactiveStyleController;
 use App\Http\Controllers\Api\KeywordSetController;
 use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\MainSystemSyncController;
 use App\Http\Controllers\Api\MainTeamController;
 use App\Http\Controllers\Api\OptionController;
-use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\RevenueChartReportController;
 use App\Http\Controllers\Api\RevenueReportController;
 use App\Http\Controllers\Api\RevenueReportRangeController;
 use App\Http\Controllers\Api\RevenueStatsController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SiteController;
-use App\Http\Controllers\Api\StyleController;
 use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Api\UserController;
@@ -52,23 +46,13 @@ Route::middleware('check.whitelist')->group(function () {
         Route::post('/unsubscribe', [FollowController::class, 'unsubscribe']);
     });
     Route::get('/site/config', [SiteController::class, 'config']);
-    Route::get('/post/{slug}', [PostController::class, 'getPostBySlug']);
-    Route::get('/posts/search', [PostController::class, 'searchPosts']);
-    Route::get('/posts/latest', [PostController::class, 'getLatestPosts']);
     Route::post('/tracking/log', [TrackingController::class, 'storeLog']);
     Route::post('/tracking/ads-conversion', [TrackingController::class, 'storeAdsConversion']);
 
-    Route::prefix('blog')->group(function (): void {
-        Route::get('/posts', [BlogController::class, 'listPosts']);
-        Route::get('/posts/index', [BlogController::class, 'indexPosts']);
-        Route::get('/posts/{id}', [BlogController::class, 'showPost'])->whereNumber('id');
-        Route::get('/categories', [BlogController::class, 'listCategories']);
-    });
 });
 
 Route::prefix('main-system')->group(function () {
     Route::post('insight-reports', [MainSystemSyncController::class, 'receiveInsightReports']);
-    Route::post('channels', [MainSystemSyncController::class, 'receiveChannels']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -94,9 +78,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('options')->group(function () {
         Route::get('users', [OptionController::class, 'users']);
         Route::get('sites', [OptionController::class, 'sites']);
-        Route::get('posts', [OptionController::class, 'posts']);
-        Route::get('styles', [OptionController::class, 'styles']);
-        Route::get('channels', [OptionController::class, 'channels']);
         Route::get('accounts', [OptionController::class, 'accounts']);
         Route::get('teams', [OptionController::class, 'teams']);
         Route::get('business-centers', [OptionController::class, 'businessCenters']);
@@ -107,10 +88,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index'])
             ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
-        Route::get('channel-assignments', [AssignController::class, 'usersWithChannels'])
-            ->middleware('permission.scope:'.Permission::ChannelsAssign->value);
-        Route::get('post-assignments', [AssignController::class, 'usersWithPosts'])
-            ->middleware('permission.scope:'.Permission::PostsAssign->value);
         Route::get('account-assignments', [AssignController::class, 'usersWithAccounts'])
             ->middleware('permission.scope:'.Permission::AccountsAssign->value);
         Route::get('parent-child-assignments', [UserParentChildController::class, 'index'])
@@ -125,10 +102,6 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::SettingsUsersDelete->value);
         Route::post('{user}/assign-accounts', [AssignController::class, 'assignAccountsToUser'])
             ->middleware('permission.scope:'.Permission::AccountsAssign->value);
-        Route::post('{user}/assign-channels', [AssignController::class, 'assignChannelsToUser'])
-            ->middleware('permission.scope:'.Permission::ChannelsAssign->value);
-        Route::post('{user}/assign-posts', [AssignController::class, 'assignPostsToUser'])
-            ->middleware('permission.scope:'.Permission::PostsAssign->value);
         Route::get('{user}/team-options', [UserController::class, 'teamOptions'])
             ->middleware('permission.scope:'.Permission::SettingsUsersView->value);
     });
@@ -160,63 +133,6 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
         Route::get('{site}/user-options', [AssignController::class, 'siteUserOptions'])
             ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
-    });
-
-    Route::prefix('posts')->group(function () {
-        Route::get('/', [PostController::class, 'index'])
-            ->middleware('permission.scope:'.Permission::PostsView->value);
-        Route::post('/', [PostController::class, 'store'])
-            ->middleware('permission.scope:'.Permission::PostsCreate->value);
-        Route::get('{post}', [PostController::class, 'show'])
-            ->middleware('permission.scope:'.Permission::PostsView->value);
-        Route::get('{post}/user-options', [PostController::class, 'userOptions'])
-            ->middleware('permission.scope:'.Permission::PostsAssign->value);
-        Route::match(['put', 'patch'], '{post}', [PostController::class, 'update'])
-            ->middleware('permission.scope:'.Permission::PostsUpdate->value);
-        Route::delete('{post}', [PostController::class, 'destroy'])
-            ->middleware('permission.scope:'.Permission::PostsDelete->value);
-        Route::post('{post}/publish', [PostController::class, 'publish'])
-            ->middleware('permission.scope:'.Permission::PostsPublish->value);
-        Route::post('{post}/toggle-hidden', [PostController::class, 'toggleHidden'])
-            ->middleware('permission.scope:'.Permission::PostsUpdate->value);
-        Route::post('{post}/assign-users', [PostController::class, 'assignUsers'])
-            ->middleware('permission.scope:'.Permission::PostsAssign->value);
-    });
-
-    Route::prefix('categories')->group(function () {
-        $categoryListBits = implode('|', [
-            (string) Permission::CategoriesView->value,
-            (string) Permission::PostsCreate->value,
-            (string) Permission::PostsUpdate->value,
-        ]);
-        Route::get('/', [CategoryController::class, 'index'])
-            ->middleware('permission.scope:'.$categoryListBits);
-        Route::post('/', [CategoryController::class, 'store'])
-            ->middleware('permission.scope:'.Permission::CategoriesCreate->value);
-        Route::get('{category}', [CategoryController::class, 'show'])
-            ->middleware('permission.scope:'.Permission::CategoriesView->value);
-        Route::match(['put', 'patch'], '{category}', [CategoryController::class, 'update'])
-            ->middleware('permission.scope:'.Permission::CategoriesUpdate->value);
-        Route::delete('{category}', [CategoryController::class, 'destroy'])
-            ->middleware('permission.scope:'.Permission::CategoriesDelete->value);
-    });
-
-    Route::prefix('channels')->group(function () {
-        Route::get('/', [ChannelController::class, 'index'])
-            ->middleware('permission.scope:'.Permission::ChannelsView->value);
-        Route::post('/', [ChannelController::class, 'store'])
-            ->middleware('permission.scope:'.Permission::ChannelsCreate->value);
-        Route::delete('{channel}', [ChannelController::class, 'destroy'])
-            ->middleware('permission.scope:'.Permission::ChannelsDelete->value);
-    });
-
-    Route::prefix('styles')->group(function () {
-        Route::get('/', [StyleController::class, 'index'])
-            ->middleware('permission.scope:'.Permission::StylesView->value);
-        Route::post('/', [StyleController::class, 'store'])
-            ->middleware('permission.scope:'.Permission::StylesCreate->value);
-        Route::delete('{style}', [StyleController::class, 'destroy'])
-            ->middleware('permission.scope:'.Permission::StylesDelete->value);
     });
 
     Route::prefix('ads-links')->group(function () {
@@ -422,16 +338,6 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('stats', [AnalyticsTrackingController::class, 'stats']);
             Route::get('keywords', [AnalyticsTrackingController::class, 'keywords']);
         });
-
-    // Don't need
-    Route::prefix('inactive-styles')->group(function () {
-        Route::get('/', [InactiveStyleController::class, 'index'])
-            ->middleware('permission.scope:'.Permission::InactiveStylesView->value);
-        Route::delete('bulk', [InactiveStyleController::class, 'bulkDestroy'])
-            ->middleware('permission.scope:'.Permission::InactiveStylesDelete->value);
-        Route::delete('{user}', [InactiveStyleController::class, 'destroy'])
-            ->middleware('permission.scope:'.Permission::InactiveStylesDelete->value);
-    });
 
     Route::prefix('style-report-range')
         ->middleware('permission.scope:'.Permission::RevenueReportRangeView->value)

@@ -12,10 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('email', 255);
             $table->foreignId('site_id')->constrained('sites')->cascadeOnDelete();
-            $table->foreignId('post_id')->nullable()->constrained('posts')->nullOnDelete();
             $table->foreignId('ads_link_id')->nullable()->constrained('ads_links')->nullOnDelete();
-            $table->string('style_code', 100)->nullable()->comment('Snapshot');
-            $table->string('channel_code', 100)->nullable()->comment('Snapshot');
             $table->softDeletes();
             $table->timestamps();
 

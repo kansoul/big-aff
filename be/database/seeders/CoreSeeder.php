@@ -105,7 +105,6 @@ class CoreSeeder extends Seeder
                     Permission::AdsReportView->value,
                     Permission::AccountsView->value,
                     Permission::CampaignsView->value,
-                    Permission::ChannelsView->value,
                     Permission::TeamsView->value,
                 ]),
                 'created_by' => $admin->id,

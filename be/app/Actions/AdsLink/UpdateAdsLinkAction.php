@@ -64,14 +64,6 @@ class UpdateAdsLinkAction
             $payload['rac'] = $data['rac'];
         }
 
-        if (array_key_exists('keyword_set_id', $data)) {
-            $payload['keyword_set_id'] = $data['keyword_set_id'];
-        }
-
-        if ($adsLink->is_old && array_key_exists('channel_code', $data)) {
-            $payload['channel_code'] = $data['channel_code'];
-        }
-
         if (array_key_exists('note', $data)) {
             $payload['note'] = $data['note'];
         }

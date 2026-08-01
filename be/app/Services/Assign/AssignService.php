@@ -5,10 +5,6 @@ namespace App\Services\Assign;
 use App\Actions\Account\AssignAccountAction;
 use App\Actions\Account\GetAccountAssignOptionsAction;
 use App\Actions\Account\ListUsersWithAccountsAction;
-use App\Actions\Channel\AssignChannelAction;
-use App\Actions\Channel\ListUsersWithChannelsAction;
-use App\Actions\Post\AssignUserPostsAction;
-use App\Actions\Post\ListUsersWithPostsAction;
 use App\Actions\Site\AssignSiteAction;
 use App\Actions\Site\GetSiteUserOptionsAction;
 use App\Actions\Team\AssignTeamAction;
@@ -22,29 +18,14 @@ use Illuminate\Support\Collection;
 class AssignService
 {
     public function __construct(
-        private readonly ListUsersWithChannelsAction $listUsersWithChannelsAction,
-        private readonly AssignChannelAction $assignChannelAction,
         private readonly ListUsersWithAccountsAction $listUsersWithAccountsAction,
         private readonly GetAccountAssignOptionsAction $getAccountAssignOptionsAction,
         private readonly AssignAccountAction $assignAccountAction,
-        private readonly ListUsersWithPostsAction $listUsersWithPostsAction,
-        private readonly AssignUserPostsAction $assignUserPostsAction,
         private readonly GetSiteUserOptionsAction $getSiteUserOptionsAction,
         private readonly AssignSiteAction $assignSiteAction,
         private readonly GetTeamUserOptionsAction $getTeamUserOptionsAction,
         private readonly AssignTeamAction $assignTeamAction,
     ) {}
-
-    public function usersWithChannels(array $filters): LengthAwarePaginator
-    {
-        return $this->listUsersWithChannelsAction->execute($filters);
-    }
-
-    /** @return array{skipped_codes: list<string>} */
-    public function assignChannelsToUser(User $user, array $channelCodes): array
-    {
-        return $this->assignChannelAction->execute($user, $channelCodes);
-    }
 
     public function usersWithAccounts(array $filters): LengthAwarePaginator
     {
@@ -61,16 +42,6 @@ class AssignService
     public function assignAccountsToUser(User $user, array $accountIds): array
     {
         return $this->assignAccountAction->execute($user, $accountIds);
-    }
-
-    public function usersWithPosts(array $filters): LengthAwarePaginator
-    {
-        return $this->listUsersWithPostsAction->execute($filters);
-    }
-
-    public function assignPostsToUser(User $user, array $postIds): void
-    {
-        $this->assignUserPostsAction->execute($user, $postIds);
     }
 
     /** @return array{options: Collection<int, array{id: int, name: string, email: string}>, assigned_user_ids: array<int>} */

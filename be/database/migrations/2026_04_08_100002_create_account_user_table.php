@@ -9,10 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('account_user', function (Blueprint $table) {
+            $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('account_id')->constrained('accounts')->cascadeOnDelete();
-
             $table->unique(['user_id', 'account_id']);
+            $table->timestamps();
         });
     }
 

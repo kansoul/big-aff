@@ -4,13 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Account\AssignAccountRequest;
 use App\Http\Requests\Account\ListUsersWithAccountsRequest;
-use App\Http\Requests\Channel\AssignChannelRequest;
-use App\Http\Requests\Channel\ListUsersWithChannelsRequest;
-use App\Http\Requests\Post\AssignUserPostsRequest;
-use App\Http\Requests\Post\ListUsersWithPostsRequest;
 use App\Http\Requests\Site\AssignSiteRequest;
 use App\Http\Requests\Team\AssignTeamRequest;
-use App\Http\Resources\ChannelResource;
 use App\Models\Site;
 use App\Models\Team;
 use App\Models\User;
@@ -23,48 +18,6 @@ class AssignController extends BaseController
     public function __construct(
         private readonly AssignService $assignService,
     ) {}
-
-    /**
-     * List users with channels
-     *
-     * Return a paginated list of users with their assigned channels.
-     *
-     * @response 200 {"data": [{"user_id": 1, "name": "John", "email": "john@example.com", "channels": []}], "pagination": {}}
-     */
-    public function usersWithChannels(ListUsersWithChannelsRequest $request): JsonResponse
-    {
-        $paginator = $this->assignService->usersWithChannels($request->validated());
-
-        $data = collect($paginator->items())->map(fn (User $user) => [
-            'user_id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'channels' => ChannelResource::collection($user->channels)->resolve(),
-        ]);
-
-        return $this->sendResponse([
-            'data' => $data,
-            'pagination' => $this->parsePagination($paginator),
-        ]);
-    }
-
-    /**
-     * Assign channels to user
-     *
-     * Sync channel assignments for a user. Channels already assigned to another user are skipped.
-     *
-     * @urlParam user integer required The user ID. Example: 1
-     *
-     * @bodyParam channel_codes string[] required Array of channel codes to assign. Example: ["chan-a", "chan-b"]
-     *
-     * @response 200 {"skipped_codes": []}
-     */
-    public function assignChannelsToUser(AssignChannelRequest $request, User $user): JsonResponse
-    {
-        $result = $this->assignService->assignChannelsToUser($user, $request->validated('channel_codes', []));
-
-        return $this->sendResponse(['skipped_codes' => $result['skipped_codes']]);
-    }
 
     /**
      * List users with accounts
@@ -126,48 +79,6 @@ class AssignController extends BaseController
         $result = $this->assignService->assignAccountsToUser($user, $request->validated('account_ids', []));
 
         return $this->sendResponse(['skipped_account_ids' => $result['skipped_account_ids']]);
-    }
-
-    /**
-     * List users with posts
-     *
-     * Return a paginated list of users with their assigned post IDs.
-     *
-     * @response 200 {"data": [{"id": 1, "name": "User", "email": "user@example.com", "assigned_post_ids": [3, 7]}], "pagination": {}}
-     */
-    public function usersWithPosts(ListUsersWithPostsRequest $request): JsonResponse
-    {
-        $paginator = $this->assignService->usersWithPosts($request->validated());
-
-        $data = collect($paginator->items())->map(fn (User $user) => [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'assigned_post_ids' => $user->assignedPosts->pluck('id')->values()->all(),
-        ]);
-
-        return $this->sendResponse([
-            'data' => $data,
-            'pagination' => $this->parsePagination($paginator),
-        ]);
-    }
-
-    /**
-     * Assign posts to user
-     *
-     * Sync a list of posts assigned to a user for view-only access.
-     *
-     * @urlParam user integer required The user ID. Example: 1
-     *
-     * @bodyParam post_ids integer[] required Array of post IDs to assign. Example: [1, 2, 3]
-     *
-     * @response 200 {"message": "Posts assigned successfully."}
-     */
-    public function assignPostsToUser(AssignUserPostsRequest $request, User $user): JsonResponse
-    {
-        $this->assignService->assignPostsToUser($user, $request->validated()['post_ids']);
-
-        return $this->sendResponse(['message' => 'Posts assigned successfully.']);
     }
 
     /**

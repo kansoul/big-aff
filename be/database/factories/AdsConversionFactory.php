@@ -22,7 +22,7 @@ class AdsConversionFactory extends Factory
         $conversionDateTime = fake()->dateTimeBetween('-30 days', 'now');
 
         return [
-            'account_id' => fake()->optional(0.9)->bothify('act_##########'),
+            'account_id' => fake()->optional(0.9)->bothify('goog_##########'),
             'campaign_id' => fake()->optional(0.8)->bothify('###########'),
             'gclid' => fake()->optional(0.7)->regexify('[A-Za-z0-9_-]{25,80}'),
             'wbraid' => fake()->optional(0.2)->regexify('[A-Za-z0-9_-]{10,80}'),

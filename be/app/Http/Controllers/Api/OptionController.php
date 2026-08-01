@@ -37,42 +37,6 @@ class OptionController extends BaseController
     }
 
     /**
-     * Post options
-     *
-     * Return posts accessible to the authenticated user for select/dropdown inputs.
-     *
-     * @response 200 {"data": [{"id": 1, "title": "Post Title", "slug": "post-title", "keyword_sets": []}]}
-     */
-    public function posts(): JsonResponse
-    {
-        return $this->sendResponse(['data' => $this->optionService->posts()]);
-    }
-
-    /**
-     * Style options
-     *
-     * Return styles accessible to the authenticated user for select/dropdown inputs.
-     *
-     * @response 200 {"data": [{"id": 1, "code": "style-a", "name": "Style A"}]}
-     */
-    public function styles(): JsonResponse
-    {
-        return $this->sendResponse(['data' => $this->optionService->styles()]);
-    }
-
-    /**
-     * Channel options
-     *
-     * Return channels accessible to the authenticated user for select/dropdown inputs.
-     *
-     * @response 200 {"data": [{"code": "channel-a", "name": "Channel A"}]}
-     */
-    public function channels(): JsonResponse
-    {
-        return $this->sendResponse(['data' => $this->optionService->channels()]);
-    }
-
-    /**
      * Account options
      *
      * Return accounts accessible to the authenticated user for select/dropdown inputs.

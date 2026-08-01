@@ -16,10 +16,10 @@ class CreateRoleAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        $role = Role::create([
-            'name' => 'Admin',
-            'permissions' => Permission::FULL_ACCESS_SENTINEL,
-        ]);
+        $role = Role::query()->firstOrCreate(
+            ['name' => 'Admin'],
+            ['permissions' => Permission::FULL_ACCESS_SENTINEL],
+        );
 
         $this->command->info("Role \"{$role->name}\" created successfully! id: {$role->id}");
     }

@@ -3,36 +3,18 @@
 namespace App\Support\ReportOwner;
 
 use App\Models\Account;
-use App\Models\Channel;
 
 /**
- * Resolves the owner (user + main team) of a channel or account at sync time so
+ * Resolves the owner (user + main team) of an account at sync time so
  * revenue/spend rows can be stamped with owner_user_id / owner_main_team_id.
  *
- * A channel/account is currently assigned to a single user, so the latest pivot
+ * An account is currently assigned to a single user, so the latest pivot
  * row wins. Results are memoized per instance — create one resolver per sync run.
  */
 class ReportOwnerResolver
 {
     /** @var array<string, array{owner_user_id: int|null, owner_main_team_id: int|null}> */
-    private array $channelCache = [];
-
-    /** @var array<string, array{owner_user_id: int|null, owner_main_team_id: int|null}> */
     private array $accountCache = [];
-
-    /**
-     * Owner attribution for a channel, keyed by its public `code`.
-     *
-     * @return array{owner_user_id: int|null, owner_main_team_id: int|null}
-     */
-    public function forChannelCode(?string $channelCode): array
-    {
-        if (blank($channelCode)) {
-            return $this->emptyOwner();
-        }
-
-        return $this->channelCache[$channelCode] ??= $this->resolveChannelOwner($channelCode);
-    }
 
     /**
      * Owner attribution for an account, keyed by its external `account_id` string.
@@ -46,30 +28,6 @@ class ReportOwnerResolver
         }
 
         return $this->accountCache[$externalAccountId] ??= $this->resolveAccountOwner($externalAccountId);
-    }
-
-    /**
-     * @return array{owner_user_id: int|null, owner_main_team_id: int|null}
-     */
-    private function resolveChannelOwner(string $channelCode): array
-    {
-        $channel = Channel::query()
-            ->where('channels.code', $channelCode)
-            ->leftJoin('channel_user', function ($join) {
-                $join->on('channel_user.channel_id', '=', 'channels.id')
-                    ->whereNull('channel_user.deleted_at');
-            })
-            ->orderByDesc('channel_user.id')
-            ->first(['channels.main_team_id', 'channel_user.user_id as owner_user_id']);
-
-        if (! $channel) {
-            return $this->emptyOwner();
-        }
-
-        return [
-            'owner_user_id' => $channel->owner_user_id !== null ? (int) $channel->owner_user_id : null,
-            'owner_main_team_id' => $channel->main_team_id !== null ? (int) $channel->main_team_id : null,
-        ];
     }
 
     /**

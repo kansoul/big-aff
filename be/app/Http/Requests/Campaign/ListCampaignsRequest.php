@@ -27,7 +27,6 @@ class ListCampaignsRequest extends FormRequest
             [
                 'account_id' => ['sometimes', 'string'],
                 'user_id' => ['sometimes', 'integer', 'exists:users,id'],
-                'style_code' => ['sometimes', 'string'],
                 'status' => ['sometimes', 'string'],
                 'search' => ['sometimes', 'string', 'max:255'],
                 'min_spend' => ['sometimes', 'numeric', 'min:0'],
