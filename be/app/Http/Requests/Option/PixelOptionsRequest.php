@@ -13,8 +13,6 @@ class PixelOptionsRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'account_id' => ['required', 'integer', 'exists:accounts,id'],
-        ];
+        return [];
     }
 }

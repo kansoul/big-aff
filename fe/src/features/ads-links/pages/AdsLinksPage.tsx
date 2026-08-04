@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 
 import { formatApiError } from '@/features/settings/components'
 import {
-  accountOptionsApi,
   adsLinksApi,
   pixelOptionsApi,
   siteOptionsApi,
@@ -25,7 +24,6 @@ import {
   type AdsLinkUpdateFormValues,
   type SiteOption,
   type UserOption,
-  type AccountOption,
   type PixelOption,
 } from '@/features/ads-links/types'
 import { PermissionSlugs, hasPermission } from '@/constants/permissions'
@@ -86,13 +84,11 @@ function buildParams(
 
 const createDefaultValues: AdsLinkCreateFormValues = {
   site_id: 0,
-  account_id: null,
   pixel_id: null,
   rac: '',
   note: '',
   googleid: '',
   tiktokid: '',
-  tiktok_pixel_id: '',
 }
 
 export function AdsLinksPage() {
@@ -107,9 +103,7 @@ export function AdsLinksPage() {
   const [totalRows, setTotalRows] = useState(0)
   const [sites, setSites] = useState<SiteOption[]>([])
   const [users, setUsers] = useState<UserOption[]>([])
-  const [accounts, setAccounts] = useState<AccountOption[]>([])
-  const [createPixels, setCreatePixels] = useState<PixelOption[]>([])
-  const [editPixels, setEditPixels] = useState<PixelOption[]>([])
+  const [pixels, setPixels] = useState<PixelOption[]>([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
 
@@ -134,23 +128,21 @@ export function AdsLinksPage() {
     resolver: zodResolver(adsLinkUpdateSchema),
     defaultValues: {
       rac: '',
-      account_id: null,
       pixel_id: null,
       googleid: '',
       tiktokid: '',
-      tiktok_pixel_id: '',
     },
   })
 
   const loadOptions = useCallback(async () => {
-    const [siteList, userList, accountList] = await Promise.all([
+    const [siteList, userList, pixelList] = await Promise.all([
       siteOptionsApi.list(),
       userOptionsApi.list(),
-      accountOptionsApi.list(),
+      pixelOptionsApi.list(),
     ])
     setSites(siteList)
     setUsers(userList)
-    setAccounts(accountList.filter((account) => account.ads_type === 'tiktok'))
+    setPixels(pixelList)
   }, [])
 
   const [refreshSignal, setRefreshSignal] = useState(0)
@@ -191,14 +183,11 @@ export function AdsLinksPage() {
     if (editRow) {
       editForm.reset({
         rac: editRow.rac,
-        account_id: editRow.account_id,
         pixel_id: editRow.pixel_id,
         googleid: editRow.googleid?.join(',') ?? '',
         tiktokid: editRow.tiktokid?.join(',') ?? '',
-        tiktok_pixel_id: editRow.tiktok_pixel_id?.join(',') ?? '',
         note: editRow.note ?? '',
       })
-      if (editRow.account_id) void pixelOptionsApi.list(editRow.account_id).then(setEditPixels)
     }
   }, [editRow, editForm])
 
@@ -226,13 +215,11 @@ export function AdsLinksPage() {
       setSubmitting(true)
       await adsLinksApi.create({
         site_id: values.site_id,
-        account_id: values.account_id ?? null,
         pixel_id: values.pixel_id ?? null,
         rac: values.rac,
         note: values.note ?? null,
         googleid: values.googleid ?? null,
         tiktokid: values.tiktokid ?? null,
-        tiktok_pixel_id: values.tiktok_pixel_id ?? null,
       })
       createForm.reset(createDefaultValues)
       if (!options?.createAnother) {
@@ -257,11 +244,9 @@ export function AdsLinksPage() {
       setSubmitting(true)
       await adsLinksApi.update(editRow.id, {
         rac: values.rac,
-        account_id: values.account_id ?? null,
         pixel_id: values.pixel_id ?? null,
         googleid: values.googleid ?? null,
         tiktokid: values.tiktokid ?? null,
-        tiktok_pixel_id: values.tiktok_pixel_id ?? null,
         note: values.note ?? null,
       })
       setEditRow(null)
@@ -363,9 +348,7 @@ export function AdsLinksPage() {
         form={createForm}
         sites={sites}
         submitting={submitting}
-        accounts={accounts}
-        pixels={createPixels}
-        onAccountChange={(id) => void pixelOptionsApi.list(id).then(setCreatePixels)}
+        pixels={pixels}
         onSubmit={onCreateSubmit}
       />
       <EditAdsLinkDialog
@@ -374,9 +357,7 @@ export function AdsLinksPage() {
         formError={formError}
         form={editForm}
         submitting={submitting}
-        accounts={accounts}
-        pixels={editPixels}
-        onAccountChange={(id) => void pixelOptionsApi.list(id).then(setEditPixels)}
+        pixels={pixels}
         onSubmit={onEditSubmit}
       />
     </div>

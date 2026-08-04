@@ -7,7 +7,6 @@ import type {
   Pagination,
   SiteOption,
   UserOption,
-  AccountOption,
   PixelOption,
 } from '@/features/ads-links/types'
 
@@ -59,18 +58,8 @@ export const userOptionsApi = {
   },
 }
 
-export const accountOptionsApi = {
-  async list(): Promise<AccountOption[]> {
-    return (await axiosInstance.get<{ data: AccountOption[] }>('/options/accounts')).data.data
-  },
-}
-
 export const pixelOptionsApi = {
-  async list(accountId: number): Promise<PixelOption[]> {
-    return (
-      await axiosInstance.get<{ data: PixelOption[] }>('/options/pixels', {
-        params: { account_id: accountId },
-      })
-    ).data.data
+  async list(): Promise<PixelOption[]> {
+    return (await axiosInstance.get<{ data: PixelOption[] }>('/options/pixels')).data.data
   },
 }

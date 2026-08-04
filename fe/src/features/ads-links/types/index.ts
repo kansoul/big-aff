@@ -8,7 +8,6 @@ export interface AdsLink {
   id: number
   slug: string
   tracking_code: string
-  account_id: number | null
   pixel_id: number | null
   rac: string
   note: string | null
@@ -29,37 +28,26 @@ export interface SiteOption {
   name: string
 }
 
-export interface AccountOption {
-  id: number
-  account_id: string
-  account_name: string | null
-  ads_type: string
-}
 export interface PixelOption {
   id: number
-  account_id: number
   pixel_id: string
   name: string | null
 }
 
 export interface AdsLinkCreatePayload {
   site_id: number
-  account_id?: number | null
   pixel_id?: number | null
   rac: string
   note?: string | null
   googleid?: string | null
   tiktokid?: string | null
-  tiktok_pixel_id?: string | null
 }
 
 export interface AdsLinkUpdatePayload {
-  account_id?: number | null
   pixel_id?: number | null
   rac?: string
   googleid?: string | null
   tiktokid?: string | null
-  tiktok_pixel_id?: string | null
   note?: string | null
 }
 
@@ -100,75 +88,55 @@ export type CopyDialogState = {
   link: string
 }
 
-function commaSeparatedValues(value?: string | null): string[] {
-  return (value ?? '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
-
-function hasMatchingTikTokPairs(value: {
-  tiktokid?: string | null
-  tiktok_pixel_id?: string | null
-}) {
-  const advertiserIds = commaSeparatedValues(value.tiktokid)
-  const pixelIds = commaSeparatedValues(value.tiktok_pixel_id)
-  return advertiserIds.length === 0 || advertiserIds.length === pixelIds.length
-}
-
 import { z } from 'zod'
 
 export const adsLinkCreateSchema = z
   .object({
     site_id: z.number({ error: 'Site is required' }).min(1, 'Site is required'),
-    account_id: z.number().nullable().optional(),
     pixel_id: z.number().nullable().optional(),
     rac: z.string().min(1, 'RAC is required'),
     note: z.string().nullable().optional(),
     googleid: z.string().nullable().optional(),
     tiktokid: z.string().nullable().optional(),
-    tiktok_pixel_id: z.string().nullable().optional(),
   })
   .refine(
-    (v) => (v.googleid?.trim() ?? '') !== '' || !!v.pixel_id || (v.tiktokid?.trim() ?? '') !== '',
+    (v) => (v.googleid?.trim() ?? '') !== '' || (v.tiktokid?.trim() ?? '') !== '',
     {
       error: 'At least one of Google Account ID or TikTok Advertiser ID is required',
       path: ['googleid'],
     },
   )
-  .refine((v) => (v.tiktokid?.trim() ?? '') === '' || (v.tiktok_pixel_id?.trim() ?? '') !== '', {
-    error: 'TikTok Pixel ID is required when TikTok Advertiser ID is provided',
-    path: ['tiktok_pixel_id'],
+  .refine((v) => (v.tiktokid?.trim() ?? '') === '' || !!v.pixel_id, {
+    error: 'Pixel is required when TikTok Advertiser ID is provided',
+    path: ['pixel_id'],
   })
-  .refine(hasMatchingTikTokPairs, {
-    error: 'Each TikTok Advertiser ID must have one corresponding Pixel ID',
-    path: ['tiktok_pixel_id'],
+  .refine((v) => !v.pixel_id || (v.tiktokid?.trim() ?? '') !== '', {
+    error: 'TikTok Advertiser ID is required when a Pixel is selected',
+    path: ['tiktokid'],
   })
 
 export const adsLinkUpdateSchema = z
   .object({
     rac: z.string().min(1, 'RAC is required'),
-    account_id: z.number().nullable().optional(),
     pixel_id: z.number().nullable().optional(),
     googleid: z.string().nullable().optional(),
     tiktokid: z.string().nullable().optional(),
-    tiktok_pixel_id: z.string().nullable().optional(),
     note: z.string().nullable().optional(),
   })
   .refine(
-    (v) => (v.googleid?.trim() ?? '') !== '' || !!v.pixel_id || (v.tiktokid?.trim() ?? '') !== '',
+    (v) => (v.googleid?.trim() ?? '') !== '' || (v.tiktokid?.trim() ?? '') !== '',
     {
       error: 'At least one of Google Account ID or TikTok Advertiser ID is required',
       path: ['googleid'],
     },
   )
-  .refine((v) => (v.tiktokid?.trim() ?? '') === '' || (v.tiktok_pixel_id?.trim() ?? '') !== '', {
-    error: 'TikTok Pixel ID is required when TikTok Advertiser ID is provided',
-    path: ['tiktok_pixel_id'],
+  .refine((v) => (v.tiktokid?.trim() ?? '') === '' || !!v.pixel_id, {
+    error: 'Pixel is required when TikTok Advertiser ID is provided',
+    path: ['pixel_id'],
   })
-  .refine(hasMatchingTikTokPairs, {
-    error: 'Each TikTok Advertiser ID must have one corresponding Pixel ID',
-    path: ['tiktok_pixel_id'],
+  .refine((v) => !v.pixel_id || (v.tiktokid?.trim() ?? '') !== '', {
+    error: 'TikTok Advertiser ID is required when a Pixel is selected',
+    path: ['tiktokid'],
   })
 
 export type AdsLinkCreateFormValues = z.infer<typeof adsLinkCreateSchema>

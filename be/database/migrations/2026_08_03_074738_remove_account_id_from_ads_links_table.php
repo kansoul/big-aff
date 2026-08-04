@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('campaign_reports', function (Blueprint $table) {
-            $table->unsignedSmallInteger('bidding_strategy_type')->nullable()->after('target_cpa');
+        Schema::table('ads_links', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('account_id');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('campaign_reports', function (Blueprint $table) {
-            $table->dropColumn('bidding_strategy_type');
+        Schema::table('ads_links', function (Blueprint $table) {
+            $table->foreignId('account_id')->nullable()->after('site_id')->constrained('accounts')->nullOnDelete();
         });
     }
 };

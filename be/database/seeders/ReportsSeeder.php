@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
  *   - insight_chart_reports.*              → idem
  *   - campaign_reports.account_id          → accounts.account_id
  *   - campaign_reports.campaign_id / name  → campaigns.*
- *   - campaign_reports.style_code/channel_code → report snapshots
+ *   - campaign_reports style/channel names → report snapshots
  *
  * Reports are idempotent — a table is only seeded if it's currently empty.
  */
@@ -153,11 +153,7 @@ class ReportsSeeder extends Seeder
                     'campaign_name' => $campaign->campaign_name,
                     'campaign_status' => $campaign->status,
                     'ads_type' => $campaign->ads_type,
-                    'daily_budget' => $campaign->daily_budget,
-                    'lifetime_budget' => $campaign->lifetime_budget,
-                    'style_code' => $linkData?->style_code,
                     'style_name' => $linkData?->style_code,
-                    'channel_code' => $linkData?->channel_code,
                     'channel_name' => $linkData?->channel_code,
                 ])->getAttributes();
                 $row['date_start'] = $date;

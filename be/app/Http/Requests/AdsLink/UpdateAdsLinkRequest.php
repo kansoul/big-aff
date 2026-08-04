@@ -19,12 +19,10 @@ class UpdateAdsLinkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'account_id' => ['nullable', 'integer', 'exists:accounts,id', 'required_with:pixel_id'],
-            'pixel_id' => ['nullable', 'integer', 'exists:pixels,id', 'required_with:account_id'],
+            'pixel_id' => ['nullable', 'integer', 'exists:pixels,id'],
             'rac' => ['nullable', 'string'],
             'googleid' => ['nullable', 'string'],
             'tiktokid' => ['nullable', 'string'],
-            'tiktok_pixel_id' => ['nullable', 'string', 'max:255'],
             'note' => ['nullable', 'string'],
         ];
     }
@@ -35,7 +33,6 @@ class UpdateAdsLinkRequest extends FormRequest
             function (Validator $validator): void {
                 $googleid = $this->input('googleid');
                 $tiktokid = $this->input('tiktokid');
-                $tiktok_pixel_id = $this->input('tiktok_pixel_id');
 
                 if (isset($googleid) || isset($tiktokid)) {
                     if (empty($googleid) && empty($tiktokid) && ! $this->filled('pixel_id')) {
@@ -48,29 +45,21 @@ class UpdateAdsLinkRequest extends FormRequest
                 $finalTiktokId = $this->exists('tiktokid')
                     ? $tiktokid
                     : ($trackingIds['tiktokid'] ?? null);
-                $finalTiktokPixelId = $this->exists('tiktok_pixel_id')
-                    ? $tiktok_pixel_id
-                    : ($trackingIds['tiktok_pixel_id'] ?? null);
+                $finalPixelId = $this->exists('pixel_id')
+                    ? $this->input('pixel_id')
+                    : ($adsLink instanceof AdsLink ? $adsLink->pixel_id : null);
 
-                if (($this->exists('tiktokid') || $this->exists('tiktok_pixel_id'))
+                if ($this->exists('tiktokid')
                     && ! empty($finalTiktokId)
-                    && empty($finalTiktokPixelId)) {
-                    $validator->errors()->add('tiktok_pixel_id', 'TikTok Pixel ID is required when TikTok Advertiser ID is provided.');
+                    && empty($finalPixelId)) {
+                    $validator->errors()->add('pixel_id', 'Pixel is required when TikTok Advertiser ID is provided.');
                 }
 
-                if (! empty($finalTiktokId) && ! empty($finalTiktokPixelId)
-                    && count($this->csvValues($finalTiktokId)) !== count($this->csvValues($finalTiktokPixelId))) {
-                    $validator->errors()->add('tiktok_pixel_id', 'Each TikTok Advertiser ID must have one corresponding Pixel ID.');
+                if (! empty($finalPixelId) && empty($finalTiktokId)) {
+                    $validator->errors()->add('tiktokid', 'TikTok Advertiser ID is required when a Pixel is selected.');
                 }
+
             },
         ];
-    }
-
-    /** @return array<int, string> */
-    private function csvValues(string|array $value): array
-    {
-        $values = is_array($value) ? $value : explode(',', $value);
-
-        return array_values(array_filter(array_map('trim', $values)));
     }
 }

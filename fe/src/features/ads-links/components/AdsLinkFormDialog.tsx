@@ -26,7 +26,6 @@ import type {
   AdsLinkCreateFormValues,
   AdsLinkUpdateFormValues,
   SiteOption,
-  AccountOption,
   PixelOption,
 } from '@/features/ads-links/types'
 
@@ -38,9 +37,7 @@ type CreateAdsLinkDialogProps = {
   formError: string | null
   form: UseFormReturn<AdsLinkCreateFormValues>
   sites: SiteOption[]
-  accounts: AccountOption[]
   pixels: PixelOption[]
-  onAccountChange: (accountId: number) => void
   submitting: boolean
   onSubmit: (
     values: AdsLinkCreateFormValues,
@@ -56,9 +53,7 @@ export function CreateAdsLinkDialog({
   formError,
   form,
   sites,
-  accounts,
   pixels,
-  onAccountChange,
   submitting,
   onSubmit,
 }: CreateAdsLinkDialogProps) {
@@ -127,24 +122,13 @@ export function CreateAdsLinkDialog({
 
             <FormField
               control={form.control}
-              name="account_id"
+              name="tiktokid"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>TikTok Account</FormLabel>
-                  <SearchableSelect
-                    value={field.value ? String(field.value) : undefined}
-                    onValueChange={(value) => {
-                      const id = Number(value)
-                      field.onChange(id)
-                      form.setValue('pixel_id', null)
-                      onAccountChange(id)
-                    }}
-                    options={accounts.map((a) => ({
-                      value: String(a.id),
-                      label: `${a.account_name ?? a.account_id} (${a.account_id})`,
-                    }))}
-                    placeholder="Select TikTok account"
-                  />
+                  <FormLabel>TikTok Advertiser ID(s)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 7123456789012345678" {...field} value={field.value ?? ''} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -238,9 +222,7 @@ type EditAdsLinkDialogProps = {
   formError: string | null
   form: UseFormReturn<AdsLinkUpdateFormValues>
   submitting: boolean
-  accounts: AccountOption[]
   pixels: PixelOption[]
-  onAccountChange: (accountId: number) => void
   onSubmit: (values: AdsLinkUpdateFormValues) => void | Promise<void>
 }
 
@@ -250,9 +232,7 @@ export function EditAdsLinkDialog({
   formError,
   form,
   submitting,
-  accounts,
   pixels,
-  onAccountChange,
   onSubmit,
 }: EditAdsLinkDialogProps) {
   const open = adsLink !== null
@@ -303,24 +283,13 @@ export function EditAdsLinkDialog({
 
             <FormField
               control={form.control}
-              name="account_id"
+              name="tiktokid"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>TikTok Account</FormLabel>
-                  <SearchableSelect
-                    value={field.value ? String(field.value) : undefined}
-                    onValueChange={(value) => {
-                      const id = Number(value)
-                      field.onChange(id)
-                      form.setValue('pixel_id', null)
-                      onAccountChange(id)
-                    }}
-                    options={accounts.map((a) => ({
-                      value: String(a.id),
-                      label: `${a.account_name ?? a.account_id} (${a.account_id})`,
-                    }))}
-                    placeholder="Select TikTok account"
-                  />
+                  <FormLabel>TikTok Advertiser ID(s)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 7123456789012345678" {...field} value={field.value ?? ''} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

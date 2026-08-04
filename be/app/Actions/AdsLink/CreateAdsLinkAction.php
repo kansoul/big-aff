@@ -2,7 +2,6 @@
 
 namespace App\Actions\AdsLink;
 
-use App\Actions\Pixel\SyncPixelsAction;
 use App\Models\AdsLink;
 use App\Models\Pixel;
 use App\Models\Site;
@@ -20,7 +19,6 @@ class CreateAdsLinkAction
 {
     public function __construct(
         private readonly RACValidationService $racValidationService,
-        private readonly SyncPixelsAction $syncPixelsAction,
     ) {}
 
     /**
@@ -50,26 +48,19 @@ class CreateAdsLinkAction
         }
         if (! empty($data['tiktokid'])) {
             $trackingIds['tiktokid'] = $this->csvValues($data['tiktokid']);
-            $trackingIds['tiktok_pixel_id'] = $this->csvValues($data['tiktok_pixel_id']);
         }
         if (! empty($data['pixel_id'])) {
-            $pixel = Pixel::query()->with('account')->findOrFail($data['pixel_id']);
-            if ($pixel->account_id !== (int) $data['account_id']) {
-                throw ValidationException::withMessages(['pixel_id' => ['Pixel does not belong to the selected account.']]);
-            }
-            OwnershipFilter::forAuthUser()->authorizeAccount($pixel->account);
-            $trackingIds['tiktokid'] = [$pixel->account->account_id];
-            $trackingIds['tiktok_pixel_id'] = [$pixel->pixel_id];
+            $pixel = Pixel::query()->findOrFail($data['pixel_id']);
+            OwnershipFilter::forAuthUser()->authorize($pixel->created_by);
+            $trackingIds['tiktok_pixel_id'] = array_fill(0, count($trackingIds['tiktokid']), $pixel->pixel_id);
         }
 
         try {
             return DB::transaction(function () use ($data, $baseSlug, $trackingIds, $user): AdsLink {
-                $this->syncPixelsAction->execute($trackingIds);
                 $slug = $this->generateUniqueSlug($baseSlug);
 
                 return AdsLink::query()->create([
                     'site_id' => $data['site_id'],
-                    'account_id' => $data['account_id'] ?? null,
                     'pixel_id' => $data['pixel_id'] ?? null,
                     'slug' => $slug,
                     'tracking_code' => Str::random(32),

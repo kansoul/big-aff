@@ -4,11 +4,14 @@ namespace App\Services\Integrations\TikTok;
 
 use App\Enums\AdsType;
 use App\Jobs\ApplyCampaignNameToRuleJob;
+use App\Jobs\NoopJob;
 use App\Models\Account;
 use App\Models\Campaign;
 use App\Models\InsightReport;
+use App\Services\Integrations\CampaignReportSyncService;
 use App\Services\MainSystem\MainSystemSyncService;
 use App\Support\ReportOwner\ReportOwnerResolver;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -145,6 +148,42 @@ class TikTokCampaignSyncService
                 continue;
             }
         }
+
+        self::dispatchCampaignReportSyncBatch($data);
+    }
+
+    private static function dispatchCampaignReportSyncBatch(array $data): void
+    {
+        $startDate = $data['start_date'];
+        $endDate = $data['end_date'];
+        $failedAdClientIds = $data['failed_ad_client_ids'] ?? false;
+
+        Bus::batch([new NoopJob])
+            ->name('TikTok Campaign Report Sync')
+            ->allowFailures()
+            ->finally(function () use ($startDate, $endDate, $failedAdClientIds): void {
+                try {
+                    $response = CampaignReportSyncService::sync([
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'failed_ad_client_ids' => $failedAdClientIds,
+                    ]);
+
+                    if (! ($response['success'] ?? false)) {
+                        Log::error('[TikTokCampaignSync][CampaignReport] Sync failed', [
+                            'message' => $response['message'] ?? null,
+                            'synced_count' => $response['synced_count'] ?? 0,
+                            'error_count' => $response['error_count'] ?? 0,
+                        ]);
+                    }
+                } catch (Throwable $throwable) {
+                    Log::error('[TikTokCampaignSync][CampaignReport] Throwable', [
+                        'error' => $throwable->getMessage(),
+                    ]);
+                }
+            })
+            ->onQueue(config('queue.queues.all-reports-sync'))
+            ->dispatch();
     }
 
     private static function campaignSyncAccountsQuery(string $adsType)

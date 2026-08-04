@@ -57,7 +57,7 @@ class OptionController extends BaseController
     public function pixels(PixelOptionsRequest $request): JsonResponse
     {
         return $this->sendResponse([
-            'data' => $this->optionService->pixels((int) $request->validated('account_id')),
+            'data' => $this->optionService->pixels(),
         ]);
     }
 

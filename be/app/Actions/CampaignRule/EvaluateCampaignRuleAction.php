@@ -8,6 +8,7 @@ use App\Jobs\SendTelegramWarningJob;
 use App\Models\Campaign;
 use App\Models\CampaignApplyRule;
 use App\Models\CampaignReport;
+use App\Models\InsightReport;
 use App\Services\Integrations\Ads\AdsStatusService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -151,7 +152,11 @@ class EvaluateCampaignRuleAction
             return null;
         }
 
-        $spend = (float) ($report->a_spend ?? 0);
+        $spend = (float) InsightReport::query()
+            ->where('account_id', $report->account_id)
+            ->where('campaign_id', $report->campaign_id)
+            ->whereDate('date_start', $date)
+            ->value('spend');
 
         $rpc = (float) ($report->r_rpc ?? 0);
 

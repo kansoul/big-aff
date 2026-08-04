@@ -21,7 +21,7 @@ class ListPixelsRequest extends FormRequest
         return array_merge(
             $this->paginationRules(),
             $this->sortRules(ListPixelsAction::ORDERABLE_COLUMNS),
-            ['query' => ['nullable', 'string', 'max:255'], 'account_id' => ['nullable', 'integer']],
+            ['query' => ['nullable', 'string', 'max:255']],
         );
     }
 }

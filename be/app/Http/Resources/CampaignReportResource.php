@@ -60,14 +60,10 @@ class CampaignReportResource extends JsonResource
             'tracking_code' => $this->realtimeReport?->linkData?->adsLink?->tracking_code,
             // Ads manager link (previous behavior)
             'ads_manager_link' => $this->buildAdsManagerLink(),
-            'daily_budget' => $this->daily_budget,
-            'lifetime_budget' => $this->lifetime_budget,
-            'target_cpa' => $this->target_cpa,
-            'bidding_strategy_type' => $this->bidding_strategy_type,
 
-            'style_code' => $this->style_code,
+            'style_code' => $this->realtimeReport?->linkData?->style_code,
             'style_name' => $this->style_name,
-            'channel_code' => $this->channel_code,
+            'channel_code' => $this->realtimeReport?->linkData?->channel_code,
             'channel_name' => $this->channel_name,
 
             // Revenue fields
@@ -84,23 +80,6 @@ class CampaignReportResource extends JsonResource
             'r_funnel_impressions' => $this->r_funnel_impressions,
             'r_funnel_rpm' => $this->r_funnel_rpm,
             'r_cpa' => $this->r_cpa,
-
-            // Ads / spend fields
-            'a_ad_clicks' => $this->a_ad_clicks,
-            'a_article_views' => $this->a_article_views,
-            'a_search_views' => $this->a_search_views,
-            'a_conversion' => $this->a_conversion,
-            'a_spend' => $this->a_spend,
-            'a_impressions' => $this->a_impressions,
-            'a_cpc' => $this->a_cpc,
-            'a_cpm' => $this->a_cpm,
-            'a_ctr' => $this->a_ctr,
-            'a_reach' => $this->a_reach,
-            'a_cpa' => $this->a_cpa,
-            'a_ctr_link' => $this->a_ctr_link,
-            'a_cpc_link' => $this->a_cpc_link,
-            'a_frequency' => $this->a_frequency,
-            'a_clicks' => $this->a_clicks,
 
             // Derived
             'revenue_est' => round($revenueEst, 2),

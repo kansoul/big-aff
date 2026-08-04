@@ -26,12 +26,8 @@ class ListCampaignReportsAction
         'campaign_name',
         'campaign_status',
         'ads_type',
-        'channel_code',
         'channel_name',
-        'style_code',
         'style_name',
-        'daily_budget',
-        'lifetime_budget',
         // revenue
         'r_search_views',
         'r_conversion',
@@ -46,22 +42,6 @@ class ListCampaignReportsAction
         'r_funnel_impressions',
         'r_funnel_rpm',
         'r_cpa',
-        // ads
-        'a_ad_clicks',
-        'a_article_views',
-        'a_search_views',
-        'a_conversion',
-        'a_spend',
-        'a_impressions',
-        'a_cpc',
-        'a_cpm',
-        'a_ctr',
-        'a_reach',
-        'a_cpa',
-        'a_ctr_link',
-        'a_cpc_link',
-        'a_frequency',
-        'a_clicks',
         // derived (computed in SELECT)
         'rpc',
         'revenue_est',
@@ -82,15 +62,26 @@ class ListCampaignReportsAction
 
         $query = $this->buildBaseQuery($filters)
             ->leftJoin('realtime_reports as rt', 'rt.id', '=', 'campaign_reports.realtime_report_id')
+            ->leftJoin('insight_reports as ir', function ($join): void {
+                $join->on('ir.account_id', '=', 'campaign_reports.account_id')
+                    ->on('ir.campaign_id', '=', 'campaign_reports.campaign_id')
+                    ->on('ir.date_start', '=', 'campaign_reports.date_start')
+                    ->whereNull('ir.deleted_at');
+            })
             ->leftJoin('users as u_list', 'u_list.id', '=', 'campaign_reports.owner_user_id')
             ->select(
                 'campaign_reports.*',
                 DB::raw('u_list.email as user_email'),
+                DB::raw('ld_scope.style_code as style_code'),
+                DB::raw('ld_scope.channel_code as channel_code'),
+                DB::raw('COALESCE(ir.spend, 0) as a_spend'),
+                DB::raw('COALESCE(ir.clicks, 0) as a_clicks'),
+                DB::raw('COALESCE(ir.search_clicks, 0) as a_conversion'),
                 DB::raw("({$rpcExpr}) as rpc"),
                 DB::raw("COALESCE(rt.click_ad_count, 0) * ({$rpcExpr}) as revenue_est"),
-                DB::raw("(COALESCE(rt.click_ad_count, 0) * ({$rpcExpr})) - COALESCE(campaign_reports.a_spend, 0) as profit"),
-                DB::raw("IF(COALESCE(campaign_reports.a_spend, 0) > 0, ((COALESCE(rt.click_ad_count, 0) * ({$rpcExpr})) - COALESCE(campaign_reports.a_spend, 0)) / COALESCE(campaign_reports.a_spend, 0) * 100, 0) as roi"),
-                DB::raw('IF(COALESCE(rt.click_ad_count, 0) > 0, COALESCE(campaign_reports.a_spend, 0) / rt.click_ad_count, NULL) as rt_cpa'),
+                DB::raw("(COALESCE(rt.click_ad_count, 0) * ({$rpcExpr})) - COALESCE(ir.spend, 0) as profit"),
+                DB::raw("IF(COALESCE(ir.spend, 0) > 0, ((COALESCE(rt.click_ad_count, 0) * ({$rpcExpr})) - COALESCE(ir.spend, 0)) / COALESCE(ir.spend, 0) * 100, 0) as roi"),
+                DB::raw('IF(COALESCE(rt.click_ad_count, 0) > 0, COALESCE(ir.spend, 0) / rt.click_ad_count, NULL) as rt_cpa'),
                 DB::raw('IF(COALESCE(campaign_reports.r_funnel_requests, 0) > 0, COALESCE(rt.click_ad_count, 0) / campaign_reports.r_funnel_requests * 100, NULL) as rt_cvr'),
                 DB::raw('IF(COALESCE(campaign_reports.r_funnel_requests, 0) > 0, COALESCE(rt.click_keyword_count, 0) / campaign_reports.r_funnel_requests * 100, NULL) as rt_ctr_keyword'),
                 DB::raw('IF(COALESCE(rt.view_search_count, 0) > 0, COALESCE(rt.click_ad_count, 0) / rt.view_search_count * 100, NULL) as rt_ctr_search'),
@@ -102,12 +93,31 @@ class ListCampaignReportsAction
 
         $query->orderBy('campaign_reports.channel_name');
 
-        SortInput::fromValidatedArray(
+        $sort = SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
             defaultColumn: 'date_start',
             defaultDirection: 'desc',
-        )->applyTo($query);
+        );
+
+        $derivedColumns = [
+            'rpc',
+            'revenue_est',
+            'profit',
+            'roi',
+            'rt_cpa',
+            'rt_cvr',
+            'rt_ctr_keyword',
+            'rt_ctr_search',
+        ];
+        $sortColumn = in_array($sort->column, $derivedColumns, true)
+            ? $sort->column
+            : 'campaign_reports.'.$sort->column;
+
+        $query->orderBy($sortColumn, $sort->direction);
+        if ($sort->column !== 'id') {
+            $query->orderBy('campaign_reports.id', $sort->direction);
+        }
 
         return PaginationInput::fromValidatedArray($filters)->paginateQuery($query);
     }
@@ -123,7 +133,12 @@ class ListCampaignReportsAction
     {
         $ownership = OwnershipFilter::forAuthUser();
 
-        $query = CampaignReport::query();
+        $query = CampaignReport::query()
+            ->leftJoin('realtime_reports as rt_scope', 'rt_scope.id', '=', 'campaign_reports.realtime_report_id')
+            ->leftJoin('link_datas as ld_scope', function ($join): void {
+                $join->on('ld_scope.id', '=', 'rt_scope.link_data_id')
+                    ->whereNull('ld_scope.deleted_at');
+            });
 
         if (config('main_system.is_main')) {
             MainTeamReportDataScope::excludeNonFetchableAccounts(
@@ -147,11 +162,11 @@ class ListCampaignReportsAction
         }
 
         if (! empty($filters['date_from'])) {
-            $query->whereDate('date_start', '>=', $filters['date_from']);
+            $query->whereDate('campaign_reports.date_start', '>=', $filters['date_from']);
         }
 
         if (! empty($filters['date_to'])) {
-            $query->whereDate('date_start', '<=', $filters['date_to']);
+            $query->whereDate('campaign_reports.date_start', '<=', $filters['date_to']);
         }
 
         if (! empty($filters['keyword'])) {
@@ -163,9 +178,9 @@ class ListCampaignReportsAction
                     ->orWhere('campaign_reports.account_name', 'like', "%{$keyword}%")
                     ->orWhere('campaign_reports.campaign_id', 'like', "%{$keyword}%")
                     ->orWhere('campaign_reports.campaign_name', 'like', "%{$keyword}%")
-                    ->orWhere('campaign_reports.channel_code', 'like', "%{$keyword}%")
+                    ->orWhere('ld_scope.channel_code', 'like', "%{$keyword}%")
                     ->orWhere('campaign_reports.channel_name', 'like', "%{$keyword}%")
-                    ->orWhere('campaign_reports.style_code', 'like', "%{$keyword}%")
+                    ->orWhere('ld_scope.style_code', 'like', "%{$keyword}%")
                     ->orWhere('campaign_reports.style_name', 'like', "%{$keyword}%")
                     ->orWhereHas('realtimeReport.linkData.adsLink', function (Builder $adsLink) use ($keyword): void {
                         $adsLink->where('slug', 'like', "%{$keyword}%");
@@ -182,20 +197,20 @@ class ListCampaignReportsAction
         }
 
         if (! empty($filters['ads_type'])) {
-            $query->where('ads_type', $filters['ads_type']);
+            $query->where('campaign_reports.ads_type', $filters['ads_type']);
         }
 
         if (! empty($filters['campaign_ids'])) {
-            $query->whereIn('campaign_id', $filters['campaign_ids']);
+            $query->whereIn('campaign_reports.campaign_id', $filters['campaign_ids']);
         }
 
         if (! empty($filters['channel_codes'])) {
-            $query->whereIn('campaign_reports.channel_code', $filters['channel_codes']);
+            $query->whereIn('ld_scope.channel_code', $filters['channel_codes']);
         }
 
         if (! empty($filters['link_data_ids'])) {
             $query->whereIn(
-                'realtime_report_id',
+                'campaign_reports.realtime_report_id',
                 RealtimeReport::whereIn('link_data_id', $filters['link_data_ids'])->select('id'),
             );
         }

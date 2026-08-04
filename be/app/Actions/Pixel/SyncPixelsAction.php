@@ -34,11 +34,10 @@ class SyncPixelsAction
 
             OwnershipFilter::forAuthUser()->authorizeAccount($account);
 
-            $pixel = Pixel::query()->firstOrCreate(
-                ['account_id' => $account->id, 'pixel_id' => $pixelId],
-                ['created_by' => auth()->id()],
+            Pixel::query()->firstOrCreate(
+                ['pixel_id' => $pixelId],
+                ['created_by' => auth()->id(), 'updated_by' => auth()->id()],
             );
-            $pixel->update(['updated_by' => auth()->id()]);
         }
     }
 }

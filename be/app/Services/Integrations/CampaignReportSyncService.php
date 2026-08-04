@@ -215,8 +215,6 @@ class CampaignReportSyncService
             $data = [
                 'realtime_report_id' => $realtimeReport?->id,
                 // Style/Channel info
-                'style_code' => $linkData->style_code,
-                'channel_code' => $linkData->channel_code,
                 'channel_name' => $revenueData['channel_name'] ?? $linkData->channel_code,
                 // Revenue fields (r_*) from RevenueReport
                 'r_search_views' => (int) ($revenueData['page_views'] ?? 0),
@@ -255,27 +253,6 @@ class CampaignReportSyncService
             'campaign_name' => $campaign?->campaign_name,
             'campaign_status' => $campaign?->status,
             'ads_type' => $campaign?->ads_type,
-            'daily_budget' => $campaign?->daily_budget ?? 0,
-            'lifetime_budget' => $campaign?->lifetime_budget ?? 0,
-            'target_cpa' => $campaign?->target_cpa ?? 0,
-            'bidding_strategy_type' => $campaign?->bidding_strategy_type,
-
-            // Ads spend fields (a_*) from InsightReport
-            'a_ad_clicks' => (int) ($insightReport->ad_clicks ?? 0),
-            'a_article_views' => (int) ($insightReport->article_views ?? 0),
-            'a_search_views' => (int) ($insightReport->search_views ?? 0),
-            'a_conversion' => (int) ($insightReport->search_clicks ?? 0),
-            'a_spend' => $spend,
-            'a_impressions' => (int) ($insightReport->impressions ?? 0),
-            'a_cpc' => (float) ($insightReport->cpc ?? 0),
-            'a_cpm' => (float) ($insightReport->cpm ?? 0),
-            'a_ctr' => (float) ($insightReport->ctr ?? 0),
-            'a_reach' => (int) ($insightReport->reach ?? 0),
-            'a_cpa' => (float) ($insightReport->cpa ?? 0),
-            'a_ctr_link' => (float) ($insightReport->ctr_link ?? 0),
-            'a_cpc_link' => (float) ($insightReport->cpc_link ?? 0),
-            'a_frequency' => (float) ($insightReport->frequency ?? 0),
-            'a_clicks' => (int) ($insightReport->clicks ?? 0),
         ];
     }
 

@@ -11,10 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('campaign_reports', function (Blueprint $table) {
-            $table->decimal('target_cpa', 15, 2)->nullable()->after('lifetime_budget');
-        });
-
         Schema::table('campaigns', function (Blueprint $table) {
             $table->decimal('target_cpa', 15, 2)->nullable()->after('lifetime_budget');
         });
@@ -25,10 +21,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('campaign_reports', function (Blueprint $table) {
-            $table->dropColumn('target_cpa');
-        });
-
         Schema::table('campaigns', function (Blueprint $table) {
             $table->dropColumn('target_cpa');
         });

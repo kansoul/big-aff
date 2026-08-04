@@ -31,16 +31,22 @@ class ListCampaignSelectorAction
         $resource = new AccountLinkedOwnerResource;
 
         $query = CampaignReport::query()
+            ->leftJoin('insight_reports', function ($join): void {
+                $join->on('insight_reports.account_id', '=', 'campaign_reports.account_id')
+                    ->on('insight_reports.campaign_id', '=', 'campaign_reports.campaign_id')
+                    ->on('insight_reports.date_start', '=', 'campaign_reports.date_start')
+                    ->whereNull('insight_reports.deleted_at');
+            })
             ->selectRaw('
-                campaign_id,
-                campaign_name,
-                account_id,
-                account_name,
-                a_spend as total_spend,
-                r_revenue as total_revenue,
-                r_revenue - a_spend as profit
+                campaign_reports.campaign_id,
+                campaign_reports.campaign_name,
+                campaign_reports.account_id,
+                campaign_reports.account_name,
+                COALESCE(insight_reports.spend, 0) as total_spend,
+                campaign_reports.r_revenue as total_revenue,
+                campaign_reports.r_revenue - COALESCE(insight_reports.spend, 0) as profit
             ')
-            ->whereDate('date_start', today());
+            ->whereDate('campaign_reports.date_start', today());
 
         if (config('main_system.is_main')) {
             MainTeamReportDataScope::excludeNonFetchableAccounts(
@@ -52,45 +58,52 @@ class ListCampaignSelectorAction
 
         if (! $resource->isAdmin()) {
             $query->whereIn(
-                'campaign_id',
+                'campaign_reports.campaign_id',
                 Campaign::whereIn('created_by', $resource->allowedUserIds())->select('campaign_id'),
             );
         }
 
         if (! empty($filters['account_id'])) {
-            $query->where('account_id', $filters['account_id']);
+            $query->where('campaign_reports.account_id', $filters['account_id']);
         }
 
         if (! empty($filters['user_id'])) {
-            $query->whereIn('campaign_id', Campaign::where('created_by', $filters['user_id'])->select('campaign_id'));
+            $query->whereIn('campaign_reports.campaign_id', Campaign::where('created_by', $filters['user_id'])->select('campaign_id'));
         }
 
         if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
-                $q->where('campaign_name', 'like', "%{$search}%")
-                    ->orWhere('campaign_id', 'like', "%{$search}%");
+                $q->where('campaign_reports.campaign_name', 'like', "%{$search}%")
+                    ->orWhere('campaign_reports.campaign_id', 'like', "%{$search}%");
             });
         }
 
         if (isset($filters['min_spend'])) {
-            $query->where('a_spend', '>=', (float) $filters['min_spend']);
+            $query->where('insight_reports.spend', '>=', (float) $filters['min_spend']);
         }
 
         if (isset($filters['min_revenue'])) {
-            $query->where('r_revenue', '>=', (float) $filters['min_revenue']);
+            $query->where('campaign_reports.r_revenue', '>=', (float) $filters['min_revenue']);
         }
 
         if (isset($filters['min_profit'])) {
-            $query->whereRaw('r_revenue - a_spend >= ?', [(float) $filters['min_profit']]);
+            $query->whereRaw('campaign_reports.r_revenue - COALESCE(insight_reports.spend, 0) >= ?', [(float) $filters['min_profit']]);
         }
 
-        SortInput::fromValidatedArray(
+        $sort = SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,
             defaultColumn: 'total_spend',
             defaultDirection: 'desc',
-        )->applyTo($query);
+        );
+
+        $sortColumn = $sort->column === 'campaign_id'
+            ? 'campaign_reports.campaign_id'
+            : $sort->column;
+
+        $query->orderBy($sortColumn, $sort->direction)
+            ->orderBy('campaign_reports.id', $sort->direction);
 
         return PaginationInput::fromValidatedArray($filters)->paginateQuery($query);
     }

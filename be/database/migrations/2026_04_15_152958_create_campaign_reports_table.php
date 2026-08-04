@@ -21,13 +21,9 @@ return new class extends Migration
             $table->string('campaign_name')->nullable();
             $table->string('campaign_status')->nullable();
             $table->string('ads_type', 50)->nullable();
-            $table->decimal('daily_budget', 15, 2)->nullable();
-            $table->decimal('lifetime_budget', 15, 2)->nullable();
 
             // Revenue
-            $table->string('style_code')->nullable();
             $table->string('style_name')->nullable();
-            $table->string('channel_code')->nullable();
             $table->string('channel_name')->nullable();
             $table->integer('r_search_views')->default(0);
             $table->integer('r_conversion')->default(0);
@@ -43,22 +39,6 @@ return new class extends Migration
             $table->decimal('r_funnel_rpm', 10, 4)->default(0.0000);
             $table->decimal('r_cpa', 10, 4)->default(0.0000);
 
-            // ads / spend
-            $table->integer('a_ad_clicks')->default(0);
-            $table->integer('a_article_views')->default(0);
-            $table->integer('a_search_views')->default(0);
-            $table->integer('a_conversion')->default(0);
-            $table->decimal('a_spend', 15, 2)->default(0.00);
-            $table->integer('a_impressions')->default(0);
-            $table->decimal('a_cpc', 10, 4)->default(0.0000);
-            $table->decimal('a_cpm', 10, 4)->default(0.0000);
-            $table->decimal('a_ctr', 8, 4)->default(0.0000);
-            $table->integer('a_reach')->default(0);
-            $table->decimal('a_cpa', 10, 4)->default(0.0000);
-            $table->decimal('a_ctr_link', 8, 4)->default(0.0000);
-            $table->decimal('a_cpc_link', 10, 4)->default(0.0000);
-            $table->decimal('a_frequency', 8, 4)->default(0.0000);
-            $table->integer('a_clicks')->default(0);
         });
     }
 

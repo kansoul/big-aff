@@ -18,19 +18,10 @@ class CampaignReportService
      *
      * @var array<int, string>
      */
-    private const SUM_COLUMNS = [
-        // Budget
-        'daily_budget',
-        'lifetime_budget',
-        // Ads (a_*)
-        'a_ad_clicks',
-        'a_article_views',
-        'a_search_views',
-        'a_conversion',
-        'a_spend',
-        'a_impressions',
-        'a_reach',
-        'a_clicks',
+    private const INSIGHT_SUM_COLUMNS = [
+        'a_conversion' => 'search_clicks',
+        'a_spend' => 'spend',
+        'a_clicks' => 'clicks',
     ];
 
     /**
@@ -100,17 +91,23 @@ class CampaignReportService
             ->leftJoin(
                 DB::raw('(SELECT MAX(id) AS id, channel_code, date FROM revenue_reports WHERE deleted_at IS NULL GROUP BY channel_code, date) AS rv_gs_unique'),
                 function ($join) {
-                    $join->on('rv_gs_unique.channel_code', '=', 'campaign_reports.channel_code')
+                    $join->on('rv_gs_unique.channel_code', '=', 'ld_scope.channel_code')
                         ->on('rv_gs_unique.date', '=', 'campaign_reports.date_start');
                 },
             )
             ->leftJoin('revenue_reports as rv_gs', 'rv_gs.id', '=', 'rv_gs_unique.id')
+            ->leftJoin('insight_reports as ir_gs', function ($join): void {
+                $join->on('ir_gs.account_id', '=', 'campaign_reports.account_id')
+                    ->on('ir_gs.campaign_id', '=', 'campaign_reports.campaign_id')
+                    ->on('ir_gs.date_start', '=', 'campaign_reports.date_start')
+                    ->whereNull('ir_gs.deleted_at');
+            })
             ->leftJoin('realtime_reports as rt_gs', 'rt_gs.id', '=', 'campaign_reports.realtime_report_id');
 
         $selectParts = ['COUNT(*) AS record_count'];
 
-        foreach (self::SUM_COLUMNS as $col) {
-            $selectParts[] = "COALESCE(SUM(campaign_reports.{$col}), 0) AS {$col}";
+        foreach (self::INSIGHT_SUM_COLUMNS as $alias => $column) {
+            $selectParts[] = "COALESCE(SUM(ir_gs.{$column}), 0) AS {$alias}";
         }
 
         // revenue_est = SUM(click_keyword_count * r_rpc) per campaign row.
@@ -156,7 +153,7 @@ class CampaignReportService
         $channelCodes = collect($filters['channel_codes'] ?? [])->filter()->unique()->values();
         if ($channelCodes->isEmpty()) {
             $channelCodes = $this->listCampaignReportsAction->buildBaseQuery($filters)
-                ->select('campaign_reports.channel_code')
+                ->select('ld_scope.channel_code')
                 ->distinct()
                 ->pluck('channel_code')
                 ->filter()
@@ -193,8 +190,8 @@ class CampaignReportService
     private function sumRevenueClicksWithRealtimeFallback(array $filters, float $defaultGoogleClicks): float
     {
         $pairsQuery = $this->listCampaignReportsAction->buildBaseQuery($filters)
-            ->selectRaw('campaign_reports.channel_code, DATE(campaign_reports.date_start) AS report_date')
-            ->whereNotNull('campaign_reports.channel_code')
+            ->selectRaw('ld_scope.channel_code, DATE(campaign_reports.date_start) AS report_date')
+            ->whereNotNull('ld_scope.channel_code')
             ->distinct();
 
         $googleClicksQuery = RevenueReport::query()
@@ -302,8 +299,8 @@ class CampaignReportService
         }
 
         return match ($groupBy) {
-            'channel_code' => 'campaign_reports.channel_code',
-            'style_code' => 'campaign_reports.style_code',
+            'channel_code' => 'ld_scope.channel_code',
+            'style_code' => 'ld_scope.style_code',
             'account_id' => 'campaign_reports.account_id',
             'campaign_id' => 'campaign_reports.campaign_id',
             default => null,
@@ -311,7 +308,7 @@ class CampaignReportService
     }
 
     /**
-     * Run a GROUP BY aggregate query for SUM_COLUMNS + revenue_est + realtime counts.
+     * Run a GROUP BY aggregate query for insight sums, revenue_est, and realtime counts.
      *
      * @param  array<string, mixed>  $filters
      * @return array<string, object> keyed by (string) group_key
@@ -320,6 +317,12 @@ class CampaignReportService
     {
         $query = $this->listCampaignReportsAction->buildBaseQuery($filters);
         $query->leftJoin('realtime_reports AS rt_grp', 'rt_grp.id', '=', 'campaign_reports.realtime_report_id');
+        $query->leftJoin('insight_reports AS ir_grp', function ($join): void {
+            $join->on('ir_grp.account_id', '=', 'campaign_reports.account_id')
+                ->on('ir_grp.campaign_id', '=', 'campaign_reports.campaign_id')
+                ->on('ir_grp.date_start', '=', 'campaign_reports.date_start')
+                ->whereNull('ir_grp.deleted_at');
+        });
 
         $groupKeyExpr = $this->applyGroupKeyJoin($query, $groupBy);
         if ($groupKeyExpr === null) {
@@ -331,8 +334,8 @@ class CampaignReportService
             'COUNT(*) AS record_count',
         ];
 
-        foreach (self::SUM_COLUMNS as $col) {
-            $selectParts[] = "COALESCE(SUM(campaign_reports.{$col}), 0) AS {$col}";
+        foreach (self::INSIGHT_SUM_COLUMNS as $alias => $column) {
+            $selectParts[] = "COALESCE(SUM(ir_grp.{$column}), 0) AS {$alias}";
         }
 
         $selectParts[] = 'COALESCE(SUM(COALESCE(rt_grp.click_ad_count, 0) * IF(NULLIF(campaign_reports.r_rpc, 0) IS NOT NULL, campaign_reports.r_rpc, IF(NULLIF(campaign_reports.r_conversion, 0) IS NOT NULL, campaign_reports.r_revenue / campaign_reports.r_conversion, 0))), 0) AS revenue_est';
@@ -372,8 +375,8 @@ class CampaignReportService
         }
 
         $pairs = $query
-            ->selectRaw("{$groupKeyExpr} AS group_key, campaign_reports.channel_code, DATE(campaign_reports.date_start) AS date_start")
-            ->whereNotNull('campaign_reports.channel_code')
+            ->selectRaw("{$groupKeyExpr} AS group_key, ld_scope.channel_code, DATE(campaign_reports.date_start) AS date_start")
+            ->whereNotNull('ld_scope.channel_code')
             ->distinct()
             ->get();
 
@@ -656,8 +659,8 @@ class CampaignReportService
             'rt_ctr_search' => 0.0,
         ];
 
-        foreach (self::SUM_COLUMNS as $col) {
-            $summary[$col] = 0.0;
+        foreach (array_keys(self::INSIGHT_SUM_COLUMNS) as $alias) {
+            $summary[$alias] = 0.0;
         }
 
         foreach (array_keys(self::REVENUE_REPORT_COLUMNS) as $alias) {
@@ -688,8 +691,8 @@ class CampaignReportService
 
         $summary['record_count'] = (int) ($row->record_count ?? 0);
 
-        foreach (self::SUM_COLUMNS as $col) {
-            $summary[$col] = (float) ($row->{$col} ?? 0);
+        foreach (array_keys(self::INSIGHT_SUM_COLUMNS) as $alias) {
+            $summary[$alias] = (float) ($row->{$alias} ?? 0);
         }
 
         $summary['revenue_est'] = (float) ($row->revenue_est ?? 0);

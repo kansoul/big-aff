@@ -35,7 +35,6 @@ import {
   RevenueChartReportInternalDialog,
   RevenueChartDialog,
   RevenueReportRangeDialog,
-  TargetCpaFormDialog,
   TrackingAnalyticsDialog,
 } from '@/features/campaign-report/components'
 import { Button } from '@/components/ui'
@@ -147,8 +146,6 @@ const SORTABLE_COLUMNS = new Set([
   'ads_type',
   'channel_code',
   'channel_name',
-  'daily_budget',
-  'lifetime_budget',
   'r_search_views',
   'r_conversion',
   'r_revenue',
@@ -162,21 +159,6 @@ const SORTABLE_COLUMNS = new Set([
   'r_funnel_impressions',
   'r_funnel_rpm',
   'r_cpa',
-  'a_ad_clicks',
-  'a_article_views',
-  'a_search_views',
-  'a_conversion',
-  'a_spend',
-  'a_impressions',
-  'a_cpc',
-  'a_cpm',
-  'a_ctr',
-  'a_reach',
-  'a_cpa',
-  'a_ctr_link',
-  'a_cpc_link',
-  'a_frequency',
-  'a_clicks',
 ])
 
 // ─── Column factory helpers ───────────────────────────────────────────────────
@@ -405,7 +387,6 @@ function getColumns(
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void,
   onOpenTrackingAnalytics: (row: CampaignReportRow) => void,
   onOpenAdsAdsetReport: (row: CampaignReportRow) => void,
-  onOpenTargetCpa: (row: CampaignReportRow) => void,
   canViewDeliveryReports: boolean,
   dateFrom?: string | null,
   dateTo?: string | null,
@@ -1027,49 +1008,6 @@ function getColumns(
   const colRtViewSearchCount = count('rt_view_search_count', 'R. S.View', 78, 'green')
   const colRtViewArticleCount = count('rt_view_article_count', 'R. Article Views', 100, 'green')
 
-  // ── Target CPA (Google only, editable) ──
-  const colTargetCpa: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'target_cpa',
-    header: 'tCPA',
-    Header: <HeaderLabel icon="blue">tCPA</HeaderLabel>,
-    size: autoSize(55, null),
-    enableSorting: false,
-    Cell: ({ row }) => {
-      if (isGroupRow(row.original)) return null
-      const r = row.original
-      const isGoogle = (r.ads_type ?? '').toLowerCase() === 'google'
-      if (!isGoogle) return <span className="text-foreground/50 text-[10px]">—</span>
-      // ROAS-based strategies (TARGET_ROAS = 8, MAXIMIZE_CONVERSION_VALUE = 11)
-      // do not carry a target CPA, so it cannot be edited.
-      if (r.bidding_strategy_type === 8 || r.bidding_strategy_type === 11) {
-        return (
-          <span
-            className="text-foreground/50 text-[10px] truncate"
-            title="ROAS-based bidding strategy — target CPA not applicable"
-          >
-            tROAS
-          </span>
-        )
-      }
-      const value = toNumber(r.target_cpa)
-      return (
-        <button
-          className={cn(
-            'tabular-nums text-[10px] underline underline-offset-2 truncate cursor-pointer',
-            value > 0 ? '' : 'text-rose-500',
-          )}
-          title="Edit target CPA"
-          onClick={(e) => {
-            e.stopPropagation()
-            onOpenTargetCpa(r)
-          }}
-        >
-          {value > 0 ? formatUsd(value) : 'Set'}
-        </button>
-      )
-    },
-  }
-
   // Column order matches AllReportResource.php
   return [
     // ── Group label (grouped mode only) ──
@@ -1092,7 +1030,6 @@ function getColumns(
     // ── Revenue & spend ──
     usd('r_revenue', 'Rev', 70, 'yellow'),
     colRevenueEst,
-    usd('a_spend', 'Spend', 78, 'blue'),
     colProfit,
     colRoi,
     colRoiRealtime,
@@ -1100,7 +1037,6 @@ function getColumns(
     // ── Conversions ──
     colRtClickAdCount,
     count('r_conversion', 'Conv.', 70, 'yellow'),
-    count('a_conversion', 'A. Conv.', 85, 'blue'),
     (() => {
       const footerText = summary ? formatDecimal(toNumber(summary.r_rpc), 2) : null
       return {
@@ -1134,8 +1070,6 @@ function getColumns(
     // ── CPA ──
     colRtCpa,
     ratio('r_cpa', 'CPA', 68, 2, 'yellow'),
-    colTargetCpa,
-    ratio('a_cpa', 'A. CPA', 85, 2, 'blue'),
 
     // ── Search impressions & RPM ──
     ratio('r_ad_requests_rpm', 'S. RPM', 70, 2, 'yellow'),
@@ -1174,12 +1108,10 @@ function getColumns(
     // ── Search views ──
     colRtViewSearchCount,
     count('r_search_views', 'S.Views', 80, 'yellow'),
-    count('a_search_views', 'A. S.View', 98, 'blue'),
 
     // ── Kw / funnel ──
     colRtClickKeywordCount,
     count('r_funnel_clicks', 'C.Kw', 105, 'yellow'),
-    count('a_clicks', 'A. C.Kw', 105, 'blue'),
     count('r_funnel_requests', 'Kw Request', 120, 'yellow'),
     colRtCtrKeyword,
     colCtrKeyword,
@@ -1189,41 +1121,9 @@ function getColumns(
     // ── CTR Search ──
     colRtCtrSearch,
 
-    // ── A. platform metrics ──
-    { ...ratio('a_ctr_link', 'A. CTR', 92, 2, 'blue'), Footer: undefined },
-    {
-      ...count('a_article_views', 'A. LP View', 100, 'blue'),
-      Footer: undefined,
-    },
-    {
-      ...ratio('a_cpc_link', 'A. CPC', 85, 2, 'blue'),
-      Footer: undefined,
-    },
-    { ...count('a_reach', 'Reach', 75, 'blue'), Footer: undefined },
-    {
-      ...count('a_impressions', 'A. Impr', 85, 'blue'),
-      Footer: undefined,
-    },
-    { ...ratio('a_cpm', 'CPM', 70, 2, 'blue'), Footer: undefined },
-    { ...ratio('a_frequency', 'A. Freq', 82, 2, 'blue'), Footer: undefined },
-    { ...ratio('a_ctr', 'A. CTR', 92, 2, 'blue'), Footer: undefined },
-    {
-      ...usd('daily_budget', 'A. Budget (Daily)', 100, 'blue'),
-      Footer: undefined,
-    },
-    {
-      ...usd('lifetime_budget', 'A. Budget (Lifetime)', 105, 'blue'),
-      Footer: undefined,
-    },
-
     // ── No AllReport equivalent — kept for completeness ──
     ratio('r_impressions_rpm', 'Impr RPM', 92, 2, 'yellow'),
     count('r_ad_requests', 'Ad Reqs', 82, 'yellow'),
-    {
-      ...count('a_ad_clicks', 'Ad Clicks', 88, 'blue'),
-      Footer: undefined,
-    },
-    { ...ratio('a_cpc', 'A. CPC', 88, 2, 'blue'), Footer: undefined },
     colRtViewArticleCount,
   ]
 }
@@ -1242,7 +1142,6 @@ type Props = {
   onPaginationChange: (page: number, perPage: number) => void
   onSortingChange: (orderBy: CampaignReportOrderBy | null, order: 'asc' | 'desc' | null) => void
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void
-  onUpdateTargetCpa: (campaignId: string, targetCpa: number) => void
   role: RBACRole
 }
 
@@ -1258,7 +1157,6 @@ function CampaignReportTableCardInner({
   onPaginationChange,
   onSortingChange,
   onToggleCampaignStatus,
-  onUpdateTargetCpa,
   role,
 }: Props) {
   const grouped = Boolean(filters.group_by)
@@ -1275,8 +1173,6 @@ function CampaignReportTableCardInner({
   const [insightChartTarget, setInsightChartTarget] = useState<InsightChartDialogTarget | null>(
     null,
   )
-  const [targetCpaOpen, setTargetCpaOpen] = useState(false)
-  const [targetCpaTarget, setTargetCpaTarget] = useState<CampaignReportRow | null>(null)
   const [summaryOnly, setSummaryOnly] = useState(false)
   const [prevPerPage, setPrevPerPage] = useState<number | null>(null)
   const effectiveSummaryOnly = grouped && summaryOnly
@@ -1375,16 +1271,6 @@ function CampaignReportTableCardInner({
     if (!next) setInsightChartTarget(null)
   }, [])
 
-  const openTargetCpa = useCallback((row: CampaignReportRow) => {
-    setTargetCpaTarget(row)
-    setTargetCpaOpen(true)
-  }, [])
-
-  const onTargetCpaOpenChange = useCallback((next: boolean) => {
-    setTargetCpaOpen(next)
-    if (!next) setTargetCpaTarget(null)
-  }, [])
-
   const canViewDeliveryReports = useMemo(
     () => hasPermission(userPermissions, PermissionSlugs.DeliveryEntitiesReportsView),
     [userPermissions],
@@ -1399,7 +1285,6 @@ function CampaignReportTableCardInner({
         onToggleCampaignStatus,
         openTrackingAnalytics,
         openDeliveryReport,
-        openTargetCpa,
         canViewDeliveryReports,
         filters.date_from,
         filters.date_to,
@@ -1415,7 +1300,6 @@ function CampaignReportTableCardInner({
       onToggleCampaignStatus,
       openTrackingAnalytics,
       openDeliveryReport,
-      openTargetCpa,
       canViewDeliveryReports,
       summary,
       toggling,
@@ -1744,13 +1628,6 @@ function CampaignReportTableCardInner({
           initialDateTo={insightChartTarget.dateTo}
         />
       )}
-
-      <TargetCpaFormDialog
-        open={targetCpaOpen}
-        onOpenChange={onTargetCpaOpenChange}
-        row={targetCpaTarget}
-        onSuccess={onUpdateTargetCpa}
-      />
     </>
   )
 }

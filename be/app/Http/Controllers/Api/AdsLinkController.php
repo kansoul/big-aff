@@ -39,7 +39,7 @@ class AdsLinkController extends BaseController
     public function store(StoreAdsLinkRequest $request): JsonResponse
     {
         $adsLink = $this->adsLinkService->create($request->validated());
-        $adsLink->load(['site', 'post', 'keywordSet']);
+        $adsLink->load('site');
 
         return $this->sendResponse(
             ['data' => new AdsLinkResource($adsLink)],
@@ -53,7 +53,7 @@ class AdsLinkController extends BaseController
     public function update(UpdateAdsLinkRequest $request, AdsLink $adsLink): JsonResponse
     {
         $updated = $this->adsLinkService->update($adsLink, $request->validated());
-        $updated->load(['site', 'post', 'keywordSet']);
+        $updated->load('site');
 
         return $this->sendResponse(['data' => new AdsLinkResource($updated)]);
     }

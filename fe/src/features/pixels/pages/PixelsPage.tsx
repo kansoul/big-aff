@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { PixelFormDialog } from '@/features/pixels/components/PixelFormDialog'
 import { pixelsApi } from '@/features/pixels/api'
-import type { Pixel, PixelAccount, PixelFormValues } from '@/features/pixels/types'
-import { axiosInstance } from '@/shared/api/axios'
+import type { Pixel, PixelFormValues } from '@/features/pixels/types'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { hasPermission, PermissionSlugs } from '@/constants/permissions'
 import { formatApiError } from '@/features/settings/components'
@@ -27,7 +34,6 @@ export function PixelsPage() {
     [permissions],
   )
   const [rows, setRows] = useState<Pixel[]>([])
-  const [accounts, setAccounts] = useState<PixelAccount[]>([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -36,12 +42,8 @@ export function PixelsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [result, accountResult] = await Promise.all([
-        pixelsApi.list({ query, per_page: 100 }),
-        axiosInstance.get<{ data: PixelAccount[] }>('/options/accounts'),
-      ])
+      const result = await pixelsApi.list({ query, per_page: 100 })
       setRows(result.data)
-      setAccounts(accountResult.data.data.filter((a) => a.ads_type === 'tiktok'))
     } catch (e) {
       toast.error(formatApiError(e))
     } finally {
@@ -103,49 +105,72 @@ export function PixelsPage() {
           </Button>
         ) : null}
       </div>
-      <div className="space-y-3">
-        {rows.map((pixel) => (
-          <Card key={pixel.id}>
-            <CardContent className="flex items-center justify-between gap-4 py-4">
-              <div>
-                <p className="font-mono text-sm font-semibold">{pixel.pixel_id}</p>
-                <p className="text-xs text-muted-foreground">
-                  {pixel.name || 'Unnamed'} ·{' '}
-                  {pixel.account?.account_name ?? pixel.account?.account_id}
-                </p>
-              </div>
-              <div className="flex gap-1">
-                {canUpdate ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEditing(pixel)
-                      setOpen(true)
-                    }}
-                  >
-                    <Pencil className="size-4" />
-                    <span className="sr-only">Edit</span>
-                  </Button>
-                ) : null}
-                {canDelete ? (
-                  <Button variant="ghost" size="icon" onClick={() => void remove(pixel)}>
-                    <Trash2 className="size-4" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {!loading && rows.length === 0 ? (
-          <p className="py-12 text-center text-sm text-muted-foreground">No pixels found.</p>
-        ) : null}
-      </div>
+      <Card className="overflow-hidden py-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-20">ID</TableHead>
+                <TableHead>Pixel ID</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead className="w-28 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-32 text-center">
+                    <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
+                    <span className="sr-only">Loading pixels</span>
+                  </TableCell>
+                </TableRow>
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                    No pixels found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rows.map((pixel) => (
+                  <TableRow key={pixel.id}>
+                    <TableCell className="text-muted-foreground">{pixel.id}</TableCell>
+                    <TableCell className="font-mono font-medium">{pixel.pixel_id}</TableCell>
+                    <TableCell>
+                      {pixel.name || <span className="text-muted-foreground">—</span>}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-1">
+                        {canUpdate ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setEditing(pixel)
+                              setOpen(true)
+                            }}
+                          >
+                            <Pencil className="size-4" />
+                            <span className="sr-only">Edit pixel {pixel.pixel_id}</span>
+                          </Button>
+                        ) : null}
+                        {canDelete ? (
+                          <Button variant="ghost" size="icon" onClick={() => void remove(pixel)}>
+                            <Trash2 className="size-4" />
+                            <span className="sr-only">Delete pixel {pixel.pixel_id}</span>
+                          </Button>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
       <PixelFormDialog
         open={open}
         pixel={editing}
-        accounts={accounts}
         saving={saving}
         onOpenChange={setOpen}
         onSubmit={submit}

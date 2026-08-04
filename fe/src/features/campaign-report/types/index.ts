@@ -8,8 +8,6 @@ export type CampaignReportOrderBy =
   | 'ads_type'
   | 'channel_code'
   | 'channel_name'
-  | 'daily_budget'
-  | 'lifetime_budget'
   | 'r_search_views'
   | 'r_conversion'
   | 'r_revenue'
@@ -23,21 +21,6 @@ export type CampaignReportOrderBy =
   | 'r_funnel_impressions'
   | 'r_funnel_rpm'
   | 'r_cpa'
-  | 'a_ad_clicks'
-  | 'a_article_views'
-  | 'a_search_views'
-  | 'a_conversion'
-  | 'a_spend'
-  | 'a_impressions'
-  | 'a_cpc'
-  | 'a_cpm'
-  | 'a_ctr'
-  | 'a_reach'
-  | 'a_cpa'
-  | 'a_ctr_link'
-  | 'a_cpc_link'
-  | 'a_frequency'
-  | 'a_clicks'
 
 export type CampaignReportOrder = 'asc' | 'desc'
 
@@ -70,10 +53,6 @@ export interface CampaignReportRow {
   slug?: string | null
   tracking_code?: string | null
   ads_manager_link?: string | null
-  daily_budget: string | number | null
-  lifetime_budget: string | number | null
-  target_cpa: string | number | null
-  bidding_strategy_type: number | null
 
   channel_code: string | null
   channel_name: string | null
@@ -91,22 +70,6 @@ export interface CampaignReportRow {
   r_funnel_impressions: number
   r_funnel_rpm: string | number
   r_cpa: string | number
-
-  a_ad_clicks: number
-  a_article_views: number
-  a_search_views: number
-  a_conversion: number
-  a_spend: string | number
-  a_impressions: number
-  a_cpc: string | number
-  a_cpm: string | number
-  a_ctr: string | number
-  a_reach: number
-  a_cpa: string | number
-  a_ctr_link: string | number
-  a_cpc_link: string | number
-  a_frequency: string | number
-  a_clicks: number
 
   revenue_est: number
   profit: number
@@ -240,13 +203,6 @@ export interface CampaignReportToggleStatusResponse {
   data: {
     campaign_id: string
     status: string
-  }
-}
-
-export interface CampaignReportUpdateTargetCpaResponse {
-  data: {
-    campaign_id: string
-    target_cpa: number
   }
 }
 

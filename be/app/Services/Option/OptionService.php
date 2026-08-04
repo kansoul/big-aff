@@ -53,9 +53,9 @@ class OptionService
         return $this->getBusinessCenterOptions->execute();
     }
 
-    public function pixels(int $accountId): Collection
+    public function pixels(): Collection
     {
-        return $this->listPixelOptions->execute($accountId);
+        return $this->listPixelOptions->execute();
     }
 
     /** @return array{can_view_unscoped: bool, show_team_filter: bool, main_teams: Collection, accounts: Collection, teams: Collection, campaigns: Collection} */

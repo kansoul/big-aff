@@ -14,7 +14,6 @@ class Pixel extends Model
     use HasFactory, PixelRelationship, SoftDeletes;
 
     protected $fillable = [
-        'account_id',
         'pixel_id',
         'name',
         'created_by',

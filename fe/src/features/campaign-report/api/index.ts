@@ -10,7 +10,6 @@ import type {
   CampaignReportFiltersResponse,
   CampaignReportListResponse,
   CampaignReportToggleStatusResponse,
-  CampaignReportUpdateTargetCpaResponse,
   CampaignRuleCreatePayload,
   CampaignRuleFilterParams,
   CampaignRuleListResponse,
@@ -68,12 +67,6 @@ export const campaignReportApi = {
     axiosInstance.post<CampaignReportToggleStatusResponse>(
       `/campaign-reports/${encodeURIComponent(campaignId)}/toggle-status`,
       { status },
-    ),
-
-  updateTargetCpa: (campaignId: string, payload: { target_cpa: number }) =>
-    axiosInstance.post<CampaignReportUpdateTargetCpaResponse>(
-      `/campaign-reports/${encodeURIComponent(campaignId)}/target-cpa`,
-      payload,
     ),
 
   queryRange: (payload: RevenueReportRangeQueryPayload) =>

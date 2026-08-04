@@ -2,7 +2,6 @@
 
 namespace App\Models\Traits\Relationship;
 
-use App\Models\Account;
 use App\Models\LinkData;
 use App\Models\Pixel;
 use App\Models\Site;
@@ -12,11 +11,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 trait AdsLinkRelationship
 {
-    public function account(): BelongsTo
-    {
-        return $this->belongsTo(Account::class);
-    }
-
     public function pixel(): BelongsTo
     {
         return $this->belongsTo(Pixel::class);

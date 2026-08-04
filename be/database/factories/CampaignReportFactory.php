@@ -56,12 +56,8 @@ class CampaignReportFactory extends Factory
             'campaign_name' => ucfirst(fake()->words(fake()->numberBetween(3, 5), true)),
             'campaign_status' => fake()->randomElement(['ACTIVE', 'ACTIVE', 'PAUSED', 'ARCHIVED']),
             'ads_type' => $adsType,
-            'daily_budget' => round(fake()->randomFloat(2, 50, 2_000), 2),
-            'lifetime_budget' => null,
             // revenue side
-            'style_code' => 'style_'.fake()->lexify('???###'),
             'style_name' => fake()->words(2, true),
-            'channel_code' => 'chan_'.fake()->lexify('???###'),
             'channel_name' => fake()->words(2, true),
             'r_search_views' => $rSearchViews,
             'r_conversion' => fake()->numberBetween(0, 20),
@@ -76,22 +72,6 @@ class CampaignReportFactory extends Factory
             'r_funnel_impressions' => $rFunnelImps,
             'r_funnel_rpm' => $rFunnelRpm,
             'r_cpa' => fake()->randomFloat(2, 0, 50),
-            // ads/spend side
-            'a_ad_clicks' => $adClicks,
-            'a_article_views' => $articleViews,
-            'a_search_views' => $searchViews,
-            'a_conversion' => fake()->numberBetween(0, 30),
-            'a_spend' => $spend,
-            'a_impressions' => $impressions,
-            'a_cpc' => $cpc,
-            'a_cpm' => $cpm,
-            'a_ctr' => $ctr,
-            'a_reach' => $reach,
-            'a_cpa' => fake()->randomFloat(2, 0, 50),
-            'a_ctr_link' => $ctrLink,
-            'a_cpc_link' => $cpcLink,
-            'a_frequency' => $frequency,
-            'a_clicks' => $clicks,
         ];
     }
 }

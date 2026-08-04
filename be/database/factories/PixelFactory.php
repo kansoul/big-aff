@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\Account;
 use App\Models\Pixel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -14,7 +13,6 @@ class PixelFactory extends Factory
     public function definition(): array
     {
         return [
-            'account_id' => Account::factory(),
             'pixel_id' => strtoupper(fake()->bothify('C##################')),
             'name' => fake()->optional()->words(3, true),
         ];
