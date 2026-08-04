@@ -28,6 +28,9 @@ class GetAdsDeliveryEntitiesRequest extends FormRequest
             'adset_name' => ['sometimes', 'nullable', 'string'],
             'ad_id' => ['sometimes', 'nullable', 'string'],
             'ad_name' => ['sometimes', 'nullable', 'string'],
+            'session_id' => ['sometimes', 'nullable', 'uuid'],
+            'click_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'event_type' => ['sometimes', 'nullable', 'string', 'max:100'],
         ];
     }
 }

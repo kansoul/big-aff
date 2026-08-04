@@ -14,17 +14,16 @@ return new class extends Migration
         Schema::create('event_clicks', function (Blueprint $table) use ($isMysql) {
             $isMysql ? $table->unsignedBigInteger('id')->autoIncrement() : $table->id();
             $table->uuid('session_id')->nullable()->index();
-            $table->unsignedBigInteger('link_data_id')->nullable();
             $table->string('campaign_id')->nullable();
             $table->string('adset_id')->nullable();
             $table->string('ad_id')->nullable();
-            $table->enum('type', ['click_keyword', 'click_ad'])->nullable();
+            $table->enum('type', ['form_view'])->nullable();
             $table->enum('page', ['article', 'search'])->nullable();
             $table->string('keyword_clicked', 750)->nullable();
             $table->timestamp('event_time')->nullable();
             $table->timestamp('created_at')->useCurrent();
 
-            $table->index(['link_data_id', 'created_at'], 'idx_event_clicks_link_date');
+            $table->index(['campaign_id', 'created_at'], 'idx_event_clicks_campaign_date');
 
             if ($isMysql) {
                 $table->primary(['id', 'created_at']);

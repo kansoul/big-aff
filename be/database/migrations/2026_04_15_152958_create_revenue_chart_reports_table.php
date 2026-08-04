@@ -15,7 +15,6 @@ return new class extends Migration
             $table->string('style_code', 100)->index();
             $table->string('channel_code', 100)->index();
             $table->string('style_name')->nullable();
-            $table->string('channel_name')->nullable();
             $table->dateTime('datetime')->index();
 
             $table->integer('page_views')->nullable();

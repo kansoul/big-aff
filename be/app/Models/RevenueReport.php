@@ -5,30 +5,26 @@ namespace App\Models;
 use App\Models\Traits\Relationship\RevenueReportRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RevenueReport extends Model
 {
-    use HasFactory, RevenueReportRelationship, SoftDeletes;
+    use HasFactory, RevenueReportRelationship;
 
     protected $table = 'revenue_reports';
 
     protected $fillable = [
-        'ad_client_id',
-        'style_code',
-        'channel_code',
-        'style_name',
-        'channel_name',
-        'owner_user_id',
-        'owner_main_team_id',
-        'date',
+        'session_id',
+        'campaign_id',
+        'adset_id',
+        'ad_id',
+        'click_id',
+        'estimate_earning',
         'page_views',
         'clicks',
         'ad_requests',
         'impressions',
         'ad_requests_rpm',
         'impressions_rpm',
-        'estimated_earnings',
         'cost_per_click',
         'funnel_requests',
         'funnel_impressions',
@@ -39,21 +35,19 @@ class RevenueReport extends Model
     protected function casts(): array
     {
         return [
-            'date' => 'date',
-            'owner_user_id' => 'integer',
-            'owner_main_team_id' => 'integer',
+            'click_id' => 'integer',
+            'estimate_earning' => 'decimal:4',
             'page_views' => 'integer',
             'clicks' => 'integer',
             'ad_requests' => 'integer',
             'impressions' => 'integer',
-            'ad_requests_rpm' => 'double',
-            'impressions_rpm' => 'double',
-            'estimated_earnings' => 'double',
-            'cost_per_click' => 'double',
+            'ad_requests_rpm' => 'decimal:4',
+            'impressions_rpm' => 'decimal:4',
+            'cost_per_click' => 'decimal:4',
             'funnel_requests' => 'integer',
             'funnel_impressions' => 'integer',
             'funnel_clicks' => 'integer',
-            'funnel_rpm' => 'double',
+            'funnel_rpm' => 'decimal:4',
         ];
     }
 }

@@ -13,7 +13,7 @@ class GetInsightChartAction
     /**
      * Returns all 6 revenue/spend metrics, each with current and previous period values.
      * Spend is sourced from InsightReport (spend).
-     * Revenue is sourced from RevenueReport (estimated_earnings), filtered by channel ownership.
+     * Revenue is sourced from session-level RevenueReport rows.
      *
      * @return array{
      *   daily_spend:    array{today: float, yesterday: float},
@@ -52,7 +52,10 @@ class GetInsightChartAction
     private function revenueBaseQuery(): Builder
     {
         $query = RevenueReport::query();
-        OwnershipFilter::forAuthUser()->applyTo($query, 'owner_user_id');
+        $ownership = OwnershipFilter::forAuthUser();
+        if (! $ownership->isAdmin()) {
+            $query->whereHas('campaign', fn ($campaign) => $campaign->whereIn('created_by', $ownership->allowedUserIds()));
+        }
 
         return $query;
     }
@@ -95,9 +98,9 @@ class GetInsightChartAction
 
         return round(
             (float) $this->revenueBaseQuery()
-                ->whereDate('date', '>=', $from)
-                ->whereDate('date', '<=', $to)
-                ->sum('estimated_earnings'),
+                ->whereDate('created_at', '>=', $from)
+                ->whereDate('created_at', '<=', $to)
+                ->sum('estimate_earning'),
             2,
         );
     }

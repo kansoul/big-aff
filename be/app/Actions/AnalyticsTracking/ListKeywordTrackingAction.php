@@ -3,8 +3,8 @@
 namespace App\Actions\AnalyticsTracking;
 
 use App\Enums\EventClickType;
+use App\Models\Campaign;
 use App\Models\EventClick;
-use App\Models\LinkData;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
@@ -24,7 +24,7 @@ class ListKeywordTrackingAction
         $campaignId = $filters['campaign_id'] ?? null;
 
         $ownership = OwnershipFilter::forAuthUser();
-        $linkDataIds = $this->buildLinkDataSubquery($ownership, $adsLinkId);
+        $campaignIds = $this->buildCampaignSubquery($ownership, $adsLinkId);
 
         /** @var Builder<EventClick> $query */
         $query = EventClick::query()
@@ -32,13 +32,13 @@ class ListKeywordTrackingAction
                 DB::raw('MIN(id) as id'),
                 DB::raw('keyword_clicked as keyword'),
                 DB::raw('COUNT(*) as click_count'),
-                DB::raw("SUM(CASE WHEN type = '".EventClickType::ClickAd->value."' THEN 1 ELSE 0 END) AS click_ad_count"),
+                DB::raw("SUM(CASE WHEN type = '".EventClickType::FormView->value."' THEN 1 ELSE 0 END) AS click_ad_count"),
             ])
             ->whereNotNull('keyword_clicked')
             ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
             ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))
-            ->when($linkDataIds, fn ($q) => $q->whereIn('link_data_id', $linkDataIds))
+            ->when($campaignIds, fn ($q) => $q->whereIn('campaign_id', $campaignIds))
             ->when(
                 ! empty($filters['keyword']),
                 fn ($q) => $q->where('keyword_clicked', 'like', '%'.$filters['keyword'].'%')
@@ -55,20 +55,20 @@ class ListKeywordTrackingAction
         return PaginationInput::fromValidatedArray($filters)->paginateQuery($query);
     }
 
-    private function buildLinkDataSubquery(OwnershipFilter $ownership, ?int $adsLinkId): ?Builder
+    private function buildCampaignSubquery(OwnershipFilter $ownership, ?int $adsLinkId): ?Builder
     {
         if ($ownership->isAdmin() && ! $adsLinkId) {
             return null;
         }
 
-        $query = LinkData::query();
+        $query = Campaign::query();
 
         if (! $ownership->isAdmin()) {
-            $ownership->applyTo($query);
+            $ownership->applyThroughAccount($query);
         }
 
         $query->when($adsLinkId, fn ($q) => $q->where('ads_link_id', $adsLinkId));
 
-        return $query->select('id');
+        return $query->select('campaign_id');
     }
 }

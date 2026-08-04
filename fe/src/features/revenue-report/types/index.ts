@@ -1,6 +1,5 @@
 export interface RevenueReportFilterParams {
-  style_codes?: string[]
-  channel_codes?: string[]
+  campaign_ids?: string[]
   date_from?: string | null
   date_to?: string | null
   order_by?: RevenueReportOrderBy | null
@@ -8,16 +7,21 @@ export interface RevenueReportFilterParams {
   page?: number
   per_page?: number
 }
+
 export type RevenueReportOrderBy =
   | 'id'
-  | 'date'
-  | 'style_code'
-  | 'channel_code'
+  | 'session_id'
+  | 'campaign_id'
+  | 'adset_id'
+  | 'ad_id'
+  | 'click_id'
+  | 'estimate_earning'
   | 'page_views'
   | 'clicks'
-  | 'estimated_earnings'
   | 'ad_requests'
   | 'impressions'
+  | 'ad_requests_rpm'
+  | 'impressions_rpm'
   | 'cost_per_click'
   | 'funnel_requests'
   | 'funnel_impressions'
@@ -26,34 +30,49 @@ export type RevenueReportOrderBy =
   | 'created_at'
 
 export type RevenueReportOrder = 'asc' | 'desc'
+
 export interface RevenueReportListResponse {
   data: RevenueReportRow[]
-  summary: Partial<RevenueReportRow>
+  summary: RevenueReportSummary
   pagination: RevenueReportPagination
 }
 
 export interface RevenueReportRow {
   id: number
-  ad_client_id: string
-  style_code: string
-  style_name: string
-  channel_code: string
-  channel_name: string
-  date: string
-  page_views: number
-  clicks: number
-  estimated_earnings: number
-  ad_requests: number
-  impressions: number
-  ad_requests_rpm: number
-  impressions_rpm: number
-  cost_per_click: number
+  session_id: string
+  campaign_id: string
+  adset_id: string | null
+  ad_id: string | null
+  click_id: number
+  estimate_earning: number
+  page_views: number | null
+  clicks: number | null
+  ad_requests: number | null
+  impressions: number | null
+  ad_requests_rpm: number | null
+  impressions_rpm: number | null
+  cost_per_click: number | null
   funnel_requests: number | null
   funnel_impressions: number | null
   funnel_clicks: number | null
   funnel_rpm: number | null
   created_at: string
   updated_at: string
+}
+
+export interface RevenueReportSummary {
+  estimate_earning: number
+  page_views: number
+  clicks: number
+  ad_requests: number
+  impressions: number
+  ad_requests_rpm: number
+  impressions_rpm: number
+  cost_per_click: number
+  funnel_requests: number
+  funnel_impressions: number
+  funnel_clicks: number
+  funnel_rpm: number
 }
 
 export interface RevenueReportPagination {

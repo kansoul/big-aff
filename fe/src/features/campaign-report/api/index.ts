@@ -10,6 +10,7 @@ import type {
   CampaignReportFiltersResponse,
   CampaignReportListResponse,
   CampaignReportToggleStatusResponse,
+  ClickTrackingListResponse,
   CampaignRuleCreatePayload,
   CampaignRuleFilterParams,
   CampaignRuleListResponse,
@@ -47,9 +48,6 @@ function buildListParams(filters: CampaignReportFilterParams) {
     ...(filters.account_ids?.length ? { 'account_ids[]': filters.account_ids } : {}),
     ...(filters.ads_type ? { ads_type: filters.ads_type } : {}),
     ...(filters.campaign_ids?.length ? { 'campaign_ids[]': filters.campaign_ids } : {}),
-    ...(filters.channel_codes?.length ? { 'channel_codes[]': filters.channel_codes } : {}),
-    ...(filters.link_data_ids?.length ? { 'link_data_ids[]': filters.link_data_ids } : {}),
-    ...(filters.group_by ? { group_by: filters.group_by } : {}),
     ...(filters.order_by ? { order_by: filters.order_by } : {}),
     ...(filters.order ? { order: filters.order } : {}),
   }
@@ -239,6 +237,22 @@ export const campaignReportApi = {
           ...(filters.status ? { status: filters.status } : {}),
           ...(filters.ad_id ? { ad_id: filters.ad_id } : {}),
           ...(filters.ad_name ? { ad_name: filters.ad_name } : {}),
+        },
+      },
+    ),
+
+  listDeliveryClicks: (campaignId: string, filters: DeliveryEntitiesFilterParams) =>
+    axiosInstance.get<ClickTrackingListResponse>(
+      `/campaign-reports/${encodeURIComponent(campaignId)}/delivery-entities-reports/clicks`,
+      {
+        params: {
+          ...(filters.date_from ? { date_from: filters.date_from } : {}),
+          ...(filters.date_to ? { date_to: filters.date_to } : {}),
+          ...(filters.adset_id ? { adset_id: filters.adset_id } : {}),
+          ...(filters.ad_id ? { ad_id: filters.ad_id } : {}),
+          ...(filters.session_id ? { session_id: filters.session_id } : {}),
+          ...(filters.click_id ? { click_id: filters.click_id } : {}),
+          ...(filters.event_type ? { event_type: filters.event_type } : {}),
         },
       },
     ),

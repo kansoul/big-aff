@@ -30,8 +30,18 @@ return new class extends Migration
             });
 
         Schema::table('pixels', function (Blueprint $table) {
+            $table->dropForeign(['account_id']);
+        });
+
+        Schema::table('pixels', function (Blueprint $table) {
             $table->dropUnique(['account_id', 'pixel_id']);
-            $table->dropConstrainedForeignId('account_id');
+        });
+
+        Schema::table('pixels', function (Blueprint $table) {
+            $table->dropColumn('account_id');
+        });
+
+        Schema::table('pixels', function (Blueprint $table) {
             $table->unique('pixel_id');
         });
     }
@@ -43,8 +53,18 @@ return new class extends Migration
     {
         Schema::table('pixels', function (Blueprint $table) {
             $table->dropUnique(['pixel_id']);
-            $table->foreignId('account_id')->nullable()->after('id')->constrained('accounts')->cascadeOnDelete();
+        });
+
+        Schema::table('pixels', function (Blueprint $table) {
+            $table->foreignId('account_id')->nullable()->after('id');
+        });
+
+        Schema::table('pixels', function (Blueprint $table) {
             $table->unique(['account_id', 'pixel_id']);
+        });
+
+        Schema::table('pixels', function (Blueprint $table) {
+            $table->foreign('account_id')->references('id')->on('accounts')->cascadeOnDelete();
         });
     }
 };

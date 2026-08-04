@@ -22,9 +22,6 @@ return new class extends Migration
             $table->string('campaign_status')->nullable();
             $table->string('ads_type', 50)->nullable();
 
-            // Revenue
-            $table->string('style_name')->nullable();
-            $table->string('channel_name')->nullable();
             $table->integer('r_search_views')->default(0);
             $table->integer('r_conversion')->default(0);
             $table->decimal('r_revenue', 15, 2)->default(0.00);

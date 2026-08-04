@@ -52,7 +52,6 @@ type RevenueDialogTarget = {
 
 type InsightChartDialogTarget = {
   channelCode: string
-  channelName?: string
   dateFrom?: string | null
   dateTo?: string | null
 }
@@ -143,9 +142,11 @@ const SORTABLE_COLUMNS = new Set([
   'account_name',
   'campaign_id',
   'campaign_name',
+  'adset_id',
+  'ad_id',
+  'session_id',
   'ads_type',
-  'channel_code',
-  'channel_name',
+  'estimate_earning',
   'r_search_views',
   'r_conversion',
   'r_revenue',
@@ -172,79 +173,6 @@ function autoSize(minSize: number, footerText: string | null | undefined): numbe
   return Math.max(minSize, footerText.length * 6 + 8)
 }
 
-function makeUsdCol(
-  key: MetricKey,
-  header: string,
-  size: number,
-  summary: CampaignReportSummary | null,
-  icon?: 'yellow' | 'blue' | 'green',
-): MRT_ColumnDef<TableRow> {
-  const isRevenueField = (key as string).startsWith('r_')
-  const footerText = summary ? formatUsd(toNumber(summary[key])) : null
-  return {
-    accessorKey: key as string,
-    header,
-    Header: <HeaderLabel icon={icon}>{header}</HeaderLabel>,
-    size: autoSize(size, footerText),
-    enableSorting: SORTABLE_COLUMNS.has(key as string),
-    Cell: ({ row }) => {
-      if (isRevenueField && !isGroupRow(row.original))
-        return <span className="text-foreground/30 text-[10px]">—</span>
-      const v = formatUsd(metric(row.original, key))
-      return (
-        <span className="tabular-nums text-[10px] text-foreground truncate" title={v}>
-          {v}
-        </span>
-      )
-    },
-    Footer: () => {
-      if (!summary) return null
-      return (
-        <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
-          {footerText}
-        </span>
-      )
-    },
-  }
-}
-
-function makeRatioCol(
-  key: MetricKey,
-  header: string,
-  size: number,
-  summary: CampaignReportSummary | null,
-  digits = 2,
-  icon?: 'yellow' | 'blue' | 'green',
-): MRT_ColumnDef<TableRow> {
-  const isRevenueField = (key as string).startsWith('r_')
-  const footerText = summary ? formatDecimal(toNumber(summary[key]), digits) : null
-  return {
-    accessorKey: key as string,
-    header,
-    Header: <HeaderLabel icon={icon}>{header}</HeaderLabel>,
-    size: autoSize(size, footerText),
-    enableSorting: SORTABLE_COLUMNS.has(key as string),
-    Cell: ({ row }) => {
-      if (isRevenueField && !isGroupRow(row.original))
-        return <span className="text-foreground/30 text-[10px]">—</span>
-      const v = formatDecimal(metric(row.original, key), digits)
-      return (
-        <span className="tabular-nums text-[10px] text-foreground truncate" title={v}>
-          {v}
-        </span>
-      )
-    },
-    Footer: () => {
-      if (!summary) return null
-      return (
-        <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
-          {footerText}
-        </span>
-      )
-    },
-  }
-}
-
 function makeCountCol(
   key: MetricKey,
   header: string,
@@ -252,7 +180,6 @@ function makeCountCol(
   summary: CampaignReportSummary | null,
   icon?: 'yellow' | 'blue' | 'green',
 ): MRT_ColumnDef<TableRow> {
-  const isRevenueField = (key as string).startsWith('r_')
   const footerText = summary ? String(summary[key]) : null
   return {
     accessorKey: key as string,
@@ -261,8 +188,6 @@ function makeCountCol(
     size: autoSize(size, footerText),
     enableSorting: SORTABLE_COLUMNS.has(key as string),
     Cell: ({ row }) => {
-      if (isRevenueField && !isGroupRow(row.original))
-        return <span className="text-foreground/30 text-[10px]">—</span>
       const v = String(metric(row.original, key))
       return (
         <span className="tabular-nums text-[10px] truncate" title={v}>
@@ -301,11 +226,7 @@ function GroupLabelCell({
   onOpenInsightChart?: (target: InsightChartDialogTarget) => void
 }) {
   const channelCode = typeof row.group_key === 'string' ? row.group_key : undefined
-  const channelName = isChannelGroup ? (row.items[0]?.channel_name ?? null) : null
-  const groupLabel =
-    isChannelGroup && channelName
-      ? `${channelName} (${row.group_key ?? '—'})`
-      : (row.group_label ?? String(row.group_key ?? '—'))
+  const groupLabel = row.group_label ?? String(row.group_key ?? '—')
   return (
     <div className="flex items-center pl-1">
       <div className="flex flex-col">
@@ -335,7 +256,6 @@ function GroupLabelCell({
                 onClick={() =>
                   onOpenInsightChart({
                     channelCode,
-                    channelName: channelName ?? undefined,
                     dateFrom,
                     dateTo,
                   })
@@ -351,7 +271,7 @@ function GroupLabelCell({
   )
 }
 
-function CopyIdCell({ id }: { id: string }) {
+function CopyIdCell({ id, onOpen }: { id: string; onOpen?: () => void }) {
   const [copied, setCopied] = useState(false)
   return (
     <button
@@ -359,6 +279,10 @@ function CopyIdCell({ id }: { id: string }) {
       title={copied ? 'Copied!' : `Click to copy: ${id}`}
       onClick={(e) => {
         e.stopPropagation()
+        if (onOpen) {
+          onOpen()
+          return
+        }
         void navigator.clipboard.writeText(id).then(() => {
           setCopied(true)
           setTimeout(() => setCopied(false), 1500)
@@ -371,7 +295,6 @@ function CopyIdCell({ id }: { id: string }) {
 }
 
 const GROUP_BY_LABEL: Record<string, string> = {
-  channel_code: 'Channel',
   account_id: 'Account',
   user_id: 'User',
   campaign_id: 'Campaign',
@@ -386,7 +309,7 @@ function getColumns(
   toggling: Record<string, boolean>,
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void,
   onOpenTrackingAnalytics: (row: CampaignReportRow) => void,
-  onOpenAdsAdsetReport: (row: CampaignReportRow) => void,
+  onOpenAdsAdsetReport: (row: CampaignReportRow, tab?: 'adsets' | 'ads' | 'clicks') => void,
   canViewDeliveryReports: boolean,
   dateFrom?: string | null,
   dateTo?: string | null,
@@ -394,24 +317,42 @@ function getColumns(
   onOpenRevenueChart?: (target: RevenueDialogTarget) => void,
   onOpenInsightChart?: (target: InsightChartDialogTarget) => void,
 ): MRT_ColumnDef<TableRow>[] {
-  // Shortcuts to avoid passing summary repeatedly
-  const usd = (key: MetricKey, header: string, size: number, icon?: 'yellow' | 'blue' | 'green') =>
-    makeUsdCol(key, header, size, summary, icon)
-
-  const ratio = (
-    key: MetricKey,
-    header: string,
-    size: number,
-    digits = 4,
-    icon?: 'yellow' | 'blue' | 'green',
-  ) => makeRatioCol(key, header, size, summary, digits, icon)
-
   const count = (
     key: MetricKey,
     header: string,
     size: number,
     icon?: 'yellow' | 'blue' | 'green',
   ) => makeCountCol(key, header, size, summary, icon)
+
+  const formatted = (
+    key: MetricKey,
+    header: string,
+    size: number,
+    formatter: (value: number) => string,
+  ): MRT_ColumnDef<TableRow> => {
+    const footerText = summary ? formatter(toNumber(summary[key])) : null
+    return {
+      accessorKey: key as string,
+      header,
+      Header: <HeaderLabel icon="yellow">{header}</HeaderLabel>,
+      size: autoSize(size, footerText),
+      enableSorting: SORTABLE_COLUMNS.has(key as string),
+      Cell: ({ row }) => {
+        const value = formatter(metric(row.original, key))
+        return (
+          <span className="tabular-nums text-[10px] truncate" title={value}>
+            {value}
+          </span>
+        )
+      },
+      Footer: () =>
+        footerText ? (
+          <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
+            {footerText}
+          </span>
+        ) : null,
+    }
+  }
 
   const isSortable = (key: string) => SORTABLE_COLUMNS.has(key)
 
@@ -431,7 +372,7 @@ function getColumns(
           isGroupRow(row.original) ? (
             <GroupLabelCell
               row={row.original}
-              isChannelGroup={groupBy === 'channel_code'}
+              isChannelGroup={false}
               dateFrom={dateFrom}
               dateTo={dateTo}
               onOpenRevenueRange={
@@ -697,39 +638,16 @@ function getColumns(
     },
   }
 
-  const colChannelName: MRT_ColumnDef<TableRow> = {
-    accessorKey: 'channel_name',
-    header: 'Channel',
-    Header: <HeaderLabel>Channel</HeaderLabel>,
-    size: 90,
-    enableSorting: isSortable('channel_name'),
-    Cell: ({ row }) => {
-      if (isGroupRow(row.original)) return null
-      const r = row.original
-      return (
-        <div className="flex flex-col">
-          <span
-            className="max-w-[70px] truncate text-[10px] text-foreground"
-            title={String(r.channel_name ?? r.channel_code ?? '—')}
-          >
-            {r.channel_name ?? r.channel_code ?? '—'}
-          </span>
-        </div>
-      )
-    },
-  }
-
-  // ── Revenue Est column (realtime-based) ──
-  const colRevenueEst: MRT_ColumnDef<TableRow> = (() => {
-    const footerText = summary ? formatUsd(toNumber(summary.revenue_est)) : null
+  const colEstimateEarning: MRT_ColumnDef<TableRow> = (() => {
+    const footerText = summary ? formatUsd(toNumber(summary.estimate_earning)) : null
     return {
-      accessorKey: 'revenue_est',
-      header: 'R. Rev',
-      Header: <HeaderLabel icon="green">R. Rev</HeaderLabel>,
+      accessorKey: 'estimate_earning',
+      header: 'Estimate Earning',
+      Header: <HeaderLabel>Estimate Earning</HeaderLabel>,
       size: autoSize(75, footerText),
-      enableSorting: isSortable('revenue_est'),
+      enableSorting: isSortable('estimate_earning'),
       Cell: ({ row }) => {
-        const v = formatUsd(metric(row.original, 'revenue_est'))
+        const v = formatUsd(metric(row.original, 'estimate_earning'))
         return (
           <span className="tabular-nums text-[10px] text-foreground truncate" title={v}>
             {v}
@@ -744,6 +662,26 @@ function getColumns(
         ) : null,
     }
   })()
+
+  const colRSearchViews = count('r_search_views', 'S. Views', 75, 'yellow')
+  const colRConversion = count('r_conversion', 'Conv.', 65, 'yellow')
+  const colRRevenue = formatted('r_revenue', 'Revenue', 80, formatUsd)
+  const colRRpc = formatted('r_rpc', 'RPC', 65, (value) => formatDecimal(value, 4))
+  const colRAdRequests = count('r_ad_requests', 'Ad Requests', 90, 'yellow')
+  const colRAdRequestsRpm = formatted('r_ad_requests_rpm', 'Ad Req. RPM', 95, (value) =>
+    formatDecimal(value, 4),
+  )
+  const colRImpressions = count('r_impressions', 'Impressions', 85, 'yellow')
+  const colRImpressionsRpm = formatted('r_impressions_rpm', 'Impr. RPM', 85, (value) =>
+    formatDecimal(value, 4),
+  )
+  const colRFunnelRequests = count('r_funnel_requests', 'Funnel Req.', 90, 'yellow')
+  const colRFunnelClicks = count('r_funnel_clicks', 'Funnel Clicks', 90, 'yellow')
+  const colRFunnelImpressions = count('r_funnel_impressions', 'Funnel Impr.', 90, 'yellow')
+  const colRFunnelRpm = formatted('r_funnel_rpm', 'Funnel RPM', 90, (value) =>
+    formatDecimal(value, 4),
+  )
+  const colRCpa = formatted('r_cpa', 'CPA', 65, (value) => formatDecimal(value, 4))
 
   // ── ROI Realtime column ──
   const colRoiRealtime: MRT_ColumnDef<TableRow> = (() => {
@@ -798,92 +736,6 @@ function getColumns(
         const v = isGroupRow(row.original) ? row.original.group_summary.rt_cpa : row.original.rt_cpa
         if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
         const vFormatted = formatUsd(v)
-        return (
-          <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
-            {vFormatted}
-          </span>
-        )
-      },
-      Footer: () =>
-        footerText ? (
-          <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
-            {footerText}
-          </span>
-        ) : null,
-    }
-  })()
-
-  const colRtCvr: MRT_ColumnDef<TableRow> = (() => {
-    const footerText = summary ? `${formatDecimal(summary.rt_cvr)}%` : null
-    return {
-      accessorKey: 'rt_cvr',
-      header: 'R. CVR',
-      Header: <HeaderLabel icon="green">R. CVR</HeaderLabel>,
-      size: autoSize(70, footerText),
-      enableSorting: false,
-      Cell: ({ row }) => {
-        const v = isGroupRow(row.original) ? row.original.group_summary.rt_cvr : row.original.rt_cvr
-        if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
-        const vFormatted = `${formatDecimal(v)}%`
-        return (
-          <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
-            {vFormatted}
-          </span>
-        )
-      },
-      Footer: () =>
-        footerText ? (
-          <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
-            {footerText}
-          </span>
-        ) : null,
-    }
-  })()
-
-  // ── CTR Keyword (yellow) — r_funnel_impressions / r_funnel_requests * 100 ──
-  const colCtrKeyword: MRT_ColumnDef<TableRow> = (() => {
-    const footerText = summary ? `${formatDecimal(summary.ctr_keyword)}%` : null
-    return {
-      accessorKey: 'ctr_keyword',
-      header: 'CTR Kw',
-      Header: <HeaderLabel icon="yellow">CTR Kw</HeaderLabel>,
-      size: autoSize(90, footerText),
-      enableSorting: false,
-      Cell: ({ row }) => {
-        const v = isGroupRow(row.original)
-          ? row.original.group_summary.ctr_keyword
-          : row.original.ctr_keyword
-        if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
-        const vFormatted = `${formatDecimal(v)}%`
-        return (
-          <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
-            {vFormatted}
-          </span>
-        )
-      },
-      Footer: () =>
-        footerText ? (
-          <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
-            {footerText}
-          </span>
-        ) : null,
-    }
-  })()
-
-  const colRtCtrKeyword: MRT_ColumnDef<TableRow> = (() => {
-    const footerText = summary ? `${formatDecimal(summary.rt_ctr_keyword)}%` : null
-    return {
-      accessorKey: 'rt_ctr_keyword',
-      header: 'R. CTR Kw',
-      Header: <HeaderLabel icon="green">R. CTR Kw</HeaderLabel>,
-      size: autoSize(100, footerText),
-      enableSorting: false,
-      Cell: ({ row }) => {
-        const v = isGroupRow(row.original)
-          ? row.original.group_summary.rt_ctr_keyword
-          : row.original.rt_ctr_keyword
-        if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
-        const vFormatted = `${formatDecimal(v)}%`
         return (
           <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
             {vFormatted}
@@ -1025,105 +877,29 @@ function getColumns(
     colCampaignOnOff,
     colLink,
     colAdsType,
-    colChannelName,
 
-    // ── Revenue & spend ──
-    usd('r_revenue', 'Rev', 70, 'yellow'),
-    colRevenueEst,
+    colEstimateEarning,
+    colRSearchViews,
+    colRConversion,
+    colRRevenue,
+    colRRpc,
+    colRAdRequests,
+    colRAdRequestsRpm,
+    colRImpressions,
+    colRImpressionsRpm,
+    colRFunnelRequests,
+    colRFunnelClicks,
+    colRFunnelImpressions,
+    colRFunnelRpm,
+    colRCpa,
     colProfit,
     colRoi,
     colRoiRealtime,
-
-    // ── Conversions ──
     colRtClickAdCount,
-    count('r_conversion', 'Conv.', 70, 'yellow'),
-    (() => {
-      const footerText = summary ? formatDecimal(toNumber(summary.r_rpc), 2) : null
-      return {
-        accessorKey: 'r_rpc',
-        header: 'RPC',
-        Header: <HeaderLabel icon="yellow">RPC</HeaderLabel>,
-        size: autoSize(70, footerText),
-        enableSorting: SORTABLE_COLUMNS.has('r_rpc'),
-        Cell: ({ row }) => {
-          if (!isGroupRow(row.original) && groupBy !== 'account_id')
-            return <span className="text-foreground/30 text-[10px]">—</span>
-          const val = isGroupRow(row.original)
-            ? toNumber(row.original.group_summary.r_rpc)
-            : toNumber(row.original.r_rpc)
-          const v = formatDecimal(val, 2)
-          return (
-            <span className="tabular-nums text-[10px] text-foreground truncate" title={v}>
-              {v}
-            </span>
-          )
-        },
-        Footer: () =>
-          footerText ? (
-            <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
-              {footerText}
-            </span>
-          ) : null,
-      } as MRT_ColumnDef<TableRow>
-    })(),
-
-    // ── CPA ──
     colRtCpa,
-    ratio('r_cpa', 'CPA', 68, 2, 'yellow'),
-
-    // ── Search impressions & RPM ──
-    ratio('r_ad_requests_rpm', 'S. RPM', 70, 2, 'yellow'),
-    count('r_impressions', 'Impr', 65, 'yellow'),
-
-    // ── CVR ──
-    colRtCvr,
-    (() => {
-      const footerText = summary ? `${formatDecimal(summary.cvr)}%` : null
-      return {
-        accessorKey: 'cvr',
-        header: 'CVR',
-        Header: <HeaderLabel icon="yellow">CVR</HeaderLabel>,
-        size: autoSize(70, footerText),
-        enableSorting: isSortable('cvr'),
-        Cell: ({ row }) => {
-          const v = isGroupRow(row.original) ? row.original.group_summary.cvr : row.original.cvr
-          if (v === null || v === 0)
-            return <span className="text-foreground/50 text-[10px]">—</span>
-          const vFormatted = `${formatDecimal(v)}%`
-          return (
-            <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
-              {vFormatted}
-            </span>
-          )
-        },
-        Footer: () =>
-          footerText ? (
-            <span className="tabular-nums text-[10px] font-semibold whitespace-nowrap">
-              {footerText}
-            </span>
-          ) : null,
-      } as MRT_ColumnDef<TableRow>
-    })(),
-
-    // ── Search views ──
     colRtViewSearchCount,
-    count('r_search_views', 'S.Views', 80, 'yellow'),
-
-    // ── Kw / funnel ──
     colRtClickKeywordCount,
-    count('r_funnel_clicks', 'C.Kw', 105, 'yellow'),
-    count('r_funnel_requests', 'Kw Request', 120, 'yellow'),
-    colRtCtrKeyword,
-    colCtrKeyword,
-    count('r_funnel_impressions', 'Kw Impr', 105, 'yellow'),
-    ratio('r_funnel_rpm', 'Kw RPM', 110, 2, 'yellow'),
-
-    // ── CTR Search ──
     colRtCtrSearch,
-
-    // ── No AllReport equivalent — kept for completeness ──
-    ratio('r_impressions_rpm', 'Impr RPM', 92, 2, 'yellow'),
-    count('r_ad_requests', 'Ad Reqs', 82, 'yellow'),
     colRtViewArticleCount,
   ]
 }
@@ -1145,6 +921,11 @@ type Props = {
   role: RBACRole
 }
 
+type DeliveryDialogTarget = {
+  row: CampaignReportRow
+  initialTab: 'adsets' | 'ads' | 'clicks'
+}
+
 function CampaignReportTableCardInner({
   data,
   rowCount,
@@ -1164,7 +945,9 @@ function CampaignReportTableCardInner({
   const [trackingDialogOpen, setTrackingDialogOpen] = useState(false)
   const [trackingDialogTarget, setTrackingDialogTarget] = useState<CampaignReportRow | null>(null)
   const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false)
-  const [deliveryDialogTarget, setDeliveryDialogTarget] = useState<CampaignReportRow | null>(null)
+  const [deliveryDialogTarget, setDeliveryDialogTarget] = useState<DeliveryDialogTarget | null>(
+    null,
+  )
   const [revenueRangeOpen, setRevenueRangeOpen] = useState(false)
   const [revenueRangeTarget, setRevenueRangeTarget] = useState<RevenueDialogTarget | null>(null)
   const [revenueChartOpen, setRevenueChartOpen] = useState(false)
@@ -1188,9 +971,6 @@ function CampaignReportTableCardInner({
       base.user_email = false
     }
 
-    if (filters.group_by === 'channel_code') {
-      base.channel_name = false
-    }
     if (filters.group_by === 'campaign_id') {
       base.campaign_id = false
       base.campaign_name = false
@@ -1210,7 +990,6 @@ function CampaignReportTableCardInner({
       base.campaign_onoff = false
       base.link = false
       base.ads_type = false
-      base.channel_name = false
     }
 
     return base
@@ -1226,10 +1005,13 @@ function CampaignReportTableCardInner({
     setTrackingDialogOpen(true)
   }, [])
 
-  const openDeliveryReport = useCallback((row: CampaignReportRow) => {
-    setDeliveryDialogTarget(row)
-    setDeliveryDialogOpen(true)
-  }, [])
+  const openDeliveryReport = useCallback(
+    (row: CampaignReportRow, initialTab: DeliveryDialogTarget['initialTab'] = 'adsets') => {
+      setDeliveryDialogTarget({ row, initialTab })
+      setDeliveryDialogOpen(true)
+    },
+    [],
+  )
 
   const onTrackingDialogOpenChange = useCallback((next: boolean) => {
     setTrackingDialogOpen(next)
@@ -1587,10 +1369,22 @@ function CampaignReportTableCardInner({
         <AdsAdsetDeliveryReportDialog
           open={deliveryDialogOpen}
           onOpenChange={onDeliveryDialogOpenChange}
-          campaignId={deliveryDialogTarget.campaign_id}
-          campaignName={deliveryDialogTarget.campaign_name}
-          initialDateFrom={deliveryDialogTarget.date_start ?? filters.date_from ?? null}
-          initialDateTo={deliveryDialogTarget.date_start ?? filters.date_to ?? null}
+          campaignId={deliveryDialogTarget.row.campaign_id}
+          campaignName={deliveryDialogTarget.row.campaign_name}
+          initialDateFrom={deliveryDialogTarget.row.date_start ?? filters.date_from ?? null}
+          initialDateTo={deliveryDialogTarget.row.date_start ?? filters.date_to ?? null}
+          initialTab={deliveryDialogTarget.initialTab}
+          initialAdsetId={
+            deliveryDialogTarget.initialTab === 'adsets' ? deliveryDialogTarget.row.adset_id : null
+          }
+          initialAdId={
+            deliveryDialogTarget.initialTab === 'ads' ? deliveryDialogTarget.row.ad_id : null
+          }
+          initialSessionId={
+            deliveryDialogTarget.initialTab === 'clicks'
+              ? deliveryDialogTarget.row.session_id
+              : null
+          }
         />
       )}
 
@@ -1623,7 +1417,6 @@ function CampaignReportTableCardInner({
           open={insightChartOpen}
           onOpenChange={onInsightChartOpenChange}
           channelCode={insightChartTarget.channelCode}
-          channelName={insightChartTarget.channelName}
           initialDateFrom={insightChartTarget.dateFrom}
           initialDateTo={insightChartTarget.dateTo}
         />

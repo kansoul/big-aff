@@ -4,15 +4,13 @@ import { cn } from '@/lib/utils'
 import type { CampaignReportSummary } from '@/features/campaign-report/types'
 
 type MetricKey =
-  | 'r_revenue'
+  | 'estimate_earning'
   | 'a_spend'
   | 'profit'
   | 'roi'
   | 'record_count'
-  | 'r_conversion'
   | 'a_conversion'
   | 'a_clicks'
-  | 'a_impressions'
 
 type MetricDef = {
   key: MetricKey
@@ -22,12 +20,11 @@ type MetricDef = {
 }
 
 const METRICS: MetricDef[] = [
-  { key: 'r_revenue', label: 'Revenue', format: 'currency' },
+  { key: 'estimate_earning', label: 'Estimate Earning', format: 'currency' },
   { key: 'a_spend', label: 'Spend', format: 'currency' },
   { key: 'profit', label: 'Profit', format: 'currency', tone: 'profit' },
   { key: 'roi', label: 'ROI', format: 'percent', tone: 'profit' },
   { key: 'record_count', label: 'Records', format: 'number' },
-  { key: 'r_conversion', label: 'Revenue Conv.', format: 'number' },
   { key: 'a_conversion', label: 'Ads Conv.', format: 'number' },
   { key: 'a_clicks', label: 'Ads Clicks', format: 'number' },
 ]

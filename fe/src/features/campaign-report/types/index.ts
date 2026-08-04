@@ -5,9 +5,11 @@ export type CampaignReportOrderBy =
   | 'account_name'
   | 'campaign_id'
   | 'campaign_name'
+  | 'adset_id'
+  | 'ad_id'
+  | 'session_id'
   | 'ads_type'
-  | 'channel_code'
-  | 'channel_name'
+  | 'estimate_earning'
   | 'r_search_views'
   | 'r_conversion'
   | 'r_revenue'
@@ -24,11 +26,12 @@ export type CampaignReportOrderBy =
 
 export type CampaignReportOrder = 'asc' | 'desc'
 
-export type CampaignReportGroupBy = '' | 'channel_code' | 'account_id' | 'user_id' | 'campaign_id'
+/** @deprecated Campaign Report API now always returns a flat list. */
+export type CampaignReportGroupBy = '' | 'account_id' | 'user_id' | 'campaign_id'
 
 export interface CampaignReportRealtime {
   id: number
-  link_data_id: number | null
+  campaign_id: string
   ads_link_id: number | null
   view_article_count: number
   view_search_count: number
@@ -45,6 +48,10 @@ export interface CampaignReportRow {
   account_name: string | null
   user_email: string | null
   campaign_id: string
+  adset_id: string | null
+  ad_id: string | null
+  session_id: string | null
+  click_id: number | null
   campaign_name: string | null
   campaign_status: string | null
   has_rule?: boolean | null
@@ -54,24 +61,20 @@ export interface CampaignReportRow {
   tracking_code?: string | null
   ads_manager_link?: string | null
 
-  channel_code: string | null
-  channel_name: string | null
-
+  estimate_earning: number
   r_search_views: number
   r_conversion: number
-  r_revenue: string | number
-  r_rpc: string | number
+  r_revenue: number
+  r_rpc: number
   r_ad_requests: number
-  r_ad_requests_rpm: string | number
+  r_ad_requests_rpm: number
   r_impressions: number
-  r_impressions_rpm: string | number
+  r_impressions_rpm: number
   r_funnel_requests: number
   r_funnel_clicks: number
   r_funnel_impressions: number
-  r_funnel_rpm: string | number
-  r_cpa: string | number
-
-  revenue_est: number
+  r_funnel_rpm: number
+  r_cpa: number
   profit: number
   roi: number
   roi_realtime: number
@@ -79,11 +82,7 @@ export interface CampaignReportRow {
   rt_click_keyword_count: number
   rt_view_search_count: number
   rt_view_article_count: number
-  cvr: number | null
   rt_cpa: number | null
-  rt_cvr: number | null
-  ctr_keyword: number | null
-  rt_ctr_keyword: number | null
   rt_ctr_search: number | null
 
   realtime_report: CampaignReportRealtime | null
@@ -93,6 +92,7 @@ export interface CampaignReportSummary {
   record_count: number
   daily_budget: number
   lifetime_budget: number
+  estimate_earning: number
   r_search_views: number
   r_conversion: number
   r_revenue: number
@@ -121,8 +121,6 @@ export interface CampaignReportSummary {
   a_ctr_link: number
   a_cpc_link: number
   a_frequency: number
-  revenue: number
-  revenue_est: number
   profit: number
   roi: number
   roi_realtime: number
@@ -130,11 +128,7 @@ export interface CampaignReportSummary {
   rt_click_keyword_count: number
   rt_view_search_count: number
   rt_view_article_count: number
-  cvr: number
-  ctr_keyword: number
   rt_cpa: number
-  rt_cvr: number
-  rt_ctr_keyword: number
   rt_ctr_search: number
 }
 
@@ -163,15 +157,9 @@ export interface CampaignReportPagination {
 }
 
 export interface CampaignReportListResponse {
-  /**
-   * When `group_by` is set, elements are `CampaignReportGroupRow` (one representative
-   * row per group, with its underlying campaign reports exposed as `items`).
-   * Otherwise, elements are flat `CampaignReportRow` values.
-   */
-  data: CampaignReportDataRow[]
+  data: CampaignReportRow[]
   pagination: CampaignReportPagination
   grand_summary: CampaignReportSummary
-  group_by: CampaignReportGroupBy | null
 }
 
 export interface CampaignReportFiltersResponse {
@@ -190,11 +178,6 @@ export interface CampaignReportFiltersResponse {
       account_id: string | null
     }>
     channels: Array<{ code: string; name: string | null }>
-    link_data_ids: Array<{
-      id: number
-      campaign_id: string | null
-      channel_code: string | null
-    }>
     ads_types: Array<{ value: string; label: string }>
   }
 }
@@ -214,8 +197,7 @@ export interface CampaignReportFilterParams {
   account_ids?: string[]
   ads_type?: string | null
   campaign_ids?: string[]
-  channel_codes?: string[]
-  link_data_ids?: number[]
+  /** @deprecated Kept temporarily for table compatibility; it is no longer sent to the API. */
   group_by?: CampaignReportGroupBy
   order_by?: CampaignReportOrderBy | null
   order?: CampaignReportOrder | null
@@ -240,7 +222,6 @@ export interface RevenueReportRangeQueryPayload {
 export interface RevenueReportRangeRow {
   range_label: string
   channel_code: string
-  channel_name: string
   revenue_start: number | null
   revenue_end: number | null
   real_revenue: number | null
@@ -633,6 +614,19 @@ export interface AdsInsightRow extends DeliveryInsightCommon {
   adset_id: string | null
 }
 
+export interface ClickTrackingRow {
+  id: number
+  session_id: string | null
+  campaign_id: string | null
+  adset_id: string | null
+  ad_id: string | null
+  event_type: string
+  page: string | null
+  payload: Record<string, unknown> | null
+  event_time: string | null
+  created_at: string | null
+}
+
 export interface DeliveryEntitiesFilterParams {
   date_from?: string | null
   date_to?: string | null
@@ -643,6 +637,9 @@ export interface DeliveryEntitiesFilterParams {
   adset_name?: string | null
   ad_id?: string | null
   ad_name?: string | null
+  session_id?: string | null
+  click_id?: number | null
+  event_type?: string | null
 }
 
 export interface DeliveryEntitiesListResponse {
@@ -658,6 +655,10 @@ export interface DeliveryAdsetListResponse {
 
 export interface DeliveryAdsListResponse {
   data: AdsInsightRow[]
+}
+
+export interface ClickTrackingListResponse {
+  data: ClickTrackingRow[]
 }
 
 export interface DeliveryEntityStatusOption {

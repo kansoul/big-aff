@@ -7,7 +7,6 @@ use App\Jobs\SendTelegramWarningJob;
 use App\Models\Campaign;
 use App\Models\CampaignReport;
 use App\Models\InsightReport;
-use App\Models\LinkData;
 use App\Models\RealtimeReport;
 use App\Models\RevenueReport;
 use App\Services\Integrations\Ads\AdsStatusService;
@@ -178,58 +177,64 @@ class CampaignReportSyncService
 
     private static function buildReportData(string $date, InsightReport $insightReport): ?array
     {
-        $linkData = LinkData::where('campaign_id', $insightReport->campaign_id)->first();
-
         $data = [];
         $spend = (float) ($insightReport->spend ?? 0);
         $campaign = $insightReport->campaign;
         $account = $campaign?->account;
-        if ($linkData) {
-            $realtimeReport = RealtimeReport::where('link_data_id', $linkData->id)
-                ->whereDate('event_time', $date)
-                ->first();
-            $revenueData = self::getRevenueData($date, $linkData->channel_code);
-            $rConversion = (int) ($revenueData['clicks'] ?? 0);
-            $sumRealtimeClickAdCount = self::sumRealtimeClickAdCount($date, $linkData->channel_code);
-            $rCpa = $rConversion > 0 ? $spend / $rConversion : 0;
-            $estimatedEarnings = (float) ($revenueData['estimated_earnings'] ?? 0);
-            $costPerClick = isset($revenueData['cost_per_click']) && $revenueData['cost_per_click'] !== null
-                ? (float) $revenueData['cost_per_click']
-                : null;
-            if ($costPerClick === null || $costPerClick <= 0) {
-                $realtimeClicks = $rConversion > 0
-                    ? $rConversion
-                    : $sumRealtimeClickAdCount;
-                $costPerClick = $realtimeClicks > 0 ? $estimatedEarnings / $realtimeClicks : 0;
+        $revenueData = RevenueReport::query()
+            ->where('campaign_id', $insightReport->campaign_id)
+            ->whereDate('created_at', $date)
+            ->selectRaw('
+                COALESCE(SUM(page_views), 0) AS search_views,
+                COALESCE(SUM(clicks), 0) AS conversions,
+                COALESCE(SUM(estimate_earning), 0) AS revenue,
+                COALESCE(SUM(ad_requests), 0) AS ad_requests,
+                COALESCE(SUM(impressions), 0) AS impressions,
+                COALESCE(SUM(funnel_requests), 0) AS funnel_requests,
+                COALESCE(SUM(funnel_clicks), 0) AS funnel_clicks,
+                COALESCE(SUM(funnel_impressions), 0) AS funnel_impressions
+            ')
+            ->first();
+        $revenue = (float) ($revenueData->revenue ?? 0);
+        $conversions = (int) ($revenueData->conversions ?? 0);
+        $adRequests = (int) ($revenueData->ad_requests ?? 0);
+        $impressions = (int) ($revenueData->impressions ?? 0);
+        $funnelImpressions = (int) ($revenueData->funnel_impressions ?? 0);
+        $data = [
+            'r_search_views' => (int) ($revenueData->search_views ?? 0),
+            'r_conversion' => $conversions,
+            'r_revenue' => $revenue,
+            'r_rpc' => $conversions > 0 ? $revenue / $conversions : 0,
+            'r_ad_requests' => $adRequests,
+            'r_ad_requests_rpm' => $adRequests > 0 ? $revenue / $adRequests * 1000 : 0,
+            'r_impressions' => $impressions,
+            'r_impressions_rpm' => $impressions > 0 ? $revenue / $impressions * 1000 : 0,
+            'r_funnel_requests' => (int) ($revenueData->funnel_requests ?? 0),
+            'r_funnel_clicks' => (int) ($revenueData->funnel_clicks ?? 0),
+            'r_funnel_impressions' => $funnelImpressions,
+            'r_funnel_rpm' => $funnelImpressions > 0 ? $revenue / $funnelImpressions * 1000 : 0,
+            'r_cpa' => $conversions > 0 ? $spend / $conversions : 0,
+        ];
+        $realtimeReport = RealtimeReport::where('campaign_id', $insightReport->campaign_id)
+            ->whereDate('event_time', $date)
+            ->first();
+        if ($realtimeReport) {
+            $sumRealtimeClickAdCount = self::sumRealtimeClickAdCount($date);
+
+            if ($campaign) {
+                self::sendHighCtrAlertIfNeeded(
+                    date: $date,
+                    campaign: $campaign,
+                    insightReport: $insightReport,
+                    realtimeReport: $realtimeReport,
+                    rConversion: $conversions,
+                    sumRealtimeClickAdCount: $sumRealtimeClickAdCount,
+                );
             }
 
-            self::sendHighCtrAlertIfNeeded(
-                date: $date,
-                linkData: $linkData,
-                insightReport: $insightReport,
-                realtimeReport: $realtimeReport,
-                rConversion: $rConversion,
-                sumRealtimeClickAdCount: $sumRealtimeClickAdCount,
-            );
-
             $data = [
+                ...$data,
                 'realtime_report_id' => $realtimeReport?->id,
-                // Style/Channel info
-                'channel_name' => $revenueData['channel_name'] ?? $linkData->channel_code,
-                // Revenue fields (r_*) from RevenueReport
-                'r_search_views' => (int) ($revenueData['page_views'] ?? 0),
-                'r_conversion' => $rConversion,
-                'r_revenue' => $estimatedEarnings,
-                'r_rpc' => $costPerClick,
-                'r_ad_requests' => (int) ($revenueData['ad_requests'] ?? 0),
-                'r_ad_requests_rpm' => (float) ($revenueData['ad_requests_rpm'] ?? 0),
-                'r_impressions' => (int) ($revenueData['impressions'] ?? 0),
-                'r_impressions_rpm' => (float) ($revenueData['impressions_rpm'] ?? 0),
-                'r_funnel_requests' => (int) ($revenueData['funnel_requests'] ?? 0),
-                'r_funnel_clicks' => (int) ($revenueData['funnel_clicks'] ?? 0),
-                'r_funnel_impressions' => (int) ($revenueData['funnel_impressions'] ?? 0),
-                'r_funnel_rpm' => (float) ($revenueData['funnel_rpm'] ?? 0),
-                'r_cpa' => $rCpa,
             ];
         } elseif ($spend > self::MIN_SPEND_TRASH_CAMPAIGN) {
             $cacheKey = self::trashCampaignAlertCacheKey($date, (int) $insightReport->campaign_id);
@@ -258,7 +263,7 @@ class CampaignReportSyncService
 
     private static function sendHighCtrAlertIfNeeded(
         string $date,
-        LinkData $linkData,
+        Campaign $campaign,
         InsightReport $insightReport,
         ?RealtimeReport $realtimeReport,
         int $rConversion,
@@ -286,23 +291,22 @@ class CampaignReportSyncService
         }
 
         $ctr = $realtimeClickAdCount / $viewSearch;
-        $cvr = $rConversion / $sumRealtimeClickAdCount;
+        $cvr = $sumRealtimeClickAdCount > 0 ? $rConversion / $sumRealtimeClickAdCount : 0.0;
 
         if ($cvr >= $tier['max_cvr'] || $ctr <= $tier['min_ctr']) {
             return;
         }
 
         $alertTierKey = self::alertTierKey($tier);
-        $cacheKey = self::highCtrAlertCacheKey($date, (int) $linkData->id);
+        $cacheKey = self::highCtrAlertCacheKey($date, (string) $campaign->campaign_id);
         $alreadyAlerted = Redis::get($cacheKey) === $alertTierKey;
 
-        $linkData->loadMissing('adsLink.site', 'adsLink.creator.campaignRuleSetting');
+        $campaign->loadMissing('adsLink.site', 'adsLink.creator.campaignRuleSetting');
 
-        $campaign = $insightReport->campaign;
         $campaignId = $insightReport->campaign_id ?? 'N/A';
-        $campaignName = $campaign?->campaign_name ?? 'N/A';
-        $adsLinkUrl = self::adsLinkUrl($linkData);
-        $owner = $linkData->adsLink?->creator;
+        $campaignName = $campaign->campaign_name ?? 'N/A';
+        $adsLinkUrl = self::adsLinkUrl($campaign);
+        $owner = $campaign->adsLink?->creator;
         $ownerName = $owner?->name ?? 'N/A';
         $telegramChatId = $owner?->campaignRuleSetting?->telegram_chat_id;
 
@@ -325,7 +329,7 @@ class CampaignReportSyncService
             SendTelegramWarningJob::dispatch(
                 message: $message,
                 campaignId: (string) $campaignId,
-                adsLinkId: (string) ($linkData->ads_link_id ?? ''),
+                adsLinkId: (string) ($campaign->ads_link_id ?? ''),
                 chatIdOverride: $telegramChatId,
             );
 
@@ -333,7 +337,7 @@ class CampaignReportSyncService
         }
 
         self::autoPauseHighCtrCampaignIfNeeded(
-            linkData: $linkData,
+            campaign: $campaign,
             insightReport: $insightReport,
             telegramChatId: $telegramChatId,
             ownerName: $ownerName,
@@ -344,7 +348,7 @@ class CampaignReportSyncService
     }
 
     private static function autoPauseHighCtrCampaignIfNeeded(
-        LinkData $linkData,
+        Campaign $campaign,
         InsightReport $insightReport,
         ?string $telegramChatId,
         string $ownerName,
@@ -400,7 +404,7 @@ class CampaignReportSyncService
             SendTelegramWarningJob::dispatch(
                 message: $message,
                 campaignId: $campaignId,
-                adsLinkId: (string) ($linkData->ads_link_id ?? ''),
+                adsLinkId: (string) ($campaign->ads_link_id ?? ''),
                 chatIdOverride: $telegramChatId,
             );
         } catch (\Throwable $e) {
@@ -419,9 +423,9 @@ class CampaignReportSyncService
         return $tier['min_clicks'].'-'.$tier['max_clicks'];
     }
 
-    private static function highCtrAlertCacheKey(string $date, int $linkDataId): string
+    private static function highCtrAlertCacheKey(string $date, string $campaignId): string
     {
-        return "campaign_report:high_ctr_alert:{$date}:link_data:{$linkDataId}:tier";
+        return "campaign_report:high_ctr_alert:{$date}:campaign:{$campaignId}:tier";
     }
 
     private static function trashCampaignAlertCacheKey(string $date, int $campaignId): string
@@ -429,9 +433,9 @@ class CampaignReportSyncService
         return "campaign_report:trash_campaign_alert:{$date}:campaign:{$campaignId}";
     }
 
-    private static function adsLinkUrl(LinkData $linkData): string
+    private static function adsLinkUrl(Campaign $campaign): string
     {
-        $adsLink = $linkData->adsLink;
+        $adsLink = $campaign->adsLink;
 
         if (! $adsLink?->slug) {
             return 'N/A';
@@ -459,43 +463,12 @@ class CampaignReportSyncService
     }
 
     /**
-     * Sum click_ad_count from RealtimeReports whose LinkData share the same channel_code on a given date.
+     * Sum click_ad_count from realtime reports for the given date.
      */
-    private static function sumRealtimeClickAdCount(string $date, string $channelCode): int
+    private static function sumRealtimeClickAdCount(string $date): int
     {
         return (int) RealtimeReport::whereDate('event_time', $date)
-            ->whereIn('link_data_id', function ($q) use ($channelCode) {
-                $q->select('id')
-                    ->from('link_datas')
-                    ->where('channel_code', $channelCode);
-            })
             ->sum('click_ad_count');
-    }
-
-    /**
-     * Get aggregated RevenueReport data for a specific channel on a date.
-     */
-    private static function getRevenueData(string $date, string $channelCode): array
-    {
-        $report = RevenueReport::where('date', $date)
-            ->where('channel_code', $channelCode)
-            ->selectRaw('
-                SUM(estimated_earnings) as estimated_earnings,
-                SUM(clicks) as clicks,
-                SUM(page_views) as page_views,
-                SUM(ad_requests) as ad_requests,
-                SUM(impressions) as impressions,
-                AVG(ad_requests_rpm) as ad_requests_rpm,
-                AVG(impressions_rpm) as impressions_rpm,
-                AVG(cost_per_click) as cost_per_click,
-                SUM(funnel_requests) as funnel_requests,
-                SUM(funnel_clicks) as funnel_clicks,
-                SUM(funnel_impressions) as funnel_impressions,
-                AVG(funnel_rpm) as funnel_rpm
-            ')
-            ->first();
-
-        return $report ? $report->toArray() : [];
     }
 
     /**

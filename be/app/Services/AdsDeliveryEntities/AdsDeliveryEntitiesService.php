@@ -6,10 +6,12 @@ use App\Actions\AdsDeliveryEntities\GetAdsDeliveryEntitiesAction;
 use App\Actions\AdsDeliveryEntities\GetAdsDeliveryEntityStatusOptionsAction;
 use App\Actions\AdsDeliveryEntities\GetAdsetDeliveryEntitiesAction;
 use App\Actions\AdsDeliveryEntities\GetAdsOnlyDeliveryEntitiesAction;
+use App\Actions\AdsDeliveryEntities\GetClickTrackingEntitiesAction;
 use App\Actions\AdsDeliveryEntities\ToggleAdsetStatusAction;
 use App\Actions\AdsDeliveryEntities\ToggleAdStatusAction;
 use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
+use App\Models\ClickTracking;
 use Illuminate\Support\Collection;
 
 class AdsDeliveryEntitiesService
@@ -18,6 +20,7 @@ class AdsDeliveryEntitiesService
         private readonly GetAdsDeliveryEntitiesAction $getAdsDeliveryEntitiesAction,
         private readonly GetAdsetDeliveryEntitiesAction $getAdsetDeliveryEntitiesAction,
         private readonly GetAdsOnlyDeliveryEntitiesAction $getAdsOnlyDeliveryEntitiesAction,
+        private readonly GetClickTrackingEntitiesAction $getClickTrackingEntitiesAction,
         private readonly GetAdsDeliveryEntityStatusOptionsAction $getAdsDeliveryEntityStatusOptionsAction,
         private readonly ToggleAdsetStatusAction $toggleAdsetStatusAction,
         private readonly ToggleAdStatusAction $toggleAdStatusAction,
@@ -48,6 +51,15 @@ class AdsDeliveryEntitiesService
     public function getAdsByCampaignId(string $campaignId, array $filters): Collection
     {
         return $this->getAdsOnlyDeliveryEntitiesAction->execute($campaignId, $filters);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, ClickTracking>
+     */
+    public function getClicksByCampaignId(string $campaignId, array $filters): Collection
+    {
+        return $this->getClickTrackingEntitiesAction->execute($campaignId, $filters);
     }
 
     /**

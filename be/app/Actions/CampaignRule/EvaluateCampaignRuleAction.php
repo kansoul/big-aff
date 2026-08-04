@@ -9,6 +9,7 @@ use App\Models\Campaign;
 use App\Models\CampaignApplyRule;
 use App\Models\CampaignReport;
 use App\Models\InsightReport;
+use App\Models\RevenueReport;
 use App\Services\Integrations\Ads\AdsStatusService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -143,7 +144,6 @@ class EvaluateCampaignRuleAction
     private function loadMetrics(Campaign $campaign, string $date): ?array
     {
         $report = CampaignReport::query()
-            ->with('realtimeReport')
             ->where('campaign_id', $campaign->campaign_id)
             ->whereDate('date_start', $date)
             ->first();
@@ -158,10 +158,10 @@ class EvaluateCampaignRuleAction
             ->whereDate('date_start', $date)
             ->value('spend');
 
-        $rpc = (float) ($report->r_rpc ?? 0);
-
-        $realtimeClicks = (int) ($report->realtimeReport?->click_ad_count ?? 0);
-        $revenue = $realtimeClicks * $rpc;
+        $revenue = (float) RevenueReport::query()
+            ->where('campaign_id', $report->campaign_id)
+            ->whereDate('created_at', $date)
+            ->sum('estimate_earning');
         $profit = $revenue - $spend;
         $roi = $spend > 0 ? ($profit / $spend) * 100 : 0.0;
 

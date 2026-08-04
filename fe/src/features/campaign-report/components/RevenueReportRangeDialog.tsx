@@ -346,7 +346,6 @@ const RESULT_COLUMNS: Array<{
 }> = [
   { key: 'range_label', label: 'Range', className: 'min-w-[180px]' },
   { key: 'channel_code', label: 'Channel Code', className: 'min-w-[110px]' },
-  { key: 'channel_name', label: 'Channel Name', className: 'min-w-[180px]' },
   { key: 'revenue_start', label: 'Revenue Start', className: 'text-right' },
   { key: 'revenue_end', label: 'Revenue End', className: 'text-right' },
   { key: 'real_revenue', label: 'Real Revenue', className: 'text-right' },

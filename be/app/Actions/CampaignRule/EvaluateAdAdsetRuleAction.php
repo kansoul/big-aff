@@ -9,7 +9,7 @@ use App\Jobs\SendTelegramWarningJob;
 use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
 use App\Models\CampaignApplyRule;
-use App\Models\CampaignReport;
+use App\Models\RevenueReport;
 use App\Services\Integrations\Ads\AdsStatusService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -131,12 +131,10 @@ class EvaluateAdAdsetRuleAction
 
     private function loadRpc(string $campaignId, string $date): float
     {
-        $report = CampaignReport::query()
+        return (float) RevenueReport::query()
             ->where('campaign_id', $campaignId)
-            ->whereDate('date_start', $date)
-            ->first();
-
-        return (float) ($report?->r_rpc ?? 0);
+            ->whereDate('created_at', $date)
+            ->average('estimate_earning');
     }
 
     /**
@@ -151,7 +149,7 @@ class EvaluateAdAdsetRuleAction
 
         return (int) DB::table('event_clicks')
             ->where($column, $entityId)
-            ->where('type', EventClickType::ClickAd->value)
+            ->where('type', EventClickType::FormView->value)
             ->where('created_at', '>=', $dayStart)
             ->where('created_at', '<', $dayEnd)
             ->count();

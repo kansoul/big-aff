@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('campaigns', function (Blueprint $table) {
             $table->id();
             $table->string('account_id')->nullable();
+            $table->foreignId('ads_link_id')->nullable()->constrained('ads_links')->nullOnDelete();
             $table->string('ads_type', 50); // 'google', 'tiktok'
             $table->string('campaign_id')->unique();
             $table->string('campaign_name')->nullable();

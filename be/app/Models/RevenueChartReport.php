@@ -18,7 +18,6 @@ class RevenueChartReport extends Model
         'style_code',
         'channel_code',
         'style_name',
-        'channel_name',
         'datetime',
         'page_views',
         'clicks',

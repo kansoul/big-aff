@@ -32,7 +32,6 @@ import { cn, getPageNumbers } from '@/lib/utils'
 type RevenueChartRow = {
   id: number
   channel_code: string
-  channel_name: string
   datetime: string | null
 
   // Delta (real_) via LAG
@@ -111,7 +110,7 @@ const SORTABLE_COLUMNS = new Set(['datetime'])
 
 // ─── Totals ───────────────────────────────────────────────────────────────────
 
-type Totals = Omit<RevenueChartRow, 'id' | 'channel_code' | 'channel_name' | 'datetime'>
+type Totals = Omit<RevenueChartRow, 'id' | 'channel_code' | 'datetime'>
 
 function computeTotals(rows: RevenueChartRow[]): Totals {
   const t = {
@@ -283,15 +282,14 @@ function TotalRow({ totals, label, sticky }: { totals: Totals; label: string; st
   )
 }
 
-function GroupHeader({ channelCode, channelName }: { channelCode: string; channelName: string }) {
-  const label = channelName ? `${channelName} (${channelCode})` : channelCode
+function GroupHeader({ channelCode }: { channelCode: string }) {
   return (
     <TableRow className="bg-muted/40 hover:bg-muted/40">
       <TableCell
         colSpan={COLUMNS.length}
         className="py-1.5 pl-3 text-[11px] font-semibold text-foreground"
       >
-        {label || '—'}
+        {channelCode || '—'}
       </TableCell>
     </TableRow>
   )
@@ -302,7 +300,6 @@ function GroupHeader({ channelCode, channelName }: { channelCode: string; channe
 export type RevenueChartReportInternalDialogProps = {
   trigger?: React.ReactNode
   channelCode: string
-  channelName?: string
   initialDateFrom?: string | null
   initialDateTo?: string | null
   open?: boolean
@@ -312,7 +309,6 @@ export type RevenueChartReportInternalDialogProps = {
 export function RevenueChartReportInternalDialog({
   trigger,
   channelCode,
-  channelName,
   initialDateFrom,
   initialDateTo,
   open: controlledOpen,
@@ -434,16 +430,12 @@ export function RevenueChartReportInternalDialog({
 
   // Group rows by channel_code
   const groupedRows = useMemo(() => {
-    const groups = new Map<
-      string,
-      { channelCode: string; channelName: string; rows: RevenueChartRow[] }
-    >()
+    const groups = new Map<string, { channelCode: string; rows: RevenueChartRow[] }>()
     for (const row of rows) {
       const key = row.channel_code || ''
       if (!groups.has(key)) {
         groups.set(key, {
           channelCode: row.channel_code,
-          channelName: row.channel_name,
           rows: [],
         })
       }
@@ -459,9 +451,7 @@ export function RevenueChartReportInternalDialog({
     [pagination],
   )
 
-  const title = channelName
-    ? `Revenue Chart: ${channelName} (${channelCode})`
-    : `Revenue Chart: ${channelCode}`
+  const title = `Revenue Chart: ${channelCode}`
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -556,7 +546,6 @@ export function RevenueChartReportInternalDialog({
                         <GroupHeader
                           key={`header-${group.channelCode}`}
                           channelCode={group.channelCode}
-                          channelName={group.channelName}
                         />
                         {group.rows.map((row) => (
                           <TableRow key={row.id} className="text-[11px]">

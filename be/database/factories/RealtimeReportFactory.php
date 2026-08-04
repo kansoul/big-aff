@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\LinkData;
 use App\Models\RealtimeReport;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -22,7 +21,7 @@ class RealtimeReportFactory extends Factory
     {
         return [
             'event_time' => fake()->dateTimeBetween('-30 days', 'now')->format('Y-m-d'),
-            'link_data_id' => LinkData::factory(),
+            'campaign_id' => fake()->numerify('##############'),
             'view_article_count' => fake()->numberBetween(0, 1000),
             'view_search_count' => fake()->numberBetween(0, 1000),
             'click_keyword_count' => fake()->numberBetween(0, 300),

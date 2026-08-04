@@ -129,31 +129,23 @@ class BuildRevenueStatsUserRowsAction
     private function revenueByUser(array $filters, bool $skipMainTeamScope = false): Collection
     {
         $query = RevenueReport::query()
+            ->join('campaigns as revenue_campaigns', 'revenue_campaigns.campaign_id', '=', 'revenue_reports.campaign_id')
             ->when(
                 ! empty($filters['date_from']),
-                fn ($q) => $q->whereDate('date', '>=', Carbon::parse($filters['date_from'])->toDateString())
+                fn ($q) => $q->whereDate('revenue_reports.created_at', '>=', Carbon::parse($filters['date_from'])->toDateString())
             )
             ->when(
                 ! empty($filters['date_to']),
-                fn ($q) => $q->whereDate('date', '<=', Carbon::parse($filters['date_to'])->toDateString())
+                fn ($q) => $q->whereDate('revenue_reports.created_at', '<=', Carbon::parse($filters['date_to'])->toDateString())
             )
-            ->when(
-                ! empty($filters['channel_codes']),
-                fn ($q) => $q->whereIn('channel_code', $filters['channel_codes'])
-            )
-            ->when(
-                config('main_system.is_main') && ! empty($filters['main_team_ids']),
-                fn ($q) => $q->whereIn('owner_main_team_id', $filters['main_team_ids'])
-            )
-            ->when(
-                config('main_system.is_main') && ! $skipMainTeamScope,
-                fn ($q) => MainTeamReportDataScope::excludeNonFetchableChannels($q)
-            )
-            ->whereNotNull('owner_user_id')
-            ->selectRaw('owner_user_id as user_id, COALESCE(SUM(estimated_earnings), 0) as revenue')
-            ->groupBy('owner_user_id');
+            ->whereNotNull('revenue_campaigns.created_by')
+            ->selectRaw('revenue_campaigns.created_by as user_id, COALESCE(SUM(estimate_earning), 0) as revenue')
+            ->groupBy('revenue_campaigns.created_by');
 
-        OwnershipFilter::forAuthUser()->applyTo($query, 'owner_user_id');
+        $ownership = OwnershipFilter::forAuthUser();
+        if (! $ownership->isAdmin()) {
+            $query->whereIn('revenue_campaigns.created_by', $ownership->allowedUserIds());
+        }
 
         return $query->get()->keyBy('user_id');
     }

@@ -39,7 +39,6 @@ class RevenueChartReportFactory extends Factory
             'style_code' => 'style_abc001',
             'style_name' => 'Blue Banner',
             'channel_code' => 'chan_tech',
-            'channel_name' => 'Tech Channel',
             'datetime' => Carbon::now()->subHours(fake()->numberBetween(0, 168)),
             'page_views' => $pageViews,
             'clicks' => $clicks,

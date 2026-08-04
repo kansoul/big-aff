@@ -17,49 +17,24 @@ class RevenueReportFactory extends Factory
      */
     public function definition(): array
     {
-        $pageViews = fake()->numberBetween(500, 50000);
-        $clicks = (int) ($pageViews * fake()->randomFloat(3, 0.01, 0.08));
-        $adRequests = (int) ($pageViews * fake()->randomFloat(2, 0.8, 1.2));
-        $impressions = (int) ($adRequests * fake()->randomFloat(2, 0.7, 0.95));
-        $estimatedEarnings = round($clicks * fake()->randomFloat(2, 0.10, 0.60), 4);
-        $cpc = $clicks > 0 ? round($estimatedEarnings / $clicks, 4) : 0;
-        $adRequestsRpm = $adRequests > 0 ? round($estimatedEarnings / $adRequests * 1000, 4) : 0;
-        $impressionsRpm = $impressions > 0 ? round($estimatedEarnings / $impressions * 1000, 4) : 0;
-
-        $funnelRequests = fake()->optional(0.7)->numberBetween(100, 5000);
-        $funnelImpressions = $funnelRequests ? (int) ($funnelRequests * fake()->randomFloat(2, 0.6, 0.9)) : null;
-        $funnelClicks = $funnelImpressions ? (int) ($funnelImpressions * fake()->randomFloat(3, 0.01, 0.05)) : null;
-        $funnelRpm = ($funnelImpressions && $estimatedEarnings)
-            ? round($estimatedEarnings / $funnelImpressions * 1000, 4)
-            : null;
-
-        static $defaultStyleCodes = ['style_abc001', 'style_def002', 'style_ghi003', 'style_jkl004', 'style_mno005'];
-        static $defaultStyleNames = ['Blue Banner', 'Red Square', 'Green Leaderboard', 'Purple Skyscraper', 'Orange Native'];
-        static $channelCodes = ['chan_tech', 'chan_lifestyle', 'chan_finance', 'chan_health', 'chan_sports'];
-        static $channelNames = ['Tech Channel', 'Lifestyle Channel', 'Finance Channel', 'Health Channel', 'Sports Channel'];
-
-        $styleIndex = array_rand($defaultStyleCodes);
-        $channelIndex = array_rand($channelCodes);
-
         return [
-            'ad_client_id' => 'legacy-'.fake()->numerify('##############'),
-            'style_code' => $defaultStyleCodes[$styleIndex],
-            'style_name' => $defaultStyleNames[$styleIndex],
-            'channel_code' => $channelCodes[$channelIndex],
-            'channel_name' => $channelNames[$channelIndex],
-            'date' => fake()->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),
-            'page_views' => $pageViews,
-            'clicks' => $clicks,
-            'estimated_earnings' => $estimatedEarnings,
-            'ad_requests' => $adRequests,
-            'impressions' => $impressions,
-            'ad_requests_rpm' => $adRequestsRpm,
-            'impressions_rpm' => $impressionsRpm,
-            'cost_per_click' => $cpc,
-            'funnel_requests' => $funnelRequests,
-            'funnel_impressions' => $funnelImpressions,
-            'funnel_clicks' => $funnelClicks,
-            'funnel_rpm' => $funnelRpm,
+            'session_id' => fake()->unique()->uuid(),
+            'campaign_id' => fake()->numerify('##############'),
+            'adset_id' => fake()->optional()->numerify('##############'),
+            'ad_id' => fake()->optional()->numerify('##############'),
+            'click_id' => fake()->unique()->numberBetween(1, 2_000_000_000),
+            'estimate_earning' => fake()->randomFloat(4, 0, 100),
+            'page_views' => fake()->numberBetween(0, 10_000),
+            'clicks' => fake()->numberBetween(0, 1_000),
+            'ad_requests' => fake()->numberBetween(0, 10_000),
+            'impressions' => fake()->numberBetween(0, 10_000),
+            'ad_requests_rpm' => fake()->randomFloat(4, 0, 100),
+            'impressions_rpm' => fake()->randomFloat(4, 0, 100),
+            'cost_per_click' => fake()->randomFloat(4, 0, 10),
+            'funnel_requests' => fake()->numberBetween(0, 10_000),
+            'funnel_impressions' => fake()->numberBetween(0, 10_000),
+            'funnel_clicks' => fake()->numberBetween(0, 1_000),
+            'funnel_rpm' => fake()->randomFloat(4, 0, 100),
         ];
     }
 }

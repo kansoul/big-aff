@@ -2,10 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Models\ClickTracking;
 use App\Models\EventAdLoad;
 use App\Models\EventClick;
 use App\Models\EventView;
-use App\Models\LinkData;
+use App\Models\RevenueReport;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -29,7 +30,6 @@ class SaveTrackingLogJob implements ShouldQueue
 
     public function __construct(
         public string $sessionId,
-        public LinkData $linkData,
         public array $logData,
     ) {
         $this->onQueue('tracking');
@@ -48,8 +48,9 @@ class SaveTrackingLogJob implements ShouldQueue
             $dateOnly = substr($dateString, 0, 10);
 
             match (true) {
-                in_array($eventType, ['view_article', 'view_search']) => $this->saveEventView($eventType, $dateOnly),
-                in_array($eventType, ['click_keyword', 'click_ad']) => $this->saveEventClick($eventType, $dateOnly),
+                $eventType === 'page_view' => $this->saveEventView($eventType, $dateOnly),
+                $eventType === 'form_view' => $this->saveEventClick($eventType, $dateOnly),
+                $eventType === 'lead' => $this->saveLeadEvent($eventType),
                 in_array($eventType, ['ads_load_article_error', 'ads_load_search_error']) => $this->saveEventAdLoad($eventType),
                 in_array($eventType, ['ads_load_article_success', 'ads_load_search_success']) => null,
                 default => throw new InvalidArgumentException("Unknown event type: {$eventType}"),
@@ -71,7 +72,6 @@ class SaveTrackingLogJob implements ShouldQueue
 
         EventView::create([
             'session_id' => $this->sessionId,
-            'link_data_id' => $this->linkData->id,
             'campaign_id' => $this->logData['campaign_id'] ?? null,
             'adset_id' => $this->logData['adset_id'] ?? null,
             'ad_id' => $this->logData['ad_id'] ?? null,
@@ -83,7 +83,7 @@ class SaveTrackingLogJob implements ShouldQueue
             'created_at' => $this->logData['created_at'] ?? $now,
         ]);
 
-        $this->bufferDailyCount($dateOnly, $this->linkData->id, $eventType);
+        $this->bufferDailyCount($dateOnly, (string) $this->logData['campaign_id'], $eventType);
     }
 
     /**
@@ -95,7 +95,6 @@ class SaveTrackingLogJob implements ShouldQueue
 
         EventClick::create([
             'session_id' => $this->sessionId,
-            'link_data_id' => $this->linkData->id,
             'campaign_id' => $this->logData['campaign_id'] ?? null,
             'adset_id' => $this->logData['adset_id'] ?? null,
             'ad_id' => $this->logData['ad_id'] ?? null,
@@ -107,7 +106,7 @@ class SaveTrackingLogJob implements ShouldQueue
             'created_at' => $this->logData['created_at'] ?? $now,
         ]);
 
-        $this->bufferDailyCount($dateOnly, $this->linkData->id, $eventType);
+        $this->bufferDailyCount($dateOnly, (string) $this->logData['campaign_id'], $eventType);
     }
 
     /**
@@ -119,7 +118,6 @@ class SaveTrackingLogJob implements ShouldQueue
 
         EventAdLoad::create([
             'session_id' => $this->sessionId,
-            'link_data_id' => $this->linkData->id,
             'campaign_id' => $this->logData['campaign_id'] ?? null,
             'adset_id' => $this->logData['adset_id'] ?? null,
             'ad_id' => $this->logData['ad_id'] ?? null,
@@ -133,15 +131,65 @@ class SaveTrackingLogJob implements ShouldQueue
     }
 
     /**
+     * Save a lead event and its extensible values.
+     */
+    private function saveLeadEvent(string $eventType): void
+    {
+        $clickTracking = ClickTracking::create([
+            'session_id' => $this->sessionId,
+            'campaign_id' => $this->logData['campaign_id'] ?? null,
+            'adset_id' => $this->logData['adset_id'] ?? null,
+            'ad_id' => $this->logData['ad_id'] ?? null,
+            'event_type' => $eventType,
+            'page' => $this->logData['page'] ?? null,
+            'payload' => $this->logData['values'] ?? $this->logData['payload'] ?? null,
+            'event_time' => $this->logData['event_time'] ?? now(),
+        ]);
+
+        RevenueReport::updateOrCreate(
+            ['session_id' => $this->sessionId],
+            [
+                'campaign_id' => $this->logData['campaign_id'],
+                'adset_id' => $this->logData['adset_id'] ?? null,
+                'ad_id' => $this->logData['ad_id'] ?? null,
+                'click_id' => $clickTracking->id,
+                'estimate_earning' => $this->logData['estimate_earning']
+                    ?? data_get($this->logData, 'values.estimate_earning')
+                    ?? data_get($this->logData, 'payload.estimate_earning')
+                    ?? 0,
+                'page_views' => $this->revenueValue('page_views'),
+                'clicks' => $this->revenueValue('clicks'),
+                'ad_requests' => $this->revenueValue('ad_requests'),
+                'impressions' => $this->revenueValue('impressions'),
+                'ad_requests_rpm' => $this->revenueValue('ad_requests_rpm'),
+                'impressions_rpm' => $this->revenueValue('impressions_rpm'),
+                'cost_per_click' => $this->revenueValue('cost_per_click'),
+                'funnel_requests' => $this->revenueValue('funnel_requests'),
+                'funnel_impressions' => $this->revenueValue('funnel_impressions'),
+                'funnel_clicks' => $this->revenueValue('funnel_clicks'),
+                'funnel_rpm' => $this->revenueValue('funnel_rpm'),
+            ],
+        );
+    }
+
+    private function revenueValue(string $field): mixed
+    {
+        return $this->logData[$field]
+            ?? data_get($this->logData, "values.{$field}")
+            ?? data_get($this->logData, "payload.{$field}");
+    }
+
+    /**
      * Buffer the daily count into Redis with an atomic HINCRBY.
      */
-    private function bufferDailyCount(string $date, int $linkDataId, string $eventType): void
+    private function bufferDailyCount(string $date, string $campaignId, string $eventType): void
     {
-        $column = match ($eventType) {
-            'view_article' => 'view_article_count',
-            'view_search' => 'view_search_count',
-            'click_keyword' => 'click_keyword_count',
-            'click_ad' => 'click_ad_count',
+        $page = $this->logData['page'] ?? null;
+        $column = match (true) {
+            $eventType === 'page_view' && $page === 'article' => 'view_article_count',
+            $eventType === 'page_view' && $page === 'search' => 'view_search_count',
+            $eventType === 'form_view' && $page === 'article' => 'click_keyword_count',
+            $eventType === 'form_view' && $page === 'search' => 'click_ad_count',
             default => null,
         };
 
@@ -149,7 +197,7 @@ class SaveTrackingLogJob implements ShouldQueue
             return;
         }
 
-        $key = "tracking_daily:{$date}:{$linkDataId}";
+        $key = "tracking_daily:{$date}:{$campaignId}";
 
         Redis::hincrby($key, $column, 1);
         Redis::expire($key, 90_000);
@@ -163,7 +211,7 @@ class SaveTrackingLogJob implements ShouldQueue
         Log::channel('tracking_events')->error('Failed to save tracking event', [
             'timestamp' => now(),
             'session_id' => $this->sessionId,
-            'link_data_id' => $this->linkData->id,
+            'campaign_id' => $this->logData['campaign_id'] ?? null,
             'type' => $this->logData['type'] ?? 'unknown',
             'error' => $exception->getMessage(),
             'stack_trace' => $exception->getTraceAsString(),
@@ -178,7 +226,7 @@ class SaveTrackingLogJob implements ShouldQueue
         Log::channel('tracking_events')->critical('SaveTrackingLogJob failed after all retries', [
             'timestamp' => now(),
             'session_id' => $this->sessionId,
-            'link_data_id' => $this->linkData->id,
+            'campaign_id' => $this->logData['campaign_id'] ?? null,
             'type' => $this->logData['type'] ?? 'unknown',
             'error' => $exception->getMessage(),
             'stack_trace' => $exception->getTraceAsString(),

@@ -7,7 +7,6 @@ use App\Models\AdsLink;
 use App\Models\BusinessCenter;
 use App\Models\Campaign;
 use App\Models\Follow;
-use App\Models\LinkData;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -16,9 +15,7 @@ use Illuminate\Support\Collection;
 /**
  * Seeds the advertising domain. All cross-table IDs are guaranteed to be consistent:
  *   - `campaigns.account_id`          → `accounts.account_id` (business string)
- *   - `link_datas.campaign_id`        → `campaigns.campaign_id`
- *   - `link_datas.channel_code`       → historical reporting snapshot
- *   - `link_datas.style_code`         → historical reporting snapshot
+ *   - `campaigns.ads_link_id`         → `ads_links.id`
  */
 class AdsSeeder extends Seeder
 {
@@ -45,11 +42,10 @@ class AdsSeeder extends Seeder
 
         $campaigns = $this->seedCampaigns($accounts, $admin);
 
-        [, $linkDataList] = $this->seedAdsLinksAndLinkData($campaigns, $admin);
+        $this->seedAdsLinks($campaigns, $admin);
 
         $this->seedFollows();
 
-        unset($linkDataList);
     }
 
     /**
@@ -180,25 +176,16 @@ class AdsSeeder extends Seeder
     }
 
     /**
-     * Creates one AdsLink + one LinkData per campaign so reports/tracking can join by
-     * campaign_id / style_code / channel_code without orphan rows.
+     * Creates one AdsLink per campaign.
      *
      * @param  Collection<int, Campaign>  $campaigns
-     * @return array{0: Collection<int, AdsLink>, 1: Collection<int, LinkData>}
      */
-    private function seedAdsLinksAndLinkData(
+    private function seedAdsLinks(
         Collection $campaigns,
         User $admin,
-    ): array {
-        $adsLinks = collect();
-        $linkData = collect();
-
+    ): void {
         foreach ($campaigns as $campaign) {
-            $existingLink = LinkData::query()->where('campaign_id', $campaign->campaign_id)->first();
-            if ($existingLink !== null) {
-                $linkData->push($existingLink);
-                $adsLinks->push(AdsLink::query()->find($existingLink->ads_link_id));
-
+            if ($campaign->ads_link_id !== null) {
                 continue;
             }
 
@@ -217,21 +204,8 @@ class AdsSeeder extends Seeder
                 'updated_by' => $campaign->updated_by ?? $admin->id,
             ]);
 
-            $link = LinkData::query()->create([
-                'ads_link_id' => $adsLink->id,
-                // campaign_id references campaigns.campaign_id (business string), unique.
-                'campaign_id' => $campaign->campaign_id,
-                'style_code' => 'report-style-'.$campaign->campaign_id,
-                'channel_code' => 'report-'.$campaign->campaign_id,
-                'created_by' => $campaign->created_by ?? $admin->id,
-                'updated_by' => $campaign->updated_by ?? $admin->id,
-            ]);
-
-            $adsLinks->push($adsLink);
-            $linkData->push($link);
+            $campaign->update(['ads_link_id' => $adsLink->id]);
         }
-
-        return [$adsLinks, $linkData];
     }
 
     private function seedFollows(): void

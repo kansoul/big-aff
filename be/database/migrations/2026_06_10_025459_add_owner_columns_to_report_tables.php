@@ -16,14 +16,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('revenue_reports', function (Blueprint $table) {
-            $table->unsignedBigInteger('owner_user_id')->nullable()->after('channel_name');
-            $table->unsignedBigInteger('owner_main_team_id')->nullable()->after('owner_user_id');
-
-            $table->index(['owner_user_id', 'date'], 'revenue_reports_owner_user_date_index');
-            $table->index(['owner_main_team_id', 'date'], 'revenue_reports_owner_main_team_date_index');
-        });
-
         Schema::table('insight_reports', function (Blueprint $table) {
             $table->unsignedBigInteger('owner_user_id')->nullable()->after('spend_type');
             $table->unsignedBigInteger('owner_main_team_id')->nullable()->after('owner_user_id');
@@ -41,12 +33,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('revenue_reports', function (Blueprint $table) {
-            $table->dropIndex('revenue_reports_owner_user_date_index');
-            $table->dropIndex('revenue_reports_owner_main_team_date_index');
-            $table->dropColumn(['owner_user_id', 'owner_main_team_id']);
-        });
-
         Schema::table('insight_reports', function (Blueprint $table) {
             $table->dropIndex('insight_reports_owner_user_date_index');
             $table->dropIndex('insight_reports_owner_main_team_date_index');

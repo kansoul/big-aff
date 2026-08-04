@@ -4,8 +4,7 @@ namespace App\Services\CampaignReport;
 
 use App\Models\Account;
 use App\Models\CampaignReport;
-use App\Models\LinkData;
-use App\Models\RevenueReport;
+use App\Models\RevenueChartReport;
 use App\Models\User;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,9 +24,7 @@ class CampaignReportFilterService
      *     users: array<int, array{id: int, name: string}>,
      *     accounts: array<int, array{id: int, account_id: string, account_name: string|null, ads_type: string|null}>,
      *     campaigns: array<int, array{campaign_id: string, campaign_name: string|null, ads_type: string|null, account_id: string|null}>,
-     *     styles: array<int, array{code: string, name: string|null}>,
      *     channels: array<int, array{code: string, name: string|null}>,
-     *     link_data_ids: array<int, array{id: int, campaign_id: string|null, style_code: string|null, channel_code: string|null}>,
      *     ads_types: array<int, array{value: string, label: string}>,
      * }
      */
@@ -39,55 +36,28 @@ class CampaignReportFilterService
             'users' => $this->users($ownership),
             'accounts' => $this->accounts($ownership),
             'campaigns' => $this->campaigns($ownership),
-            'styles' => $this->reportStyles($ownership),
             'channels' => $this->reportChannels($ownership),
-            'link_data_ids' => $this->linkDataIds($ownership),
             'ads_types' => self::ADS_TYPES,
         ];
     }
 
     /**
-     * Historical style snapshots from revenue reports; no Style entity is involved.
-     *
-     * @return array<int, array{code: string, name: string|null}>
-     */
-    private function reportStyles(OwnershipFilter $ownership): array
-    {
-        $query = RevenueReport::query()
-            ->select(['style_code', 'style_name'])
-            ->whereNotNull('style_code')
-            ->groupBy('style_code', 'style_name')
-            ->orderBy('style_code');
-
-        $ownership->applyTo($query, 'owner_user_id');
-
-        return $query->get()
-            ->map(fn (RevenueReport $report) => [
-                'code' => (string) $report->style_code,
-                'name' => $report->style_name,
-            ])
-            ->all();
-    }
-
-    /**
-     * Historical channel snapshots from revenue reports; no Channel entity is involved.
-     *
      * @return array<int, array{code: string, name: string|null}>
      */
     private function reportChannels(OwnershipFilter $ownership): array
     {
-        $query = RevenueReport::query()
-            ->select(['channel_code', 'channel_name'])
+        $query = RevenueChartReport::query()
+            ->select(['channel_code'])
             ->whereNotNull('channel_code')
-            ->groupBy('channel_code', 'channel_name')
+            ->groupBy('channel_code')
             ->orderBy('channel_code');
 
         $ownership->applyTo($query, 'owner_user_id');
 
         return $query->get()
-            ->map(fn (RevenueReport $report) => [
+            ->map(fn (RevenueChartReport $report) => [
                 'code' => (string) $report->channel_code,
-                'name' => $report->channel_name,
+                'name' => null,
             ])
             ->all();
     }
@@ -159,36 +129,6 @@ class CampaignReportFilterService
                 'account_id' => $r->account_id !== null ? (string) $r->account_id : null,
             ])
             ->all();
-    }
-
-    /**
-     * @return array<int, array{id: int, campaign_id: string|null, style_code: string|null, channel_code: string|null}>
-     */
-    private function linkDataIds(OwnershipFilter $ownership): array
-    {
-        $realtimeIdQuery = CampaignReport::query()
-            ->select('realtime_report_id')
-            ->whereNotNull('realtime_report_id');
-
-        $this->applyAccountOwnership($realtimeIdQuery, $ownership);
-
-        $linkDataIdQuery = DB::table('realtime_reports')
-            ->whereIn('id', $realtimeIdQuery)
-            ->whereNotNull('link_data_id')
-            ->select('link_data_id')
-            ->distinct();
-
-        $rows = LinkData::query()
-            ->whereIn('id', $linkDataIdQuery)
-            ->orderBy('id')
-            ->get(['id', 'campaign_id', 'style_code', 'channel_code']);
-
-        return $rows->map(fn (LinkData $l) => [
-            'id' => (int) $l->id,
-            'campaign_id' => $l->campaign_id,
-            'style_code' => $l->style_code,
-            'channel_code' => $l->channel_code,
-        ])->all();
     }
 
     /**

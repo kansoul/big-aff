@@ -14,7 +14,7 @@ class RealtimeReport extends Model
 
     protected $fillable = [
         'event_time',
-        'link_data_id',
+        'campaign_id',
         'view_article_count',
         'view_search_count',
         'click_keyword_count',

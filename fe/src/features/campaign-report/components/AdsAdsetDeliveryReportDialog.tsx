@@ -50,6 +50,7 @@ import { campaignReportApi } from '@/features/campaign-report/api'
 import type {
   AdsInsightRow,
   AdsetInsightRow,
+  ClickTrackingRow,
   DeliveryEntitiesFilterParams,
   DeliveryEntityStatusOption,
 } from '@/features/campaign-report/types'
@@ -58,11 +59,11 @@ import { useAuthStore } from '@/hooks/useAuthStore'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DeliveryTab = 'adsets' | 'ads'
+export type DeliveryTab = 'adsets' | 'ads' | 'clicks'
 
 type GroupByKey = 'none' | 'date_start'
 
-type DeliveryRow = AdsetInsightRow | AdsInsightRow
+type DeliveryRow = AdsetInsightRow | AdsInsightRow | ClickTrackingRow
 
 type Props = {
   trigger?: React.ReactNode
@@ -72,6 +73,11 @@ type Props = {
   initialDateTo?: string | null
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  initialTab?: DeliveryTab
+  initialAdsetId?: string | null
+  initialAdId?: string | null
+  initialSessionId?: string | null
+  initialClickId?: number | null
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -290,6 +296,11 @@ function AdsAdsetDeliveryReportDialogInner({
   initialDateTo,
   open: controlledOpen,
   onOpenChange,
+  initialTab = 'adsets',
+  initialAdsetId,
+  initialAdId,
+  initialSessionId,
+  initialClickId,
 }: Props) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
   const isControlled = typeof controlledOpen === 'boolean'
@@ -302,7 +313,7 @@ function AdsAdsetDeliveryReportDialogInner({
     },
     [isControlled, onOpenChange],
   )
-  const [activeTab, setActiveTab] = useState<DeliveryTab>('adsets')
+  const [activeTab, setActiveTab] = useState<DeliveryTab>(initialTab)
 
   const permissions = useAuthStore((s) => s.user?.permissions ?? [])
   const canToggle = useMemo(
@@ -319,13 +330,21 @@ function AdsAdsetDeliveryReportDialogInner({
       adset_name: null,
       ad_id: null,
       ad_name: null,
+      session_id: null,
+      click_id: null,
+      event_type: null,
+      ...(initialAdsetId ? { adset_id: initialAdsetId } : {}),
+      ...(initialAdId ? { ad_id: initialAdId } : {}),
+      ...(initialSessionId ? { session_id: initialSessionId } : {}),
+      ...(initialClickId ? { click_id: initialClickId } : {}),
     }),
-    [initialDateFrom, initialDateTo],
+    [initialAdId, initialAdsetId, initialClickId, initialDateFrom, initialDateTo, initialSessionId],
   )
 
   const [filters, setFilters] = useState<DeliveryEntitiesFilterParams>(buildInitialFilters)
   const [adsets, setAdsets] = useState<AdsetInsightRow[]>([])
   const [ads, setAds] = useState<AdsInsightRow[]>([])
+  const [clicks, setClicks] = useState<ClickTrackingRow[]>([])
   const [loading, setLoading] = useState(false)
   const [toggling, setToggling] = useState<Record<string, boolean>>({})
 
@@ -338,16 +357,24 @@ function AdsAdsetDeliveryReportDialogInner({
   const [perPage, setPerPage] = useState(10)
   const [sort, setSort] = useState<SortState>({ column: null, direction: null })
 
+  useEffect(() => {
+    if (!open) return
+    setActiveTab(initialTab)
+    setFilters(buildInitialFilters())
+  }, [buildInitialFilters, initialTab, open])
+
   const loadData = useCallback(
     async (activeFilters: DeliveryEntitiesFilterParams) => {
       try {
         setLoading(true)
-        const [adsetsRes, adsRes] = await Promise.all([
+        const [adsetsRes, adsRes, clicksRes] = await Promise.all([
           campaignReportApi.listDeliveryAdsets(campaignId, activeFilters),
           campaignReportApi.listDeliveryAds(campaignId, activeFilters),
+          campaignReportApi.listDeliveryClicks(campaignId, activeFilters),
         ])
         setAdsets(adsetsRes.data.data)
         setAds(adsRes.data.data)
+        setClicks(clicksRes.data.data)
       } catch (err) {
         toast.error(formatApiError(err))
       } finally {
@@ -378,14 +405,15 @@ function AdsAdsetDeliveryReportDialogInner({
         setFilters(buildInitialFilters())
         setAdsets([])
         setAds([])
-        setActiveTab('adsets')
+        setClicks([])
+        setActiveTab(initialTab)
         setSearch('')
         setPage(1)
         setSort({ column: null, direction: null })
         setGroupBy('none')
       }
     },
-    [buildInitialFilters, setDialogOpen],
+    [buildInitialFilters, initialTab, setDialogOpen],
   )
 
   // Reset pagination/search when switching tab
@@ -401,16 +429,36 @@ function AdsAdsetDeliveryReportDialogInner({
   )
 
   const filterFields = useMemo<FilterFieldDef[]>(() => {
-    const common: FilterFieldDef[] = [
-      {
-        field: 'date_range',
-        label: 'Date',
-        type: 'daterange',
-        value: {
-          from: filters.date_from ?? null,
-          to: filters.date_to ?? null,
-        },
+    const dateField: FilterFieldDef = {
+      field: 'date_range',
+      label: 'Date',
+      type: 'daterange',
+      value: {
+        from: filters.date_from ?? null,
+        to: filters.date_to ?? null,
       },
+    }
+    if (activeTab === 'clicks') {
+      return [
+        dateField,
+        {
+          field: 'session_id',
+          label: 'Session ID',
+          type: 'input',
+          value: filters.session_id ?? null,
+          placeholder: 'Enter Session ID',
+        },
+        {
+          field: 'event_type',
+          label: 'Event Type',
+          type: 'input',
+          value: filters.event_type ?? null,
+          placeholder: 'e.g. lead',
+        },
+      ]
+    }
+    const common: FilterFieldDef[] = [
+      dateField,
       {
         field: 'status',
         label: 'Status',
@@ -465,22 +513,30 @@ function AdsAdsetDeliveryReportDialogInner({
     filters.adset_name,
     filters.ad_id,
     filters.ad_name,
+    filters.session_id,
+    filters.event_type,
     statusSelectOptions,
   ])
 
-  const onApplyFilters = useCallback((values: Record<string, unknown>) => {
-    const range = values.date_range as { from: string | null; to: string | null } | null
-    setFilters({
-      date_from: range?.from ?? null,
-      date_to: range?.to ?? null,
-      status: (values.status as string | null) ?? null,
-      adset_id: (values.adset_id as string | null) ?? null,
-      adset_name: (values.adset_name as string | null) ?? null,
-      ad_id: (values.ad_id as string | null) ?? null,
-      ad_name: (values.ad_name as string | null) ?? null,
-    })
-    setPage(1)
-  }, [])
+  const onApplyFilters = useCallback(
+    (values: Record<string, unknown>) => {
+      const range = values.date_range as { from: string | null; to: string | null } | null
+      setFilters({
+        date_from: range?.from ?? null,
+        date_to: range?.to ?? null,
+        status: (values.status as string | null) ?? null,
+        adset_id: (values.adset_id as string | null) ?? null,
+        adset_name: (values.adset_name as string | null) ?? null,
+        ad_id: (values.ad_id as string | null) ?? null,
+        ad_name: (values.ad_name as string | null) ?? null,
+        session_id: (values.session_id as string | null) ?? null,
+        click_id: filters.click_id ?? null,
+        event_type: (values.event_type as string | null) ?? null,
+      })
+      setPage(1)
+    },
+    [filters.click_id],
+  )
 
   const onFilterReset = useCallback(() => {
     setFilters(buildInitialFilters())
@@ -499,51 +555,45 @@ function AdsAdsetDeliveryReportDialogInner({
 
   // ── Toggle status ──────────────────────────────────────────────────────────
 
-  const onToggleAdsetStatus = useCallback(
-    async (row: AdsetInsightRow, checked: boolean) => {
-      if (!row.status_toggleable) return
-      const next: 'ACTIVE' | 'PAUSED' = checked ? 'ACTIVE' : 'PAUSED'
-      const key = `adset:${row.id}`
-      setToggling((prev) => ({ ...prev, [key]: true }))
-      try {
-        const { data } = await campaignReportApi.toggleAdsetStatus(row.id, next)
-        // Toggle response is computed without the list-only fields (has_rule, realtime
-        // metrics), so preserve them from the existing row to avoid the badge flickering off.
-        setAdsets((prev) =>
-          prev.map((r) => (r.id === row.id ? { ...data.data, has_rule: r.has_rule } : r)),
-        )
-        toast.success(`Adset is now ${data.data.status}`)
-      } catch (err) {
-        toast.error(formatApiError(err))
-      } finally {
-        setToggling((prev) => ({ ...prev, [key]: false }))
-      }
-    },
-    [campaignId],
-  )
+  const onToggleAdsetStatus = useCallback(async (row: AdsetInsightRow, checked: boolean) => {
+    if (!row.status_toggleable) return
+    const next: 'ACTIVE' | 'PAUSED' = checked ? 'ACTIVE' : 'PAUSED'
+    const key = `adset:${row.id}`
+    setToggling((prev) => ({ ...prev, [key]: true }))
+    try {
+      const { data } = await campaignReportApi.toggleAdsetStatus(row.id, next)
+      // Toggle response is computed without the list-only fields (has_rule, realtime
+      // metrics), so preserve them from the existing row to avoid the badge flickering off.
+      setAdsets((prev) =>
+        prev.map((r) => (r.id === row.id ? { ...data.data, has_rule: r.has_rule } : r)),
+      )
+      toast.success(`Adset is now ${data.data.status}`)
+    } catch (err) {
+      toast.error(formatApiError(err))
+    } finally {
+      setToggling((prev) => ({ ...prev, [key]: false }))
+    }
+  }, [])
 
-  const onToggleAdStatus = useCallback(
-    async (row: AdsInsightRow, checked: boolean) => {
-      if (!row.status_toggleable) return
-      const next: 'ACTIVE' | 'PAUSED' = checked ? 'ACTIVE' : 'PAUSED'
-      const key = `ad:${row.id}`
-      setToggling((prev) => ({ ...prev, [key]: true }))
-      try {
-        const { data } = await campaignReportApi.toggleAdStatus(row.id, next)
-        // Toggle response is computed without the list-only fields (has_rule, realtime
-        // metrics), so preserve them from the existing row to avoid the badge flickering off.
-        setAds((prev) =>
-          prev.map((r) => (r.id === row.id ? { ...data.data, has_rule: r.has_rule } : r)),
-        )
-        toast.success(`Ad is now ${data.data.status}`)
-      } catch (err) {
-        toast.error(formatApiError(err))
-      } finally {
-        setToggling((prev) => ({ ...prev, [key]: false }))
-      }
-    },
-    [campaignId],
-  )
+  const onToggleAdStatus = useCallback(async (row: AdsInsightRow, checked: boolean) => {
+    if (!row.status_toggleable) return
+    const next: 'ACTIVE' | 'PAUSED' = checked ? 'ACTIVE' : 'PAUSED'
+    const key = `ad:${row.id}`
+    setToggling((prev) => ({ ...prev, [key]: true }))
+    try {
+      const { data } = await campaignReportApi.toggleAdStatus(row.id, next)
+      // Toggle response is computed without the list-only fields (has_rule, realtime
+      // metrics), so preserve them from the existing row to avoid the badge flickering off.
+      setAds((prev) =>
+        prev.map((r) => (r.id === row.id ? { ...data.data, has_rule: r.has_rule } : r)),
+      )
+      toast.success(`Ad is now ${data.data.status}`)
+    } catch (err) {
+      toast.error(formatApiError(err))
+    } finally {
+      setToggling((prev) => ({ ...prev, [key]: false }))
+    }
+  }, [])
 
   // ── Column definitions (memoized per tab) ──────────────────────────────────
 
@@ -1271,9 +1321,86 @@ function AdsAdsetDeliveryReportDialogInner({
     [canToggle, onToggleAdStatus, toggling],
   )
 
+  const clickColumns = useMemo<ColDef<ClickTrackingRow>[]>(
+    () => [
+      {
+        key: 'id',
+        label: 'Click ID',
+        sortKey: 'id',
+        className: 'min-w-[90px]',
+        render: (r) => <span className="font-mono text-[11px]">{r.id}</span>,
+      },
+      {
+        key: 'session_id',
+        label: 'Session ID',
+        sortKey: 'session_id',
+        className: 'min-w-[260px]',
+        render: (r) => <span className="font-mono text-[11px]">{r.session_id ?? '-'}</span>,
+      },
+      {
+        key: 'adset_id',
+        label: 'Adset ID',
+        sortKey: 'adset_id',
+        className: 'min-w-[150px]',
+        render: (r) => <span className="font-mono text-[11px]">{r.adset_id ?? '-'}</span>,
+      },
+      {
+        key: 'ad_id',
+        label: 'Ad ID',
+        sortKey: 'ad_id',
+        className: 'min-w-[150px]',
+        render: (r) => <span className="font-mono text-[11px]">{r.ad_id ?? '-'}</span>,
+      },
+      {
+        key: 'event_type',
+        label: 'Event Type',
+        sortKey: 'event_type',
+        className: 'min-w-[120px]',
+        render: (r) => <StatusBadge status={r.event_type} label={r.event_type} />,
+      },
+      {
+        key: 'page',
+        label: 'Page',
+        sortKey: 'page',
+        className: 'min-w-[240px] max-w-[360px]',
+        render: (r) => (
+          <span className="block truncate text-xs" title={r.page ?? undefined}>
+            {r.page ?? '-'}
+          </span>
+        ),
+      },
+      {
+        key: 'payload',
+        label: 'Payload',
+        className: 'min-w-[280px] max-w-[420px]',
+        render: (r) => {
+          const payload = r.payload ? JSON.stringify(r.payload) : '-'
+          return (
+            <span className="block truncate font-mono text-[11px]" title={payload}>
+              {payload}
+            </span>
+          )
+        },
+      },
+      {
+        key: 'event_time',
+        label: 'Event Time',
+        sortKey: 'event_time',
+        className: 'min-w-[170px]',
+        render: (r) => (
+          <span className="tabular-nums text-xs text-muted-foreground">
+            {r.event_time ? dayjs(r.event_time).format('DD/MM/YYYY HH:mm:ss') : '-'}
+          </span>
+        ),
+      },
+    ],
+    [],
+  )
+
   // ── Derived data: search + sort (grouping is visual only) ─────────────────
 
-  const rawRows: DeliveryRow[] = activeTab === 'adsets' ? adsets : ads
+  const rawRows: DeliveryRow[] =
+    activeTab === 'adsets' ? adsets : activeTab === 'ads' ? ads : clicks
 
   const filteredRows = useMemo(() => {
     if (!search.trim()) return rawRows
@@ -1285,8 +1412,15 @@ function AdsAdsetDeliveryReportDialogInner({
           .some((v) => String(v).toLowerCase().includes(q)),
       )
     }
-    return (rawRows as AdsInsightRow[]).filter((r) =>
-      [r.ad_id, r.ad_name, r.account_id, r.campaign_id, r.adset_id]
+    if (activeTab === 'ads') {
+      return (rawRows as AdsInsightRow[]).filter((r) =>
+        [r.ad_id, r.ad_name, r.account_id, r.campaign_id, r.adset_id]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q)),
+      )
+    }
+    return (rawRows as ClickTrackingRow[]).filter((r) =>
+      [r.id, r.session_id, r.adset_id, r.ad_id, r.event_type, r.page]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q)),
     )
@@ -1325,7 +1459,7 @@ function AdsAdsetDeliveryReportDialogInner({
     if (groupBy !== 'date_start') return null
     const map = new Map<string, DeliveryRow[]>()
     for (const row of pageRows) {
-      const key = row.date_start ?? '—'
+      const key = 'date_start' in row ? (row.date_start ?? '—') : formatDate(row.event_time)
       const existing = map.get(key) ?? []
       existing.push(row)
       map.set(key, existing)
@@ -1349,7 +1483,9 @@ function AdsAdsetDeliveryReportDialogInner({
 
   // ── Render helpers tied to current tab ────────────────────────────────────
 
-  const columns = (activeTab === 'adsets' ? adsetColumns : adColumns) as ColDef<DeliveryRow>[]
+  const columns = (
+    activeTab === 'adsets' ? adsetColumns : activeTab === 'ads' ? adColumns : clickColumns
+  ) as ColDef<DeliveryRow>[]
 
   const summaryTotals = useMemo(() => {
     const totals: Record<string, number> = {}
@@ -1380,9 +1516,16 @@ function AdsAdsetDeliveryReportDialogInner({
       if (filters.adset_id) chips.push({ key: 'adset_id', label: `Adset ID: ${filters.adset_id}` })
       if (filters.adset_name)
         chips.push({ key: 'adset_name', label: `Adset Name: ${filters.adset_name}` })
-    } else {
+    } else if (activeTab === 'ads') {
       if (filters.ad_id) chips.push({ key: 'ad_id', label: `Ad ID: ${filters.ad_id}` })
       if (filters.ad_name) chips.push({ key: 'ad_name', label: `Ad Name: ${filters.ad_name}` })
+    } else {
+      if (filters.session_id) {
+        chips.push({ key: 'session_id', label: `Session ID: ${filters.session_id}` })
+      }
+      if (filters.event_type) {
+        chips.push({ key: 'event_type', label: `Event Type: ${filters.event_type}` })
+      }
     }
     return chips
   }, [filters, statusOptions, activeTab])
@@ -1426,6 +1569,7 @@ function AdsAdsetDeliveryReportDialogInner({
             <TabsList variant="line">
               <TabsTrigger value="adsets">Adsets</TabsTrigger>
               <TabsTrigger value="ads">Ads</TabsTrigger>
+              <TabsTrigger value="clicks">Click</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -1546,7 +1690,7 @@ function AdsAdsetDeliveryReportDialogInner({
                       >
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <BarChart3 className="h-7 w-7 opacity-30" />
-                          <p className="text-sm">No delivery data for the selected filters.</p>
+                          <p className="text-sm">No report data for the selected filters.</p>
                         </div>
                       </TableCell>
                     </TableRow>

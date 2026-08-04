@@ -21,7 +21,6 @@ class RevenueChartReportResource extends JsonResource
             'style_code' => $this->style_code,
             'style_name' => $this->style_name,
             'channel_code' => $this->channel_code,
-            'channel_name' => $this->channel_name,
             'datetime' => $this->datetime?->toIso8601String(),
 
             // Raw cumulative fields

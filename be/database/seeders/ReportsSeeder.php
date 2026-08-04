@@ -6,10 +6,9 @@ use App\Models\Campaign;
 use App\Models\CampaignReport;
 use App\Models\InsightChartReport;
 use App\Models\InsightReport;
-use App\Models\LinkData;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -40,20 +39,15 @@ class ReportsSeeder extends Seeder
             return;
         }
 
-        $linkDataByCampaignId = LinkData::query()
-            ->whereNotNull('campaign_id')
-            ->get()
-            ->keyBy('campaign_id');
-
         $this->seedInsightReports($campaigns);
         $this->seedInsightChartReports($campaigns);
-        $this->seedCampaignReports($campaigns, $linkDataByCampaignId);
+        $this->seedCampaignReports($campaigns);
     }
 
     /**
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Campaign>  $campaigns
+     * @param  Collection<int, Campaign>  $campaigns
      */
-    private function seedInsightReports(\Illuminate\Database\Eloquent\Collection $campaigns): void
+    private function seedInsightReports(Collection $campaigns): void
     {
         if (InsightReport::query()->exists()) {
             return;
@@ -87,9 +81,9 @@ class ReportsSeeder extends Seeder
     }
 
     /**
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Campaign>  $campaigns
+     * @param  Collection<int, Campaign>  $campaigns
      */
-    private function seedInsightChartReports(\Illuminate\Database\Eloquent\Collection $campaigns): void
+    private function seedInsightChartReports(Collection $campaigns): void
     {
         if (InsightChartReport::query()->exists()) {
             return;
@@ -119,30 +113,24 @@ class ReportsSeeder extends Seeder
     }
 
     /**
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Campaign>  $campaigns
-     * @param  Collection<string, LinkData>  $linkDataByCampaignId
+     * @param  Collection<int, Campaign>  $campaigns
      */
-    private function seedCampaignReports(
-        \Illuminate\Database\Eloquent\Collection $campaigns,
-        Collection $linkDataByCampaignId,
-    ): void {
+    private function seedCampaignReports(Collection $campaigns): void
+    {
         if (CampaignReport::query()->exists()) {
             return;
         }
 
         $now = Carbon::now();
 
-        // Pre-create all RealtimeReports in bulk, keyed by "link_data_id|date"
-        $realtimeMap = $this->seedRealtimeReports($campaigns, $linkDataByCampaignId, $now);
+        $realtimeMap = $this->seedRealtimeReports($campaigns, $now);
 
         $rows = [];
 
         foreach ($campaigns as $campaign) {
-            $linkData = $linkDataByCampaignId->get($campaign->campaign_id);
-
             for ($day = self::CAMPAIGN_REPORT_DAYS; $day >= 0; $day--) {
                 $date = $now->copy()->subDays($day)->toDateString();
-                $realtimeId = $linkData ? ($realtimeMap[$linkData->id.'|'.$date] ?? null) : null;
+                $realtimeId = $realtimeMap[$campaign->campaign_id.'|'.$date] ?? null;
 
                 $row = CampaignReport::factory()->make([
                     'realtime_report_id' => $realtimeId,
@@ -153,8 +141,6 @@ class ReportsSeeder extends Seeder
                     'campaign_name' => $campaign->campaign_name,
                     'campaign_status' => $campaign->status,
                     'ads_type' => $campaign->ads_type,
-                    'style_name' => $linkData?->style_code,
-                    'channel_name' => $linkData?->channel_code,
                 ])->getAttributes();
                 $row['date_start'] = $date;
                 $rows[] = $row;
@@ -172,30 +158,22 @@ class ReportsSeeder extends Seeder
     }
 
     /**
-     * Bulk-inserts RealtimeReports for all campaigns that have LinkData,
-     * then returns a map of "link_data_id|date" → realtime_report id.
+     * Bulk-inserts RealtimeReports and returns a map of "campaign_id|date" to id.
      *
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Campaign>  $campaigns
-     * @param  Collection<string, LinkData>  $linkDataByCampaignId
+     * @param  Collection<int, Campaign>  $campaigns
      * @return array<string, int>
      */
     private function seedRealtimeReports(
-        \Illuminate\Database\Eloquent\Collection $campaigns,
-        Collection $linkDataByCampaignId,
+        Collection $campaigns,
         Carbon $now,
     ): array {
         $toInsert = [];
         $keys = [];
 
         foreach ($campaigns as $campaign) {
-            $linkData = $linkDataByCampaignId->get($campaign->campaign_id);
-            if ($linkData === null) {
-                continue;
-            }
-
             for ($day = self::CAMPAIGN_REPORT_DAYS; $day >= 0; $day--) {
                 $date = $now->copy()->subDays($day)->toDateString();
-                $key = $linkData->id.'|'.$date;
+                $key = $campaign->campaign_id.'|'.$date;
 
                 if (isset($keys[$key])) {
                     continue;
@@ -203,7 +181,7 @@ class ReportsSeeder extends Seeder
 
                 $keys[$key] = true;
                 $toInsert[] = [
-                    'link_data_id' => $linkData->id,
+                    'campaign_id' => $campaign->campaign_id,
                     'event_time' => $date,
                     'view_article_count' => random_int(50, 800),
                     'view_search_count' => random_int(30, 700),
@@ -222,17 +200,17 @@ class ReportsSeeder extends Seeder
         }
 
         // Fetch inserted IDs back into the map
-        $linkDataIds = array_unique(array_column($toInsert, 'link_data_id'));
+        $campaignIds = array_unique(array_column($toInsert, 'campaign_id'));
         $dates = array_unique(array_column($toInsert, 'event_time'));
 
         $records = DB::table('realtime_reports')
-            ->whereIn('link_data_id', $linkDataIds)
+            ->whereIn('campaign_id', $campaignIds)
             ->whereIn('event_time', $dates)
-            ->get(['id', 'link_data_id', 'event_time']);
+            ->get(['id', 'campaign_id', 'event_time']);
 
         $map = [];
         foreach ($records as $record) {
-            $map[$record->link_data_id.'|'.$record->event_time] = $record->id;
+            $map[$record->campaign_id.'|'.$record->event_time] = $record->id;
         }
 
         return $map;

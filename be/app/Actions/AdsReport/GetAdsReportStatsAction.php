@@ -104,21 +104,24 @@ class GetAdsReportStatsAction
         $profit = null;
 
         if ($showRevenueProfit) {
-            $revenueQuery = RevenueReport::query();
+            $revenueQuery = RevenueReport::query()
+                ->join('campaigns as revenue_campaigns', 'revenue_campaigns.campaign_id', '=', 'revenue_reports.campaign_id');
             if (! $canViewUnscoped) {
-                $ownership->applyTo($revenueQuery, 'owner_user_id');
+                $revenueQuery->whereIn('revenue_campaigns.created_by', $ownership->allowedUserIds());
             }
             if ($mainTeamIds !== null) {
-                $revenueQuery->whereIn('owner_main_team_id', $mainTeamIds);
+                $revenueQuery
+                    ->join('accounts as revenue_accounts', 'revenue_accounts.account_id', '=', 'revenue_campaigns.account_id')
+                    ->whereIn('revenue_accounts.main_team_id', $mainTeamIds);
             }
             if ($dateFrom) {
-                $revenueQuery->whereDate('date', '>=', $dateFrom);
+                $revenueQuery->whereDate('revenue_reports.created_at', '>=', $dateFrom);
             }
             if ($dateTo) {
-                $revenueQuery->whereDate('date', '<=', $dateTo);
+                $revenueQuery->whereDate('revenue_reports.created_at', '<=', $dateTo);
             }
 
-            $totalRevenue = (float) $revenueQuery->sum('estimated_earnings');
+            $totalRevenue = (float) $revenueQuery->sum('estimate_earning');
             $profit = $totalRevenue - $totalSpend;
         }
 

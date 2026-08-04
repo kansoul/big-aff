@@ -94,7 +94,7 @@ class FlushRealtimeReportCommand extends Command
                 continue;
             }
 
-            [, $date, $linkDataId] = $parts;
+            [, $date, $campaignId] = $parts;
 
             /** @var list<string> $hash */
             $hash = Redis::eval($script, 1, $key);
@@ -108,7 +108,7 @@ class FlushRealtimeReportCommand extends Command
 
             $rows[] = [
                 'event_time' => $date,
-                'link_data_id' => (int) $linkDataId,
+                'campaign_id' => $campaignId,
                 'view_article_count' => (int) ($counts['view_article_count'] ?? 0),
                 'view_search_count' => (int) ($counts['view_search_count'] ?? 0),
                 'click_keyword_count' => (int) ($counts['click_keyword_count'] ?? 0),
@@ -132,7 +132,7 @@ class FlushRealtimeReportCommand extends Command
         try {
             RealtimeReport::upsert(
                 $rows,
-                uniqueBy: ['event_time', 'link_data_id'],
+                uniqueBy: ['event_time', 'campaign_id'],
                 update: [
                     'view_article_count' => DB::raw('view_article_count + VALUES(view_article_count)'),
                     'view_search_count' => DB::raw('view_search_count + VALUES(view_search_count)'),

@@ -6,9 +6,9 @@ use App\Enums\EventClickType;
 use App\Models\Account;
 use App\Models\AdsetInsightsReport;
 use App\Models\Campaign;
-use App\Models\CampaignReport;
 use App\Models\CampaignRule;
 use App\Models\EventClick;
+use App\Models\RevenueReport;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -64,22 +64,19 @@ trait AdsInsightsReportRelationship
         return EventClick::query()
             ->selectRaw('COUNT(*)')
             ->whereColumn('event_clicks.ad_id', 'ads_insights_reports.ad_id')
-            ->where('event_clicks.type', EventClickType::ClickAd->value)
+            ->where('event_clicks.type', EventClickType::FormView->value)
             ->whereColumn('event_clicks.created_at', '>=', 'ads_insights_reports.date_start')
             ->whereRaw('event_clicks.created_at < DATE_ADD(ads_insights_reports.date_start, INTERVAL 1 DAY)');
     }
 
     /**
-     * @return Builder<CampaignReport>
+     * @return Builder<RevenueReport>
      */
     public static function rpcEstSubquery(): Builder
     {
-        return CampaignReport::query()
-            ->select('r_rpc')
-            ->whereColumn('campaign_reports.campaign_id', 'ads_insights_reports.campaign_id')
-            ->whereColumn('campaign_reports.date_start', '<=', 'ads_insights_reports.date_start')
-            ->whereNotNull('campaign_reports.r_rpc')
-            ->orderByDesc('campaign_reports.date_start')
-            ->limit(1);
+        return RevenueReport::query()
+            ->selectRaw('AVG(estimate_earning)')
+            ->whereColumn('revenue_reports.campaign_id', 'ads_insights_reports.campaign_id')
+            ->whereRaw('DATE(revenue_reports.created_at) <= ads_insights_reports.date_start');
     }
 }

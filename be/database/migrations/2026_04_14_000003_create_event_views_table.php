@@ -16,19 +16,17 @@ return new class extends Migration
             // the partition column must be part of every unique/primary key.
             $isMysql ? $table->unsignedBigInteger('id')->autoIncrement() : $table->id();
             $table->uuid('session_id')->nullable()->index();
-            $table->unsignedBigInteger('link_data_id')->nullable();
             $table->string('campaign_id')->nullable();
             $table->string('adset_id')->nullable();
             $table->string('ad_id')->nullable();
-            $table->enum('type', ['view_article', 'view_search'])->nullable();
+            $table->enum('type', ['page_view'])->nullable();
             $table->enum('page', ['article', 'search'])->nullable();
             $table->string('query', 750)->nullable();
             $table->timestamp('event_time')->nullable();
             // NOT NULL required — MySQL RANGE partition keys cannot be nullable.
             $table->timestamp('created_at')->useCurrent();
 
-            // Covering index for aggregation: WHERE link_data_id = ? AND created_at BETWEEN ...
-            $table->index(['link_data_id', 'created_at'], 'idx_event_views_link_date');
+            $table->index(['campaign_id', 'created_at'], 'idx_event_views_campaign_date');
 
             // Widen primary key to include partition column
             if ($isMysql) {

@@ -13,6 +13,7 @@ class Campaign extends Model
 
     protected $fillable = [
         'account_id',
+        'ads_link_id',
         'ads_type',
         'campaign_id',
         'campaign_name',

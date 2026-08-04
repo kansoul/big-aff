@@ -15,18 +15,6 @@ class ListCampaignReportsRequest extends FormRequest
     use ValidatesPaginationQuery;
     use ValidatesSortQuery;
 
-    /**
-     * Valid group_by values (empty string / missing = no grouping).
-     *
-     * @var array<int, string>
-     */
-    public const GROUP_BY_COLUMNS = [
-        'channel_code',
-        'account_id',
-        'user_id',
-        'campaign_id',
-    ];
-
     public function authorize(): bool
     {
         return true;
@@ -51,11 +39,6 @@ class ListCampaignReportsRequest extends FormRequest
                 'ads_type' => ['nullable', 'string', Rule::in(AdsType::values())],
                 'campaign_ids' => ['nullable', 'array'],
                 'campaign_ids.*' => ['string', 'max:255'],
-                'channel_codes' => ['nullable', 'array'],
-                'channel_codes.*' => ['string', 'max:100'],
-                'link_data_ids' => ['nullable', 'array'],
-                'link_data_ids.*' => ['integer'],
-                'group_by' => ['nullable', 'string', Rule::in(self::GROUP_BY_COLUMNS)],
             ],
         );
     }

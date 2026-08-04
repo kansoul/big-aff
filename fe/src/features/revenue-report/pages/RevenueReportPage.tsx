@@ -1,124 +1,68 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useLocation } from 'react-router-dom'
-import {
-  MantineReactTable,
-  MRT_ShowHideColumnsButton,
-  type MRT_ColumnDef,
-  useMantineReactTable,
-} from 'mantine-react-table'
-import { BarChart3 } from 'lucide-react'
+import { MantineReactTable, type MRT_ColumnDef, useMantineReactTable } from 'mantine-react-table'
 import { toast } from 'sonner'
 
-import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
-
-import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
 import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { Badge } from '@/components/ui/badge'
 import { campaignReportApi } from '@/features/campaign-report/api'
-import type { RevenueReportRow, RevenueReportFilterParams, RevenueReportOrderBy } from '../types'
-import { revenueReportApi } from '../api/revenueReportApi'
-import { useTableUrlState } from '@/hooks/useTableUrlState'
-import { setPaginationInParams } from '@/lib/utils'
-import type { TablePaginationState } from '@/lib/utils'
+import type {
+  RevenueReportFilterParams,
+  RevenueReportRow,
+  RevenueReportSummary,
+} from '@/features/revenue-report/types'
+import { revenueReportApi } from '@/features/revenue-report/api/revenueReportApi'
 
-// ─── Column definitions ───────────────────────────────────────────────────────
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-const DEFAULT_FILTERS: RevenueReportFilterParams = {}
-type ChannelOption = { code: string; name: string | null }
-
-function parseFilters(params: URLSearchParams): RevenueReportFilterParams {
-  const channelCodes = params.getAll('channel_codes[]')
-  const styleCodes = params.getAll('style_codes[]')
-  return {
-    date_from: params.get('date_from') ?? undefined,
-    date_to: params.get('date_to') ?? undefined,
-    channel_codes: channelCodes.length ? channelCodes : undefined,
-    style_codes: styleCodes.length ? styleCodes : undefined,
-    order_by: (params.get('order_by') as RevenueReportOrderBy) ?? undefined,
-    order: (params.get('order') as 'asc' | 'desc') ?? undefined,
-  }
-}
-
-function buildParams(
-  filters: RevenueReportFilterParams,
-  pagination: TablePaginationState,
-): URLSearchParams {
-  const params = new URLSearchParams()
-  if (filters.date_from) params.set('date_from', filters.date_from)
-  if (filters.date_to) params.set('date_to', filters.date_to)
-  ;(filters.channel_codes ?? []).forEach((c) => params.append('channel_codes[]', c))
-  ;(filters.style_codes ?? []).forEach((s) => params.append('style_codes[]', s))
-  if (filters.order_by) params.set('order_by', filters.order_by)
-  if (filters.order) params.set('order', filters.order)
-  setPaginationInParams(params, pagination, 30)
-  return params
+const DEFAULT_FILTERS: RevenueReportFilterParams = {
+  page: 1,
+  per_page: 30,
 }
 
 export function RevenueReportPage() {
-  const [data, setData] = useState<RevenueReportRow[]>([])
-  const [summary, setSummary] = useState<Partial<RevenueReportRow>>({})
-  const [rowCount, setRowCount] = useState(0)
+  const [rows, setRows] = useState<RevenueReportRow[]>([])
+  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [campaignOptions, setCampaignOptions] = useState<Array<{ value: string; label: string }>>(
+    [],
+  )
+  const [total, setTotal] = useState(0)
+  const [summary, setSummary] = useState<Partial<RevenueReportSummary>>({})
   const [loading, setLoading] = useState(false)
-  const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([])
-
-  const { filters, pagination, setPagination, onFilterChange, onFilterReset } =
-    useTableUrlState<RevenueReportFilterParams>({
-      parseFilters,
-      buildParams,
-      defaultFilters: DEFAULT_FILTERS,
-      defaultPageSize: 30,
-    })
 
   useEffect(() => {
     campaignReportApi
       .filters()
-      .then((res) => setChannelOptions(res.data.data.channels))
-      .catch(() => toast.error('Failed to load channel options'))
+      .then(({ data }) => {
+        setCampaignOptions(
+          data.data.campaigns.map((campaign) => ({
+            value: campaign.campaign_id,
+            label: campaign.campaign_name
+              ? `${campaign.campaign_name} (${campaign.campaign_id})`
+              : campaign.campaign_id,
+          })),
+        )
+      })
+      .catch(() => toast.error('Failed to load campaigns'))
   }, [])
 
-  const loadData = useCallback(
-    async (activeFilters: RevenueReportFilterParams, page: number, perPage: number) => {
-      try {
-        setLoading(true)
-        const { data: response } = await revenueReportApi.listRevenue({
-          ...activeFilters,
-          page,
-          per_page: perPage,
-        })
-        setData(response.data)
-        setSummary(response.summary)
-        setRowCount(response.pagination.total)
-      } catch {
-        toast.error('Failed to load revenue report')
-        setData([])
-        setRowCount(0)
-      } finally {
-        setLoading(false)
-      }
-    },
-    [],
-  )
+  const loadData = useCallback(async (activeFilters: RevenueReportFilterParams) => {
+    try {
+      setLoading(true)
+      const { data } = await revenueReportApi.listRevenue(activeFilters)
+      setRows(data.data)
+      setTotal(data.pagination.total)
+      setSummary(data.summary)
+    } catch {
+      toast.error('Failed to load revenue report')
+      setRows([])
+      setTotal(0)
+      setSummary({})
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    void loadData(filters, pagination.pageIndex + 1, pagination.pageSize)
-  }, [loadData, filters, pagination.pageIndex, pagination.pageSize])
-
-  const onApplyFilters = useCallback(
-    (values: Record<string, unknown>) => {
-      const dateRange = values.date_range as { from: string | null; to: string | null } | null
-      onFilterChange({
-        date_from: dateRange?.from ?? null,
-        date_to: dateRange?.to ?? null,
-        channel_codes: Array.isArray(values.channel_codes)
-          ? (values.channel_codes as string[])
-          : [],
-        style_codes: Array.isArray(values.style_codes) ? (values.style_codes as string[]) : [],
-      })
-    },
-    [onFilterChange],
-  )
+    void loadData(filters)
+  }, [filters, loadData])
 
   const filterFields = useMemo<FilterFieldDef[]>(
     () => [
@@ -132,440 +76,158 @@ export function RevenueReportPage() {
             : null,
       },
       {
-        field: 'channel_codes',
-        label: 'Channels',
+        field: 'campaign_ids',
+        label: 'Campaigns',
         type: 'multiselect',
-        value: filters.channel_codes ?? [],
-        options: channelOptions.map((c) => ({ label: c.name ?? c.code, value: c.code })),
+        value: filters.campaign_ids ?? [],
+        options: campaignOptions,
       },
     ],
-    [filters.date_from, filters.date_to, filters.channel_codes, channelOptions],
+    [campaignOptions, filters.campaign_ids, filters.date_from, filters.date_to],
   )
-
-  const activeChips = useMemo<ActiveFilterChip[]>(() => {
-    const chips: ActiveFilterChip[] = []
-
-    if (filters.date_from || filters.date_to) {
-      chips.push({
-        key: 'date_range',
-        label: 'Date',
-        displayValue: `${filters.date_from ?? '…'} -> ${filters.date_to ?? '…'}`,
-      })
-    }
-    if ((filters.channel_codes?.length ?? 0) > 0) {
-      const labels = (filters.channel_codes ?? []).map((code) => {
-        const option = channelOptions.find((channel) => channel.code === code)
-        return option?.name ?? code
-      })
-      chips.push({
-        key: 'channel_codes',
-        label: 'Channels',
-        displayValue:
-          labels.length <= 2
-            ? labels.join(', ')
-            : `${labels.slice(0, 2).join(', ')} +${labels.length - 2}`,
-      })
-    }
-    if ((filters.style_codes?.length ?? 0) > 0) {
-      const labels = filters.style_codes ?? []
-      chips.push({
-        key: 'style_codes',
-        label: 'Styles',
-        displayValue:
-          labels.length <= 2
-            ? labels.join(', ')
-            : `${labels.slice(0, 2).join(', ')} +${labels.length - 2}`,
-      })
-    }
-
-    return chips
-  }, [
-    filters.date_from,
-    filters.date_to,
-    filters.channel_codes,
-    filters.style_codes,
-    channelOptions,
-  ])
-
-  function handleRemoveChip(key: string) {
-    if (key === 'date_range') {
-      onFilterChange({ date_from: null, date_to: null })
-    } else if (key === 'channel_codes') {
-      onFilterChange({ channel_codes: [] })
-    } else if (key === 'style_codes') {
-      onFilterChange({ style_codes: [] })
-    }
-  }
 
   const columns = useMemo<MRT_ColumnDef<RevenueReportRow>[]>(
     () => [
+      { accessorKey: 'session_id', header: 'Session ID', size: 270 },
+      { accessorKey: 'campaign_id', header: 'Campaign ID', size: 150 },
+      { accessorKey: 'adset_id', header: 'Adset ID', size: 150 },
+      { accessorKey: 'ad_id', header: 'Ad ID', size: 150 },
+      { accessorKey: 'click_id', header: 'Click ID', size: 100 },
       {
-        accessorKey: 'id',
-        header: 'ID',
-        size: 65,
+        accessorKey: 'estimate_earning',
+        header: 'Estimate Earning',
+        size: 140,
         Cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+          <Badge variant="secondary">${Number(row.original.estimate_earning).toFixed(4)}</Badge>
         ),
-        Footer: () => <span className="text-[11px] font-bold uppercase tracking-wider">Total</span>,
-      },
-      {
-        accessorKey: 'date',
-        header: 'Date',
-        size: 150,
-        enableSorting: true,
-        Cell: ({ row }) => <span className="font-medium text-foreground">{row.original.date}</span>,
-      },
-      {
-        accessorKey: 'channel_name',
-        id: 'channel_code',
-        header: 'Channel',
-        size: 160,
-        enableSorting: true,
-        Cell: ({ row }) => (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-muted-foreground">{row.original.channel_name}</span>
-            <span className="inline-block w-fit rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 font-mono text-[11px]">
-              {row.original.channel_code}
-            </span>
-          </div>
-        ),
+        Footer: () => <Badge>${Number(summary.estimate_earning ?? 0).toFixed(4)}</Badge>,
       },
       {
         accessorKey: 'page_views',
         header: 'Page Views',
         size: 110,
-        enableSorting: true,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground/95">
-            {row.original.page_views.toLocaleString()}
-          </span>
-        ),
-        Footer: () => (
-          <span className="tabular-nums font-bold text-foreground">
-            {summary.page_views?.toLocaleString() ?? 0}
-          </span>
-        ),
+        Footer: () => Number(summary.page_views ?? 0).toLocaleString(),
       },
       {
         accessorKey: 'clicks',
         header: 'Clicks',
         size: 90,
-        enableSorting: true,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground/95">
-            {row.original.clicks.toLocaleString()}
-          </span>
-        ),
-        Footer: () => (
-          <span className="tabular-nums font-bold text-foreground">
-            {summary.clicks?.toLocaleString() ?? 0}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'estimated_earnings',
-        header: 'Earnings',
-        size: 110,
-        enableSorting: true,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <Badge variant="secondary">${row.original.estimated_earnings.toFixed(2)}</Badge>
-        ),
-        Footer: () => (
-          <Badge variant="default" className="font-bold">
-            ${(summary.estimated_earnings ?? 0).toFixed(2)}
-          </Badge>
-        ),
-      },
-      {
-        accessorKey: 'cost_per_click',
-        header: 'CPC',
-        size: 90,
-        enableSorting: true,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground/95">
-            ${row.original.cost_per_click.toFixed(2)}
-          </span>
-        ),
-        Footer: () => (
-          <span className="tabular-nums font-bold text-foreground">
-            ${(summary.cost_per_click ?? 0).toFixed(2)}
-          </span>
-        ),
+        Footer: () => Number(summary.clicks ?? 0).toLocaleString(),
       },
       {
         accessorKey: 'ad_requests',
         header: 'Ad Requests',
         size: 110,
-        enableSorting: true,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground/95">
-            {row.original.ad_requests.toLocaleString()}
-          </span>
-        ),
-        Footer: () => (
-          <span className="tabular-nums font-bold text-foreground">
-            {summary.ad_requests?.toLocaleString() ?? 0}
-          </span>
-        ),
+        Footer: () => Number(summary.ad_requests ?? 0).toLocaleString(),
       },
       {
         accessorKey: 'impressions',
         header: 'Impressions',
         size: 110,
-        enableSorting: true,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground/95">
-            {row.original.impressions.toLocaleString()}
-          </span>
-        ),
-        Footer: () => (
-          <span className="tabular-nums font-bold text-foreground">
-            {summary.impressions?.toLocaleString() ?? 0}
-          </span>
-        ),
+        Footer: () => Number(summary.impressions ?? 0).toLocaleString(),
       },
       {
         accessorKey: 'ad_requests_rpm',
-        header: 'RPM (Req)',
-        size: 100,
-        enableSorting: false,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground/95">
-            ${row.original.ad_requests_rpm.toFixed(2)}
-          </span>
-        ),
-        Footer: () => (
-          <span className="tabular-nums font-bold text-foreground">
-            ${(summary.ad_requests_rpm ?? 0).toFixed(2)}
-          </span>
-        ),
+        header: 'Ad Requests RPM',
+        size: 130,
+        Footer: () => Number(summary.ad_requests_rpm ?? 0).toFixed(4),
       },
       {
         accessorKey: 'impressions_rpm',
-        header: 'RPM (Imp)',
-        size: 100,
-        enableSorting: false,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground/95">
-            ${row.original.impressions_rpm.toFixed(2)}
-          </span>
-        ),
-        Footer: () => (
-          <span className="tabular-nums font-bold text-foreground">
-            ${(summary.impressions_rpm ?? 0).toFixed(2)}
-          </span>
-        ),
+        header: 'Impressions RPM',
+        size: 130,
+        Footer: () => Number(summary.impressions_rpm ?? 0).toFixed(4),
+      },
+      {
+        accessorKey: 'cost_per_click',
+        header: 'Cost / Click',
+        size: 110,
+        Footer: () => Number(summary.cost_per_click ?? 0).toFixed(4),
       },
       {
         accessorKey: 'funnel_requests',
-        header: 'Funnel Req',
-        size: 110,
-        enableSorting: true,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground/95">
-            {row.original.funnel_requests != null
-              ? row.original.funnel_requests.toLocaleString()
-              : '—'}
-          </span>
-        ),
-        Footer: () => (
-          <span className="tabular-nums font-bold text-foreground">
-            {summary.funnel_requests?.toLocaleString() ?? 0}
-          </span>
-        ),
+        header: 'Funnel Requests',
+        size: 120,
+        Footer: () => Number(summary.funnel_requests ?? 0).toLocaleString(),
       },
       {
         accessorKey: 'funnel_impressions',
-        header: 'Funnel Imp',
-        size: 110,
-        enableSorting: true,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground/95">
-            {row.original.funnel_impressions != null
-              ? row.original.funnel_impressions.toLocaleString()
-              : '—'}
-          </span>
-        ),
-        Footer: () => (
-          <span className="tabular-nums font-bold text-foreground">
-            {summary.funnel_impressions?.toLocaleString() ?? 0}
-          </span>
-        ),
+        header: 'Funnel Impressions',
+        size: 140,
+        Footer: () => Number(summary.funnel_impressions ?? 0).toLocaleString(),
       },
       {
         accessorKey: 'funnel_clicks',
         header: 'Funnel Clicks',
         size: 110,
-        enableSorting: true,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground/95">
-            {row.original.funnel_clicks != null ? row.original.funnel_clicks.toLocaleString() : '—'}
-          </span>
-        ),
-        Footer: () => (
-          <span className="tabular-nums font-bold text-foreground">
-            {summary.funnel_clicks?.toLocaleString() ?? 0}
-          </span>
-        ),
+        Footer: () => Number(summary.funnel_clicks ?? 0).toLocaleString(),
       },
       {
         accessorKey: 'funnel_rpm',
         header: 'Funnel RPM',
         size: 110,
-        enableSorting: true,
-        mantineTableHeadCellProps: { style: { textAlign: 'right' } },
-        mantineTableBodyCellProps: { style: { textAlign: 'right' } },
-        mantineTableFooterCellProps: { style: { textAlign: 'right' } },
-        Cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground/95">
-            {row.original.funnel_rpm != null ? `$${row.original.funnel_rpm.toFixed(2)}` : '—'}
-          </span>
-        ),
-        Footer: () => (
-          <span className="tabular-nums font-bold text-foreground">
-            ${(summary.funnel_rpm ?? 0).toFixed(2)}
-          </span>
-        ),
+        Footer: () => Number(summary.funnel_rpm ?? 0).toFixed(4),
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Created At',
+        size: 180,
       },
     ],
     [summary],
   )
-  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
-    useLocation().pathname,
-    {
-      ad_requests_rpm: false,
-      impressions_rpm: false,
-      funnel_requests: false,
-      funnel_impressions: false,
-      funnel_clicks: false,
-      funnel_rpm: false,
-    },
-  )
 
   const table = useMantineReactTable({
-    data,
     columns,
-    getRowId: (row) => String(row.id),
+    data: rows,
+    rowCount: total,
+    manualPagination: true,
+    manualSorting: true,
     enableColumnFilters: false,
     enableGlobalFilter: false,
-    enableColumnPinning: true,
-    initialState: {
-      density: 'md',
-    },
-    manualPagination: true,
-    rowCount,
-    manualSorting: true,
     state: {
-      showLoadingOverlay: loading,
+      isLoading: loading,
       pagination: {
-        pageIndex: pagination.pageIndex,
-        pageSize: pagination.pageSize,
+        pageIndex: (filters.page ?? 1) - 1,
+        pageSize: filters.per_page ?? 30,
       },
-      sorting: filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : [],
-      columnVisibility,
     },
-    onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: (updater) => {
-      const next = typeof updater === 'function' ? updater(pagination) : updater
-      setPagination(next)
-    },
-    onSortingChange: (updater) => {
-      const current = filters.order_by
-        ? [{ id: filters.order_by, desc: filters.order === 'desc' }]
-        : []
+      const current = {
+        pageIndex: (filters.page ?? 1) - 1,
+        pageSize: filters.per_page ?? 30,
+      }
       const next = typeof updater === 'function' ? updater(current) : updater
-      onFilterChange({
-        order_by: next[0] ? (next[0].id as RevenueReportOrderBy) : undefined,
-        order: next[0] ? (next[0].desc ? 'desc' : 'asc') : undefined,
-      })
+      setFilters((previous) => ({
+        ...previous,
+        page: next.pageIndex + 1,
+        per_page: next.pageSize,
+      }))
     },
-    enablePagination: true,
-    paginationDisplayMode: 'pages',
-    enableFullScreenToggle: false,
-    mantineLoadingOverlayProps: {
-      sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
-    },
-    mantineTableContainerProps: {
-      onScroll: (e: React.UIEvent<HTMLDivElement>) => {
-        e.currentTarget.style.setProperty('--mrt-scroll-left', `${e.currentTarget.scrollLeft}px`)
-      },
-      sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
-    },
-    localization: { rowsPerPage: 'Per Page' },
-    renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-          <BarChart3 className="h-5 w-5 text-muted-foreground/50" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-foreground">No report rows found</p>
-          <p className="text-xs text-muted-foreground">Try adjusting your date range or filters.</p>
-        </div>
-      </div>
-    ),
-    renderTopToolbar: ({ table: t }) => (
-      <div className="flex w-full flex-col border-b border-border bg-card">
-        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-1.5">
-            <BarChart3 className="h-4 w-4 text-muted-foreground/60" />
-            <span className="text-sm font-semibold text-foreground">Revenue Report</span>
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-              {rowCount.toLocaleString()}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <MRT_ShowHideColumnsButton table={t} />
-          </div>
-        </div>
-        <div className="border-t border-border/60 px-4 py-3">
-          <FilterPanel
-            fields={filterFields}
-            onReset={onFilterReset}
-            applyMode
-            onApply={onApplyFilters}
-          />
-        </div>
-        <ActiveFilterChips
-          chips={activeChips}
-          onRemove={handleRemoveChip}
-          onClearAll={onFilterReset}
-        />
-      </div>
-    ),
   })
 
-  return <MantineReactTable table={table} />
+  return (
+    <div className="flex flex-col gap-4">
+      <FilterPanel
+        fields={filterFields}
+        applyMode
+        onApply={(values: Record<string, unknown>) => {
+          const range = values.date_range as { from?: string | null; to?: string | null } | null
+          setFilters((previous) => ({
+            ...previous,
+            date_from: range?.from ?? null,
+            date_to: range?.to ?? null,
+            campaign_ids: Array.isArray(values.campaign_ids)
+              ? values.campaign_ids.filter(
+                  (value: unknown): value is string => typeof value === 'string',
+                )
+              : [],
+            page: 1,
+          }))
+        }}
+        onReset={() => setFilters(DEFAULT_FILTERS)}
+      />
+      <MantineReactTable table={table} />
+    </div>
+  )
 }

@@ -3,7 +3,7 @@
 namespace App\Actions\AnalyticsTracking;
 
 use App\Models\AdsLink;
-use App\Models\LinkData;
+use App\Models\Campaign;
 use App\Support\OwnershipFilter\OwnershipFilter;
 
 class GetAnalyticsTrackingFilterOptionsAction
@@ -15,19 +15,19 @@ class GetAnalyticsTrackingFilterOptionsAction
     {
         $ownership = OwnershipFilter::forAuthUser();
 
-        $linkDataQuery = LinkData::query()
+        $campaignQuery = Campaign::query()
             ->whereNotNull('ads_link_id');
 
         if (! $ownership->isAdmin()) {
-            $ownership->applyTo($linkDataQuery);
+            $ownership->applyThroughAccount($campaignQuery);
         }
 
-        $linkDatas = $linkDataQuery
+        $campaignRows = $campaignQuery
             ->select(['ads_link_id', 'campaign_id'])
             ->get();
 
-        $adsLinkIds = $linkDatas->pluck('ads_link_id')->filter()->unique()->values();
-        $campaigns = $linkDatas->pluck('campaign_id')->filter()->unique()->sort()->values();
+        $adsLinkIds = $campaignRows->pluck('ads_link_id')->filter()->unique()->values();
+        $campaigns = $campaignRows->pluck('campaign_id')->filter()->unique()->sort()->values();
 
         $adsLinks = AdsLink::query()
             ->select(['id', 'slug', 'site_id'])

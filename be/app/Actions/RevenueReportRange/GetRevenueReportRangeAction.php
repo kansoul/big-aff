@@ -3,7 +3,6 @@
 namespace App\Actions\RevenueReportRange;
 
 use App\Models\RevenueChartReport;
-use App\Models\RevenueReport;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Carbon\Carbon;
 
@@ -17,15 +16,6 @@ class GetRevenueReportRangeAction
     {
         $ownership = OwnershipFilter::forAuthUser();
 
-        $allowedChannelCodes = null;
-        if (! $ownership->isAdmin()) {
-            $allowedChannelCodes = RevenueReport::query()
-                ->whereIn('owner_user_id', $ownership->allowedUserIds())
-                ->distinct()
-                ->pluck('channel_code')
-                ->all();
-        }
-
         $data = [];
 
         foreach ($filters['ranges'] as $range) {
@@ -35,15 +25,16 @@ class GetRevenueReportRangeAction
 
             $channelCodes = $range['channel_codes'];
 
-            if ($allowedChannelCodes !== null) {
-                $channelCodes = array_values(array_intersect($channelCodes, $allowedChannelCodes));
-            }
-
             if (empty($channelCodes)) {
                 continue;
             }
 
-            $startRecords = RevenueChartReport::whereIn('channel_code', $channelCodes)
+            $startQuery = RevenueChartReport::query()->whereIn('channel_code', $channelCodes);
+            $endQuery = RevenueChartReport::query()->whereIn('channel_code', $channelCodes);
+            $ownership->applyTo($startQuery, 'owner_user_id');
+            $ownership->applyTo($endQuery, 'owner_user_id');
+
+            $startRecords = $startQuery
                 ->whereBetween('datetime', [
                     $startDateTime->copy()->startOfMinute(),
                     $startDateTime->copy()->endOfMinute(),
@@ -51,20 +42,11 @@ class GetRevenueReportRangeAction
                 ->get()
                 ->keyBy('channel_code');
 
-            $endRecords = RevenueChartReport::whereIn('channel_code', $channelCodes)
+            $endRecords = $endQuery
                 ->whereBetween('datetime', [
                     $endDateTime->copy()->startOfMinute(),
                     $endDateTime->copy()->endOfMinute(),
                 ])
-                ->get()
-                ->keyBy('channel_code');
-
-            $latestRevenueReportIds = RevenueReport::whereIn('channel_code', $channelCodes)
-                ->selectRaw('MAX(id) as id')
-                ->groupBy('channel_code')
-                ->pluck('id');
-
-            $revenueReports = RevenueReport::whereIn('id', $latestRevenueReportIds)
                 ->get()
                 ->keyBy('channel_code');
 
@@ -82,7 +64,7 @@ class GetRevenueReportRangeAction
                 if ($hasData) {
                     $realRevenue = $revenueEnd - $revenueStart;
                     $realConversion = $conversionEnd - $conversionStart;
-                    // mirrors CampaignReport rpc: r_revenue / r_conversion when conversion > 0
+                    // Revenue per conversion for the selected range.
                     $realRpc = $realConversion > 0 ? round($realRevenue / $realConversion, 4) : 0.0;
                 } else {
                     $realRevenue = null;
@@ -90,21 +72,9 @@ class GetRevenueReportRangeAction
                     $realRpc = null;
                 }
 
-                $revenueReport = $revenueReports->get($channelCode);
-
-                // matching ListRevenueReportsAction summary formula
-                $reportEarnings = (float) ($revenueReport?->estimated_earnings ?? 0.0);
-                $cpc = $revenueReport?->cost_per_click;
-                if ($cpc === null) {
-                    $reportClicks = (int) ($revenueReport?->clicks ?? 0);
-                    // cpc = estimated_earnings / clicks from the latest daily report,
-                    $cpc = $reportClicks > 0 ? round($reportEarnings / $reportClicks, 4) : 0.0;
-                }
-
                 $data[] = [
                     'range_label' => $label,
                     'channel_code' => $channelCode,
-                    'channel_name' => $revenueReport?->channel_name ?? $channelCode,
                     'revenue_start' => $revenueStart,
                     'revenue_end' => $revenueEnd,
                     'real_revenue' => $realRevenue !== null ? round($realRevenue, 4) : null,
@@ -112,7 +82,7 @@ class GetRevenueReportRangeAction
                     'conversion_end' => $conversionEnd,
                     'real_conversion' => $realConversion,
                     'real_rpc' => $realRpc,
-                    'cpc' => $cpc,
+                    'cpc' => 0.0,
                 ];
             }
         }

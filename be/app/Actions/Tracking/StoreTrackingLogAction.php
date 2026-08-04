@@ -3,7 +3,6 @@
 namespace App\Actions\Tracking;
 
 use App\Jobs\SaveTrackingLogJob;
-use App\Models\LinkData;
 use App\Models\TrackingSession;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
@@ -17,12 +16,8 @@ class StoreTrackingLogAction
     {
         $sessionId = $this->findOrCreateSession($data);
 
-        $linkData = LinkData::where('campaign_id', $data['campaign_id'])->first();
-
-        if ($linkData) {
-            $data['created_at'] = now();
-            SaveTrackingLogJob::dispatch($sessionId, $linkData, $data);
-        }
+        $data['created_at'] = now();
+        SaveTrackingLogJob::dispatch($sessionId, $data);
 
         return $sessionId;
     }

@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\Campaign;
 use App\Models\EventAdLoad;
 use App\Models\EventClick;
 use App\Models\EventView;
-use App\Models\LinkData;
 use App\Models\RealtimeReport;
 use App\Models\TrackingSession;
 use Carbon\Carbon;
@@ -13,13 +13,9 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeds the tracking-event tables. Every event is tied to a real `link_datas` row so
- * that `campaign_id`, `link_data_id`, and ad/adset identifiers stay consistent with the
- * ads graph produced by AdsSeeder.
- *
- *   - event_* rows inherit `campaign_id` from the link_data.
+ * Seeds tracking events using campaign IDs from the ads graph.
  *   - session_id values are drawn from `tracking_sessions` seeded in this run.
- *   - `realtime_reports` is populated per (link_data_id, day) with totals in range.
+ *   - `realtime_reports` is populated per (campaign_id, day) with totals in range.
  */
 class TrackingSeeder extends Seeder
 {
@@ -31,17 +27,17 @@ class TrackingSeeder extends Seeder
 
     public function run(): void
     {
-        $linkData = LinkData::query()->get(['id', 'campaign_id']);
-        if ($linkData->isEmpty()) {
+        $campaigns = Campaign::query()->get(['campaign_id']);
+        if ($campaigns->isEmpty()) {
             return;
         }
 
         $sessionIds = $this->seedTrackingSessions();
 
-        $this->seedEventViews($linkData, $sessionIds);
-        $this->seedEventClicks($linkData, $sessionIds);
-        $this->seedEventAdLoads($linkData, $sessionIds);
-        $this->seedRealtimeReports($linkData);
+        $this->seedEventViews($campaigns, $sessionIds);
+        $this->seedEventClicks($campaigns, $sessionIds);
+        $this->seedEventAdLoads($campaigns, $sessionIds);
+        $this->seedRealtimeReports($campaigns);
     }
 
     /**
@@ -58,10 +54,10 @@ class TrackingSeeder extends Seeder
     }
 
     /**
-     * @param  Collection<int, LinkData>  $linkData
+     * @param  Collection<int, Campaign>  $campaigns
      * @param  array<int, string>  $sessionIds
      */
-    private function seedEventViews(Collection $linkData, array $sessionIds): void
+    private function seedEventViews(Collection $campaigns, array $sessionIds): void
     {
         if (EventView::query()->exists()) {
             return;
@@ -69,12 +65,11 @@ class TrackingSeeder extends Seeder
 
         EventView::factory()
             ->count(self::VIEW_COUNT)
-            ->state(function () use ($linkData, $sessionIds): array {
-                $link = $linkData->random();
+            ->state(function () use ($campaigns, $sessionIds): array {
+                $campaign = $campaigns->random();
 
                 return [
-                    'link_data_id' => $link->id,
-                    'campaign_id' => $link->campaign_id,
+                    'campaign_id' => $campaign->campaign_id,
                     'session_id' => $sessionIds[array_rand($sessionIds)],
                 ];
             })
@@ -82,10 +77,10 @@ class TrackingSeeder extends Seeder
     }
 
     /**
-     * @param  Collection<int, LinkData>  $linkData
+     * @param  Collection<int, Campaign>  $campaigns
      * @param  array<int, string>  $sessionIds
      */
-    private function seedEventClicks(Collection $linkData, array $sessionIds): void
+    private function seedEventClicks(Collection $campaigns, array $sessionIds): void
     {
         if (EventClick::query()->exists()) {
             return;
@@ -93,12 +88,11 @@ class TrackingSeeder extends Seeder
 
         EventClick::factory()
             ->count(self::CLICK_COUNT)
-            ->state(function () use ($linkData, $sessionIds): array {
-                $link = $linkData->random();
+            ->state(function () use ($campaigns, $sessionIds): array {
+                $campaign = $campaigns->random();
 
                 return [
-                    'link_data_id' => $link->id,
-                    'campaign_id' => $link->campaign_id,
+                    'campaign_id' => $campaign->campaign_id,
                     'session_id' => $sessionIds[array_rand($sessionIds)],
                 ];
             })
@@ -106,10 +100,10 @@ class TrackingSeeder extends Seeder
     }
 
     /**
-     * @param  Collection<int, LinkData>  $linkData
+     * @param  Collection<int, Campaign>  $campaigns
      * @param  array<int, string>  $sessionIds
      */
-    private function seedEventAdLoads(Collection $linkData, array $sessionIds): void
+    private function seedEventAdLoads(Collection $campaigns, array $sessionIds): void
     {
         if (EventAdLoad::query()->exists()) {
             return;
@@ -121,7 +115,7 @@ class TrackingSeeder extends Seeder
 
             for ($i = 0; $i < $total; $i++) {
                 $eventTime = $dayStart->copy()->addSeconds(fake()->numberBetween(0, 86399));
-                $link = $linkData->random();
+                $campaign = $campaigns->random();
 
                 $isError = fake()->boolean(25);
                 $isSearch = fake()->boolean(50);
@@ -133,8 +127,7 @@ class TrackingSeeder extends Seeder
                     ->when(! $isError && ! $isSearch, fn ($f) => $f->successArticle())
                     ->create([
                         'session_id' => $sessionIds[array_rand($sessionIds)],
-                        'link_data_id' => $link->id,
-                        'campaign_id' => $link->campaign_id,
+                        'campaign_id' => $campaign->campaign_id,
                         'event_time' => $eventTime,
                         'created_at' => $eventTime,
                     ]);
@@ -143,23 +136,23 @@ class TrackingSeeder extends Seeder
     }
 
     /**
-     * One realtime_report row per (link_data_id, day) so dashboards have daily totals.
+     * One realtime_report row per (campaign_id, day) so dashboards have daily totals.
      *
-     * @param  Collection<int, LinkData>  $linkData
+     * @param  Collection<int, Campaign>  $campaigns
      */
-    private function seedRealtimeReports(Collection $linkData): void
+    private function seedRealtimeReports(Collection $campaigns): void
     {
         if (RealtimeReport::query()->exists()) {
             return;
         }
 
-        foreach ($linkData as $link) {
+        foreach ($campaigns as $campaign) {
             for ($day = 29; $day >= 0; $day--) {
                 $date = Carbon::now()->subDays($day)->format('Y-m-d');
 
                 RealtimeReport::query()->create([
                     'event_time' => $date,
-                    'link_data_id' => $link->id,
+                    'campaign_id' => $campaign->campaign_id,
                     'view_article_count' => fake()->numberBetween(0, 500),
                     'view_search_count' => fake()->numberBetween(0, 500),
                     'click_keyword_count' => fake()->numberBetween(0, 150),

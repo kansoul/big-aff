@@ -6,6 +6,7 @@ use App\Http\Requests\AdsDeliveryEntities\GetAdsDeliveryEntitiesRequest;
 use App\Http\Requests\AdsDeliveryEntities\ToggleDeliveryEntityStatusRequest;
 use App\Http\Resources\AdsDeliveryEntities\AdsetInsightsReportResource;
 use App\Http\Resources\AdsDeliveryEntities\AdsInsightsReportResource;
+use App\Http\Resources\AdsDeliveryEntities\ClickTrackingResource;
 use App\Services\AdsDeliveryEntities\AdsDeliveryEntitiesService;
 use Illuminate\Http\JsonResponse;
 
@@ -76,6 +77,18 @@ class AdsDeliveryEntitiesController extends BaseController
 
         return $this->sendResponse([
             'data' => AdsInsightsReportResource::collection($ads),
+        ]);
+    }
+
+    /**
+     * Get click tracking rows by campaign ID.
+     */
+    public function clicks(GetAdsDeliveryEntitiesRequest $request, string $campaignId): JsonResponse
+    {
+        $clicks = $this->service->getClicksByCampaignId($campaignId, $request->validated());
+
+        return $this->sendResponse([
+            'data' => ClickTrackingResource::collection($clicks),
         ]);
     }
 

@@ -3,8 +3,8 @@
 namespace App\Models\Traits\Relationship;
 
 use App\Models\Campaign;
-use App\Models\MainTeam;
-use App\Models\User;
+use App\Models\ClickTracking;
+use App\Models\TrackingSession;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 trait RevenueReportRelationship
@@ -14,23 +14,13 @@ trait RevenueReportRelationship
         return $this->belongsTo(Campaign::class, 'campaign_id', 'campaign_id');
     }
 
-    /**
-     * User that owned the channel when this revenue was recorded.
-     *
-     * @return BelongsTo<User, $this>
-     */
-    public function owner(): BelongsTo
+    public function trackingSession(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'owner_user_id');
+        return $this->belongsTo(TrackingSession::class, 'session_id', 'session_id');
     }
 
-    /**
-     * Main team that owned the channel when this revenue was recorded.
-     *
-     * @return BelongsTo<MainTeam, $this>
-     */
-    public function ownerMainTeam(): BelongsTo
+    public function clickTracking(): BelongsTo
     {
-        return $this->belongsTo(MainTeam::class, 'owner_main_team_id');
+        return $this->belongsTo(ClickTracking::class, 'click_id');
     }
 }

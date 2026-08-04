@@ -15,7 +15,6 @@ class EventAdLoad extends Model
 
     protected $fillable = [
         'session_id',
-        'link_data_id',
         'campaign_id',
         'adset_id',
         'ad_id',

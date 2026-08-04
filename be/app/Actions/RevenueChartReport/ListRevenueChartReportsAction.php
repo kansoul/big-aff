@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class ListRevenueChartReportsAction
 {
-    public const ORDERABLE_COLUMNS = ['id', 'datetime', 'channel_code', 'channel_name', 'created_at'];
+    public const ORDERABLE_COLUMNS = ['id', 'datetime', 'channel_code', 'created_at'];
 
     /**
      * @param  array{date_from?: string|null, date_to?: string|null, hourly_interval?: string|null, channel_code?: string|null, per_page?: int|null, page?: int|null, order_by?: string|null, order?: string|null}  $filters

@@ -10,7 +10,6 @@ use App\Services\CampaignReport\CampaignReportFilterService;
 use App\Services\CampaignReport\CampaignReportService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 /**
  * @tags Campaign Reports
@@ -27,20 +26,16 @@ class CampaignReportController extends BaseController
      * List campaign reports
      *
      * Return a paginated list of daily campaign reports (aggregated from insight, revenue,
-     * and realtime data in `campaign_reports`). Supports multiple filters and an optional
-     * `group_by` parameter that computes per-group summary on the current page.
+     * and realtime data in `campaign_reports`). Revenue rows are returned as a flat list
+     * grouped by campaign, adset, ad, and session identifiers.
      *
      * @queryParam date_from string Filter records on or after this date (Y-m-d). Example: 2026-04-01
      * @queryParam date_to string Filter records on or before this date (Y-m-d). Example: 2026-04-30
-     * @queryParam keyword string Search campaign, account, channel, style, or link fields. Example: summer
+     * @queryParam keyword string Search campaign, account, or Ads Link fields. Example: summer
      * @queryParam user_ids integer[] Filter by users assigned to the account.
      * @queryParam account_ids integer[] Filter by `accounts.id`.
      * @queryParam ads_type string Filter by ads type. Enum: google, tiktok. Example: google
      * @queryParam campaign_ids string[] Filter by campaign IDs.
-     * @queryParam style_codes string[] Filter by style codes.
-     * @queryParam channel_codes string[] Filter by channel codes.
-     * @queryParam link_data_ids integer[] Filter by `realtime_reports.link_data_id`.
-     * @queryParam group_by string Group the current page results by this key. Enum: channel_code, style_code, account_id, user_id, campaign_id.
      * @queryParam order_by string Column to sort by. Example: date_start
      * @queryParam order string Sort direction. Enum: asc, desc. Example: desc
      * @queryParam per_page integer Items per page (max 100). Example: 15
@@ -53,46 +48,18 @@ class CampaignReportController extends BaseController
         /** @var LengthAwarePaginator $paginator */
         $paginator = $result['paginator'];
 
-        $data = $result['group_by'] !== null
-            ? $this->formatGroupedData($result['groups'], $request)
-            : CampaignReportResource::collection($paginator->items())->resolve($request);
-
         return $this->sendResponse([
-            'data' => $data,
+            'data' => CampaignReportResource::collection($paginator->items())->resolve($request),
             'pagination' => $this->parsePagination($paginator),
             'grand_summary' => $result['grand_summary'],
-            'group_by' => $result['group_by'],
         ]);
-    }
-
-    /**
-     * Collapse each bucket into a single representative row that carries the group
-     * label + summary and exposes its underlying campaign reports as `items`.
-     * This mirrors the shape consumed by the tracking-afs campaign report UI.
-     *
-     * @param  array<int, array<string, mixed>>  $groups
-     * @return array<int, array<string, mixed>>
-     */
-    private function formatGroupedData(array $groups, Request $request): array
-    {
-        return array_map(
-            fn (array $group): array => [
-                'is_group' => true,
-                'group_key' => $group['group_key'],
-                'group_label' => $group['group_label'],
-                'record_count' => $group['record_count'],
-                'group_summary' => $group['group_summary'],
-                'items' => CampaignReportResource::collection($group['items'])->resolve($request),
-            ],
-            $groups,
-        );
     }
 
     /**
      * Get filter options
      *
      * Return option lists used by the Campaign Report filter panel:
-     * users, accounts, campaigns, styles, channels, ads_types, link_data_ids.
+     * users, accounts, campaigns, and ads_types.
      *
      * All lists respect the auth user's ownership scope (admin bypasses).
      */

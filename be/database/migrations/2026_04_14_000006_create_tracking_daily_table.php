@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->date('event_time')->index();
-            $table->unsignedBigInteger('link_data_id')->nullable()->index();
+            $table->string('campaign_id')->index();
 
             $table->unsignedBigInteger('view_article_count')->default(0);
             $table->unsignedBigInteger('view_search_count')->default(0);
@@ -26,7 +26,7 @@ return new class extends Migration
 
             $table->unique([
                 'event_time',
-                'link_data_id',
+                'campaign_id',
             ], 'realtime_reports_unique');
         });
     }

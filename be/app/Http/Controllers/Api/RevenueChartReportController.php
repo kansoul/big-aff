@@ -38,7 +38,7 @@ class RevenueChartReportController extends BaseController
      * @queryParam date_to string End date (Y-m-d). Example: 2026-04-18
      * @queryParam interval string Time interval. Enum: 5m,15m,30m,1,2,3,4,6,12,24. Default: 1 (hourly). Example: 1
      * @queryParam channel_codes string[] Filter by channel codes (required — returns empty if omitted). Example: ["CHAN1"]
-     * @queryParam order_by string Column to sort by. Enum: id,datetime,channel_code,channel_name,created_at. Example: datetime
+     * @queryParam order_by string Column to sort by. Enum: id,datetime,channel_code,created_at. Example: datetime
      * @queryParam order string Sort direction. Enum: asc,desc. Example: desc
      * @queryParam per_page integer Items per page (max 100). Example: 25
      * @queryParam page integer Page number. Example: 1

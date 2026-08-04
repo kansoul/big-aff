@@ -19,11 +19,11 @@ class DatabaseSeeder extends Seeder
             CreateRoleAdminSeeder::class,
             CoreSeeder::class,
 
-            // 2. Ads graph: accounts, campaigns, ads_links, link_datas.
+            // 2. Ads graph: accounts, campaigns, and ads_links.
             //    Must run before reports/tracking which reference campaign identifiers.
             AdsSeeder::class,
 
-            // 3. Tracking events — needs real link_datas and campaigns.
+            // 3. Tracking events — needs real campaigns.
             TrackingSeeder::class,
 
             // 4. Daily / insight / revenue / campaign reports — needs ads + tracking data.

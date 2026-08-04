@@ -15,7 +15,7 @@ use Throwable;
 
 /**
  * Reconciliation job — re-aggregates event counts from raw event tables
- * into tracking_daily for a specific date and link_data_id.
+ * into realtime_reports for a specific date and campaign.
  *
  * This is NOT dispatched after every event (that is handled by the atomic
  * increment in SaveTrackingLogJob). Use this job for scheduled nightly
@@ -36,24 +36,24 @@ class SyncRealtimeReportJob implements ShouldBeUnique, ShouldQueue
 
     public function __construct(
         public string $dateOnly,
-        public int $linkDataId,
+        public string $campaignId,
     ) {
         $this->onQueue('tracking-sync');
     }
 
     public function uniqueId(): string
     {
-        return implode(':', ['sync_tracking_daily', $this->dateOnly, $this->linkDataId]);
+        return implode(':', ['sync_tracking_daily', $this->dateOnly, $this->campaignId]);
     }
 
     public function handle(): void
     {
         try {
-            RealtimeReportSyncService::syncLinkDataForDate($this->dateOnly, $this->linkDataId);
+            RealtimeReportSyncService::syncCampaignForDate($this->dateOnly, $this->campaignId);
         } catch (Exception $e) {
             Log::channel('tracking_events')->warning('RealtimeReport reconciliation failed', [
                 'timestamp' => now(),
-                'link_data_id' => $this->linkDataId,
+                'campaign_id' => $this->campaignId,
                 'date' => $this->dateOnly,
                 'error' => $e->getMessage(),
             ]);
@@ -66,7 +66,7 @@ class SyncRealtimeReportJob implements ShouldBeUnique, ShouldQueue
     {
         Log::channel('tracking_events')->critical('SyncRealtimeReportJob failed after all retries', [
             'timestamp' => now(),
-            'link_data_id' => $this->linkDataId,
+            'campaign_id' => $this->campaignId,
             'date' => $this->dateOnly,
             'error' => $exception->getMessage(),
             'stack_trace' => $exception->getTraceAsString(),

@@ -20,8 +20,7 @@ class EventAdLoadFactory extends Factory
 
         return [
             'session_id' => fake()->uuid(),
-            'link_data_id' => null,
-            'campaign_id' => null,
+            'campaign_id' => fake()->numerify('##############'),
             'adset_id' => 'adset_'.fake()->numerify('##########'),
             'ad_id' => 'ad_'.fake()->numerify('##########'),
             'type' => $type,

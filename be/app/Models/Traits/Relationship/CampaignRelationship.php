@@ -5,13 +5,12 @@ namespace App\Models\Traits\Relationship;
 use App\Models\Account;
 use App\Models\AdsetInsightsReport;
 use App\Models\AdsInsightsReport;
+use App\Models\AdsLink;
 use App\Models\CampaignApplyRule;
 use App\Models\CampaignRule;
-use App\Models\LinkData;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
@@ -26,11 +25,11 @@ trait CampaignRelationship
     }
 
     /**
-     * @return HasOne<LinkData, $this>
+     * @return BelongsTo<AdsLink, $this>
      */
-    public function linkData(): HasOne
+    public function adsLink(): BelongsTo
     {
-        return $this->hasOne(LinkData::class, 'campaign_id', 'campaign_id');
+        return $this->belongsTo(AdsLink::class);
     }
 
     /**

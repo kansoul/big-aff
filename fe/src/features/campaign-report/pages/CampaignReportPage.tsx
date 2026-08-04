@@ -6,10 +6,8 @@ import { toast } from 'sonner'
 import { campaignReportApi } from '@/features/campaign-report/api'
 import { CampaignReportTableCard } from '@/features/campaign-report/components'
 import type {
-  CampaignReportDataRow,
   CampaignReportFilterParams,
   CampaignReportFiltersResponse,
-  CampaignReportGroupBy,
   CampaignReportListResponse,
   CampaignReportOrder,
   CampaignReportOrderBy,
@@ -38,9 +36,6 @@ const DEFAULT_FILTERS: CampaignReportFilterParams = {
   account_ids: [],
   ads_type: null,
   campaign_ids: [],
-  channel_codes: [],
-  link_data_ids: [],
-  group_by: 'channel_code',
   page: 1,
   per_page: 30,
 }
@@ -48,17 +43,6 @@ const DEFAULT_FILTERS: CampaignReportFilterParams = {
 // ─── URL helpers ──────────────────────────────────────────────────────────────
 
 function parseFiltersFromUrl(params: URLSearchParams): CampaignReportFilterParams {
-  const allowed: CampaignReportGroupBy[] = ['channel_code', 'account_id', 'user_id', 'campaign_id']
-  // null = key absent from URL → use default; '' = user explicitly picked 'No grouping'
-  const rawGroupBy = params.get('group_by')
-  const groupBy: CampaignReportGroupBy =
-    rawGroupBy === null
-      ? 'channel_code'
-      : rawGroupBy === ''
-        ? ''
-        : (allowed as string[]).includes(rawGroupBy)
-          ? (rawGroupBy as CampaignReportGroupBy)
-          : 'channel_code'
   return {
     date_from: params.get('date_from') ?? DEFAULT_FILTERS.date_from,
     date_to: params.get('date_to') ?? DEFAULT_FILTERS.date_to,
@@ -70,12 +54,6 @@ function parseFiltersFromUrl(params: URLSearchParams): CampaignReportFilterParam
     account_ids: params.getAll('account_ids[]').filter(Boolean),
     ads_type: params.get('ads_type') ?? null,
     campaign_ids: params.getAll('campaign_ids[]'),
-    channel_codes: params.getAll('channel_codes[]'),
-    link_data_ids: params
-      .getAll('link_data_ids[]')
-      .map(Number)
-      .filter((n) => !Number.isNaN(n)),
-    group_by: groupBy,
     order_by: (params.get('order_by') as CampaignReportOrderBy) ?? undefined,
     order: (params.get('order') as CampaignReportOrder) ?? undefined,
     page: params.get('page') ? Number(params.get('page')) : 1,
@@ -92,10 +70,6 @@ function buildUrlParams(filters: CampaignReportFilterParams): URLSearchParams {
   ;(filters.account_ids ?? []).forEach((id) => params.append('account_ids[]', String(id)))
   if (filters.ads_type) params.set('ads_type', filters.ads_type)
   ;(filters.campaign_ids ?? []).forEach((id) => params.append('campaign_ids[]', id))
-  ;(filters.channel_codes ?? []).forEach((c) => params.append('channel_codes[]', c))
-  ;(filters.link_data_ids ?? []).forEach((id) => params.append('link_data_ids[]', String(id)))
-  // Always write group_by so empty string ('') is preserved in URL as ?group_by=
-  params.set('group_by', filters.group_by ?? 'channel_code')
   if (filters.order_by) params.set('order_by', filters.order_by)
   if (filters.order) params.set('order', filters.order)
   if (filters.page && filters.page !== 1) params.set('page', String(filters.page))
@@ -108,17 +82,8 @@ const EMPTY_OPTIONS: FilterOptions = {
   accounts: [],
   campaigns: [],
   channels: [],
-  link_data_ids: [],
   ads_types: [],
 }
-
-const GROUP_BY_OPTIONS: SelectOption[] = [
-  { value: '__none__', label: 'No grouping' },
-  { value: 'channel_code', label: 'Channel' },
-  { value: 'account_id', label: 'Account' },
-  { value: 'user_id', label: 'User' },
-  { value: 'campaign_id', label: 'Campaign' },
-]
 
 function parseDateRange(value: unknown): DateRangeValue | null {
   if (value && typeof value === 'object' && 'from' in value && 'to' in value) {
@@ -143,12 +108,6 @@ function parseStringOrNull(value: unknown): string | null {
   return null
 }
 
-function parseGroupBy(value: unknown): CampaignReportGroupBy {
-  if (typeof value !== 'string' || value === '__none__') return ''
-  const allowed: CampaignReportGroupBy[] = ['channel_code', 'account_id', 'user_id', 'campaign_id']
-  return (allowed as string[]).includes(value) ? (value as CampaignReportGroupBy) : ''
-}
-
 export function CampaignReportPage() {
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -170,14 +129,9 @@ export function CampaignReportPage() {
 
   const role = getUserRole(user?.roles ?? [], !!user?.is_admin)
 
-  const groupByOptions = useMemo<SelectOption[]>(
-    () => GROUP_BY_OPTIONS.filter((o) => !role.isMember || o.value !== 'user_id'),
-    [role.isMember],
-  )
-
   const [options, setOptions] = useState<FilterOptions>(EMPTY_OPTIONS)
 
-  const [rows, setRows] = useState<CampaignReportDataRow[]>([])
+  const [rows, setRows] = useState<CampaignReportRow[]>([])
   const [toggling, setToggling] = useState<Record<string, boolean>>({})
   const [rowCount, setRowCount] = useState(0)
   const [grandSummary, setGrandSummary] = useState<CampaignReportSummary | null>(null)
@@ -242,14 +196,7 @@ export function CampaignReportPage() {
       const applyStatus = (r: CampaignReportRow): CampaignReportRow =>
         r.campaign_id === campaignId ? { ...r, campaign_status: updatedStatus } : r
 
-      setRows((prev) =>
-        prev.map((row) => {
-          if ('is_group' in row && row.is_group === true) {
-            return { ...row, items: row.items.map(applyStatus) }
-          }
-          return applyStatus(row as CampaignReportRow)
-        }),
-      )
+      setRows((prev) => prev.map(applyStatus))
 
       toast.success(`Campaign is now ${updatedStatus}`)
     } catch (err) {
@@ -277,9 +224,6 @@ export function CampaignReportPage() {
       account_ids: parseStringArray(values.account_ids),
       ads_type: parseStringOrNull(values.ads_type),
       campaign_ids: parseStringArray(values.campaign_ids),
-      channel_codes: parseStringArray(values.channel_codes),
-      link_data_ids: parseNumberArray(values.link_data_ids),
-      group_by: parseGroupBy(values.group_by),
       page: 1,
     }))
   }, [])
@@ -327,28 +271,6 @@ export function CampaignReportPage() {
     [options.campaigns],
   )
 
-  const channelOptions = useMemo<SelectOption[]>(
-    () =>
-      options.channels.map((c) => ({
-        value: c.code,
-        label: c.name ? `${c.name} (${c.code})` : c.code,
-      })),
-    [options.channels],
-  )
-
-  const linkDataOptions = useMemo<SelectOption[]>(
-    () =>
-      options.link_data_ids.map((l) => {
-        const parts = [String(l.id)]
-        if (l.campaign_id) parts.push(l.campaign_id)
-        return {
-          value: String(l.id),
-          label: parts.join(' · '),
-        }
-      }),
-    [options.link_data_ids],
-  )
-
   const adsTypeOptions = useMemo<SelectOption[]>(
     () => options.ads_types.map((t) => ({ value: t.value, label: t.label })),
     [options.ads_types],
@@ -371,7 +293,7 @@ export function CampaignReportPage() {
         label: 'Search',
         type: 'input',
         value: filters.keyword ?? null,
-        placeholder: 'Campaign, account, channel, link...',
+        placeholder: 'Campaign, account, or Ads Link...',
       },
       {
         field: 'user_ids',
@@ -406,43 +328,8 @@ export function CampaignReportPage() {
         options: campaignOptions,
         placeholder: 'All campaigns',
       },
-      {
-        field: 'channel_codes',
-        label: 'Channel',
-        type: 'multiselect',
-        value: filters.channel_codes ?? [],
-        options: channelOptions,
-        placeholder: 'All channels',
-      },
-      {
-        field: 'link_data_ids',
-        label: 'Link Tracking',
-        type: 'multiselect',
-        value: (filters.link_data_ids ?? []).map(String),
-        options: linkDataOptions,
-        placeholder: 'All links',
-      },
-      {
-        field: 'group_by',
-        label: 'Group By',
-        type: 'select',
-        value: filters.group_by ? filters.group_by : '__none__',
-        options: groupByOptions,
-        placeholder: 'No grouping',
-        hideAllOption: true,
-      },
     ],
-    [
-      filters,
-      userOptions,
-      accountOptions,
-      adsTypeOptions,
-      campaignOptions,
-      channelOptions,
-      linkDataOptions,
-      role,
-      groupByOptions,
-    ],
+    [filters, userOptions, accountOptions, adsTypeOptions, campaignOptions, role],
   )
 
   return (

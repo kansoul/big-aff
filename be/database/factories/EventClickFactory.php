@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Enums\EventClickType;
 use App\Enums\EventPage;
 use App\Models\EventClick;
-use App\Models\LinkData;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -26,8 +25,7 @@ class EventClickFactory extends Factory
 
         return [
             'session_id' => fake()->uuid(),
-            'link_data_id' => LinkData::factory(),
-            'campaign_id' => fake()->optional(0.8)->numerify('##############'),
+            'campaign_id' => fake()->numerify('##############'),
             'adset_id' => fake()->optional(0.6)->bothify('adset_##########'),
             'ad_id' => fake()->optional(0.6)->bothify('ad_##########'),
             'type' => fake()->randomElement(EventClickType::cases()),

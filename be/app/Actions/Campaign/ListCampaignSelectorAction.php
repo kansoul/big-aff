@@ -9,6 +9,7 @@ use App\Support\OwnerResource\AccountLinkedOwnerResource;
 use App\Support\PaginationInput\PaginationInput;
 use App\Support\SortInput\SortInput;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class ListCampaignSelectorAction
 {
@@ -29,6 +30,9 @@ class ListCampaignSelectorAction
     public function execute(array $filters): LengthAwarePaginator
     {
         $resource = new AccountLinkedOwnerResource;
+        $revenueByCampaign = DB::table('revenue_reports')
+            ->selectRaw('campaign_id, DATE(created_at) as report_date, SUM(estimate_earning) as total_revenue')
+            ->groupBy('campaign_id', DB::raw('DATE(created_at)'));
 
         $query = CampaignReport::query()
             ->leftJoin('insight_reports', function ($join): void {
@@ -37,14 +41,18 @@ class ListCampaignSelectorAction
                     ->on('insight_reports.date_start', '=', 'campaign_reports.date_start')
                     ->whereNull('insight_reports.deleted_at');
             })
+            ->leftJoinSub($revenueByCampaign, 'revenue_totals', function ($join): void {
+                $join->on('revenue_totals.campaign_id', '=', 'campaign_reports.campaign_id')
+                    ->on('revenue_totals.report_date', '=', 'campaign_reports.date_start');
+            })
             ->selectRaw('
                 campaign_reports.campaign_id,
                 campaign_reports.campaign_name,
                 campaign_reports.account_id,
                 campaign_reports.account_name,
                 COALESCE(insight_reports.spend, 0) as total_spend,
-                campaign_reports.r_revenue as total_revenue,
-                campaign_reports.r_revenue - COALESCE(insight_reports.spend, 0) as profit
+                COALESCE(revenue_totals.total_revenue, 0) as total_revenue,
+                COALESCE(revenue_totals.total_revenue, 0) - COALESCE(insight_reports.spend, 0) as profit
             ')
             ->whereDate('campaign_reports.date_start', today());
 
@@ -84,11 +92,11 @@ class ListCampaignSelectorAction
         }
 
         if (isset($filters['min_revenue'])) {
-            $query->where('campaign_reports.r_revenue', '>=', (float) $filters['min_revenue']);
+            $query->whereRaw('COALESCE(revenue_totals.total_revenue, 0) >= ?', [(float) $filters['min_revenue']]);
         }
 
         if (isset($filters['min_profit'])) {
-            $query->whereRaw('campaign_reports.r_revenue - COALESCE(insight_reports.spend, 0) >= ?', [(float) $filters['min_profit']]);
+            $query->whereRaw('COALESCE(revenue_totals.total_revenue, 0) - COALESCE(insight_reports.spend, 0) >= ?', [(float) $filters['min_profit']]);
         }
 
         $sort = SortInput::fromValidatedArray(

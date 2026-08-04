@@ -97,19 +97,22 @@ class GetRevenueTableAction
         $yesterday = $now->copy()->subDay()->toDateString();
 
         $query = RevenueReport::query()
-            ->whereDate('date', '>=', $from)
-            ->whereDate('date', '<=', $to)
-            ->when(config('main_system.is_main'), fn ($q) => MainTeamReportDataScope::excludeNonFetchableChannels($q))
-            ->whereNotNull('owner_user_id')
+            ->join('campaigns as revenue_campaigns', 'revenue_campaigns.campaign_id', '=', 'revenue_reports.campaign_id')
+            ->whereDate('revenue_reports.created_at', '>=', $from)
+            ->whereDate('revenue_reports.created_at', '<=', $to)
+            ->whereNotNull('revenue_campaigns.created_by')
             ->selectRaw('
-                owner_user_id as user_id,
-                COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as daily_revenue,
-                COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as yesterday_revenue,
-                COALESCE(SUM(estimated_earnings), 0) as monthly_revenue
+                revenue_campaigns.created_by as user_id,
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN estimate_earning ELSE 0 END), 0) as daily_revenue,
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN estimate_earning ELSE 0 END), 0) as yesterday_revenue,
+                COALESCE(SUM(estimate_earning), 0) as monthly_revenue
             ', [$today, $yesterday])
-            ->groupBy('owner_user_id');
+            ->groupBy('revenue_campaigns.created_by');
 
-        OwnershipFilter::forAuthUser()->applyTo($query, 'owner_user_id');
+        $ownership = OwnershipFilter::forAuthUser();
+        if (! $ownership->isAdmin()) {
+            $query->whereIn('revenue_campaigns.created_by', $ownership->allowedUserIds());
+        }
 
         return $query->get()->keyBy('user_id');
     }
@@ -386,16 +389,18 @@ class GetRevenueTableAction
         $lastMonthTo = $now->copy()->subMonthNoOverflow()->endOfMonth()->toDateString();
 
         return RevenueReport::query()
-            ->whereNotNull('owner_main_team_id')
-            ->whereDate('date', '>=', $lastMonthFrom)
-            ->whereDate('date', '<=', $thisMonthTo)
-            ->groupBy('owner_main_team_id')
+            ->join('campaigns as revenue_campaigns', 'revenue_campaigns.campaign_id', '=', 'revenue_reports.campaign_id')
+            ->join('accounts as revenue_accounts', 'revenue_accounts.account_id', '=', 'revenue_campaigns.account_id')
+            ->whereNotNull('revenue_accounts.main_team_id')
+            ->whereDate('revenue_reports.created_at', '>=', $lastMonthFrom)
+            ->whereDate('revenue_reports.created_at', '<=', $thisMonthTo)
+            ->groupBy('revenue_accounts.main_team_id')
             ->selectRaw('
-                owner_main_team_id as main_team_id,
-                COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as today_revenue,
-                COALESCE(SUM(CASE WHEN date = ? THEN estimated_earnings ELSE 0 END), 0) as yesterday_revenue,
-                COALESCE(SUM(CASE WHEN date >= ? AND date <= ? THEN estimated_earnings ELSE 0 END), 0) as this_month_revenue,
-                COALESCE(SUM(CASE WHEN date >= ? AND date <= ? THEN estimated_earnings ELSE 0 END), 0) as last_month_revenue
+                revenue_accounts.main_team_id as main_team_id,
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN estimate_earning ELSE 0 END), 0) as today_revenue,
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN estimate_earning ELSE 0 END), 0) as yesterday_revenue,
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) >= ? AND DATE(revenue_reports.created_at) <= ? THEN estimate_earning ELSE 0 END), 0) as this_month_revenue,
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) >= ? AND DATE(revenue_reports.created_at) <= ? THEN estimate_earning ELSE 0 END), 0) as last_month_revenue
             ', [$today, $yesterday, $thisMonthFrom, $thisMonthTo, $lastMonthFrom, $lastMonthTo])
             ->get()
             ->keyBy('main_team_id');

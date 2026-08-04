@@ -25,9 +25,6 @@ class CampaignReport extends Model
         'campaign_name',
         'campaign_status',
         'ads_type',
-        // Revenue
-        'style_name',
-        'channel_name',
         'r_search_views',
         'r_conversion',
         'r_revenue',

@@ -5,6 +5,7 @@ namespace App\Http\Requests\Tracking;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class StoreTrackingLogRequest extends FormRequest
 {
@@ -22,7 +23,20 @@ class StoreTrackingLogRequest extends FormRequest
             'campaign_id' => 'required|string',
 
             // Event data
-            'type' => 'nullable|string|max:100',
+            'type' => [
+                'required',
+                'string',
+                Rule::in([
+                    'page_view',
+                    'form_view',
+                    'lead',
+                    'ads_load_article_error',
+                    'ads_load_search_error',
+                    'ads_load_article_success',
+                    'ads_load_search_success',
+                ]),
+            ],
+            'eventType' => 'nullable|string|max:100',
             'page' => 'required|string|max:500',
             'ad_id' => 'nullable|string',
             'adset_id' => 'nullable|string',
@@ -31,6 +45,20 @@ class StoreTrackingLogRequest extends FormRequest
             'keyword_clicked' => 'nullable|string|max:255',
             'load_time_ms' => 'nullable|integer|min:0',
             'container_type' => 'nullable|string|max:255',
+            'payload' => 'nullable|array',
+            'values' => 'nullable|array',
+            'estimate_earning' => 'nullable|numeric|min:0',
+            'page_views' => 'nullable|integer|min:0',
+            'clicks' => 'nullable|integer|min:0',
+            'ad_requests' => 'nullable|integer|min:0',
+            'impressions' => 'nullable|integer|min:0',
+            'ad_requests_rpm' => 'nullable|numeric|min:0',
+            'impressions_rpm' => 'nullable|numeric|min:0',
+            'cost_per_click' => 'nullable|numeric|min:0',
+            'funnel_requests' => 'nullable|integer|min:0',
+            'funnel_impressions' => 'nullable|integer|min:0',
+            'funnel_clicks' => 'nullable|integer|min:0',
+            'funnel_rpm' => 'nullable|numeric|min:0',
 
             // Session fields
             'ip_address' => 'nullable|string|max:45',
@@ -58,6 +86,7 @@ class StoreTrackingLogRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
+            'type' => $this->input('type') ?: $this->input('eventType'),
             'event_time' => $this->event_time ?: now(),
             'ip_address' => $this->ip_address ?: $this->ip(),
             'user_agent' => $this->user_agent ?: $this->userAgent(),

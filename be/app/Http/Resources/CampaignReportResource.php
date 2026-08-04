@@ -33,14 +33,12 @@ class CampaignReportResource extends JsonResource
     public function toArray(Request $request): array
     {
         $spend = (float) ($this->a_spend ?? 0);
-        $revenueEst = (float) ($this->revenue_est ?? 0);
-        $profit = (float) ($this->profit ?? $revenueEst - $spend);
+        $estimateEarning = (float) ($this->estimate_earning ?? 0);
+        $profit = (float) ($this->profit ?? $estimateEarning - $spend);
         $roi = (float) ($this->roi ?? ($spend > 0 ? ($profit / $spend) * 100 : 0.0));
 
         $rtClickAdCount = (float) ($this->realtimeReport?->click_ad_count ?? 0);
-        $rtClickKeywordCount = (float) ($this->realtimeReport?->click_keyword_count ?? 0);
         $rtViewSearchCount = (float) ($this->realtimeReport?->view_search_count ?? 0);
-        $funnelRequests = (float) ($this->r_funnel_requests ?? 0);
 
         return [
             'id' => $this->id,
@@ -51,50 +49,42 @@ class CampaignReportResource extends JsonResource
             'account_name' => $this->account_name,
             'user_email' => $this->user_email,
             'campaign_id' => $this->campaign_id,
+            'adset_id' => $this->adset_id,
+            'ad_id' => $this->ad_id,
+            'session_id' => $this->session_id,
+            'click_id' => $this->click_id === null ? null : (int) $this->click_id,
             'campaign_name' => $this->campaign_name,
             'campaign_status' => $this->campaign_status,
             'has_rule' => (bool) ($this->has_rule ?? false),
             'ads_type' => $this->ads_type,
-            'site_url' => $this->realtimeReport?->linkData?->adsLink?->site?->url,
-            'slug' => $this->realtimeReport?->linkData?->adsLink?->slug,
-            'tracking_code' => $this->realtimeReport?->linkData?->adsLink?->tracking_code,
+            'site_url' => $this->campaign?->adsLink?->site?->url,
+            'slug' => $this->campaign?->adsLink?->slug,
+            'tracking_code' => $this->campaign?->adsLink?->tracking_code,
             // Ads manager link (previous behavior)
             'ads_manager_link' => $this->buildAdsManagerLink(),
 
-            'style_code' => $this->realtimeReport?->linkData?->style_code,
-            'style_name' => $this->style_name,
-            'channel_code' => $this->realtimeReport?->linkData?->channel_code,
-            'channel_name' => $this->channel_name,
-
-            // Revenue fields
-            'r_search_views' => $this->r_search_views,
-            'r_conversion' => $this->r_conversion,
-            'r_revenue' => $this->r_revenue,
-            'r_rpc' => $this->r_rpc,
-            'r_ad_requests' => $this->r_ad_requests,
-            'r_ad_requests_rpm' => $this->r_ad_requests_rpm,
-            'r_impressions' => $this->r_impressions,
-            'r_impressions_rpm' => $this->r_impressions_rpm,
-            'r_funnel_requests' => $this->r_funnel_requests,
-            'r_funnel_clicks' => $this->r_funnel_clicks,
-            'r_funnel_impressions' => $this->r_funnel_impressions,
-            'r_funnel_rpm' => $this->r_funnel_rpm,
-            'r_cpa' => $this->r_cpa,
-
-            // Derived
-            'revenue_est' => round($revenueEst, 2),
+            'estimate_earning' => round($estimateEarning, 4),
+            'r_search_views' => (int) $this->r_search_views,
+            'r_conversion' => (int) $this->r_conversion,
+            'r_revenue' => round((float) $this->r_revenue, 2),
+            'r_rpc' => round((float) $this->r_rpc, 4),
+            'r_ad_requests' => (int) $this->r_ad_requests,
+            'r_ad_requests_rpm' => round((float) $this->r_ad_requests_rpm, 4),
+            'r_impressions' => (int) $this->r_impressions,
+            'r_impressions_rpm' => round((float) $this->r_impressions_rpm, 4),
+            'r_funnel_requests' => (int) $this->r_funnel_requests,
+            'r_funnel_clicks' => (int) $this->r_funnel_clicks,
+            'r_funnel_impressions' => (int) $this->r_funnel_impressions,
+            'r_funnel_rpm' => round((float) $this->r_funnel_rpm, 4),
+            'r_cpa' => round((float) $this->r_cpa, 4),
             'profit' => round($profit, 2),
             'roi' => round($roi, 2),
             'roi_realtime' => round($roi, 2),
             'rt_click_ad_count' => (int) $rtClickAdCount,
-            'rt_click_keyword_count' => (int) $rtClickKeywordCount,
+            'rt_click_keyword_count' => (int) ($this->realtimeReport?->click_keyword_count ?? 0),
             'rt_view_search_count' => (int) $rtViewSearchCount,
             'rt_view_article_count' => (int) ($this->realtimeReport?->view_article_count ?? 0),
-            'cvr' => $funnelRequests > 0 ? round(((float) ($this->a_clicks ?? 0) / $funnelRequests) * 100, 4) : null,
             'rt_cpa' => $rtClickAdCount > 0 ? round($spend / $rtClickAdCount, 4) : null,
-            'rt_cvr' => $funnelRequests > 0 ? round(($rtClickAdCount / $funnelRequests) * 100, 4) : null,
-            'ctr_keyword' => $funnelRequests > 0 ? round(($this->r_funnel_impressions / $funnelRequests) * 100, 4) : null,
-            'rt_ctr_keyword' => $funnelRequests > 0 ? round(($rtClickKeywordCount / $funnelRequests) * 100, 4) : null,
             'rt_ctr_search' => $rtViewSearchCount > 0 ? round(($rtClickAdCount / $rtViewSearchCount) * 100, 4) : null,
 
             // Realtime tracking counters (nullable)
@@ -106,8 +96,8 @@ class CampaignReportResource extends JsonResource
 
                 return [
                     'id' => $rt->id,
-                    'link_data_id' => $rt->link_data_id,
-                    'ads_link_id' => $rt->linkData?->ads_link_id,
+                    'campaign_id' => $rt->campaign_id,
+                    'ads_link_id' => $this->campaign?->ads_link_id,
                     'view_article_count' => $rt->view_article_count,
                     'view_search_count' => $rt->view_search_count,
                     'click_keyword_count' => $rt->click_keyword_count,

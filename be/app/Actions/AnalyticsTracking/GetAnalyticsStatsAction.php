@@ -5,10 +5,10 @@ namespace App\Actions\AnalyticsTracking;
 use App\Enums\EventAdLoadType;
 use App\Enums\EventClickType;
 use App\Enums\EventViewType;
+use App\Models\Campaign;
 use App\Models\EventAdLoad;
 use App\Models\EventClick;
 use App\Models\EventView;
-use App\Models\LinkData;
 use App\Support\OwnershipFilter\OwnershipFilter;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -22,17 +22,17 @@ class GetAnalyticsStatsAction
         $campaignId = $filters['campaign_id'] ?? null;
 
         $ownership = OwnershipFilter::forAuthUser();
-        $linkDataIds = $this->buildLinkDataSubquery($ownership, $adsLinkId);
+        $campaignIds = $this->buildCampaignSubquery($ownership, $adsLinkId);
 
         $viewTotals = EventView::query()
             ->selectRaw('
-                COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS search_views,
-                COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS article_views
-            ', [EventViewType::ViewSearch->value, EventViewType::ViewArticle->value])
+                COALESCE(SUM(CASE WHEN type = ? AND page = ? THEN 1 ELSE 0 END), 0) AS search_views,
+                COALESCE(SUM(CASE WHEN type = ? AND page = ? THEN 1 ELSE 0 END), 0) AS article_views
+            ', [EventViewType::PageView->value, 'search', EventViewType::PageView->value, 'article'])
             ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
             ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))
-            ->when($linkDataIds, fn ($q) => $q->whereIn('link_data_id', $linkDataIds))
+            ->when($campaignIds, fn ($q) => $q->whereIn('campaign_id', $campaignIds))
             ->first();
 
         $searchViews = (int) $viewTotals->search_views;
@@ -40,13 +40,13 @@ class GetAnalyticsStatsAction
 
         $clickTotals = EventClick::query()
             ->selectRaw('
-                COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS ad_clicks,
-                COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS keyword_clicks
-            ', [EventClickType::ClickAd->value, EventClickType::ClickKeyword->value])
+                COALESCE(SUM(CASE WHEN type = ? AND page = ? THEN 1 ELSE 0 END), 0) AS ad_clicks,
+                COALESCE(SUM(CASE WHEN type = ? AND page = ? THEN 1 ELSE 0 END), 0) AS keyword_clicks
+            ', [EventClickType::FormView->value, 'search', EventClickType::FormView->value, 'article'])
             ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
             ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))
-            ->when($linkDataIds, fn ($q) => $q->whereIn('link_data_id', $linkDataIds))
+            ->when($campaignIds, fn ($q) => $q->whereIn('campaign_id', $campaignIds))
             ->first();
 
         $adClicks = (int) $clickTotals->ad_clicks;
@@ -60,7 +60,7 @@ class GetAnalyticsStatsAction
             ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
             ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))
-            ->when($linkDataIds, fn ($q) => $q->whereIn('link_data_id', $linkDataIds))
+            ->when($campaignIds, fn ($q) => $q->whereIn('campaign_id', $campaignIds))
             ->first();
 
         $failedSearch = (int) $loadTotals->failed_search;
@@ -100,7 +100,7 @@ class GetAnalyticsStatsAction
         ];
     }
 
-    private function buildLinkDataSubquery(OwnershipFilter $ownership, ?int $adsLinkId): ?Builder
+    private function buildCampaignSubquery(OwnershipFilter $ownership, ?int $adsLinkId): ?Builder
     {
         // Only needed when filtering by ads_link_id or restricting to non-admin ownership.
         // campaign_id is filtered directly on the event tables (they carry the column natively).
@@ -108,14 +108,14 @@ class GetAnalyticsStatsAction
             return null;
         }
 
-        $query = LinkData::query();
+        $query = Campaign::query();
 
         if (! $ownership->isAdmin()) {
-            $ownership->applyTo($query);
+            $ownership->applyThroughAccount($query);
         }
 
         $query->when($adsLinkId, fn ($q) => $q->where('ads_link_id', $adsLinkId));
 
-        return $query->select('id');
+        return $query->select('campaign_id');
     }
 }

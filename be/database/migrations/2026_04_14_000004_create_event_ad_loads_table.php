@@ -15,7 +15,6 @@ return new class extends Migration
         Schema::create('event_ad_loads', function (Blueprint $table) use ($isMysql) {
             $isMysql ? $table->unsignedBigInteger('id')->autoIncrement() : $table->id();
             $table->uuid('session_id')->nullable()->index();
-            $table->unsignedBigInteger('link_data_id')->nullable();
             $table->string('campaign_id')->nullable();
             $table->string('adset_id')->nullable();
             $table->string('ad_id')->nullable();
@@ -26,7 +25,7 @@ return new class extends Migration
             $table->timestamp('event_time')->nullable();
             $table->timestamp('created_at')->useCurrent();
 
-            $table->index(['link_data_id', 'created_at'], 'idx_event_ad_loads_link_date');
+            $table->index(['campaign_id', 'created_at'], 'idx_event_ad_loads_campaign_date');
 
             if ($isMysql) {
                 $table->primary(['id', 'created_at']);

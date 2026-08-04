@@ -76,33 +76,33 @@ class RealtimeReportSyncService
         $syncedCount = 0;
         $errorCount = 0;
 
-        $linkDataIds = collect();
+        $campaignIds = collect();
         $startOfDay = Carbon::parse($date)->startOfDay();
         $endOfDay = Carbon::parse($date)->endOfDay();
 
-        $viewLinkIds = EventView::where('created_at', '>=', $startOfDay)
+        $viewCampaignIds = EventView::where('created_at', '>=', $startOfDay)
             ->where('created_at', '<=', $endOfDay)
             ->distinct()
-            ->pluck('link_data_id');
-        $linkDataIds = $linkDataIds->merge($viewLinkIds);
+            ->pluck('campaign_id');
+        $campaignIds = $campaignIds->merge($viewCampaignIds);
 
-        $clickLinkIds = EventClick::where('created_at', '>=', $startOfDay)
+        $clickCampaignIds = EventClick::where('created_at', '>=', $startOfDay)
             ->where('created_at', '<=', $endOfDay)
             ->distinct()
-            ->pluck('link_data_id');
-        $linkDataIds = $linkDataIds->merge($clickLinkIds);
+            ->pluck('campaign_id');
+        $campaignIds = $campaignIds->merge($clickCampaignIds);
 
-        $linkDataIds = $linkDataIds->unique();
+        $campaignIds = $campaignIds->filter()->unique();
 
-        foreach ($linkDataIds as $linkDataId) {
+        foreach ($campaignIds as $campaignId) {
             try {
-                self::syncLinkDataForDate($date, $linkDataId);
+                self::syncCampaignForDate($date, (string) $campaignId);
                 $syncedCount++;
             } catch (Exception $e) {
                 $errorCount++;
-                Log::channel('sync_reports')->error('[RealtimeReportSync] Link data sync failed', [
+                Log::channel('sync_reports')->error('[RealtimeReportSync] Campaign sync failed', [
                     'date' => $date,
-                    'link_data_id' => $linkDataId,
+                    'campaign_id' => $campaignId,
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -115,28 +115,28 @@ class RealtimeReportSyncService
     }
 
     /**
-     * Sync data for a specific link_data_id and date
+     * Sync data for a specific campaign and date
      */
-    public static function syncLinkDataForDate(string $date, int $linkDataId): void
+    public static function syncCampaignForDate(string $date, string $campaignId): void
     {
         $startOfDay = Carbon::parse($date)->startOfDay();
         $endOfDay = Carbon::parse($date)->endOfDay();
 
-        $views = EventView::where('link_data_id', $linkDataId)
+        $views = EventView::where('campaign_id', $campaignId)
             ->where('created_at', '>=', $startOfDay)
             ->where('created_at', '<=', $endOfDay)
             ->selectRaw("
-                COALESCE(SUM(CASE WHEN type='view_article' THEN 1 ELSE 0 END), 0) AS view_article_count,
-                COALESCE(SUM(CASE WHEN type='view_search'  THEN 1 ELSE 0 END), 0) AS view_search_count
+                COALESCE(SUM(CASE WHEN type='page_view' AND page='article' THEN 1 ELSE 0 END), 0) AS view_article_count,
+                COALESCE(SUM(CASE WHEN type='page_view' AND page='search' THEN 1 ELSE 0 END), 0) AS view_search_count
             ")
             ->first();
 
-        $clicks = EventClick::where('link_data_id', $linkDataId)
+        $clicks = EventClick::where('campaign_id', $campaignId)
             ->where('created_at', '>=', $startOfDay)
             ->where('created_at', '<=', $endOfDay)
             ->selectRaw("
-                COALESCE(SUM(CASE WHEN type='click_keyword' THEN 1 ELSE 0 END), 0) AS click_keyword_count,
-                COALESCE(SUM(CASE WHEN type='click_ad'      THEN 1 ELSE 0 END), 0) AS click_ad_count
+                COALESCE(SUM(CASE WHEN type='form_view' AND page='article' THEN 1 ELSE 0 END), 0) AS click_keyword_count,
+                COALESCE(SUM(CASE WHEN type='form_view' AND page='search' THEN 1 ELSE 0 END), 0) AS click_ad_count
             ")
             ->first();
 
@@ -145,7 +145,7 @@ class RealtimeReportSyncService
         RealtimeReport::upsert(
             [[
                 'event_time' => $date,
-                'link_data_id' => $linkDataId,
+                'campaign_id' => $campaignId,
                 'view_article_count' => $views->view_article_count,
                 'view_search_count' => $views->view_search_count,
                 'click_keyword_count' => $clicks->click_keyword_count,
@@ -153,7 +153,7 @@ class RealtimeReportSyncService
                 'created_at' => $now,
                 'updated_at' => $now,
             ]],
-            ['event_time', 'link_data_id'],
+            ['event_time', 'campaign_id'],
             [
                 'view_article_count',
                 'view_search_count',
