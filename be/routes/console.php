@@ -32,6 +32,15 @@ Schedule::command('reports:sync-all')
     ->name('sync-all-reports')
     ->withoutOverlapping(15);
 
+// TikTok-only campaign + campaign report sync.
+// Offset by 2 minutes from reports:sync-all (which runs at :00/:05/:10/...) so the
+// two never hit the TikTok API at the same time. NOTE: reports:sync-all already syncs
+// TikTok, so this is redundant work unless TikTok is dropped from that command.
+Schedule::command('tiktok-ads:sync-campaign-reports')
+    ->name('sync-tiktok-campaign-reports')
+    ->withoutOverlapping(15)
+    ->onOneServer();
+
 Schedule::command('reports:fetch-ads-adsets-by-tiktok')
     ->everyFiveMinutes()
     ->name('fetch-ads-adsets-by-tiktok')
@@ -42,7 +51,7 @@ Schedule::command('campaigns:run-schedules')
     ->withoutOverlapping(30)
     ->everyFiveMinutes();
 
-Schedule::command('google-ads:sync-conversions')
-    ->hourly()
-    ->name('sync-google-conversions')
-    ->withoutOverlapping(30);
+// Schedule::command('google-ads:sync-conversions')
+//     ->hourly()
+//     ->name('sync-google-conversions')
+//     ->withoutOverlapping(30);

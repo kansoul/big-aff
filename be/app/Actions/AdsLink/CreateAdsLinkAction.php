@@ -66,6 +66,7 @@ class CreateAdsLinkAction
                     'tracking_code' => Str::random(32),
                     'rac' => $data['rac'],
                     'note' => $data['note'] ?? null,
+                    'postback_url' => $data['postback_url'] ?? null,
                     'is_hidden' => false,
                     'tracking_ids' => $trackingIds,
                     'created_by' => $user?->id,

@@ -47,18 +47,6 @@ class StoreTrackingLogRequest extends FormRequest
             'container_type' => 'nullable|string|max:255',
             'payload' => 'nullable|array',
             'values' => 'nullable|array',
-            'estimate_earning' => 'nullable|numeric|min:0',
-            'page_views' => 'nullable|integer|min:0',
-            'clicks' => 'nullable|integer|min:0',
-            'ad_requests' => 'nullable|integer|min:0',
-            'impressions' => 'nullable|integer|min:0',
-            'ad_requests_rpm' => 'nullable|numeric|min:0',
-            'impressions_rpm' => 'nullable|numeric|min:0',
-            'cost_per_click' => 'nullable|numeric|min:0',
-            'funnel_requests' => 'nullable|integer|min:0',
-            'funnel_impressions' => 'nullable|integer|min:0',
-            'funnel_clicks' => 'nullable|integer|min:0',
-            'funnel_rpm' => 'nullable|numeric|min:0',
 
             // Session fields
             'ip_address' => 'nullable|string|max:45',

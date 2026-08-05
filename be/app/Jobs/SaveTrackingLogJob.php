@@ -3,10 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\ClickTracking;
-use App\Models\EventAdLoad;
 use App\Models\EventClick;
 use App\Models\EventView;
-use App\Models\RevenueReport;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -51,8 +49,6 @@ class SaveTrackingLogJob implements ShouldQueue
                 $eventType === 'page_view' => $this->saveEventView($eventType, $dateOnly),
                 $eventType === 'form_view' => $this->saveEventClick($eventType, $dateOnly),
                 $eventType === 'lead' => $this->saveLeadEvent($eventType),
-                in_array($eventType, ['ads_load_article_error', 'ads_load_search_error']) => $this->saveEventAdLoad($eventType),
-                in_array($eventType, ['ads_load_article_success', 'ads_load_search_success']) => null,
                 default => throw new InvalidArgumentException("Unknown event type: {$eventType}"),
             };
         } catch (InvalidArgumentException $e) {
@@ -110,32 +106,11 @@ class SaveTrackingLogJob implements ShouldQueue
     }
 
     /**
-     * Save the event ad load.
-     */
-    private function saveEventAdLoad(string $eventType): void
-    {
-        $now = now();
-
-        EventAdLoad::create([
-            'session_id' => $this->sessionId,
-            'campaign_id' => $this->logData['campaign_id'] ?? null,
-            'adset_id' => $this->logData['adset_id'] ?? null,
-            'ad_id' => $this->logData['ad_id'] ?? null,
-            'type' => $eventType,
-            'container_type' => $this->logData['container_type'] ?? null,
-            'load_time_ms' => $this->logData['load_time_ms'] ?? null,
-            'ad_loaded' => false,
-            'event_time' => $this->logData['event_time'] ?? $now,
-            'created_at' => $this->logData['created_at'] ?? $now,
-        ]);
-    }
-
-    /**
      * Save a lead event and its extensible values.
      */
     private function saveLeadEvent(string $eventType): void
     {
-        $clickTracking = ClickTracking::create([
+        ClickTracking::create([
             'session_id' => $this->sessionId,
             'campaign_id' => $this->logData['campaign_id'] ?? null,
             'adset_id' => $this->logData['adset_id'] ?? null,
@@ -145,38 +120,6 @@ class SaveTrackingLogJob implements ShouldQueue
             'payload' => $this->logData['values'] ?? $this->logData['payload'] ?? null,
             'event_time' => $this->logData['event_time'] ?? now(),
         ]);
-
-        RevenueReport::updateOrCreate(
-            ['session_id' => $this->sessionId],
-            [
-                'campaign_id' => $this->logData['campaign_id'],
-                'adset_id' => $this->logData['adset_id'] ?? null,
-                'ad_id' => $this->logData['ad_id'] ?? null,
-                'click_id' => $clickTracking->id,
-                'estimate_earning' => $this->logData['estimate_earning']
-                    ?? data_get($this->logData, 'values.estimate_earning')
-                    ?? data_get($this->logData, 'payload.estimate_earning')
-                    ?? 0,
-                'page_views' => $this->revenueValue('page_views'),
-                'clicks' => $this->revenueValue('clicks'),
-                'ad_requests' => $this->revenueValue('ad_requests'),
-                'impressions' => $this->revenueValue('impressions'),
-                'ad_requests_rpm' => $this->revenueValue('ad_requests_rpm'),
-                'impressions_rpm' => $this->revenueValue('impressions_rpm'),
-                'cost_per_click' => $this->revenueValue('cost_per_click'),
-                'funnel_requests' => $this->revenueValue('funnel_requests'),
-                'funnel_impressions' => $this->revenueValue('funnel_impressions'),
-                'funnel_clicks' => $this->revenueValue('funnel_clicks'),
-                'funnel_rpm' => $this->revenueValue('funnel_rpm'),
-            ],
-        );
-    }
-
-    private function revenueValue(string $field): mixed
-    {
-        return $this->logData[$field]
-            ?? data_get($this->logData, "values.{$field}")
-            ?? data_get($this->logData, "payload.{$field}");
     }
 
     /**

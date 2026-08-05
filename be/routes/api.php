@@ -51,6 +51,7 @@ Route::middleware('check.whitelist')->group(function () {
     Route::get('/tracking/config/{trackingCode}', [TrackingController::class, 'config'])
         ->whereAlphaNumeric('trackingCode');
     Route::post('/tracking/ads-conversion', [TrackingController::class, 'storeAdsConversion']);
+    Route::post('/tracking/pixel-conversion', [TrackingController::class, 'storePixelConversion']);
 
 });
 

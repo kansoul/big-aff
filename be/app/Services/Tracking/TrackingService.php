@@ -4,6 +4,7 @@ namespace App\Services\Tracking;
 
 use App\Actions\Tracking\GetAdsLinkTrackingConfigAction;
 use App\Actions\Tracking\StoreAdsConversionAction;
+use App\Actions\Tracking\StorePixelConversionAction;
 use App\Actions\Tracking\StoreTrackingLogAction;
 
 class TrackingService
@@ -11,6 +12,7 @@ class TrackingService
     public function __construct(
         protected StoreTrackingLogAction $storeTrackingLogAction,
         protected StoreAdsConversionAction $storeAdsConversionAction,
+        protected StorePixelConversionAction $storePixelConversionAction,
         protected GetAdsLinkTrackingConfigAction $getAdsLinkTrackingConfigAction,
     ) {}
 
@@ -28,6 +30,14 @@ class TrackingService
     public function storeAdsConversion(array $validatedData): void
     {
         $this->storeAdsConversionAction->execute($validatedData);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validatedData
+     */
+    public function storePixelConversion(array $validatedData): void
+    {
+        $this->storePixelConversionAction->execute($validatedData);
     }
 
     /** @return array<string, mixed> */

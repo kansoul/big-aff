@@ -24,6 +24,7 @@ class UpdateAdsLinkRequest extends FormRequest
             'googleid' => ['nullable', 'string'],
             'tiktokid' => ['nullable', 'string'],
             'note' => ['nullable', 'string'],
+            'postback_url' => ['nullable', 'string', 'max:2048', 'url'],
         ];
     }
 
