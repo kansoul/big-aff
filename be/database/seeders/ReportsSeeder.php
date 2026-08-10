@@ -2,10 +2,16 @@
 
 namespace Database\Seeders;
 
+use App\Models\AdsetInsightsReport;
+use App\Models\AdsInsightsReport;
 use App\Models\Campaign;
 use App\Models\CampaignReport;
+use App\Models\ClickTracking;
 use App\Models\InsightChartReport;
 use App\Models\InsightReport;
+use App\Models\RevenueChartReport;
+use App\Models\RevenueReport;
+use App\Models\TrackingSession;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
@@ -24,11 +30,18 @@ use Illuminate\Support\Facades\DB;
  */
 class ReportsSeeder extends Seeder
 {
-    private const DAILY_DAYS = 30;
+    private const DAILY_DAYS = 2;
 
-    private const CHART_DAYS = 7;
+    private const CHART_DAYS = 2;
 
-    private const CAMPAIGN_REPORT_DAYS = 14;
+    private const CAMPAIGN_REPORT_DAYS = 2;
+
+    /** Days of ad-level / adset-level insights per campaign. */
+    private const ENTITY_INSIGHT_DAYS = 1;
+
+    private const REVENUE_REPORT_COUNT = 3;
+
+    private const REVENUE_CHART_REPORT_COUNT = 3;
 
     private const CHUNK_SIZE = 500;
 
@@ -42,6 +55,99 @@ class ReportsSeeder extends Seeder
         $this->seedInsightReports($campaigns);
         $this->seedInsightChartReports($campaigns);
         $this->seedCampaignReports($campaigns);
+        $this->seedEntityInsightReports($campaigns);
+        $this->seedRevenueReports($campaigns);
+        $this->seedRevenueChartReports();
+    }
+
+    /**
+     * Ad-level and adset-level insights. Each campaign gets one adset, and that adset gets
+     * one ad, so `ads_insights_reports.adset_id` always resolves to an adset report row.
+     *
+     * @param  Collection<int, Campaign>  $campaigns
+     */
+    private function seedEntityInsightReports(Collection $campaigns): void
+    {
+        if (AdsInsightsReport::query()->exists() && AdsetInsightsReport::query()->exists()) {
+            return;
+        }
+
+        $now = Carbon::now();
+
+        foreach ($campaigns as $campaign) {
+            $adsetId = fake()->numerify('################');
+            $adId = fake()->numerify('################');
+
+            for ($day = self::ENTITY_INSIGHT_DAYS; $day >= 0; $day--) {
+                $date = $now->copy()->subDays($day)->toDateString();
+
+                $shared = [
+                    'adset_id' => $adsetId,
+                    'campaign_id' => $campaign->campaign_id,
+                    'account_id' => $campaign->account_id,
+                    'status' => $campaign->status,
+                    'effective_status' => $campaign->status,
+                    'date_start' => $date,
+                    'date_stop' => $date,
+                ];
+
+                AdsetInsightsReport::factory()->create($shared + [
+                    'adset_name' => $campaign->campaign_name.' — Adset',
+                ]);
+
+                AdsInsightsReport::factory()->create($shared + [
+                    'ad_id' => $adId,
+                    'ad_name' => $campaign->campaign_name.' — Ad',
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Revenue rows keyed to real sessions, campaigns and click events.
+     *
+     * @param  Collection<int, Campaign>  $campaigns
+     */
+    private function seedRevenueReports(Collection $campaigns): void
+    {
+        if (RevenueReport::query()->exists()) {
+            return;
+        }
+
+        $sessionIds = TrackingSession::query()->pluck('session_id');
+        $clickIds = ClickTracking::query()->pluck('id');
+
+        for ($i = 0; $i < self::REVENUE_REPORT_COUNT; $i++) {
+            $campaign = $campaigns[$i % $campaigns->count()];
+
+            RevenueReport::factory()->create([
+                'session_id' => $sessionIds->isNotEmpty()
+                    ? $sessionIds[$i % $sessionIds->count()]
+                    : fake()->uuid(),
+                'campaign_id' => $campaign->campaign_id,
+                'click_id' => $clickIds->isNotEmpty()
+                    ? $clickIds[$i % $clickIds->count()]
+                    : fake()->numberBetween(1, 1_000_000),
+            ]);
+        }
+    }
+
+    /**
+     * Hourly chart rows for a single channel so the revenue chart has a series to draw.
+     */
+    private function seedRevenueChartReports(): void
+    {
+        if (RevenueChartReport::query()->exists()) {
+            return;
+        }
+
+        $now = Carbon::now()->startOfHour();
+
+        for ($i = self::REVENUE_CHART_REPORT_COUNT - 1; $i >= 0; $i--) {
+            RevenueChartReport::factory()->create([
+                'datetime' => $now->copy()->subHours($i),
+            ]);
+        }
     }
 
     /**

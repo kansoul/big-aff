@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Campaign;
+use App\Models\ClickTracking;
 use App\Models\EventAdLoad;
 use App\Models\EventClick;
 use App\Models\EventView;
@@ -19,11 +20,19 @@ use Illuminate\Database\Seeder;
  */
 class TrackingSeeder extends Seeder
 {
-    private const SESSION_COUNT = 200;
+    private const SESSION_COUNT = 3;
 
-    private const VIEW_COUNT = 500;
+    private const VIEW_COUNT = 3;
 
-    private const CLICK_COUNT = 300;
+    private const CLICK_COUNT = 3;
+
+    /** Number of past days covered by ad-load events and realtime reports. */
+    private const EVENT_DAYS = 2;
+
+    /** Ad-load events generated per day. */
+    private const AD_LOADS_PER_DAY = 2;
+
+    private const CLICK_TRACKING_COUNT = 3;
 
     public function run(): void
     {
@@ -37,7 +46,29 @@ class TrackingSeeder extends Seeder
         $this->seedEventViews($campaigns, $sessionIds);
         $this->seedEventClicks($campaigns, $sessionIds);
         $this->seedEventAdLoads($campaigns, $sessionIds);
+        $this->seedClickTracking($campaigns, $sessionIds);
         $this->seedRealtimeReports($campaigns);
+    }
+
+    /**
+     * Raw click events (the source `revenue_reports.click_id` points at).
+     *
+     * @param  Collection<int, Campaign>  $campaigns
+     * @param  array<int, string>  $sessionIds
+     */
+    private function seedClickTracking(Collection $campaigns, array $sessionIds): void
+    {
+        if (ClickTracking::query()->exists()) {
+            return;
+        }
+
+        ClickTracking::factory()
+            ->count(self::CLICK_TRACKING_COUNT)
+            ->state(fn (): array => [
+                'campaign_id' => $campaigns->random()->campaign_id,
+                'session_id' => $sessionIds[array_rand($sessionIds)],
+            ])
+            ->create();
     }
 
     /**
@@ -109,9 +140,9 @@ class TrackingSeeder extends Seeder
             return;
         }
 
-        for ($day = 14; $day >= 0; $day--) {
+        for ($day = self::EVENT_DAYS; $day >= 0; $day--) {
             $dayStart = Carbon::now()->subDays($day)->startOfDay();
-            $total = fake()->numberBetween(30, 80);
+            $total = self::AD_LOADS_PER_DAY;
 
             for ($i = 0; $i < $total; $i++) {
                 $eventTime = $dayStart->copy()->addSeconds(fake()->numberBetween(0, 86399));
@@ -147,7 +178,7 @@ class TrackingSeeder extends Seeder
         }
 
         foreach ($campaigns as $campaign) {
-            for ($day = 29; $day >= 0; $day--) {
+            for ($day = self::EVENT_DAYS; $day >= 0; $day--) {
                 $date = Carbon::now()->subDays($day)->format('Y-m-d');
 
                 RealtimeReport::query()->create([

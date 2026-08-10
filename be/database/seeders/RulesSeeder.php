@@ -29,11 +29,17 @@ use Illuminate\Support\Facades\Schema;
  */
 class RulesSeeder extends Seeder
 {
-    private const CONVERSION_COUNT = 80;
+    private const CONVERSION_COUNT = 3;
 
-    private const ADS_CONVERSION_COUNT = 80;
+    private const ADS_CONVERSION_COUNT = 3;
 
-    private const GTAG_COUNT = 80;
+    private const GTAG_COUNT = 1;
+
+    /** Campaigns wired into apply-rules / schedules. */
+    private const CAMPAIGN_LIMIT = 4;
+
+    /** Campaign rules attached to each campaign. */
+    private const RULES_PER_CAMPAIGN = 1;
 
     public function run(): void
     {
@@ -75,14 +81,14 @@ class RulesSeeder extends Seeder
         }
 
         foreach ($owners as $owner) {
-            CampaignRule::factory()->count(4)->forCampaign()->active()->create(['user_id' => $owner->id]);
-            CampaignRule::factory()->count(2)->forAdAdset()->active()->create(['user_id' => $owner->id]);
+            CampaignRule::factory()->count(1)->forCampaign()->active()->create(['user_id' => $owner->id]);
+            CampaignRule::factory()->count(1)->forAdAdset()->active()->create(['user_id' => $owner->id]);
         }
 
-        // Add a few inactive/expired rules for realism
+        // One inactive + one expired rule so those states are still representable.
         $firstOwner = $owners->first();
-        CampaignRule::factory()->count(2)->forCampaign()->inactive()->create(['user_id' => $firstOwner->id]);
-        CampaignRule::factory()->count(2)->forCampaign()->expired()->create(['user_id' => $firstOwner->id]);
+        CampaignRule::factory()->count(1)->forCampaign()->inactive()->create(['user_id' => $firstOwner->id]);
+        CampaignRule::factory()->count(1)->forCampaign()->expired()->create(['user_id' => $firstOwner->id]);
     }
 
     private function seedCampaignApplyRules(): void
@@ -91,7 +97,7 @@ class RulesSeeder extends Seeder
             return;
         }
 
-        $campaigns = Campaign::query()->limit(20)->get();
+        $campaigns = Campaign::query()->limit(self::CAMPAIGN_LIMIT)->get();
         $campaignRules = CampaignRule::query()
             ->where('entity_type', EntityTypeEnum::Campaign->value)
             ->where('is_active', true)
@@ -102,7 +108,7 @@ class RulesSeeder extends Seeder
         }
 
         foreach ($campaigns as $campaign) {
-            foreach ($campaignRules->random(min(3, $campaignRules->count())) as $rule) {
+            foreach ($campaignRules->random(min(self::RULES_PER_CAMPAIGN, $campaignRules->count())) as $rule) {
                 CampaignApplyRule::query()->firstOrCreate([
                     'campaign_rule_id' => $rule->id,
                     'sourceable_type' => Campaign::class,
@@ -213,19 +219,21 @@ class RulesSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        $campaignIds = Campaign::query()->limit(20)->pluck('campaign_id')->all();
+        $campaignIds = Campaign::query()->limit(self::CAMPAIGN_LIMIT)->pluck('campaign_id')->all();
         if (count($campaignIds) === 0) {
             return;
         }
 
-        foreach (array_slice($campaignIds, 0, 10) as $campaignId) {
+        $half = (int) ceil(count($campaignIds) / 2);
+
+        foreach (array_slice($campaignIds, 0, $half) as $campaignId) {
             DB::table('campaign_schedule_items')->insertOrIgnore([
                 'campaign_schedule_id' => $schedule1Id,
                 'campaign_id' => $campaignId,
             ]);
         }
 
-        foreach (array_slice($campaignIds, 10, 10) as $campaignId) {
+        foreach (array_slice($campaignIds, $half) as $campaignId) {
             DB::table('campaign_schedule_items')->insertOrIgnore([
                 'campaign_schedule_id' => $schedule2Id,
                 'campaign_id' => $campaignId,

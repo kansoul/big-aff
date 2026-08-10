@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\Permission;
 use App\Enums\TeamRole;
+use App\Models\MainTeam;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
@@ -29,6 +30,9 @@ class CoreSeeder extends Seeder
 {
     private const ADMIN_EMAIL = 'admin@example.com';
 
+    /** Split evenly between the two teams. */
+    private const MEMBER_COUNT = 2;
+
     public function run(): void
     {
         $adminRole = $this->ensureAdminRole();
@@ -48,8 +52,9 @@ class CoreSeeder extends Seeder
         $this->attachUserToTeam($team2, $leaderTeam2, TeamRole::LEADER);
 
         $members = $this->seedMembers($admin, $memberRole);
-        $membersTeam1 = $members->take(3)->values();
-        $membersTeam2 = $members->skip(3)->values();
+        $perTeam = (int) ceil(self::MEMBER_COUNT / 2);
+        $membersTeam1 = $members->take($perTeam)->values();
+        $membersTeam2 = $members->skip($perTeam)->values();
 
         foreach ($membersTeam1 as $member) {
             $this->attachUserToTeam($team1, $member, TeamRole::MEMBER);
@@ -59,6 +64,8 @@ class CoreSeeder extends Seeder
         }
 
         $this->seedMemberToLeaderParentChild($leaderTeam1, $membersTeam1, $leaderTeam2, $membersTeam2);
+
+        $this->seedMainTeam();
 
         $this->seedUserTablePreferences(
             User::query()->whereIn('email', [
@@ -261,11 +268,11 @@ class CoreSeeder extends Seeder
             ->where('created_by', $admin->id)
             ->get();
 
-        if ($existing->count() >= 6) {
-            return $existing->take(6)->values();
+        if ($existing->count() >= self::MEMBER_COUNT) {
+            return $existing->take(self::MEMBER_COUNT)->values();
         }
 
-        $toCreate = 6 - $existing->count();
+        $toCreate = self::MEMBER_COUNT - $existing->count();
 
         $created = User::factory()
             ->count($toCreate)
@@ -275,6 +282,21 @@ class CoreSeeder extends Seeder
             ]);
 
         return $existing->concat($created)->values();
+    }
+
+    /**
+     * The single main team that owns synced accounts (`accounts.main_team_id`).
+     */
+    private function seedMainTeam(): void
+    {
+        if (MainTeam::query()->exists()) {
+            return;
+        }
+
+        MainTeam::factory()->create([
+            'name' => 'Main Team',
+            'description' => 'Seed main team',
+        ]);
     }
 
     private function attachUserToTeam(Team $team, User $user, TeamRole $role): void

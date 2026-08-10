@@ -48,6 +48,10 @@ class StoreTrackingLogRequest extends FormRequest
             'payload' => 'nullable|array',
             'values' => 'nullable|array',
 
+            // Apply wizard answers, sent with the `lead` event only.
+            'lead_data' => 'nullable|array',
+            'lead_data.*' => 'nullable|string|max:255',
+
             // Session fields
             'ip_address' => 'nullable|string|max:45',
             'device' => 'nullable|string|max:20',

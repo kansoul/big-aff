@@ -7,7 +7,13 @@ use App\Models\AdsLink;
 use App\Models\BusinessCenter;
 use App\Models\Campaign;
 use App\Models\Follow;
+use App\Models\KeywordSet;
+use App\Models\MainTeam;
+use App\Models\Pixel;
+use App\Models\PixelConversion;
+use App\Models\Site;
 use App\Models\Team;
+use App\Models\TrackingSession;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -19,13 +25,21 @@ use Illuminate\Support\Collection;
  */
 class AdsSeeder extends Seeder
 {
-    private const BUSINESS_CENTER_COUNT = 4;
+    private const BUSINESS_CENTER_COUNT = 1;
 
-    private const ACCOUNT_COUNT = 10;
+    /** TikTok accounts; a single extra Google account is seeded as an edge case. */
+    private const ACCOUNT_COUNT = 3;
 
-    private const CAMPAIGNS_PER_ACCOUNT = 3;
+    private const CAMPAIGNS_PER_ACCOUNT = 1;
 
-    private const FOLLOW_COUNT = 50;
+    private const FOLLOW_COUNT = 2;
+
+    /** Kept small on purpose: enough rows to eyeball the pixel conversion + postback flow. */
+    private const PIXEL_CONVERSION_LINK_COUNT = 3;
+
+    private const PIXEL_COUNT = 2;
+
+    private const KEYWORD_SET_COUNT = 2;
 
     public function run(): void
     {
@@ -39,10 +53,16 @@ class AdsSeeder extends Seeder
 
         $accounts = $this->seedAccounts($admin, $managers, $teams, $businessCenters);
         $this->attachAccountsToUsers($accounts, $admin, $managers);
+        $this->assignMainTeam($accounts);
 
         $campaigns = $this->seedCampaigns($accounts, $admin);
 
-        $this->seedAdsLinks($campaigns, $admin);
+        $pixels = $this->seedPixels($admin);
+        $this->seedKeywordSets($admin);
+
+        $this->seedAdsLinks($campaigns, $admin, $pixels);
+
+        $this->seedPixelConversions($campaigns);
 
         $this->seedFollows();
 
@@ -84,13 +104,14 @@ class AdsSeeder extends Seeder
         Collection $businessCenters,
     ): Collection {
         if (Account::query()->count() >= self::ACCOUNT_COUNT) {
-            return Account::query()->limit(self::ACCOUNT_COUNT + 2)->get();
+            return Account::query()->limit(self::ACCOUNT_COUNT + 1)->get();
         }
 
         $missing = self::ACCOUNT_COUNT - Account::query()->count();
 
         Account::factory()
             ->count($missing)
+            ->tiktok()
             ->active()
             ->create([
                 'created_by' => $admin->id,
@@ -118,7 +139,7 @@ class AdsSeeder extends Seeder
             ]);
         }
 
-        return Account::query()->limit(self::ACCOUNT_COUNT + 2)->get();
+        return Account::query()->limit(self::ACCOUNT_COUNT + 1)->get();
     }
 
     /**
@@ -144,13 +165,65 @@ class AdsSeeder extends Seeder
     }
 
     /**
+     * Points every account at the seeded main team so `accounts.main_team_id` — and the
+     * owner columns backfilled onto the report tables — are populated.
+     *
+     * @param  Collection<int, Account>  $accounts
+     */
+    private function assignMainTeam(Collection $accounts): void
+    {
+        $mainTeamId = MainTeam::query()->value('id');
+
+        if ($mainTeamId === null) {
+            return;
+        }
+
+        foreach ($accounts as $account) {
+            if ($account->main_team_id === null) {
+                $account->update(['main_team_id' => $mainTeamId]);
+            }
+        }
+    }
+
+    /**
+     * @return Collection<int, Pixel>
+     */
+    private function seedPixels(User $admin): Collection
+    {
+        $missing = self::PIXEL_COUNT - Pixel::query()->count();
+
+        if ($missing > 0) {
+            Pixel::factory()->count($missing)->create([
+                'created_by' => $admin->id,
+                'updated_by' => $admin->id,
+            ]);
+        }
+
+        return Pixel::query()->limit(self::PIXEL_COUNT)->get();
+    }
+
+    private function seedKeywordSets(User $admin): void
+    {
+        $missing = self::KEYWORD_SET_COUNT - KeywordSet::query()->count();
+
+        if ($missing <= 0) {
+            return;
+        }
+
+        KeywordSet::factory()->count($missing)->create([
+            'created_by' => $admin->id,
+            'updated_by' => $admin->id,
+        ]);
+    }
+
+    /**
      * @param  Collection<int, Account>  $accounts
      * @return Collection<int, Campaign>
      */
     private function seedCampaigns(Collection $accounts, User $admin): Collection
     {
         if (Campaign::query()->count() >= $accounts->count() * self::CAMPAIGNS_PER_ACCOUNT) {
-            return Campaign::query()->with('account')->limit(40)->get();
+            return Campaign::query()->with('account')->limit(20)->get();
         }
 
         foreach ($accounts as $account) {
@@ -172,27 +245,37 @@ class AdsSeeder extends Seeder
                 ]);
         }
 
-        return Campaign::query()->with('account')->limit(40)->get();
+        return Campaign::query()->with('account')->limit(20)->get();
     }
 
     /**
-     * Creates one AdsLink per campaign.
+     * Creates one AdsLink per campaign, attached to a seeded site (and, for TikTok, a pixel).
      *
      * @param  Collection<int, Campaign>  $campaigns
+     * @param  Collection<int, Pixel>  $pixels
      */
     private function seedAdsLinks(
         Collection $campaigns,
         User $admin,
+        Collection $pixels,
     ): void {
+        $sites = Site::query()->get();
+
         foreach ($campaigns as $campaign) {
             if ($campaign->ads_link_id !== null) {
                 continue;
             }
 
+            $isTikTok = $campaign->ads_type === 'tiktok';
+
             $adsLink = AdsLink::factory()->create([
+                'site_id' => $sites->isNotEmpty() ? $sites->random()->id : null,
+                'pixel_id' => $isTikTok && $pixels->isNotEmpty() ? $pixels->random()->id : null,
                 'rac' => 'https://example.com/redirect/'.$campaign->campaign_id,
                 'note' => 'Seed link for '.$campaign->campaign_name,
-                'tracking_ids' => $campaign->ads_type === 'tiktok'
+                // Only pixel-driven (TikTok) links get an outbound postback template.
+                'postback_url' => $isTikTok ? self::postbackTemplate() : null,
+                'tracking_ids' => $isTikTok
                     ? [
                         'tiktokid' => [fake()->numerify('###################')],
                         'tiktok_pixel_id' => [fake()->bothify('C??????????????????')],
@@ -205,6 +288,78 @@ class AdsSeeder extends Seeder
             ]);
 
             $campaign->update(['ads_link_id' => $adsLink->id]);
+        }
+    }
+
+    /**
+     * Outbound postback template exercising every macro the builder replaces.
+     */
+    private static function postbackTemplate(): string
+    {
+        return 'https://postback.example.com/conv'
+            .'?cid={click_id}'
+            .'&event={event_name}'
+            .'&payout={payout}'
+            .'&cur={currency}'
+            .'&sub={tracking_code}'
+            .'&ts={timestamp}';
+    }
+
+    /**
+     * Creates a handful of pixel conversions on TikTok links so the postback states
+     * (delivered / failed / not configured) can be inspected end to end.
+     *
+     * @param  Collection<int, Campaign>  $campaigns
+     */
+    private function seedPixelConversions(Collection $campaigns): void
+    {
+        if (PixelConversion::query()->exists()) {
+            return;
+        }
+
+        $tikTokCampaigns = $campaigns
+            ->where('ads_type', 'tiktok')
+            ->filter(fn (Campaign $campaign): bool => $campaign->ads_link_id !== null)
+            ->take(self::PIXEL_CONVERSION_LINK_COUNT)
+            ->values();
+
+        if ($tikTokCampaigns->isEmpty()) {
+            return;
+        }
+
+        $states = ['postbackSent', 'postbackFailed', 'withoutPostback'];
+
+        foreach ($tikTokCampaigns as $index => $campaign) {
+            $adsLink = AdsLink::query()->find($campaign->ads_link_id);
+
+            if (! $adsLink) {
+                continue;
+            }
+
+            $state = $states[$index % count($states)];
+
+            // Links seeded before postback_url existed need a template to test against.
+            if ($state !== 'withoutPostback' && empty($adsLink->postback_url)) {
+                $adsLink->update(['postback_url' => self::postbackTemplate()]);
+            }
+
+            $trackingIds = $adsLink->tracking_ids ?? [];
+
+            $attributes = [
+                'ads_link_id' => $adsLink->id,
+                'tracking_code' => $adsLink->tracking_code,
+                'advertiser_id' => $trackingIds['tiktokid'][0] ?? null,
+                'pixel_id' => $trackingIds['tiktok_pixel_id'][0] ?? null,
+                'campaign_id' => $campaign->campaign_id,
+                'session_id' => TrackingSession::query()->value('session_id'),
+            ];
+
+            // withoutPostback() clears the URL; the other states keep the link's template.
+            if ($state !== 'withoutPostback') {
+                $attributes['postback_url'] = $adsLink->postback_url;
+            }
+
+            PixelConversion::factory()->{$state}()->create($attributes);
         }
     }
 
