@@ -16,6 +16,7 @@ class StoreTrackingLogRequest extends FormRequest
 
     public function rules(): array
     {
+        info($this->all());
         return [
             'session_id' => 'nullable|string|uuid',
 
@@ -47,10 +48,6 @@ class StoreTrackingLogRequest extends FormRequest
             'container_type' => 'nullable|string|max:255',
             'payload' => 'nullable|array',
             'values' => 'nullable|array',
-
-            // Apply wizard answers, sent with the `lead` event only.
-            'lead_data' => 'nullable|array',
-            'lead_data.*' => 'nullable|string|max:255',
 
             // Session fields
             'ip_address' => 'nullable|string|max:45',

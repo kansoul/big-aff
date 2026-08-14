@@ -77,10 +77,6 @@ class UpdateAdsLinkAction
             $payload['note'] = $data['note'];
         }
 
-        if (array_key_exists('postback_url', $data)) {
-            $payload['postback_url'] = $data['postback_url'];
-        }
-
         DB::transaction(function () use ($adsLink, $payload): void {
             $adsLink->update($payload);
         });

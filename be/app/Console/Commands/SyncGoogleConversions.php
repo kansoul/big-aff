@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Actions\Tracking\ResolveAdsConversionRpcAction;
+use App\Enums\AdsConversionType;
 use App\Models\Account;
 use App\Models\AdsConversion;
 use App\Services\Integrations\Google\GoogleAdsConversionSyncService;
@@ -37,7 +38,9 @@ class SyncGoogleConversions extends Command
         $googleAdsConversionSyncService = app(GoogleAdsConversionSyncService::class);
         $resolveRpc = app(ResolveAdsConversionRpcAction::class);
 
-        AdsConversion::whereNull('synced_at')
+        AdsConversion::query()
+            ->where('type', AdsConversionType::GOOGLE)
+            ->whereNull('synced_at')
             ->chunkById(self::BATCH_SIZE, function ($chunk) use (&$accountCache, $googleAdsConversionSyncService, $resolveRpc) {
                 $grouped = $chunk->groupBy('account_id');
 
@@ -153,7 +156,7 @@ class SyncGoogleConversions extends Command
                             $this->error("Failed to sync records for customer {$accountId}");
                         }
                     } catch (Throwable $e) {
-                        Log::error("Error processing ad revenue sync for customer {$accountId}: " . $e->getMessage());
+                        Log::error("Error processing ad revenue sync for customer {$accountId}: ".$e->getMessage());
                         $this->error("Error syncing customer {$accountId}");
                     }
                 }

@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\GoogleConversionController;
 use App\Http\Controllers\Api\GtagController;
 use App\Http\Controllers\Api\KeywordSetController;
+use App\Http\Controllers\Api\LoanApplicationController;
 use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\MainSystemSyncController;
 use App\Http\Controllers\Api\MainTeamController;
@@ -42,6 +43,10 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/switch', [AuthController::class, 'switch']);
 
 Route::middleware('check.whitelist')->group(function () {
+    Route::post('/loan-applications', [LoanApplicationController::class, 'store']);
+    // Resume: the browser only ever holds the public id, never the row id.
+    Route::get('/loan-applications/{loanApplication:public_id}', [LoanApplicationController::class, 'show']);
+    Route::patch('/loan-applications/{loanApplication:public_id}', [LoanApplicationController::class, 'update']);
     Route::prefix('follow')->group(function (): void {
         Route::post('/subscribe', [FollowController::class, 'store']);
         Route::post('/unsubscribe', [FollowController::class, 'unsubscribe']);
@@ -51,7 +56,6 @@ Route::middleware('check.whitelist')->group(function () {
     Route::get('/tracking/config/{trackingCode}', [TrackingController::class, 'config'])
         ->whereAlphaNumeric('trackingCode');
     Route::post('/tracking/ads-conversion', [TrackingController::class, 'storeAdsConversion']);
-    Route::post('/tracking/pixel-conversion', [TrackingController::class, 'storePixelConversion']);
 
 });
 

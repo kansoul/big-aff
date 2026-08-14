@@ -25,7 +25,6 @@ class AdsLinkResource extends JsonResource
             'pixel_id' => $this->pixel_id,
             'rac' => $this->rac,
             'note' => $this->note,
-            'postback_url' => $this->postback_url,
             'is_hidden' => $this->is_hidden,
             'googleid' => $trackingIds['googleid'] ?? null,
             'tiktokid' => $trackingIds['tiktokid'] ?? null,

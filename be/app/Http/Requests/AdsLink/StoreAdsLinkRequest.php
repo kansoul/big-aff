@@ -22,7 +22,6 @@ class StoreAdsLinkRequest extends FormRequest
             'pixel_id' => ['nullable', 'integer', 'exists:pixels,id'],
             'rac' => ['required', 'string'],
             'note' => ['nullable', 'string'],
-            'postback_url' => ['nullable', 'string', 'max:2048', 'url'],
             'googleid' => ['nullable', 'string'],
             'tiktokid' => ['nullable', 'string'],
         ];

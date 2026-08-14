@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\AdsConversionType;
 use App\Models\AdsConversion;
 use App\Models\TrackingSession;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -35,10 +36,12 @@ class StoreAdsConversionJob implements ShouldQueue
             }
             AdsConversion::create([
                 'account_id' => $this->data['account_id'],
+                'type' => $this->data['type'] ?? AdsConversionType::GOOGLE->value,
                 'campaign_id' => $this->data['campaign_id'] ?? null,
                 'gclid' => $this->data['gclid'] ?? null,
                 'wbraid' => $this->data['wbraid'] ?? null,
                 'gbraid' => $this->data['gbraid'] ?? null,
+                'ttclid' => $this->data['ttclid'] ?? null,
                 'session_id' => $this->data['session_id'] ?? null,
                 'conversion_action_resource_name' => $this->data['conversion_action_resource_name'],
                 'conversion_value' => $this->data['conversion_value'] ?? null,

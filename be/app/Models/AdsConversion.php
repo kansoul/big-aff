@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AdsConversionType;
 use App\Models\Traits\Relationship\AdsConversionRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,10 +13,12 @@ class AdsConversion extends Model
 
     protected $fillable = [
         'account_id',
+        'type',
         'campaign_id',
         'gclid',
         'wbraid',
         'gbraid',
+        'ttclid',
         'session_id',
         'conversion_action_resource_name',
         'conversion_value',
@@ -29,6 +32,7 @@ class AdsConversion extends Model
     protected function casts(): array
     {
         return [
+            'type' => AdsConversionType::class,
             'conversion_value' => 'decimal:6',
             'synced_at' => 'datetime',
         ];

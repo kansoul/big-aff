@@ -20,7 +20,6 @@ class AdsLink extends Model
         'note',
         'is_hidden',
         'tracking_ids',
-        'postback_url',
         'is_old',
         'created_by',
         'updated_by',

@@ -15,7 +15,6 @@ class StoreTrackingLogAction
     public function execute(array $data): string
     {
         $sessionId = $this->findOrCreateSession($data);
-
         $data['created_at'] = now();
         SaveTrackingLogJob::dispatch($sessionId, $data);
 

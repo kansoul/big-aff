@@ -5,7 +5,6 @@ namespace App\Jobs;
 use App\Models\ClickTracking;
 use App\Models\EventClick;
 use App\Models\EventView;
-use App\Models\LeadSubmission;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -107,12 +106,10 @@ class SaveTrackingLogJob implements ShouldQueue
     }
 
     /**
-     * Save a lead event and its extensible values.
+     * Save a lead tracking event.
      */
     private function saveLeadEvent(string $eventType): void
     {
-        $this->saveLeadSubmission();
-
         ClickTracking::create([
             'session_id' => $this->sessionId,
             'campaign_id' => $this->logData['campaign_id'] ?? null,
@@ -123,47 +120,6 @@ class SaveTrackingLogJob implements ShouldQueue
             'payload' => $this->logData['values'] ?? $this->logData['payload'] ?? null,
             'event_time' => $this->logData['event_time'] ?? now(),
         ]);
-    }
-
-    /**
-     * Persist the values the user typed into the apply wizard.
-     */
-    private function saveLeadSubmission(): void
-    {
-        $leadData = $this->logData['lead_data'] ?? null;
-
-        if (! is_array($leadData) || $leadData === []) {
-            return;
-        }
-
-        $attributes = [
-            'session_id' => $this->sessionId,
-            'campaign_id' => $this->logData['campaign_id'] ?? null,
-            'adset_id' => $this->logData['adset_id'] ?? null,
-            'ad_id' => $this->logData['ad_id'] ?? null,
-            'page' => $this->logData['page'] ?? null,
-            'event_time' => $this->logData['event_time'] ?? now(),
-        ];
-
-        $extra = [];
-
-        foreach ($leadData as $key => $value) {
-            if ($value === null || $value === '') {
-                continue;
-            }
-
-            if (isset(LeadSubmission::FIELD_MAP[$key])) {
-                $attributes[LeadSubmission::FIELD_MAP[$key]] = $value;
-
-                continue;
-            }
-
-            $extra[$key] = $value;
-        }
-
-        $attributes['extra'] = $extra ?: null;
-
-        LeadSubmission::create($attributes);
     }
 
     /**

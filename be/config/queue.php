@@ -131,7 +131,6 @@ return [
         'receive-insights' => env('QUEUE_RECEIVE_INSIGHTS', 'receive-insights'),
         'main-system-sync' => env('QUEUE_MAIN_SYSTEM_SYNC', 'main-system-sync'),
         'ads-conversion' => env('QUEUE_ADS_CONVERSION', 'ads-conversion'),
-        'pixel-conversion' => env('QUEUE_PIXEL_CONVERSION', 'pixel-conversion'),
         'fetch-ads-adsets' => env('QUEUE_FETCH_ADS_ADSETS', 'fetch-ads-adsets'),
     ],
 ];
