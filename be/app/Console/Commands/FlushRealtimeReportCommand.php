@@ -109,10 +109,10 @@ class FlushRealtimeReportCommand extends Command
             $rows[] = [
                 'event_time' => $date,
                 'campaign_id' => $campaignId,
-                'view_article_count' => (int) ($counts['view_article_count'] ?? 0),
-                'view_search_count' => (int) ($counts['view_search_count'] ?? 0),
-                'click_keyword_count' => (int) ($counts['click_keyword_count'] ?? 0),
-                'click_ad_count' => (int) ($counts['click_ad_count'] ?? 0),
+                'view_count' => (int) ($counts['view_count'] ?? 0),
+                'redirect_count' => (int) ($counts['redirect_count'] ?? 0),
+                'next_step_count' => (int) ($counts['next_step_count'] ?? 0),
+                'lead_count' => (int) ($counts['lead_count'] ?? 0),
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -134,10 +134,10 @@ class FlushRealtimeReportCommand extends Command
                 $rows,
                 uniqueBy: ['event_time', 'campaign_id'],
                 update: [
-                    'view_article_count' => DB::raw('view_article_count + VALUES(view_article_count)'),
-                    'view_search_count' => DB::raw('view_search_count + VALUES(view_search_count)'),
-                    'click_keyword_count' => DB::raw('click_keyword_count + VALUES(click_keyword_count)'),
-                    'click_ad_count' => DB::raw('click_ad_count + VALUES(click_ad_count)'),
+                    'view_count' => DB::raw('view_count + VALUES(view_count)'),
+                    'redirect_count' => DB::raw('redirect_count + VALUES(redirect_count)'),
+                    'next_step_count' => DB::raw('next_step_count + VALUES(next_step_count)'),
+                    'lead_count' => DB::raw('lead_count + VALUES(lead_count)'),
                     'updated_at' => DB::raw('NOW()'),
                 ],
             );

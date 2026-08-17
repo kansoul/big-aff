@@ -2,23 +2,76 @@
 
 namespace App\Actions\Tracking;
 
+use App\Actions\LoanApplication\CreateLoanApplicationAction;
+use App\Actions\LoanApplication\UpdateLoanApplicationAction;
 use App\Jobs\SaveTrackingLogJob;
+use App\Models\LoanApplication;
 use App\Models\TrackingSession;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
 
 class StoreTrackingLogAction
 {
+    public function __construct(
+        protected CreateLoanApplicationAction $createLoanApplicationAction,
+        protected UpdateLoanApplicationAction $updateLoanApplicationAction,
+    ) {}
+
     /**
-     * save tracking log
+     * Save a tracking log entry.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{session_id: string, public_id: ?string}
      */
-    public function execute(array $data): string
+    public function execute(array $data): array
     {
         $sessionId = $this->findOrCreateSession($data);
         $data['created_at'] = now();
+
+        // next_step only writes the loan application, inline so the caller gets
+        // its public id back; there is no event row for it.
+        if (($data['type'] ?? null) === 'next_step') {
+            return [
+                'session_id' => $sessionId,
+                'public_id' => $this->saveLoanApplication($data)->public_id,
+            ];
+        }
+
         SaveTrackingLogJob::dispatch($sessionId, $data);
 
-        return $sessionId;
+        return [
+            'session_id' => $sessionId,
+            'public_id' => null,
+        ];
+    }
+
+    /**
+     * Persist the submitted wizard step, creating the application on first step.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    protected function saveLoanApplication(array $data): LoanApplication
+    {
+        $fields = array_intersect_key(
+            $data,
+            array_flip([...LoanApplication::applicationFields(), 'campaign_id', 'utm_source', 'aff_click_id']),
+        );
+
+        if (! empty($data['completed'])) {
+            $fields['completed_at'] = now();
+        }
+
+        $publicId = $data['public_id'] ?? null;
+
+        if (! empty($publicId)) {
+            $application = LoanApplication::where('public_id', $publicId)->first();
+
+            if ($application) {
+                return $this->updateLoanApplicationAction->execute($application, $fields);
+            }
+        }
+
+        return $this->createLoanApplicationAction->execute($fields);
     }
 
     /**

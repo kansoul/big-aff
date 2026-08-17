@@ -37,8 +37,8 @@ class CampaignReportResource extends JsonResource
         $profit = (float) ($this->profit ?? $estimateEarning - $spend);
         $roi = (float) ($this->roi ?? ($spend > 0 ? ($profit / $spend) * 100 : 0.0));
 
-        $rtClickAdCount = (float) ($this->realtimeReport?->click_ad_count ?? 0);
-        $rtViewSearchCount = (float) ($this->realtimeReport?->view_search_count ?? 0);
+        $rtLeadCount = (float) ($this->realtimeReport?->lead_count ?? 0);
+        $rtViewCount = (float) ($this->realtimeReport?->view_count ?? 0);
 
         return [
             'id' => $this->id,
@@ -80,12 +80,12 @@ class CampaignReportResource extends JsonResource
             'profit' => round($profit, 2),
             'roi' => round($roi, 2),
             'roi_realtime' => round($roi, 2),
-            'rt_click_ad_count' => (int) $rtClickAdCount,
-            'rt_click_keyword_count' => (int) ($this->realtimeReport?->click_keyword_count ?? 0),
-            'rt_view_search_count' => (int) $rtViewSearchCount,
-            'rt_view_article_count' => (int) ($this->realtimeReport?->view_article_count ?? 0),
-            'rt_cpa' => $rtClickAdCount > 0 ? round($spend / $rtClickAdCount, 4) : null,
-            'rt_ctr_search' => $rtViewSearchCount > 0 ? round(($rtClickAdCount / $rtViewSearchCount) * 100, 4) : null,
+            'rt_lead_count' => (int) $rtLeadCount,
+            'rt_next_step_count' => (int) ($this->realtimeReport?->next_step_count ?? 0),
+            'rt_redirect_count' => (int) ($this->realtimeReport?->redirect_count ?? 0),
+            'rt_view_count' => (int) $rtViewCount,
+            'rt_cpa' => $rtLeadCount > 0 ? round($spend / $rtLeadCount, 4) : null,
+            'rt_ctr' => $rtViewCount > 0 ? round(($rtLeadCount / $rtViewCount) * 100, 4) : null,
 
             // Realtime tracking counters (nullable)
             'realtime_report' => $this->whenLoaded('realtimeReport', function () {
@@ -98,10 +98,10 @@ class CampaignReportResource extends JsonResource
                     'id' => $rt->id,
                     'campaign_id' => $rt->campaign_id,
                     'ads_link_id' => $this->campaign?->ads_link_id,
-                    'view_article_count' => $rt->view_article_count,
-                    'view_search_count' => $rt->view_search_count,
-                    'click_keyword_count' => $rt->click_keyword_count,
-                    'click_ad_count' => $rt->click_ad_count,
+                    'view_count' => $rt->view_count,
+                    'redirect_count' => $rt->redirect_count,
+                    'next_step_count' => $rt->next_step_count,
+                    'lead_count' => $rt->lead_count,
                 ];
             }),
         ];

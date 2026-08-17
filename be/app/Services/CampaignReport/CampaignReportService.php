@@ -71,10 +71,10 @@ class CampaignReportService
                 COALESCE(SUM(revenue_summary.funnel_clicks), 0) AS r_funnel_clicks,
                 COALESCE(SUM(revenue_summary.funnel_impressions), 0) AS r_funnel_impressions,
                 COALESCE(SUM(ir_summary.spend), 0) AS a_spend,
-                COALESCE(SUM(rt_summary.click_ad_count), 0) AS rt_click_ad_count,
-                COALESCE(SUM(rt_summary.click_keyword_count), 0) AS rt_click_keyword_count,
-                COALESCE(SUM(rt_summary.view_search_count), 0) AS rt_view_search_count,
-                COALESCE(SUM(rt_summary.view_article_count), 0) AS rt_view_article_count
+                COALESCE(SUM(rt_summary.lead_count), 0) AS rt_lead_count,
+                COALESCE(SUM(rt_summary.next_step_count), 0) AS rt_next_step_count,
+                COALESCE(SUM(rt_summary.redirect_count), 0) AS rt_redirect_count,
+                COALESCE(SUM(rt_summary.view_count), 0) AS rt_view_count
             ')
             ->first();
 
@@ -90,10 +90,10 @@ class CampaignReportService
             'r_funnel_clicks' => (int) ($row->r_funnel_clicks ?? 0),
             'r_funnel_impressions' => (int) ($row->r_funnel_impressions ?? 0),
             'a_spend' => (float) ($row->a_spend ?? 0),
-            'rt_click_ad_count' => (int) ($row->rt_click_ad_count ?? 0),
-            'rt_click_keyword_count' => (int) ($row->rt_click_keyword_count ?? 0),
-            'rt_view_search_count' => (int) ($row->rt_view_search_count ?? 0),
-            'rt_view_article_count' => (int) ($row->rt_view_article_count ?? 0),
+            'rt_lead_count' => (int) ($row->rt_lead_count ?? 0),
+            'rt_next_step_count' => (int) ($row->rt_next_step_count ?? 0),
+            'rt_redirect_count' => (int) ($row->rt_redirect_count ?? 0),
+            'rt_view_count' => (int) ($row->rt_view_count ?? 0),
         ]);
     }
 
@@ -106,8 +106,8 @@ class CampaignReportService
         $earning = (float) ($summary['estimate_earning'] ?? 0);
         $spend = (float) ($summary['a_spend'] ?? 0);
         $profit = $earning - $spend;
-        $clicks = (int) ($summary['rt_click_ad_count'] ?? 0);
-        $searchViews = (int) ($summary['rt_view_search_count'] ?? 0);
+        $leads = (int) ($summary['rt_lead_count'] ?? 0);
+        $views = (int) ($summary['rt_view_count'] ?? 0);
         $revenue = (float) ($summary['r_revenue'] ?? 0);
         $conversions = (int) ($summary['r_conversion'] ?? 0);
         $adRequests = (int) ($summary['r_ad_requests'] ?? 0);
@@ -124,8 +124,8 @@ class CampaignReportService
             'profit' => round($profit, 2),
             'roi' => $spend > 0 ? round(($profit / $spend) * 100, 2) : 0.0,
             'roi_realtime' => $spend > 0 ? round(($profit / $spend) * 100, 2) : 0.0,
-            'rt_cpa' => $clicks > 0 ? round($spend / $clicks, 4) : 0.0,
-            'rt_ctr_search' => $searchViews > 0 ? round(($clicks / $searchViews) * 100, 4) : 0.0,
+            'rt_cpa' => $leads > 0 ? round($spend / $leads, 4) : 0.0,
+            'rt_ctr' => $views > 0 ? round(($leads / $views) * 100, 4) : 0.0,
         ];
     }
 }

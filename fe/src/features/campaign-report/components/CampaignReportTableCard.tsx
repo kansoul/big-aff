@@ -751,18 +751,18 @@ function getColumns(
     }
   })()
 
-  const colRtCtrSearch: MRT_ColumnDef<TableRow> = (() => {
-    const footerText = summary ? `${formatDecimal(summary.rt_ctr_search)}%` : null
+  const colRtCtr: MRT_ColumnDef<TableRow> = (() => {
+    const footerText = summary ? `${formatDecimal(summary.rt_ctr)}%` : null
     return {
-      accessorKey: 'rt_ctr_search',
-      header: 'R. CTR S.',
-      Header: <HeaderLabel icon="green">R. CTR S.</HeaderLabel>,
+      accessorKey: 'rt_ctr',
+      header: 'R. CTR',
+      Header: <HeaderLabel icon="green">R. CTR</HeaderLabel>,
       size: autoSize(95, footerText),
       enableSorting: false,
       Cell: ({ row }) => {
         const v = isGroupRow(row.original)
-          ? row.original.group_summary.rt_ctr_search
-          : row.original.rt_ctr_search
+          ? row.original.group_summary.rt_ctr
+          : row.original.rt_ctr
         if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
         const vFormatted = `${formatDecimal(v)}%`
         return (
@@ -855,10 +855,10 @@ function getColumns(
   })()
 
   // ── Realtime (rt_*) columns — top-level fields from BE, display-only ──
-  const colRtClickAdCount = count('rt_click_ad_count', 'R. Conv.', 65, 'green')
-  const colRtClickKeywordCount = count('rt_click_keyword_count', 'R. C.Kw', 100, 'green')
-  const colRtViewSearchCount = count('rt_view_search_count', 'R. S.View', 78, 'green')
-  const colRtViewArticleCount = count('rt_view_article_count', 'R. Article Views', 100, 'green')
+  const colRtLeadCount = count('rt_lead_count', 'R. Lead', 65, 'green')
+  const colRtNextStepCount = count('rt_next_step_count', 'R. Next Step', 100, 'green')
+  const colRtRedirectCount = count('rt_redirect_count', 'R. Redirect', 78, 'green')
+  const colRtViewCount = count('rt_view_count', 'R. Views', 100, 'green')
 
   // Column order matches AllReportResource.php
   return [
@@ -895,12 +895,12 @@ function getColumns(
     colProfit,
     colRoi,
     colRoiRealtime,
-    colRtClickAdCount,
+    colRtLeadCount,
     colRtCpa,
-    colRtViewSearchCount,
-    colRtClickKeywordCount,
-    colRtCtrSearch,
-    colRtViewArticleCount,
+    colRtRedirectCount,
+    colRtNextStepCount,
+    colRtCtr,
+    colRtViewCount,
   ]
 }
 

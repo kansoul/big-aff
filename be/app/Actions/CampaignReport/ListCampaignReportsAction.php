@@ -45,7 +45,7 @@ class ListCampaignReportsAction
         'profit',
         'roi',
         'rt_cpa',
-        'rt_ctr_search',
+        'rt_ctr',
     ];
 
     /**
@@ -105,8 +105,8 @@ class ListCampaignReportsAction
                 DB::raw('IF(COALESCE(revenue_totals.conversions, 0) > 0, COALESCE(ir.spend, 0) / revenue_totals.conversions, 0) as r_cpa'),
                 DB::raw('COALESCE(revenue_totals.estimate_earning, 0) - COALESCE(ir.spend, 0) as profit'),
                 DB::raw('IF(COALESCE(ir.spend, 0) > 0, (COALESCE(revenue_totals.estimate_earning, 0) - COALESCE(ir.spend, 0)) / COALESCE(ir.spend, 0) * 100, 0) as roi'),
-                DB::raw('IF(COALESCE(rt.click_ad_count, 0) > 0, COALESCE(ir.spend, 0) / rt.click_ad_count, NULL) as rt_cpa'),
-                DB::raw('IF(COALESCE(rt.view_search_count, 0) > 0, COALESCE(rt.click_ad_count, 0) / rt.view_search_count * 100, NULL) as rt_ctr_search'),
+                DB::raw('IF(COALESCE(rt.lead_count, 0) > 0, COALESCE(ir.spend, 0) / rt.lead_count, NULL) as rt_cpa'),
+                DB::raw('IF(COALESCE(rt.view_count, 0) > 0, COALESCE(rt.lead_count, 0) / rt.view_count * 100, NULL) as rt_ctr'),
             )
             ->withExists(['campaign as has_rule' => fn ($q) => $q->whereHas('campaignRules', fn ($q) => $q->where('is_active', true))])
             ->with([
@@ -142,7 +142,7 @@ class ListCampaignReportsAction
             'profit',
             'roi',
             'rt_cpa',
-            'rt_ctr_search',
+            'rt_ctr',
         ];
         $sortColumn = in_array($sort->column, $derivedColumns, true)
             ? $sort->column

@@ -283,11 +283,11 @@ const KEYWORD_COLUMNS: KeywordColDef[] = [
     render: (row) => <span className="tabular-nums">{row.click_count.toLocaleString()}</span>,
   },
   {
-    key: 'click_ad_count',
-    label: 'Ad Clicks',
-    orderBy: 'click_ad_count',
+    key: 'redirect_count',
+    label: 'Redirects',
+    orderBy: 'redirect_count',
     className: 'min-w-[110px]',
-    render: (row) => <span className="tabular-nums">{row.click_ad_count.toLocaleString()}</span>,
+    render: (row) => <span className="tabular-nums">{row.redirect_count.toLocaleString()}</span>,
   },
   {
     key: 'ctr',

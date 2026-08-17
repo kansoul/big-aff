@@ -15,20 +15,20 @@ class RealtimeReport extends Model
     protected $fillable = [
         'event_time',
         'campaign_id',
-        'view_article_count',
-        'view_search_count',
-        'click_keyword_count',
-        'click_ad_count',
+        'view_count',
+        'redirect_count',
+        'next_step_count',
+        'lead_count',
     ];
 
     protected function casts(): array
     {
         return [
             'event_time' => 'date',
-            'view_article_count' => 'integer',
-            'view_search_count' => 'integer',
-            'click_keyword_count' => 'integer',
-            'click_ad_count' => 'integer',
+            'view_count' => 'integer',
+            'redirect_count' => 'integer',
+            'next_step_count' => 'integer',
+            'lead_count' => 'integer',
         ];
     }
 }

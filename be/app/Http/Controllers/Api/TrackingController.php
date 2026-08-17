@@ -22,11 +22,12 @@ class TrackingController extends BaseController
     public function storeLog(StoreTrackingLogRequest $request): JsonResponse
     {
         try {
-            $sessionId = $this->trackingService->handleLog($request->validated());
+            $result = $this->trackingService->handleLog($request->validated());
 
             return $this->sendResponse([
                 'success' => true,
-                'session_id' => $sessionId,
+                'session_id' => $result['session_id'],
+                'public_id' => $result['public_id'],
             ]);
         } catch (Exception $e) {
             Log::error('Failed to store tracking log', [
@@ -37,6 +38,7 @@ class TrackingController extends BaseController
             return $this->sendResponse([
                 'success' => false,
                 'session_id' => null,
+                'public_id' => null,
             ]);
         }
     }

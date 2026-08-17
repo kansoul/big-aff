@@ -2,9 +2,13 @@
 
 namespace App\Jobs;
 
-use App\Models\ClickTracking;
+use App\Enums\AdsConversionType;
+use App\Enums\EventPage;
+use App\Models\AdsConversion;
+use App\Models\Campaign;
 use App\Models\EventClick;
 use App\Models\EventView;
+use App\Models\RevenueReport;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -47,8 +51,7 @@ class SaveTrackingLogJob implements ShouldQueue
 
             match (true) {
                 $eventType === 'page_view' => $this->saveEventView($eventType, $dateOnly),
-                $eventType === 'form_view' => $this->saveEventClick($eventType, $dateOnly),
-                $eventType === 'lead' => $this->saveLeadEvent($eventType),
+                in_array($eventType, ['redirect', 'lead'], true) => $this->saveEventClick($eventType, $dateOnly),
                 default => throw new InvalidArgumentException("Unknown event type: {$eventType}"),
             };
         } catch (InvalidArgumentException $e) {
@@ -72,18 +75,75 @@ class SaveTrackingLogJob implements ShouldQueue
             'adset_id' => $this->logData['adset_id'] ?? null,
             'ad_id' => $this->logData['ad_id'] ?? null,
             'type' => $eventType,
-            'page' => $this->logData['page'] ?? null,
+            'page' => $this->resolvePage(),
             'query' => $this->logData['query'] ?? null,
             'traffic' => $this->logData['test'] ?? null,
             'event_time' => $this->logData['event_time'] ?? $now,
             'created_at' => $this->logData['created_at'] ?? $now,
         ]);
 
+        $this->saveRevenueReport();
+        $this->saveAdsConversion();
+
         $this->bufferDailyCount($dateOnly, (string) $this->logData['campaign_id'], $eventType);
     }
 
     /**
-     * Save the event view.
+     * Open the revenue row for this session. session_id is unique, so a second
+     * page view on the same session leaves the existing row untouched.
+     */
+    private function saveRevenueReport(): void
+    {
+        RevenueReport::firstOrCreate(
+            ['session_id' => $this->sessionId],
+            [
+                'campaign_id' => $this->logData['campaign_id'] ?? null,
+                'adset_id' => $this->logData['adset_id'] ?? null,
+                'ad_id' => $this->logData['ad_id'] ?? null,
+                'revenue' => 0,
+            ],
+        );
+    }
+
+    /**
+     * Store the ads click identifiers that came in with the landing page view,
+     * so the conversion can be attributed later. Nothing to store when the
+     * visitor did not arrive from an ad.
+     */
+    private function saveAdsConversion(): void
+    {
+        $clickIds = array_filter([
+            'gclid' => $this->logData['gclid'] ?? null,
+            'wbraid' => $this->logData['wbraid'] ?? null,
+            'gbraid' => $this->logData['gbraid'] ?? null,
+            'ttclid' => $this->logData['ttclid'] ?? null,
+        ]);
+
+        if ($clickIds === []) {
+            return;
+        }
+
+        $campaignId = $this->logData['campaign_id'] ?? null;
+        $type = isset($clickIds['ttclid'])
+            ? AdsConversionType::TIKTOK->value
+            : AdsConversionType::GOOGLE->value;
+
+        AdsConversion::firstOrCreate(
+            [
+                'session_id' => $this->sessionId,
+                'type' => $type,
+            ],
+            [
+                ...$clickIds,
+                'account_id' => Campaign::where('campaign_id', $campaignId)->value('account_id'),
+                'campaign_id' => $campaignId,
+                'conversion_date_time' => now()->format('Y-m-d H:i:sP'),
+            ],
+        );
+    }
+
+    /**
+     * Save the event click (redirect or lead).
      */
     private function saveEventClick(string $eventType, string $dateOnly): void
     {
@@ -95,7 +155,7 @@ class SaveTrackingLogJob implements ShouldQueue
             'adset_id' => $this->logData['adset_id'] ?? null,
             'ad_id' => $this->logData['ad_id'] ?? null,
             'type' => $eventType,
-            'page' => $this->logData['page'] ?? null,
+            'page' => $this->resolvePage(),
             'keyword_clicked' => $this->logData['keyword_clicked'] ?? null,
             'traffic' => $this->logData['test'] ?? null,
             'event_time' => $this->logData['event_time'] ?? $now,
@@ -106,20 +166,14 @@ class SaveTrackingLogJob implements ShouldQueue
     }
 
     /**
-     * Save a lead tracking event.
+     * The page column is an enum; anything outside it falls back to the only
+     * page currently in production.
      */
-    private function saveLeadEvent(string $eventType): void
+    private function resolvePage(): string
     {
-        ClickTracking::create([
-            'session_id' => $this->sessionId,
-            'campaign_id' => $this->logData['campaign_id'] ?? null,
-            'adset_id' => $this->logData['adset_id'] ?? null,
-            'ad_id' => $this->logData['ad_id'] ?? null,
-            'event_type' => $eventType,
-            'page' => $this->logData['page'] ?? null,
-            'payload' => $this->logData['values'] ?? $this->logData['payload'] ?? null,
-            'event_time' => $this->logData['event_time'] ?? now(),
-        ]);
+        $page = $this->logData['page'] ?? null;
+
+        return EventPage::tryFrom((string) $page)?->value ?? EventPage::Quickpayly->value;
     }
 
     /**
@@ -127,12 +181,10 @@ class SaveTrackingLogJob implements ShouldQueue
      */
     private function bufferDailyCount(string $date, string $campaignId, string $eventType): void
     {
-        $page = $this->logData['page'] ?? null;
-        $column = match (true) {
-            $eventType === 'page_view' && $page === 'article' => 'view_article_count',
-            $eventType === 'page_view' && $page === 'search' => 'view_search_count',
-            $eventType === 'form_view' && $page === 'article' => 'click_keyword_count',
-            $eventType === 'form_view' && $page === 'search' => 'click_ad_count',
+        $column = match ($eventType) {
+            'page_view' => 'view_count',
+            'redirect' => 'redirect_count',
+            'lead' => 'lead_count',
             default => null,
         };
 

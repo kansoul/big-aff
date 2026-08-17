@@ -4,6 +4,7 @@ namespace App\Services\Integrations\Tracking;
 
 use App\Models\EventClick;
 use App\Models\EventView;
+use App\Models\LoanApplication;
 use App\Models\RealtimeReport;
 use Carbon\Carbon;
 use Exception;
@@ -126,8 +127,7 @@ class RealtimeReportSyncService
             ->where('created_at', '>=', $startOfDay)
             ->where('created_at', '<=', $endOfDay)
             ->selectRaw("
-                COALESCE(SUM(CASE WHEN type='page_view' AND page='article' THEN 1 ELSE 0 END), 0) AS view_article_count,
-                COALESCE(SUM(CASE WHEN type='page_view' AND page='search' THEN 1 ELSE 0 END), 0) AS view_search_count
+                COALESCE(SUM(CASE WHEN type='page_view' THEN 1 ELSE 0 END), 0) AS view_count
             ")
             ->first();
 
@@ -135,10 +135,16 @@ class RealtimeReportSyncService
             ->where('created_at', '>=', $startOfDay)
             ->where('created_at', '<=', $endOfDay)
             ->selectRaw("
-                COALESCE(SUM(CASE WHEN type='form_view' AND page='article' THEN 1 ELSE 0 END), 0) AS click_keyword_count,
-                COALESCE(SUM(CASE WHEN type='form_view' AND page='search' THEN 1 ELSE 0 END), 0) AS click_ad_count
+                COALESCE(SUM(CASE WHEN type='redirect' THEN 1 ELSE 0 END), 0) AS redirect_count,
+                COALESCE(SUM(CASE WHEN type='lead' THEN 1 ELSE 0 END), 0) AS lead_count
             ")
             ->first();
+
+        // next_step has no event row; the applications touched today are the count.
+        $nextStepCount = LoanApplication::where('campaign_id', $campaignId)
+            ->where('updated_at', '>=', $startOfDay)
+            ->where('updated_at', '<=', $endOfDay)
+            ->count();
 
         $now = now();
 
@@ -146,19 +152,19 @@ class RealtimeReportSyncService
             [[
                 'event_time' => $date,
                 'campaign_id' => $campaignId,
-                'view_article_count' => $views->view_article_count,
-                'view_search_count' => $views->view_search_count,
-                'click_keyword_count' => $clicks->click_keyword_count,
-                'click_ad_count' => $clicks->click_ad_count,
+                'view_count' => $views->view_count,
+                'redirect_count' => $clicks->redirect_count,
+                'next_step_count' => $nextStepCount,
+                'lead_count' => $clicks->lead_count,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]],
             ['event_time', 'campaign_id'],
             [
-                'view_article_count',
-                'view_search_count',
-                'click_keyword_count',
-                'click_ad_count',
+                'view_count',
+                'redirect_count',
+                'next_step_count',
+                'lead_count',
                 'updated_at',
             ],
         );

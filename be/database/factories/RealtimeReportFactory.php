@@ -22,10 +22,10 @@ class RealtimeReportFactory extends Factory
         return [
             'event_time' => fake()->dateTimeBetween('-30 days', 'now')->format('Y-m-d'),
             'campaign_id' => fake()->numerify('##############'),
-            'view_article_count' => fake()->numberBetween(0, 1000),
-            'view_search_count' => fake()->numberBetween(0, 1000),
-            'click_keyword_count' => fake()->numberBetween(0, 300),
-            'click_ad_count' => fake()->numberBetween(0, 300),
+            'view_count' => fake()->numberBetween(0, 1000),
+            'redirect_count' => fake()->numberBetween(0, 1000),
+            'next_step_count' => fake()->numberBetween(0, 300),
+            'lead_count' => fake()->numberBetween(0, 300),
         ];
     }
 }

@@ -219,7 +219,7 @@ class CampaignReportSyncService
             ->whereDate('event_time', $date)
             ->first();
         if ($realtimeReport) {
-            $sumRealtimeClickAdCount = self::sumRealtimeClickAdCount($date);
+            $sumRealtimeLeadCount = self::sumRealtimeLeadCount($date);
 
             if ($campaign) {
                 self::sendHighCtrAlertIfNeeded(
@@ -228,7 +228,7 @@ class CampaignReportSyncService
                     insightReport: $insightReport,
                     realtimeReport: $realtimeReport,
                     rConversion: $conversions,
-                    sumRealtimeClickAdCount: $sumRealtimeClickAdCount,
+                    sumRealtimeLeadCount: $sumRealtimeLeadCount,
                 );
             }
 
@@ -267,7 +267,7 @@ class CampaignReportSyncService
         InsightReport $insightReport,
         ?RealtimeReport $realtimeReport,
         int $rConversion,
-        int $sumRealtimeClickAdCount,
+        int $sumRealtimeLeadCount,
     ): void {
         if ($insightReport->campaign?->ads_type == AdsType::GOOGLE->value) {
             return;
@@ -277,21 +277,21 @@ class CampaignReportSyncService
             return;
         }
 
-        $realtimeClickAdCount = (int) ($realtimeReport->click_ad_count ?? 0);
-        $tier = self::matchAlertTier($realtimeClickAdCount);
+        $realtimeLeadCount = (int) ($realtimeReport->lead_count ?? 0);
+        $tier = self::matchAlertTier($realtimeLeadCount);
 
         if (! $tier || ! $realtimeReport) {
             return;
         }
 
-        $viewSearch = (int) ($realtimeReport->view_search_count ?? 0);
+        $viewCount = (int) ($realtimeReport->view_count ?? 0);
 
-        if ($viewSearch <= 0) {
+        if ($viewCount <= 0) {
             return;
         }
 
-        $ctr = $realtimeClickAdCount / $viewSearch;
-        $cvr = $sumRealtimeClickAdCount > 0 ? $rConversion / $sumRealtimeClickAdCount : 0.0;
+        $ctr = $realtimeLeadCount / $viewCount;
+        $cvr = $sumRealtimeLeadCount > 0 ? $rConversion / $sumRealtimeLeadCount : 0.0;
 
         if ($cvr >= $tier['max_cvr'] || $ctr <= $tier['min_ctr']) {
             return;
@@ -319,9 +319,9 @@ class CampaignReportSyncService
                 ."Campaign Name: *{$campaignName}*\n"
                 ."Ads Link: {$adsLinkUrl}\n"
                 ."Owner: *{$ownerName}*\n"
-                ."View Search: *{$viewSearch}*\n"
-                ."Click Ad: *{$realtimeClickAdCount}*\n"
-                ."Channel Click Ad: *{$sumRealtimeClickAdCount}*\n"
+                ."View: *{$viewCount}*\n"
+                ."Lead: *{$realtimeLeadCount}*\n"
+                ."Channel Lead: *{$sumRealtimeLeadCount}*\n"
                 ."CTR: *{$ctrPercent}%*\n"
                 ."Conversion: *{$rConversion}*\n"
                 ."CVR: *{$cvrPercent}%*";
@@ -342,7 +342,7 @@ class CampaignReportSyncService
             telegramChatId: $telegramChatId,
             ownerName: $ownerName,
             adsLinkUrl: $adsLinkUrl,
-            clickAdCount: $realtimeClickAdCount,
+            leadCount: $realtimeLeadCount,
             ctr: $ctr,
         );
     }
@@ -353,10 +353,10 @@ class CampaignReportSyncService
         ?string $telegramChatId,
         string $ownerName,
         string $adsLinkUrl,
-        int $clickAdCount,
+        int $leadCount,
         float $ctr,
     ): void {
-        if ($clickAdCount <= self::HIGH_CTR_AUTO_PAUSE_MIN_CLICKS) {
+        if ($leadCount <= self::HIGH_CTR_AUTO_PAUSE_MIN_CLICKS) {
             return;
         }
 
@@ -399,7 +399,7 @@ class CampaignReportSyncService
                 ."Ads Link: {$adsLinkUrl}\n"
                 ."Owner: *{$ownerName}*\n"
                 ."CTR (15m): *{$ctrPercent}%* (> ".round(self::HIGH_CTR_AUTO_PAUSE_MIN_CTR * 100)."%) \n"
-                ."Click Ad (15m): *{$clickAdCount}* (> ".self::HIGH_CTR_AUTO_PAUSE_MIN_CLICKS.')';
+                ."Lead (15m): *{$leadCount}* (> ".self::HIGH_CTR_AUTO_PAUSE_MIN_CLICKS.')';
 
             SendTelegramWarningJob::dispatch(
                 message: $message,
@@ -463,12 +463,12 @@ class CampaignReportSyncService
     }
 
     /**
-     * Sum click_ad_count from realtime reports for the given date.
+     * Sum lead_count from realtime reports for the given date.
      */
-    private static function sumRealtimeClickAdCount(string $date): int
+    private static function sumRealtimeLeadCount(string $date): int
     {
         return (int) RealtimeReport::whereDate('event_time', $date)
-            ->sum('click_ad_count');
+            ->sum('lead_count');
     }
 
     /**

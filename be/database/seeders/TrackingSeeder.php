@@ -184,10 +184,10 @@ class TrackingSeeder extends Seeder
                 RealtimeReport::query()->create([
                     'event_time' => $date,
                     'campaign_id' => $campaign->campaign_id,
-                    'view_article_count' => fake()->numberBetween(0, 500),
-                    'view_search_count' => fake()->numberBetween(0, 500),
-                    'click_keyword_count' => fake()->numberBetween(0, 150),
-                    'click_ad_count' => fake()->numberBetween(0, 150),
+                    'view_count' => fake()->numberBetween(0, 500),
+                    'redirect_count' => fake()->numberBetween(0, 500),
+                    'next_step_count' => fake()->numberBetween(0, 150),
+                    'lead_count' => fake()->numberBetween(0, 150),
                 ]);
             }
         }

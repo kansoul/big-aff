@@ -19,6 +19,7 @@ class RevenueReport extends Model
         'ad_id',
         'click_id',
         'estimate_earning',
+        'revenue',
         'page_views',
         'clicks',
         'ad_requests',
@@ -37,6 +38,7 @@ class RevenueReport extends Model
         return [
             'click_id' => 'integer',
             'estimate_earning' => 'decimal:4',
+            'revenue' => 'decimal:4',
             'page_views' => 'integer',
             'clicks' => 'integer',
             'ad_requests' => 'integer',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Tracking;
 
+use App\Http\Requests\LoanApplication\UpdateLoanApplicationRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -14,31 +15,44 @@ class StoreTrackingLogRequest extends FormRequest
         return true;
     }
 
+    /** Event types handled by the tracking log endpoint. */
+    public const TYPES = [
+        'page_view',
+        'redirect',
+        'next_step',
+        'lead',
+    ];
+
     public function rules(): array
     {
-        info($this->all());
+        $isNextStep = $this->input('type') === 'next_step';
+
         return [
+            ...($isNextStep ? UpdateLoanApplicationRequest::fieldRules() : []),
+
             'session_id' => 'nullable|string|uuid',
+            // The loan application being continued, when already created.
+            'public_id' => $isNextStep ? 'nullable|string|uuid' : 'prohibited',
 
             // Link tracking lookup
-            'campaign_id' => 'required|string',
+            'campaign_id' => $isNextStep ? 'nullable|string' : 'required|string',
 
             // Event data
             'type' => [
                 'required',
                 'string',
-                Rule::in([
-                    'page_view',
-                    'form_view',
-                    'lead',
-                    'ads_load_article_error',
-                    'ads_load_search_error',
-                    'ads_load_article_success',
-                    'ads_load_search_success',
-                ]),
+                Rule::in(self::TYPES),
             ],
             'eventType' => 'nullable|string|max:100',
-            'page' => 'required|string|max:500',
+            // Optional: there is only one page live, so it defaults to quickpayly.
+            'page' => 'nullable|string|max:500',
+            'utm_source' => 'nullable|string|max:64',
+
+            // Ads click identifiers, captured from the landing URL on page_view.
+            'gclid' => 'nullable|string|max:255',
+            'wbraid' => 'nullable|string|max:255',
+            'gbraid' => 'nullable|string|max:255',
+            'ttclid' => 'nullable|string|max:255',
             'ad_id' => 'nullable|string',
             'adset_id' => 'nullable|string',
             'event_time' => 'nullable|date',

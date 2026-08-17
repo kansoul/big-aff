@@ -26,9 +26,9 @@ class GetAnalyticsStatsAction
 
         $viewTotals = EventView::query()
             ->selectRaw('
-                COALESCE(SUM(CASE WHEN type = ? AND page = ? THEN 1 ELSE 0 END), 0) AS search_views,
-                COALESCE(SUM(CASE WHEN type = ? AND page = ? THEN 1 ELSE 0 END), 0) AS article_views
-            ', [EventViewType::PageView->value, 'search', EventViewType::PageView->value, 'article'])
+                COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS search_views,
+                COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS article_views
+            ', [EventViewType::PageView->value, EventViewType::PageView->value])
             ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
             ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))
@@ -40,9 +40,9 @@ class GetAnalyticsStatsAction
 
         $clickTotals = EventClick::query()
             ->selectRaw('
-                COALESCE(SUM(CASE WHEN type = ? AND page = ? THEN 1 ELSE 0 END), 0) AS ad_clicks,
-                COALESCE(SUM(CASE WHEN type = ? AND page = ? THEN 1 ELSE 0 END), 0) AS keyword_clicks
-            ', [EventClickType::FormView->value, 'search', EventClickType::FormView->value, 'article'])
+                COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS ad_clicks,
+                COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS keyword_clicks
+            ', [EventClickType::Lead->value, EventClickType::Redirect->value])
             ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
             ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))

@@ -289,10 +289,10 @@ class ReportsSeeder extends Seeder
                 $toInsert[] = [
                     'campaign_id' => $campaign->campaign_id,
                     'event_time' => $date,
-                    'view_article_count' => random_int(50, 800),
-                    'view_search_count' => random_int(30, 700),
-                    'click_keyword_count' => random_int(5, 200),
-                    'click_ad_count' => random_int(2, 150),
+                    'view_count' => random_int(50, 800),
+                    'redirect_count' => random_int(30, 700),
+                    'next_step_count' => random_int(5, 200),
+                    'lead_count' => random_int(2, 150),
                 ];
             }
         }

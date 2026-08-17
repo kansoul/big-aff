@@ -149,7 +149,7 @@ class EvaluateAdAdsetRuleAction
 
         return (int) DB::table('event_clicks')
             ->where($column, $entityId)
-            ->where('type', EventClickType::FormView->value)
+            ->where('type', EventClickType::Lead->value)
             ->where('created_at', '>=', $dayStart)
             ->where('created_at', '<', $dayEnd)
             ->count();

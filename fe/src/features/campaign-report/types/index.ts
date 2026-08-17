@@ -33,10 +33,10 @@ export interface CampaignReportRealtime {
   id: number
   campaign_id: string
   ads_link_id: number | null
-  view_article_count: number
-  view_search_count: number
-  click_keyword_count: number
-  click_ad_count: number
+  view_count: number
+  redirect_count: number
+  next_step_count: number
+  lead_count: number
 }
 
 export interface CampaignReportRow {
@@ -78,12 +78,12 @@ export interface CampaignReportRow {
   profit: number
   roi: number
   roi_realtime: number
-  rt_click_ad_count: number
-  rt_click_keyword_count: number
-  rt_view_search_count: number
-  rt_view_article_count: number
+  rt_lead_count: number
+  rt_next_step_count: number
+  rt_redirect_count: number
+  rt_view_count: number
   rt_cpa: number | null
-  rt_ctr_search: number | null
+  rt_ctr: number | null
 
   realtime_report: CampaignReportRealtime | null
 }
@@ -124,12 +124,12 @@ export interface CampaignReportSummary {
   profit: number
   roi: number
   roi_realtime: number
-  rt_click_ad_count: number
-  rt_click_keyword_count: number
-  rt_view_search_count: number
-  rt_view_article_count: number
+  rt_lead_count: number
+  rt_next_step_count: number
+  rt_redirect_count: number
+  rt_view_count: number
   rt_cpa: number
-  rt_ctr_search: number
+  rt_ctr: number
 }
 
 export interface CampaignReportGroupRow {
@@ -278,7 +278,7 @@ export interface AnalyticsTrackingFilterOptionsResponse {
 
 // ─── Keyword Tracking ─────────────────────────────────────────────────────────
 
-export type KeywordTrackingOrderBy = 'keyword' | 'click_count' | 'click_ad_count'
+export type KeywordTrackingOrderBy = 'keyword' | 'click_count' | 'redirect_count'
 
 export interface KeywordTrackingFilterParams {
   ads_link_id?: number | null
@@ -296,7 +296,7 @@ export interface KeywordTrackingRow {
   id: number
   keyword: string
   click_count: number
-  click_ad_count: number
+  redirect_count: number
   ctr: number
 }
 

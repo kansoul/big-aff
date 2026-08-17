@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class ListKeywordTrackingAction
 {
-    public const ORDERABLE_COLUMNS = ['keyword', 'click_count', 'click_ad_count'];
+    public const ORDERABLE_COLUMNS = ['keyword', 'click_count', 'redirect_count'];
 
     public function execute(array $filters): LengthAwarePaginator
     {
@@ -32,7 +32,7 @@ class ListKeywordTrackingAction
                 DB::raw('MIN(id) as id'),
                 DB::raw('keyword_clicked as keyword'),
                 DB::raw('COUNT(*) as click_count'),
-                DB::raw("SUM(CASE WHEN type = '".EventClickType::FormView->value."' THEN 1 ELSE 0 END) AS click_ad_count"),
+                DB::raw("SUM(CASE WHEN type = '".EventClickType::Redirect->value."' THEN 1 ELSE 0 END) AS redirect_count"),
             ])
             ->whereNotNull('keyword_clicked')
             ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
