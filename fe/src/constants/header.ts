@@ -45,6 +45,7 @@ export type NavItem = {
 
 export const NAVIGATION_ITEMS: NavItem[] = [
   { name: 'Dashboard', href: PATHS.dashboard, icon: LayoutDashboard },
+  { name: 'New Campaign', href: PATHS.newCampaign, icon: Megaphone },
   {
     name: 'Content',
     items: [
