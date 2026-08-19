@@ -16,9 +16,9 @@ class TrackingService
 
     /**
      * @param  array<string, mixed>  $validatedData
-     * @return array{session_id: string, public_id: ?string}
+     * @return string the session the event was recorded on
      */
-    public function handleLog(array $validatedData): array
+    public function handleLog(array $validatedData): string
     {
         return $this->storeTrackingLogAction->execute($validatedData);
     }

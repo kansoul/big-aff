@@ -10,6 +10,8 @@ docs/
 │   ├── overview.md         # Giới thiệu, cài đặt, cấu trúc dự án
 │   ├── architecture.md     # Kiến trúc, luồng xử lý, permission system
 │   ├── api.md              # API endpoints đầy đủ
+│   ├── landing-page-integration-guide.md  # Nhúng tracking vào một landing page mới
+│   ├── landing-page-tracking.md  # Nhúng tracker.js vào landing page Next.js (tóm tắt)
 │   └── tech-stack.md       # Tech stack và dependencies
 └── fe/                     # Frontend documentation
     ├── overview.md         # Giới thiệu, cài đặt, cấu trúc dự án
@@ -26,6 +28,8 @@ docs/
 | [Overview](be/overview.md) | Project overview, cài đặt, env vars |
 | [Architecture](be/architecture.md) | Layered architecture, permission system, DB schema |
 | [API](be/api.md) | Tất cả API endpoints với request/response examples |
+| [Landing Page Integration Guide](be/landing-page-integration-guide.md) | Nhúng tracking vào LP mới: env, snippet, cách gọi 4 event |
+| [Landing Page Tracking](be/landing-page-tracking.md) | Bản tóm tắt: nhúng `tracker.js`, gọi event, kiểm tra |
 | [Tech Stack](be/tech-stack.md) | Frameworks, libraries, design patterns |
 
 ### Frontend (React 19 + TypeScript)

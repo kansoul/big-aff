@@ -7,26 +7,17 @@ use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * The canonical rule set for the applicant answers. No endpoint of its own — the
+ * answers arrive through the tracking log, which borrows these rules.
+ */
 class UpdateLoanApplicationRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /** @return array<string, mixed> */
-    public function rules(): array
+    public static function fieldRules(): array
     {
-        return self::fieldRules();
-    }
-
-    /** @return array<string, mixed> */
-    public static function fieldRules(bool $requiredLoanAmount = false): array
-    {
-        $optional = $requiredLoanAmount ? 'required' : 'sometimes';
-
         return [
-            'loan_amount' => [$optional, 'integer', Rule::in(range(1, 4))],
+            'loan_amount' => ['sometimes', 'integer', Rule::in(range(1, 4))],
             'loan_purpose' => ['sometimes', 'integer', Rule::in(range(1, 9))],
             'email' => ['sometimes', 'email', 'max:255'],
             // Same shape the wizard enforces: 10 digits, area code not 0.
@@ -105,12 +96,5 @@ class UpdateLoanApplicationRequest extends FormRequest
                 $fail('The :attribute is not a valid routing number.');
             }
         };
-    }
-
-    protected function passedValidation(): void
-    {
-        if ($this->boolean('completed')) {
-            $this->merge(['completed_at' => now()]);
-        }
     }
 }
