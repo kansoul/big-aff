@@ -1,8 +1,7 @@
 import { memo } from 'react'
 import { Outlet, useNavigation } from 'react-router-dom'
 
-import { Header } from '@/components/common/Header'
-import { ScreenTitle } from '@/components/common/ScreenTitle'
+import { AppSidebar } from '@/components/common/AppSidebar'
 
 function NavigationProgress() {
   const { state } = useNavigation()
@@ -19,11 +18,10 @@ function NavigationProgress() {
 
 function DashboardLayoutInner() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen bg-background text-foreground">
       <NavigationProgress />
-      <Header />
-      <main className="w-full px-2 md:px-4 py-4">
-        <ScreenTitle />
+      <AppSidebar />
+      <main className="w-full min-w-0 flex-1 px-2 py-4 pt-14 md:px-4 md:pt-4">
         <Outlet />
       </main>
     </div>

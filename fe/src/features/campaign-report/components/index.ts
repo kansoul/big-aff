@@ -1,5 +1,10 @@
 export { AdsAdsetDeliveryReportDialog } from './AdsAdsetDeliveryReportDialog'
 export { CampaignReportTableCard } from './CampaignReportTableCard'
+export { CampaignReportDetailTab } from './CampaignReportDetailTab'
+export {
+  CampaignReportWorkspaceTabs,
+  type CampaignReportWorkspaceTab,
+} from './CampaignReportWorkspaceTabs'
 export { CampaignReportSummaryCard } from './CampaignReportSummaryCard'
 export { CampaignIdSelector } from './CampaignIdSelector'
 export { CampaignSchedulesDialog } from './CampaignSchedulesDialog'

@@ -71,14 +71,6 @@ export const router = createBrowserRouter([
                 handle: { title: 'Dashboard', navSection: NAV_SECTIONS.dashboard },
               },
               {
-                path: routeSegment(PATHS.newCampaign),
-                lazy: async () => {
-                  const { NewCampaignPage } =
-                    await import('@/features/new-campaign/pages/NewCampaignPage')
-                  return { Component: NewCampaignPage }
-                },
-              },
-              {
                 path: routeSegment(PATHS.media),
                 lazy: async () => {
                   const { MediaPage } = await import('@/features/media/pages/MediaPage')

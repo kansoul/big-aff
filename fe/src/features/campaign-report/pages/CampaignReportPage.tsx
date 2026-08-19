@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import dayjs from '@/lib/dayjs'
 import { toast } from 'sonner'
 
 import { campaignReportApi } from '@/features/campaign-report/api'
-import { CampaignReportTableCard } from '@/features/campaign-report/components'
+import {
+  CampaignReportDetailTab,
+  CampaignReportTableCard,
+  CampaignReportWorkspaceTabs,
+  type CampaignReportWorkspaceTab,
+} from '@/features/campaign-report/components'
 import type {
   CampaignReportFilterParams,
   CampaignReportFiltersResponse,
@@ -23,8 +27,13 @@ import type { DateRangeValue } from '@/components/ui/date-range-picker-presets'
 import { formatApiError } from '@/features/settings/components'
 import { useAuthStore } from '@/hooks/useAuthStore'
 import { getUserRole } from '@/constants/role'
+import dayjs from '@/lib/dayjs'
 
 type FilterOptions = CampaignReportFiltersResponse['data']
+
+type CampaignReportDetailWorkspaceTab = CampaignReportWorkspaceTab & {
+  initialFilters: CampaignReportFilterParams
+}
 
 const AUTO_REFETCH_INTERVAL_MS = 60_000
 
@@ -77,6 +86,47 @@ function buildUrlParams(filters: CampaignReportFilterParams): URLSearchParams {
   return params
 }
 
+function tabFiltersKey(campaignId: string): string {
+  return `cr_tab_${campaignId}`
+}
+
+function tabNameKey(campaignId: string): string {
+  return `cr_tab_name_${campaignId}`
+}
+
+function parseWorkspaceTabs(
+  params: URLSearchParams,
+  fallbackFilters: CampaignReportFilterParams,
+): CampaignReportDetailWorkspaceTab[] {
+  return (params.get('cr_tabs') ?? '')
+    .split(',')
+    .filter(Boolean)
+    .map((campaignId) => {
+      let storedFilters: CampaignReportFilterParams = fallbackFilters
+      const rawFilters = params.get(tabFiltersKey(campaignId))
+      if (rawFilters) {
+        try {
+          const parsed: unknown = JSON.parse(rawFilters)
+          if (parsed && typeof parsed === 'object') {
+            storedFilters = {
+              ...fallbackFilters,
+              ...(parsed as Partial<CampaignReportFilterParams>),
+            }
+          }
+        } catch {
+          // Ignore malformed workspace parameters and use the main report filters instead.
+        }
+      }
+
+      return {
+        id: campaignId,
+        campaignId,
+        campaignName: params.get(tabNameKey(campaignId)) ?? campaignId,
+        initialFilters: { ...storedFilters, campaign_ids: [campaignId] },
+      }
+    })
+}
+
 const EMPTY_OPTIONS: FilterOptions = {
   users: [],
   accounts: [],
@@ -114,15 +164,32 @@ export function CampaignReportPage() {
   const [filters, setFilters] = useState<CampaignReportFilterParams>(() =>
     parseFiltersFromUrl(searchParams),
   )
+  const [tabs, setTabs] = useState<CampaignReportDetailWorkspaceTab[]>(() =>
+    parseWorkspaceTabs(searchParams, parseFiltersFromUrl(searchParams)),
+  )
+  const [activeTabId, setActiveTabId] = useState(() => {
+    const activeTab = searchParams.get('cr_active')
+    return activeTab && tabs.some((tab) => tab.id === activeTab) ? activeTab : 'home'
+  })
+  const activeDetailTab = tabs.find((tab) => tab.id === activeTabId)
 
-  const isMounted = useRef(false)
   useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true
-      return
-    }
-    setSearchParams(buildUrlParams(filters), { replace: true })
-  }, [filters, setSearchParams])
+    setSearchParams(
+      (current) => {
+        const activeFilters =
+          activeTabId === 'home' ? filters : (activeDetailTab?.initialFilters ?? filters)
+        const next = buildUrlParams(activeFilters)
+        if (tabs.length) next.set('cr_tabs', tabs.map((tab) => tab.id).join(','))
+        if (activeTabId !== 'home') next.set('cr_active', activeTabId)
+        tabs.forEach((tab) => {
+          next.set(tabFiltersKey(tab.id), JSON.stringify(tab.initialFilters))
+          next.set(tabNameKey(tab.id), tab.campaignName)
+        })
+        return next.toString() === current.toString() ? current : next
+      },
+      { replace: true },
+    )
+  }, [activeDetailTab, activeTabId, filters, setSearchParams, tabs])
 
   const user = useAuthStore((s) => s.user)
   const userPermissions = useMemo(() => user?.permissions ?? [], [user?.permissions])
@@ -136,6 +203,7 @@ export function CampaignReportPage() {
   const [rowCount, setRowCount] = useState(0)
   const [grandSummary, setGrandSummary] = useState<CampaignReportSummary | null>(null)
   const [loading, setLoading] = useState(false)
+  const latestLoadId = useRef(0)
 
   useEffect(() => {
     let cancelled = false
@@ -156,34 +224,38 @@ export function CampaignReportPage() {
   const loadData = useCallback(
     async (activeFilters: CampaignReportFilterParams, options?: { showLoading?: boolean }) => {
       const showLoading = options?.showLoading ?? true
+      const loadId = ++latestLoadId.current
 
       try {
         if (showLoading) setLoading(true)
         const { data }: { data: CampaignReportListResponse } =
           await campaignReportApi.list(activeFilters)
+        if (loadId !== latestLoadId.current) return
         setRows(data.data)
         setRowCount(data.pagination.total)
         setGrandSummary(data.grand_summary)
       } catch (err) {
-        if (showLoading) toast.error(formatApiError(err))
+        if (showLoading && loadId === latestLoadId.current) toast.error(formatApiError(err))
       } finally {
-        if (showLoading) setLoading(false)
+        if (showLoading && loadId === latestLoadId.current) setLoading(false)
       }
     },
     [],
   )
 
   useEffect(() => {
+    if (activeTabId !== 'home') return
     void loadData(filters)
-  }, [loadData, filters])
+  }, [activeTabId, loadData, filters])
 
   useEffect(() => {
+    if (activeTabId !== 'home') return
     const interval = window.setInterval(() => {
       void loadData(filters, { showLoading: false })
     }, AUTO_REFETCH_INTERVAL_MS)
 
     return () => window.clearInterval(interval)
-  }, [loadData, filters])
+  }, [activeTabId, loadData, filters])
 
   const onToggleCampaignStatus = useCallback(async (campaignId: string, checked: boolean) => {
     const next: 'ACTIVE' | 'PAUSED' = checked ? 'ACTIVE' : 'PAUSED'
@@ -244,6 +316,55 @@ export function CampaignReportPage() {
         order: order ?? undefined,
         page: 1,
       }))
+    },
+    [],
+  )
+
+  const onOpenCampaign = useCallback(
+    (campaign: CampaignReportRow) => {
+      const tabId = campaign.campaign_id
+      setTabs((previous) => {
+        if (previous.some((tab) => tab.id === tabId)) return previous
+        return [
+          ...previous,
+          {
+            id: tabId,
+            campaignId: campaign.campaign_id,
+            campaignName: campaign.campaign_name ?? campaign.campaign_id,
+            initialFilters: { ...filters, campaign_ids: [campaign.campaign_id], page: 1 },
+          },
+        ]
+      })
+      setActiveTabId(tabId)
+    },
+    [filters],
+  )
+
+  const onActivateTab = useCallback((tabId: string) => {
+    setActiveTabId(tabId)
+
+    if (tabId !== 'home') return
+
+    setFilters((previous) => {
+      if (!previous.campaign_ids?.length) return previous
+      return { ...previous, campaign_ids: [], page: 1 }
+    })
+  }, [])
+
+  const onCloseTab = useCallback(
+    (tabId: string) => {
+      setTabs((previous) => previous.filter((tab) => tab.id !== tabId))
+      if (activeTabId !== tabId) return
+      onActivateTab('home')
+    },
+    [activeTabId, onActivateTab],
+  )
+
+  const onTabFiltersChange = useCallback(
+    (tabId: string, nextFilters: CampaignReportFilterParams) => {
+      setTabs((previous) =>
+        previous.map((tab) => (tab.id === tabId ? { ...tab, initialFilters: nextFilters } : tab)),
+      )
     },
     [],
   )
@@ -332,29 +453,70 @@ export function CampaignReportPage() {
     [filters, userOptions, accountOptions, adsTypeOptions, campaignOptions, role],
   )
 
-  return (
-    <div className="flex flex-col gap-6">
-      <FilterPanel
-        fields={filterFields}
-        onReset={onResetFilters}
-        applyMode
-        onApply={onApplyFilters}
-      />
+  const activeDetailTabId = activeDetailTab?.id
+  const onActiveTabFiltersChange = useCallback(
+    (nextFilters: CampaignReportFilterParams) => {
+      if (!activeDetailTabId) return
+      onTabFiltersChange(activeDetailTabId, nextFilters)
+    },
+    [activeDetailTabId, onTabFiltersChange],
+  )
+  const workspaceTabs = (
+    <CampaignReportWorkspaceTabs
+      activeTabId={activeTabId}
+      tabs={tabs}
+      onActivateTab={onActivateTab}
+      onCloseTab={onCloseTab}
+    />
+  )
 
-      <CampaignReportTableCard
-        data={rows}
-        rowCount={rowCount}
-        loading={loading}
-        filters={filters}
-        filterOptions={options}
-        summary={grandSummary}
-        toggling={toggling}
-        userPermissions={userPermissions}
-        onPaginationChange={onPaginationChange}
-        onSortingChange={onSortingChange}
-        onToggleCampaignStatus={handleToggleCampaignStatus}
-        role={role}
-      />
-    </div>
+  return (
+    <section className="h-[calc(100dvh-4.5rem)] min-h-0 md:h-[calc(100dvh-2rem)]">
+      {activeTabId === 'home' ? (
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="mb-4 shrink-0">
+            <FilterPanel
+              fields={filterFields}
+              onReset={onResetFilters}
+              applyMode
+              onApply={onApplyFilters}
+            />
+          </div>
+          <div className="shrink-0">{workspaceTabs}</div>
+
+          <div className="min-h-0 flex-1">
+            <CampaignReportTableCard
+              data={rows}
+              rowCount={rowCount}
+              loading={loading}
+              filters={filters}
+              filterOptions={options}
+              summary={grandSummary}
+              toggling={toggling}
+              userPermissions={userPermissions}
+              onPaginationChange={onPaginationChange}
+              onSortingChange={onSortingChange}
+              onToggleCampaignStatus={handleToggleCampaignStatus}
+              onOpenCampaign={onOpenCampaign}
+              role={role}
+            />
+          </div>
+        </div>
+      ) : (
+        activeDetailTab && (
+          <CampaignReportDetailTab
+            key={activeDetailTab.id}
+            campaignId={activeDetailTab.campaignId}
+            initialFilters={activeDetailTab.initialFilters}
+            filterOptions={options}
+            userPermissions={userPermissions}
+            role={role}
+            onOpenCampaign={onOpenCampaign}
+            onFiltersChange={onActiveTabFiltersChange}
+            workspaceTabs={workspaceTabs}
+          />
+        )
+      )}
+    </section>
   )
 }

@@ -178,6 +178,21 @@
   overflow: hidden !important;
 }
 
+/* Campaign report tabs sit directly above this toolbar, so its top edge stays square. */
+.mantine-Paper-root.campaign-report-table-paper {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  display: flex !important;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.campaign-report-table-paper .campaign-report-table-container {
+  min-height: 0;
+  flex: 1 1 0%;
+}
+
 /* Top toolbar (search + action buttons row) */
 .mantine-Paper-root > div:first-child {
   background-color: var(--card) !important;
@@ -471,9 +486,12 @@
   html {
     @apply font-sans;
     font-size: 16px;
-    color-scheme: light dark;
+    color-scheme: light;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+  }
+  html.dark {
+    color-scheme: dark;
   }
 }

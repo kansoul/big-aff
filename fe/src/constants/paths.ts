@@ -6,7 +6,6 @@ export const PATHS = {
   root: '/',
   login: '/login',
   dashboard: '/dashboard',
-  newCampaign: '/new-campaign',
   media: '/media',
   settingsUsers: '/users',
   settingsRoles: '/roles',
