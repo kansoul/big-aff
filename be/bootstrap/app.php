@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureAppUser;
 use App\Http\Middleware\EnsureMainSystem;
 use App\Http\Middleware\EnsurePermissionScope;
+use App\Http\Middleware\EnsureRevenuePostbackKey;
 use App\Http\Middleware\PruneExpiredToken;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Foundation\Application;
@@ -40,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ensure.app.user' => EnsureAppUser::class,
             'ensure.main-system' => EnsureMainSystem::class,
             'check.whitelist' => CheckWhitelist::class,
+            'revenue.postback.key' => EnsureRevenuePostbackKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

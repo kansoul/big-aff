@@ -121,7 +121,7 @@ class GetAdsReportStatsAction
                 $revenueQuery->whereDate('revenue_reports.created_at', '<=', $dateTo);
             }
 
-            $totalRevenue = (float) $revenueQuery->sum('estimate_earning');
+            $totalRevenue = (float) $revenueQuery->sum('revenue_reports.revenue');
             $profit = $totalRevenue - $totalSpend;
         }
 

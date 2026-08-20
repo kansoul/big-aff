@@ -14,20 +14,9 @@ export type RevenueReportOrderBy =
   | 'campaign_id'
   | 'adset_id'
   | 'ad_id'
-  | 'click_id'
-  | 'estimate_earning'
-  | 'page_views'
-  | 'clicks'
-  | 'ad_requests'
-  | 'impressions'
-  | 'ad_requests_rpm'
-  | 'impressions_rpm'
-  | 'cost_per_click'
-  | 'funnel_requests'
-  | 'funnel_impressions'
-  | 'funnel_clicks'
-  | 'funnel_rpm'
+  | 'revenue'
   | 'created_at'
+  | 'revenue_received_at'
 
 export type RevenueReportOrder = 'asc' | 'desc'
 
@@ -43,36 +32,14 @@ export interface RevenueReportRow {
   campaign_id: string
   adset_id: string | null
   ad_id: string | null
-  click_id: number
-  estimate_earning: number
-  page_views: number | null
-  clicks: number | null
-  ad_requests: number | null
-  impressions: number | null
-  ad_requests_rpm: number | null
-  impressions_rpm: number | null
-  cost_per_click: number | null
-  funnel_requests: number | null
-  funnel_impressions: number | null
-  funnel_clicks: number | null
-  funnel_rpm: number | null
+  revenue: number
+  revenue_received_at: string | null
   created_at: string
   updated_at: string
 }
 
 export interface RevenueReportSummary {
-  estimate_earning: number
-  page_views: number
-  clicks: number
-  ad_requests: number
-  impressions: number
-  ad_requests_rpm: number
-  impressions_rpm: number
-  cost_per_click: number
-  funnel_requests: number
-  funnel_impressions: number
-  funnel_clicks: number
-  funnel_rpm: number
+  revenue: number
 }
 
 export interface RevenueReportPagination {

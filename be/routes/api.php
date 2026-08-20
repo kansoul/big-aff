@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\MainTeamController;
 use App\Http\Controllers\Api\OptionController;
 use App\Http\Controllers\Api\PixelController;
 use App\Http\Controllers\Api\RevenueChartReportController;
+use App\Http\Controllers\Api\RevenuePostbackController;
 use App\Http\Controllers\Api\RevenueReportController;
 use App\Http\Controllers\Api\RevenueReportRangeController;
 use App\Http\Controllers\Api\RevenueStatsController;
@@ -37,6 +38,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/switch', [AuthController::class, 'switch']);
+
+Route::get('/revenue/postback', RevenuePostbackController::class)
+    ->middleware('revenue.postback.key');
 
 Route::middleware('check.whitelist')->group(function () {
     Route::post('/tracking/log', [TrackingController::class, 'storeLog']);

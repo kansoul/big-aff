@@ -185,14 +185,14 @@ class CampaignReportSyncService
             ->where('campaign_id', $insightReport->campaign_id)
             ->whereDate('created_at', $date)
             ->selectRaw('
-                COALESCE(SUM(page_views), 0) AS search_views,
-                COALESCE(SUM(clicks), 0) AS conversions,
-                COALESCE(SUM(estimate_earning), 0) AS revenue,
-                COALESCE(SUM(ad_requests), 0) AS ad_requests,
-                COALESCE(SUM(impressions), 0) AS impressions,
-                COALESCE(SUM(funnel_requests), 0) AS funnel_requests,
-                COALESCE(SUM(funnel_clicks), 0) AS funnel_clicks,
-                COALESCE(SUM(funnel_impressions), 0) AS funnel_impressions
+                0 AS search_views,
+                0 AS conversions,
+                COALESCE(SUM(revenue), 0) AS revenue,
+                0 AS ad_requests,
+                0 AS impressions,
+                0 AS funnel_requests,
+                0 AS funnel_clicks,
+                0 AS funnel_impressions
             ')
             ->first();
         $revenue = (float) ($revenueData->revenue ?? 0);

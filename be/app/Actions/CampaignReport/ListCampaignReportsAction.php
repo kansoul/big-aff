@@ -54,17 +54,10 @@ class ListCampaignReportsAction
     public function execute(array $filters): LengthAwarePaginator
     {
         $revenueBySession = DB::table('revenue_reports')
-            ->selectRaw('campaign_id, adset_id, ad_id, session_id, MAX(click_id) AS click_id,
+            ->selectRaw('campaign_id, MAX(adset_id) AS adset_id, MAX(ad_id) AS ad_id, MAX(session_id) AS session_id,
                 DATE(created_at) AS revenue_date,
-                SUM(estimate_earning) AS estimate_earning,
-                SUM(page_views) AS search_views,
-                SUM(clicks) AS conversions,
-                SUM(ad_requests) AS ad_requests,
-                SUM(impressions) AS impressions,
-                SUM(funnel_requests) AS funnel_requests,
-                SUM(funnel_clicks) AS funnel_clicks,
-                SUM(funnel_impressions) AS funnel_impressions')
-            ->groupBy('campaign_id', 'adset_id', 'ad_id', 'session_id', DB::raw('DATE(created_at)'));
+                SUM(revenue) AS revenue')
+            ->groupBy('campaign_id', DB::raw('DATE(created_at)'));
 
         $query = $this->buildBaseQuery($filters)
             ->leftJoin('realtime_reports as rt', 'rt.id', '=', 'campaign_reports.realtime_report_id')
@@ -85,26 +78,25 @@ class ListCampaignReportsAction
                 DB::raw('revenue_totals.adset_id as adset_id'),
                 DB::raw('revenue_totals.ad_id as ad_id'),
                 DB::raw('revenue_totals.session_id as session_id'),
-                DB::raw('revenue_totals.click_id as click_id'),
                 DB::raw('COALESCE(ir.spend, 0) as a_spend'),
                 DB::raw('COALESCE(ir.clicks, 0) as a_clicks'),
                 DB::raw('COALESCE(ir.search_clicks, 0) as a_conversion'),
-                DB::raw('COALESCE(revenue_totals.estimate_earning, 0) as estimate_earning'),
-                DB::raw('COALESCE(revenue_totals.search_views, 0) as r_search_views'),
-                DB::raw('COALESCE(revenue_totals.conversions, 0) as r_conversion'),
-                DB::raw('COALESCE(revenue_totals.estimate_earning, 0) as r_revenue'),
-                DB::raw('IF(COALESCE(revenue_totals.conversions, 0) > 0, revenue_totals.estimate_earning / revenue_totals.conversions, 0) as r_rpc'),
-                DB::raw('COALESCE(revenue_totals.ad_requests, 0) as r_ad_requests'),
-                DB::raw('IF(COALESCE(revenue_totals.ad_requests, 0) > 0, revenue_totals.estimate_earning / revenue_totals.ad_requests * 1000, 0) as r_ad_requests_rpm'),
-                DB::raw('COALESCE(revenue_totals.impressions, 0) as r_impressions'),
-                DB::raw('IF(COALESCE(revenue_totals.impressions, 0) > 0, revenue_totals.estimate_earning / revenue_totals.impressions * 1000, 0) as r_impressions_rpm'),
-                DB::raw('COALESCE(revenue_totals.funnel_requests, 0) as r_funnel_requests'),
-                DB::raw('COALESCE(revenue_totals.funnel_clicks, 0) as r_funnel_clicks'),
-                DB::raw('COALESCE(revenue_totals.funnel_impressions, 0) as r_funnel_impressions'),
-                DB::raw('IF(COALESCE(revenue_totals.funnel_impressions, 0) > 0, revenue_totals.estimate_earning / revenue_totals.funnel_impressions * 1000, 0) as r_funnel_rpm'),
-                DB::raw('IF(COALESCE(revenue_totals.conversions, 0) > 0, COALESCE(ir.spend, 0) / revenue_totals.conversions, 0) as r_cpa'),
-                DB::raw('COALESCE(revenue_totals.estimate_earning, 0) - COALESCE(ir.spend, 0) as profit'),
-                DB::raw('IF(COALESCE(ir.spend, 0) > 0, (COALESCE(revenue_totals.estimate_earning, 0) - COALESCE(ir.spend, 0)) / COALESCE(ir.spend, 0) * 100, 0) as roi'),
+                DB::raw('COALESCE(revenue_totals.revenue, 0) as estimate_earning'),
+                DB::raw('0 as r_search_views'),
+                DB::raw('0 as r_conversion'),
+                DB::raw('COALESCE(revenue_totals.revenue, 0) as r_revenue'),
+                DB::raw('0 as r_rpc'),
+                DB::raw('0 as r_ad_requests'),
+                DB::raw('0 as r_ad_requests_rpm'),
+                DB::raw('0 as r_impressions'),
+                DB::raw('0 as r_impressions_rpm'),
+                DB::raw('0 as r_funnel_requests'),
+                DB::raw('0 as r_funnel_clicks'),
+                DB::raw('0 as r_funnel_impressions'),
+                DB::raw('0 as r_funnel_rpm'),
+                DB::raw('0 as r_cpa'),
+                DB::raw('COALESCE(revenue_totals.revenue, 0) - COALESCE(ir.spend, 0) as profit'),
+                DB::raw('IF(COALESCE(ir.spend, 0) > 0, (COALESCE(revenue_totals.revenue, 0) - COALESCE(ir.spend, 0)) / COALESCE(ir.spend, 0) * 100, 0) as roi'),
                 DB::raw('IF(COALESCE(rt.lead_count, 0) > 0, COALESCE(ir.spend, 0) / rt.lead_count, NULL) as rt_cpa'),
                 DB::raw('IF(COALESCE(rt.view_count, 0) > 0, COALESCE(rt.lead_count, 0) / rt.view_count * 100, NULL) as rt_ctr'),
             )

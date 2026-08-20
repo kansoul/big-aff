@@ -134,7 +134,7 @@ class EvaluateAdAdsetRuleAction
         return (float) RevenueReport::query()
             ->where('campaign_id', $campaignId)
             ->whereDate('created_at', $date)
-            ->average('estimate_earning');
+            ->average('revenue');
     }
 
     /**

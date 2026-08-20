@@ -103,9 +103,9 @@ class GetRevenueTableAction
             ->whereNotNull('revenue_campaigns.created_by')
             ->selectRaw('
                 revenue_campaigns.created_by as user_id,
-                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN estimate_earning ELSE 0 END), 0) as daily_revenue,
-                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN estimate_earning ELSE 0 END), 0) as yesterday_revenue,
-                COALESCE(SUM(estimate_earning), 0) as monthly_revenue
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN revenue_reports.revenue ELSE 0 END), 0) as daily_revenue,
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN revenue_reports.revenue ELSE 0 END), 0) as yesterday_revenue,
+                COALESCE(SUM(revenue_reports.revenue), 0) as monthly_revenue
             ', [$today, $yesterday])
             ->groupBy('revenue_campaigns.created_by');
 
@@ -397,10 +397,10 @@ class GetRevenueTableAction
             ->groupBy('revenue_accounts.main_team_id')
             ->selectRaw('
                 revenue_accounts.main_team_id as main_team_id,
-                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN estimate_earning ELSE 0 END), 0) as today_revenue,
-                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN estimate_earning ELSE 0 END), 0) as yesterday_revenue,
-                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) >= ? AND DATE(revenue_reports.created_at) <= ? THEN estimate_earning ELSE 0 END), 0) as this_month_revenue,
-                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) >= ? AND DATE(revenue_reports.created_at) <= ? THEN estimate_earning ELSE 0 END), 0) as last_month_revenue
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN revenue_reports.revenue ELSE 0 END), 0) as today_revenue,
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) = ? THEN revenue_reports.revenue ELSE 0 END), 0) as yesterday_revenue,
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) >= ? AND DATE(revenue_reports.created_at) <= ? THEN revenue_reports.revenue ELSE 0 END), 0) as this_month_revenue,
+                COALESCE(SUM(CASE WHEN DATE(revenue_reports.created_at) >= ? AND DATE(revenue_reports.created_at) <= ? THEN revenue_reports.revenue ELSE 0 END), 0) as last_month_revenue
             ', [$today, $yesterday, $thisMonthFrom, $thisMonthTo, $lastMonthFrom, $lastMonthTo])
             ->get()
             ->keyBy('main_team_id');

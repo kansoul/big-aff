@@ -31,7 +31,7 @@ class ListCampaignSelectorAction
     {
         $resource = new AccountLinkedOwnerResource;
         $revenueByCampaign = DB::table('revenue_reports')
-            ->selectRaw('campaign_id, DATE(created_at) as report_date, SUM(estimate_earning) as total_revenue')
+            ->selectRaw('campaign_id, DATE(created_at) as report_date, SUM(revenue) as total_revenue')
             ->groupBy('campaign_id', DB::raw('DATE(created_at)'));
 
         $query = CampaignReport::query()

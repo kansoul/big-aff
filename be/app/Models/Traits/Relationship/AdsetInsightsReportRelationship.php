@@ -75,7 +75,7 @@ trait AdsetInsightsReportRelationship
     public static function rpcEstSubquery(): Builder
     {
         return RevenueReport::query()
-            ->selectRaw('AVG(estimate_earning)')
+            ->selectRaw('AVG(revenue)')
             ->whereColumn('revenue_reports.campaign_id', 'adset_insights_reports.campaign_id')
             ->whereRaw('DATE(revenue_reports.created_at) <= adset_insights_reports.date_start');
     }

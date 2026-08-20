@@ -100,7 +100,7 @@ class GetInsightChartAction
             (float) $this->revenueBaseQuery()
                 ->whereDate('created_at', '>=', $from)
                 ->whereDate('created_at', '<=', $to)
-                ->sum('estimate_earning'),
+                ->sum('revenue'),
             2,
         );
     }

@@ -37,14 +37,7 @@ class CampaignReportService
     {
         $revenueByCampaignDate = DB::table('revenue_reports')
             ->selectRaw('campaign_id, DATE(created_at) AS revenue_date,
-                SUM(estimate_earning) AS estimate_earning,
-                SUM(page_views) AS search_views,
-                SUM(clicks) AS conversions,
-                SUM(ad_requests) AS ad_requests,
-                SUM(impressions) AS impressions,
-                SUM(funnel_requests) AS funnel_requests,
-                SUM(funnel_clicks) AS funnel_clicks,
-                SUM(funnel_impressions) AS funnel_impressions')
+                SUM(revenue) AS revenue')
             ->groupBy('campaign_id', DB::raw('DATE(created_at)'));
 
         $row = $this->listCampaignReportsAction->buildBaseQuery($filters)
@@ -61,15 +54,15 @@ class CampaignReportService
             })
             ->selectRaw('
                 COUNT(*) AS record_count,
-                COALESCE(SUM(revenue_summary.estimate_earning), 0) AS estimate_earning,
-                COALESCE(SUM(revenue_summary.search_views), 0) AS r_search_views,
-                COALESCE(SUM(revenue_summary.conversions), 0) AS r_conversion,
-                COALESCE(SUM(revenue_summary.estimate_earning), 0) AS r_revenue,
-                COALESCE(SUM(revenue_summary.ad_requests), 0) AS r_ad_requests,
-                COALESCE(SUM(revenue_summary.impressions), 0) AS r_impressions,
-                COALESCE(SUM(revenue_summary.funnel_requests), 0) AS r_funnel_requests,
-                COALESCE(SUM(revenue_summary.funnel_clicks), 0) AS r_funnel_clicks,
-                COALESCE(SUM(revenue_summary.funnel_impressions), 0) AS r_funnel_impressions,
+                COALESCE(SUM(revenue_summary.revenue), 0) AS estimate_earning,
+                0 AS r_search_views,
+                0 AS r_conversion,
+                COALESCE(SUM(revenue_summary.revenue), 0) AS r_revenue,
+                0 AS r_ad_requests,
+                0 AS r_impressions,
+                0 AS r_funnel_requests,
+                0 AS r_funnel_clicks,
+                0 AS r_funnel_impressions,
                 COALESCE(SUM(ir_summary.spend), 0) AS a_spend,
                 COALESCE(SUM(rt_summary.lead_count), 0) AS rt_lead_count,
                 COALESCE(SUM(rt_summary.next_step_count), 0) AS rt_next_step_count,

@@ -121,6 +121,7 @@ class SaveTrackingLogJob implements ShouldQueue
                 'adset_id' => $this->logData['adset_id'] ?? null,
                 'ad_id' => $this->logData['ad_id'] ?? null,
                 'revenue' => 0,
+                'created_at' => $this->logData['created_at'] ?? now(),
             ],
         );
     }

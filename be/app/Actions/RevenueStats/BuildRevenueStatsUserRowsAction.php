@@ -139,7 +139,7 @@ class BuildRevenueStatsUserRowsAction
                 fn ($q) => $q->whereDate('revenue_reports.created_at', '<=', Carbon::parse($filters['date_to'])->toDateString())
             )
             ->whereNotNull('revenue_campaigns.created_by')
-            ->selectRaw('revenue_campaigns.created_by as user_id, COALESCE(SUM(estimate_earning), 0) as revenue')
+            ->selectRaw('revenue_campaigns.created_by as user_id, COALESCE(SUM(revenue_reports.revenue), 0) as revenue')
             ->groupBy('revenue_campaigns.created_by');
 
         $ownership = OwnershipFilter::forAuthUser();

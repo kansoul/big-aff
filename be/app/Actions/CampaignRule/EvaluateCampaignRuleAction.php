@@ -161,7 +161,7 @@ class EvaluateCampaignRuleAction
         $revenue = (float) RevenueReport::query()
             ->where('campaign_id', $report->campaign_id)
             ->whereDate('created_at', $date)
-            ->sum('estimate_earning');
+            ->sum('revenue');
         $profit = $revenue - $spend;
         $roi = $spend > 0 ? ($profit / $spend) * 100 : 0.0;
 
