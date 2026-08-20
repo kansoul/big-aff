@@ -24,10 +24,9 @@ import { useIsMobile } from '@/hooks/useMobile'
 import { cn } from '@/lib/utils'
 
 const FIELDS: Array<{ field: ConversionField; header: string }> = [
-  { field: 'article_view', header: 'Article View' },
-  { field: 'rsu_click', header: 'RSU Click' },
-  { field: 'search_view', header: 'Search View' },
-  { field: 'search_click', header: 'Search Click' },
+  { field: 'page_view', header: 'Page View' },
+  { field: 'redirect', header: 'Redirect' },
+  { field: 'submit_form', header: 'Submit Form' },
 ]
 
 type Props = {

@@ -24,8 +24,9 @@ type ImportBulkDialogProps = {
 }
 
 const PLACEHOLDER = `Customer ID|Tên Conversion|Conversion ID
-706-350-4758|OutboundClickU|7530496784
-706-350-4758|Purchase|1234567890`
+706-350-4758|page_view|7530496784
+706-350-4758|redirect|7530496785
+706-350-4758|submit_form|7530496786`
 
 export function ImportBulkDialog({ open, onOpenChange, onSuccess }: ImportBulkDialogProps) {
   const [lines, setLines] = useState('')

@@ -51,7 +51,8 @@ Schedule::command('campaigns:run-schedules')
     ->withoutOverlapping(30)
     ->everyFiveMinutes();
 
-// Schedule::command('google-ads:sync-conversions')
-//     ->hourly()
-//     ->name('sync-google-conversions')
-//     ->withoutOverlapping(30);
+Schedule::command('google-ads:sync-conversions')
+    ->hourly()
+    ->name('sync-google-conversions')
+    ->withoutOverlapping(30)
+    ->onOneServer();

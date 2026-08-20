@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Actions\Tracking\ResolveAdsConversionRpcAction;
 use App\Enums\AdsConversionType;
 use App\Models\Account;
 use App\Models\AdsConversion;
@@ -36,12 +35,11 @@ class SyncGoogleConversions extends Command
     {
         $accountCache = [];
         $googleAdsConversionSyncService = app(GoogleAdsConversionSyncService::class);
-        $resolveRpc = app(ResolveAdsConversionRpcAction::class);
 
         AdsConversion::query()
             ->where('type', AdsConversionType::GOOGLE)
             ->whereNull('synced_at')
-            ->chunkById(self::BATCH_SIZE, function ($chunk) use (&$accountCache, $googleAdsConversionSyncService, $resolveRpc) {
+            ->chunkById(self::BATCH_SIZE, function ($chunk) use (&$accountCache, $googleAdsConversionSyncService) {
                 $grouped = $chunk->groupBy('account_id');
 
                 foreach ($grouped as $accountId => $records) {
@@ -62,10 +60,9 @@ class SyncGoogleConversions extends Command
                         $conversion = $account->conversion;
 
                         $mapping = [
-                            'OutboundClick' => $conversion->search_click,
-                            'ArticleView' => $conversion->article_view,
-                            'Redirect' => $conversion->rsu_click,
-                            'SearchView' => $conversion->search_view,
+                            'page_view' => $conversion->page_view,
+                            'redirect' => $conversion->redirect,
+                            'submit_form' => $conversion->submit_form,
                         ];
 
                         $validRecords = $records->map(function ($record) use ($accountId, $mapping) {
@@ -85,49 +82,14 @@ class SyncGoogleConversions extends Command
                             continue;
                         }
 
-                        $roasEnabled = $account->roas_enabled;
-
-                        $validRecords = $validRecords->filter(function ($record) use ($resolveRpc, $roasEnabled) {
-                            if (! $roasEnabled) {
-                                $record->resolved_conversion_value = 0;
-
-                                return true;
-                            }
-
-                            $conversionValue = $record->conversion_value;
-
-                            if (! $conversionValue || (float) $conversionValue <= 0) {
-                                $conversionValue = $resolveRpc->execute(
-                                    $record->campaign_id,
-                                    $record->created_at,
-                                );
-
-                                if (! $conversionValue || (float) $conversionValue <= 0) {
-                                    return false;
-                                }
-
-                                AdsConversion::where('id', $record->id)->update(['conversion_value' => $conversionValue]);
-                            }
-
-                            $record->resolved_conversion_value = $conversionValue;
-
-                            return true;
-                        })->values();
-
-                        if ($validRecords->isEmpty()) {
-                            continue;
-                        }
-
                         $adRevenuesPayload = $validRecords->map(function ($record) {
-                            $conversionValue = $record->resolved_conversion_value;
-
                             return [
                                 'gclid' => $record->gclid,
                                 'wbraid' => $record->wbraid,
                                 'gbraid' => $record->gbraid,
                                 'conversion_action_resource_name' => $record->real_resource_name,
-                                'conversion_value' => $conversionValue,
-                                'currency_code' => $conversionValue ? ($record->currency_code ?: 'USD') : $record->currency_code,
+                                'conversion_value' => $record->conversion_value,
+                                'currency_code' => $record->currency_code ?: 'USD',
                                 'conversion_date_time' => $record->conversion_date_time,
                             ];
                         })->toArray();

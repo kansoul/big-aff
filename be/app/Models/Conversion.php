@@ -12,9 +12,8 @@ class Conversion extends Model
 
     protected $fillable = [
         'account_id',
-        'article_view',
-        'rsu_click',
-        'search_view',
-        'search_click',
+        'page_view',
+        'redirect',
+        'submit_form',
     ];
 }

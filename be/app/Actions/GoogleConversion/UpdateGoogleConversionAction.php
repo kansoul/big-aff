@@ -8,10 +8,9 @@ use App\Support\OwnerResource\AccountOwnerResource;
 class UpdateGoogleConversionAction
 {
     private const CONVERSION_FIELDS = [
-        'article_view',
-        'rsu_click',
-        'search_view',
-        'search_click',
+        'page_view',
+        'redirect',
+        'submit_form',
     ];
 
     /**

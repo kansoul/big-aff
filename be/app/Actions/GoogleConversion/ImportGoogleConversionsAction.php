@@ -12,10 +12,9 @@ class ImportGoogleConversionsAction
      * @var array<string, string>
      */
     private const CONVERSION_MAPPING = [
-        'OutboundClickU' => 'search_click',
-        'ArticleViewU' => 'article_view',
-        'SearchViewU' => 'search_view',
-        'RSUClickU' => 'rsu_click',
+        'page_view' => 'page_view',
+        'redirect' => 'redirect',
+        'submit_form' => 'submit_form',
     ];
 
     /**

@@ -111,20 +111,13 @@ export function GoogleConversionsPage() {
       const saved = original.conversion
       return {
         account_id: String(original.account_id),
-        article_view:
-          draft.article_view !== undefined
-            ? draft.article_view || null
-            : (saved?.article_view ?? null),
-        rsu_click:
-          draft.rsu_click !== undefined ? draft.rsu_click || null : (saved?.rsu_click ?? null),
-        search_view:
-          draft.search_view !== undefined
-            ? draft.search_view || null
-            : (saved?.search_view ?? null),
-        search_click:
-          draft.search_click !== undefined
-            ? draft.search_click || null
-            : (saved?.search_click ?? null),
+        page_view:
+          draft.page_view !== undefined ? draft.page_view || null : (saved?.page_view ?? null),
+        redirect: draft.redirect !== undefined ? draft.redirect || null : (saved?.redirect ?? null),
+        submit_form:
+          draft.submit_form !== undefined
+            ? draft.submit_form || null
+            : (saved?.submit_form ?? null),
       }
     })
 

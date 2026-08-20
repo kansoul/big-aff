@@ -1,12 +1,11 @@
 export type GoogleConversionOrderBy = 'id' | 'account_id' | 'account_name' | 'created_at'
 
-export type ConversionField = 'article_view' | 'rsu_click' | 'search_view' | 'search_click'
+export type ConversionField = 'page_view' | 'redirect' | 'submit_form'
 
 export interface GoogleConversionData {
-  article_view: string | null
-  rsu_click: string | null
-  search_view: string | null
-  search_click: string | null
+  page_view: string | null
+  redirect: string | null
+  submit_form: string | null
 }
 
 export interface GoogleConversion {
@@ -45,10 +44,9 @@ export interface GoogleConversionFilterParams {
 
 export interface GoogleConversionBulkUpdateRow {
   account_id: string
-  article_view?: string | null
-  rsu_click?: string | null
-  search_view?: string | null
-  search_click?: string | null
+  page_view?: string | null
+  redirect?: string | null
+  submit_form?: string | null
 }
 
 /** Map of rowId → per-field draft values (always strings; empty string represents null). */

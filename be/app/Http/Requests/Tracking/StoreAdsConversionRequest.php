@@ -45,8 +45,11 @@ class StoreAdsConversionRequest extends FormRequest
                 'required_without_all:gclid,wbraid,gbraid',
             ],
             'session_id' => ['nullable', 'string', 'max:255'],
-            'conversion_action_resource_name' => ['required', 'string'],
-            'conversion_value' => ['nullable', 'numeric'],
+            'conversion_action_resource_name' => [
+                'required',
+                Rule::in(['page_view', 'redirect', 'submit_form']),
+            ],
+            'conversion_value' => ['required', 'numeric', 'min:0'],
             'currency_code' => ['nullable', 'string'],
         ];
     }

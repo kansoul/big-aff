@@ -68,7 +68,7 @@ class GoogleAdsConversionSyncService
                 }
 
                 $conversion->setConversionAction($adRevenue['conversion_action_resource_name']);
-                if ($adRevenue['conversion_value']) {
+                if ($adRevenue['conversion_value'] !== null) {
                     $conversion->setConversionValue((float) $adRevenue['conversion_value']);
                 }
                 if ($adRevenue['currency_code']) {
@@ -132,7 +132,7 @@ class GoogleAdsConversionSyncService
 
             return array_unique($failedIndices);
         } catch (Exception $e) {
-            Log::error('Error syncing Ad Revenue to Google Ads: ' . $e->getMessage());
+            Log::error('Error syncing Ad Revenue to Google Ads: '.$e->getMessage());
 
             return null;
         }

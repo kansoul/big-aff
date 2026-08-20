@@ -18,10 +18,9 @@ class UpdateGoogleConversionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'article_view' => ['nullable', 'string', 'max:255'],
-            'rsu_click' => ['nullable', 'string', 'max:255'],
-            'search_view' => ['nullable', 'string', 'max:255'],
-            'search_click' => ['nullable', 'string', 'max:255'],
+            'page_view' => ['nullable', 'string', 'max:255'],
+            'redirect' => ['nullable', 'string', 'max:255'],
+            'submit_form' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

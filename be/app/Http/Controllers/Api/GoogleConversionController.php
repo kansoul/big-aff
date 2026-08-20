@@ -31,7 +31,7 @@ class GoogleConversionController extends BaseController
      * @queryParam per_page integer Items per page (max 100). Example: 15
      * @queryParam page integer Page number. Example: 1
      *
-     * @response 200 {"data": [{"id": 1, "account_id": "706-350-4758", "account_name": "My Google Account", "conversion": {"article_view": "111", "rsu_click": "222", "search_view": "333", "search_click": "444"}}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
+     * @response 200 {"data": [{"id": 1, "account_id": "706-350-4758", "account_name": "My Google Account", "conversion": {"page_view": "111", "redirect": "222", "submit_form": "333"}}], "pagination": {"total": 1, "per_page": 15, "current_page": 1, "last_page": 1}}
      */
     public function index(ListGoogleConversionsRequest $request): JsonResponse
     {
@@ -50,12 +50,11 @@ class GoogleConversionController extends BaseController
      *
      * @urlParam account integer required The account ID. Example: 1
      *
-     * @bodyParam article_view string optional Article view conversion ID. Example: 7530496784
-     * @bodyParam rsu_click string optional RSU click conversion ID. Example: 7530496785
-     * @bodyParam search_view string optional Search view conversion ID. Example: 7530496786
-     * @bodyParam search_click string optional Search click conversion ID. Example: 7530496787
+     * @bodyParam page_view string optional Page view conversion ID. Example: 7530496784
+     * @bodyParam redirect string optional Redirect conversion ID. Example: 7530496785
+     * @bodyParam submit_form string optional Submit form conversion ID. Example: 7530496786
      *
-     * @response 200 {"data": {"id": 1, "account_id": "706-350-4758", "account_name": "My Google Account", "conversion": {"article_view": "7530496784", "rsu_click": "7530496785", "search_view": "7530496786", "search_click": "7530496787"}}}
+     * @response 200 {"data": {"id": 1, "account_id": "706-350-4758", "account_name": "My Google Account", "conversion": {"page_view": "7530496784", "redirect": "7530496785", "submit_form": "7530496786"}}}
      * @response 403 {"message": "This action is unauthorized."}
      * @response 404 {"message": "No query results for model [App\\Models\\Account] 1"}
      */
@@ -73,10 +72,9 @@ class GoogleConversionController extends BaseController
      *
      * @bodyParam rows array required Array of conversion rows.
      * @bodyParam rows[].account_id integer required The account ID. Example: 1
-     * @bodyParam rows[].article_view string optional Article view conversion ID. Example: 7530496784
-     * @bodyParam rows[].rsu_click string optional RSU click conversion ID. Example: 7530496785
-     * @bodyParam rows[].search_view string optional Search view conversion ID. Example: 7530496786
-     * @bodyParam rows[].search_click string optional Search click conversion ID. Example: 7530496787
+     * @bodyParam rows[].page_view string optional Page view conversion ID. Example: 7530496784
+     * @bodyParam rows[].redirect string optional Redirect conversion ID. Example: 7530496785
+     * @bodyParam rows[].submit_form string optional Submit form conversion ID. Example: 7530496786
      *
      * @response 200 {"data": {"message": "Conversions saved successfully"}}
      */
@@ -92,9 +90,9 @@ class GoogleConversionController extends BaseController
      *
      * Parse and import conversion data from pipe-delimited text.
      * Each line format: `Customer ID|Conversion Name|Conversion ID`
-     * Supported conversion names: OutboundClickU, ArticleViewU, SearchViewU, RSUClickU
+     * Supported conversion names: page_view, redirect, submit_form
      *
-     * @bodyParam data string required Pipe-delimited conversion data. Example: "706-350-4758|OutboundClickU|7530496784\n706-350-4758|ArticleViewU|7530496785"
+     * @bodyParam lines string required Pipe-delimited conversion data. Example: "706-350-4758|page_view|7530496784\n706-350-4758|redirect|7530496785"
      *
      * @response 200 {"data": {"processed": 2, "skipped": 0}}
      */

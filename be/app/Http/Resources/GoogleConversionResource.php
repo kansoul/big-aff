@@ -21,10 +21,9 @@ class GoogleConversionResource extends JsonResource
             'account_id' => $this->account_id,
             'account_name' => $this->account_name,
             'conversion' => $this->whenLoaded('conversion', fn () => [
-                'article_view' => $this->conversion?->article_view,
-                'rsu_click' => $this->conversion?->rsu_click,
-                'search_view' => $this->conversion?->search_view,
-                'search_click' => $this->conversion?->search_click,
+                'page_view' => $this->conversion?->page_view,
+                'redirect' => $this->conversion?->redirect,
+                'submit_form' => $this->conversion?->submit_form,
             ]),
         ];
     }

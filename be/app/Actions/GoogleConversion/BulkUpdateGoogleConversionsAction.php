@@ -9,10 +9,9 @@ use Illuminate\Support\Facades\DB;
 class BulkUpdateGoogleConversionsAction
 {
     private const CONVERSION_FIELDS = [
-        'article_view',
-        'rsu_click',
-        'search_view',
-        'search_click',
+        'page_view',
+        'redirect',
+        'submit_form',
     ];
 
     /**

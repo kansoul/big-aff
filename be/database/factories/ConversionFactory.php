@@ -29,10 +29,9 @@ class ConversionFactory extends Factory
 
                 return Account::factory()->create()->account_id;
             },
-            'article_view' => fake()->optional(0.8)->bothify('av_##########'),
-            'rsu_click' => fake()->optional(0.8)->bothify('rc_##########'),
-            'search_view' => fake()->optional(0.8)->bothify('sv_##########'),
-            'search_click' => fake()->optional(0.8)->bothify('sc_##########'),
+            'page_view' => fake()->optional(0.8)->bothify('pv_##########'),
+            'redirect' => fake()->optional(0.8)->bothify('rd_##########'),
+            'submit_form' => fake()->optional(0.8)->bothify('sf_##########'),
         ];
     }
 }
