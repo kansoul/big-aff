@@ -4,7 +4,6 @@ namespace App\Actions\Account;
 
 use App\Models\Account;
 use App\Support\Accounts\AccountsAccess;
-use App\Support\Gtag\GtagResolver;
 use App\Support\OwnerResource\AccountOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
@@ -12,10 +11,6 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateAccountAction
 {
-    public function __construct(
-        private readonly GtagResolver $gtagResolver = new GtagResolver,
-    ) {}
-
     /**
      * @param  array<string, mixed>  $data
      *
@@ -39,9 +34,6 @@ class UpdateAccountAction
 
         $data['updated_by'] = Auth::id();
         $account->update($data);
-
-        // gtag cache depends on ads_type + gtag_enabled, so invalidate on any account change.
-        $this->gtagResolver->forget($account->account_id);
 
         if ($userId !== false) {
             DB::table('account_user')->where('account_id', $account->id)->delete();

@@ -30,7 +30,6 @@ class StoreAccountRequest extends FormRequest
             'is_special' => ['nullable', 'boolean'],
             'sync_to_mcc' => ['nullable', 'boolean'],
             'roas_enabled' => ['nullable', 'boolean'],
-            'gtag_enabled' => ['nullable', 'boolean'],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
 
             'lines' => ['required', 'string'],

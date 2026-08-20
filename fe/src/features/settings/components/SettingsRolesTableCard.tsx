@@ -1,17 +1,16 @@
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import {
   MantineReactTable,
-  MRT_GlobalFilterTextInput,
   useMantineReactTable,
   type MRT_ColumnDef,
-  type MRT_RowSelectionState,
   MRT_ShowHideColumnsButton,
-  MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
 import { Pencil, Plus, Shield, Trash2 } from 'lucide-react'
 
 import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
+import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useIsMobile } from '@/hooks/useMobile'
@@ -147,9 +146,6 @@ type SettingsRolesTableCardProps = {
   onAddClick: () => void
   onEditRow: (role: Role) => void
   onDeleteRow: (role: Role) => void
-  selectedIds: Set<number>
-  onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
-  onBulkDeleteClick: () => void
 }
 
 function SettingsRolesTableCardInner({
@@ -162,10 +158,8 @@ function SettingsRolesTableCardInner({
   onAddClick,
   onEditRow,
   onDeleteRow,
-  selectedIds,
-  onSelectionChange,
-  onBulkDeleteClick,
 }: SettingsRolesTableCardProps) {
+  const [keyword, setKeyword] = useState('')
   const isMobile = useIsMobile()
   const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
     useLocation().pathname,
@@ -175,47 +169,46 @@ function SettingsRolesTableCardInner({
     () => getRolesColumns({ canUpdate, canAssign, hasDeletableRows, onEditRow, onDeleteRow }),
     [canUpdate, canAssign, hasDeletableRows, onEditRow, onDeleteRow],
   )
-  const rowSelection = useMemo<MRT_RowSelectionState>(
+  const filteredRoles = useMemo(
     () =>
-      Object.fromEntries(
-        roles.map((row) => [String(row.id), !isSystemRole(row) && selectedIds.has(row.id)]),
-      ),
-    [roles, selectedIds],
+      keyword
+        ? roles.filter((role) => role.name.toLowerCase().includes(keyword.toLowerCase()))
+        : roles,
+    [keyword, roles],
+  )
+  const filterFields = useMemo<FilterFieldDef[]>(
+    () => [
+      {
+        field: 'keyword',
+        label: 'Search',
+        type: 'input',
+        value: keyword || null,
+        placeholder: 'Search role name…',
+      },
+    ],
+    [keyword],
+  )
+  const activeChips = useMemo<ActiveFilterChip[]>(
+    () => (keyword ? [{ key: 'keyword', label: 'Search', displayValue: `“${keyword}”` }] : []),
+    [keyword],
   )
 
   const table = useMantineReactTable({
-    data: roles,
+    data: filteredRoles,
     columns,
     getRowId: (row) => String(row.id),
     enableColumnFilters: false,
-    enableGlobalFilter: true,
-    positionGlobalFilter: 'left',
+    enableGlobalFilter: false,
     enableColumnPinning: !isMobile,
-    enableRowSelection: canDelete ? ({ original }) => !isSystemRole(original) : false,
     initialState: {
-      showGlobalFilter: true,
-      density: 'md',
+      density: 'xs',
     },
     state: {
       showLoadingOverlay: loading,
-      rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
       columnVisibility,
     },
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: (updater) => {
-      const newSelection: MRT_RowSelectionState =
-        typeof updater === 'function' ? updater(rowSelection) : updater
-      onSelectionChange(() => {
-        const next = new Set<number>()
-        for (const [idStr, checked] of Object.entries(newSelection)) {
-          if (!checked) continue
-          const role = roles.find((item) => String(item.id) === idStr)
-          if (role && !isSystemRole(role)) next.add(Number(idStr))
-        }
-        return next
-      })
-    },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
@@ -228,10 +221,6 @@ function SettingsRolesTableCardInner({
       },
       sx: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
     },
-    mantineSearchTextInputProps: {
-      placeholder: 'Search by role name…',
-      sx: { minWidth: 'clamp(120px, 40vw, 260px)' },
-    },
     renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full flex-col border-b border-border bg-card">
         <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
@@ -243,20 +232,6 @@ function SettingsRolesTableCardInner({
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            {canDelete && selectedIds.size > 0 ? (
-              <>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
-                  onClick={onBulkDeleteClick}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Delete {selectedIds.size} selected
-                </Button>
-                <div className="h-4 w-px bg-border" />
-              </>
-            ) : null}
             {canCreate ? (
               <Button
                 size="sm"
@@ -268,15 +243,24 @@ function SettingsRolesTableCardInner({
               </Button>
             ) : null}
             {canCreate && <div className="h-4 w-px bg-border" />}
-            <MRT_ToggleGlobalFilterButton table={t} />
             <MRT_ShowHideColumnsButton table={t} />
           </div>
         </div>
-        {t.getState().showGlobalFilter ? (
-          <div className="border-t border-border/60 px-4 py-3">
-            <MRT_GlobalFilterTextInput table={t} />
-          </div>
-        ) : null}
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            applyMode
+            onApply={(values) =>
+              setKeyword(typeof values.keyword === 'string' ? values.keyword : '')
+            }
+            onReset={() => setKeyword('')}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={() => setKeyword('')}
+          onClearAll={() => setKeyword('')}
+        />
       </div>
     ),
     renderEmptyRowsFallback: () => (

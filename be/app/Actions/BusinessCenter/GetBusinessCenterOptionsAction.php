@@ -9,11 +9,11 @@ use Illuminate\Support\Collection;
 class GetBusinessCenterOptionsAction
 {
     /**
-     * @return Collection<int, array{id: int, name: string}>
+     * @return Collection<int, array{id: int, bc_id: string, name: string, ads_type: string}>
      */
     public function execute(): Collection
     {
-        $query = BusinessCenter::query()->select(['id', 'name'])->orderBy('name');
+        $query = BusinessCenter::query()->select(['id', 'bc_id', 'name', 'ads_type'])->orderBy('name');
         (new BusinessCenterOwnerResource)->applyTo($query);
 
         return $query->get();

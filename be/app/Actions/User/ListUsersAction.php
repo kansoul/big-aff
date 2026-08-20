@@ -34,6 +34,18 @@ class ListUsersAction
 
         (new UserOwnerResource)->applyTo($query);
 
+        if (! empty($filters['keyword'])) {
+            $keyword = $filters['keyword'];
+            $query->where(function ($query) use ($keyword): void {
+                $query->where('users.name', 'like', "%{$keyword}%")
+                    ->orWhere('users.email', 'like', "%{$keyword}%");
+            });
+        }
+
+        if (! empty($filters['role_id'])) {
+            $query->where('users.role_id', $filters['role_id']);
+        }
+
         SortInput::fromValidatedArray(
             $filters,
             self::ORDERABLE_COLUMNS,

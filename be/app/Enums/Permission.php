@@ -125,7 +125,7 @@ enum Permission: string
     // —— Revenue Report Range ——
     case DashboardUserView = 'dashboard.users.view';
 
-    // —— Gtags ——
+    // Deprecated Google Tags permission slots; do not remove, rename, or reorder.
     case GtagsView = 'gtags.view';
     case GtagsCreate = 'gtags.create';
     case GtagsUpdate = 'gtags.update';

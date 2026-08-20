@@ -5,7 +5,6 @@ namespace App\Models\Traits\Relationship;
 use App\Models\BusinessCenter;
 use App\Models\Campaign;
 use App\Models\Conversion;
-use App\Models\Gtag;
 use App\Models\MainTeam;
 use App\Models\Team;
 use App\Models\User;
@@ -79,13 +78,5 @@ trait AccountRelationship
     public function conversion(): HasOne
     {
         return $this->hasOne(Conversion::class, 'account_id', 'account_id');
-    }
-
-    /**
-     * @return HasOne<Gtag>
-     */
-    public function gtag(): HasOne
-    {
-        return $this->hasOne(Gtag::class, 'account_id', 'account_id');
     }
 }

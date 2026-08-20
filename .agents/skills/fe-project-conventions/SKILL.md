@@ -136,6 +136,8 @@ The logged-in user receives **`permissions: string[]`** from the API — see **`
 ## Forms
 
 - Pattern: **react-hook-form** + **zod** schema + **zodResolver**; use shadcn **`Form`** / **`FormField`** components under **`@/components/ui/form`** (see **`LoginPage`**).
+- Use **`@/components/common/SearchableSelect`** for every select field inside forms, including short enum and status lists. This keeps selection behavior consistent and remains usable as option sets grow.
+- Do not use the plain shadcn `Select` directly for form fields. Reserve it for non-form controls only when search would be inappropriate, and document that exception in the component.
 
 ## Filters and search
 

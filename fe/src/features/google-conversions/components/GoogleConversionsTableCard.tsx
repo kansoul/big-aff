@@ -1,91 +1,36 @@
-import { memo } from 'react'
-import { ChevronLeft, ChevronRight, FileUp, Loader2, RefreshCw, Repeat, Save } from 'lucide-react'
+import { memo, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
+import {
+  MantineReactTable,
+  MRT_ShowHideColumnsButton,
+  type MRT_ColumnDef,
+  type MRT_SortingState,
+  useMantineReactTable,
+} from 'mantine-react-table'
+import { FileUp, Loader2, RefreshCw, Repeat, Save } from 'lucide-react'
 
+import { ActiveFilterChips } from '@/components/common/ActiveFilterChips'
+import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
 import type {
   ConversionField,
   GoogleConversion,
   GoogleConversionDraftMap,
   GoogleConversionFilterParams,
 } from '@/features/google-conversions/types'
+import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
+import { useIsMobile } from '@/hooks/useMobile'
+import { cn } from '@/lib/utils'
 
-const CONVERSION_COLUMNS: Array<{ field: ConversionField; header: string }> = [
+const FIELDS: Array<{ field: ConversionField; header: string }> = [
   { field: 'article_view', header: 'Article View' },
   { field: 'rsu_click', header: 'RSU Click' },
   { field: 'search_view', header: 'Search View' },
   { field: 'search_click', header: 'Search Click' },
 ]
 
-// ─── Row card ────────────────────────────────────────────────────────────────
-
-type ConversionRowProps = {
-  conversion: GoogleConversion
-  draft: GoogleConversionDraftMap[number] | undefined
-  isDirty: boolean
-  canUpdate: boolean
-  saving: boolean
-  onDraftChange: (id: number, field: ConversionField, value: string) => void
-}
-
-const ConversionRow = memo(function ConversionRow({
-  conversion,
-  draft,
-  isDirty,
-  canUpdate,
-  saving,
-  onDraftChange,
-}: ConversionRowProps) {
-  return (
-    <Card className={cn('transition-colors', isDirty ? 'border-primary/40' : 'border-border')}>
-      <CardContent className="pt-4 pb-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr]">
-          {/* Account — read-only */}
-          <div className="space-y-1.5">
-            <p className="text-xs font-semibold tracking-wide text-muted-foreground">Account</p>
-            <Input
-              value={conversion.account_name}
-              readOnly
-              disabled
-              className="h-9 cursor-default bg-muted/40 text-sm font-medium"
-            />
-          </div>
-
-          {/* Editable conversion ID fields */}
-          {CONVERSION_COLUMNS.map(({ field, header }) => {
-            const value = draft?.[field] ?? conversion.conversion?.[field] ?? ''
-            return (
-              <div key={field} className="space-y-1.5">
-                <p className="text-xs font-semibold tracking-wide text-muted-foreground">
-                  {header}
-                </p>
-                <Input
-                  value={value}
-                  placeholder="Conversion ID"
-                  disabled={!canUpdate || saving}
-                  className="h-9 font-mono text-sm"
-                  onChange={(e) => onDraftChange(conversion.id, field, e.target.value)}
-                />
-              </div>
-            )
-          })}
-        </div>
-
-        {isDirty ? (
-          <p className="mt-2 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-            Unsaved changes
-          </p>
-        ) : null}
-      </CardContent>
-    </Card>
-  )
-})
-
-// ─── Main component ───────────────────────────────────────────────────────────
-
-type GoogleConversionsTableCardProps = {
+type Props = {
   conversions: GoogleConversion[]
   loading: boolean
   saving: boolean
@@ -102,143 +47,188 @@ type GoogleConversionsTableCardProps = {
   onReload: () => void
 }
 
-function isDirtyRow(
-  conversion: GoogleConversion,
-  draft: GoogleConversionDraftMap[number] | undefined,
-): boolean {
-  if (!draft) return false
-  return CONVERSION_COLUMNS.some(({ field }) => {
-    const draftVal = draft[field]
-    if (draftVal === undefined) return false
-    return draftVal !== (conversion.conversion?.[field] ?? '')
-  })
-}
-
-export function GoogleConversionsTableCard({
-  conversions,
-  loading,
-  saving,
-  rowCount,
-  filters,
-  drafts,
-  dirtyCount,
-  canUpdate,
-  canCreate,
-  onFilterChange,
-  onDraftChange,
-  onSaveChanges,
-  onImportClick,
-  onReload,
-}: GoogleConversionsTableCardProps) {
-  const page = filters.page ?? 1
-  const perPage = filters.per_page ?? 15
-  const totalPages = Math.max(1, Math.ceil(rowCount / perPage))
-  const showEmpty = !loading && conversions.length === 0
-
-  return (
-    <section className="space-y-4">
-      {/* Toolbar */}
-      <p className="text-xs text-muted-foreground">
-        {rowCount} record{rowCount === 1 ? '' : 's'}
-      </p>
-      <div className="flex flex-wrap justify-end items-center gap-2">
-        {canUpdate ? (
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-            disabled={saving || dirtyCount === 0}
-            onClick={onSaveChanges}
-          >
-            {saving ? (
-              <>
-                <Loader2 className="size-3.5 animate-spin" />
-                Saving…
-              </>
-            ) : (
-              <>
-                <Save className="size-3.5" />
-                Save Changes{dirtyCount > 0 ? ` (${dirtyCount})` : ''}
-              </>
-            )}
-          </Button>
-        ) : null}
-        <Button
-          size="sm"
-          className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-          disabled={loading}
-          onClick={onReload}
-        >
-          <RefreshCw className={cn('size-3.5', loading && 'animate-spin')} />
-          Reload
-        </Button>
-        {canCreate ? (
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 px-3 text-xs font-semibold tracking-wide"
-            onClick={onImportClick}
-          >
-            <FileUp className="size-3.5" />
-            Import Bulk
-          </Button>
-        ) : null}
-      </div>
-
-      {/* Rows */}
-      <div className={cn('space-y-3', loading && 'pointer-events-none opacity-60')}>
-        {conversions.map((item) => (
-          <ConversionRow
-            key={item.id}
-            conversion={item}
-            draft={drafts[item.id]}
-            isDirty={isDirtyRow(item, drafts[item.id])}
-            canUpdate={canUpdate}
-            saving={saving}
-            onDraftChange={onDraftChange}
-          />
-        ))}
-      </div>
-
-      {showEmpty ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-2 py-14 text-center">
-            <Repeat className="size-8 text-muted-foreground/30" />
-            <p className="text-sm text-muted-foreground">No conversion records found.</p>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {/* Pagination */}
-      <Card>
-        <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">
-            Page {page} / {totalPages}
-          </p>
-          <div className="flex w-full gap-2 sm:w-auto">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full sm:w-auto"
-              disabled={loading || page <= 1}
-              onClick={() => onFilterChange({ page: page - 1 })}
-            >
-              <ChevronLeft className="size-4" />
-              Previous
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full sm:w-auto"
-              disabled={loading || page >= totalPages}
-              onClick={() => onFilterChange({ page: page + 1 })}
-            >
-              Next
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </section>
+function GoogleConversionsTableCardInner(props: Props) {
+  const isMobile = useIsMobile()
+  const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
+    useLocation().pathname,
+    {},
   )
+  const columns = useMemo<MRT_ColumnDef<GoogleConversion>[]>(
+    () => [
+      {
+        accessorKey: 'id',
+        header: 'ID',
+        size: 65,
+        Cell: ({ row }) => (
+          <span className="font-mono text-[11px] text-muted-foreground">#{row.original.id}</span>
+        ),
+      },
+      { accessorKey: 'account_name', header: 'Account', size: 240 },
+      ...FIELDS.map(
+        ({ field, header }): MRT_ColumnDef<GoogleConversion> => ({
+          id: field,
+          header,
+          size: 190,
+          enableSorting: false,
+          Cell: ({ row }) => {
+            const value =
+              props.drafts[row.original.id]?.[field] ?? row.original.conversion?.[field] ?? ''
+            return (
+              <Input
+                value={value}
+                aria-label={`${header} for ${row.original.account_name}`}
+                placeholder="Conversion ID"
+                disabled={!props.canUpdate || props.saving}
+                className={cn(
+                  'h-7 min-w-36 font-mono text-xs',
+                  props.drafts[row.original.id]?.[field] !== undefined && 'border-primary/50',
+                )}
+                onChange={(event) =>
+                  props.onDraftChange(row.original.id, field, event.target.value)
+                }
+              />
+            )
+          },
+        }),
+      ),
+    ],
+    [props],
+  )
+  const sorting = useMemo<MRT_SortingState>(
+    () =>
+      props.filters.order_by
+        ? [{ id: props.filters.order_by, desc: props.filters.order === 'desc' }]
+        : [],
+    [props.filters.order, props.filters.order_by],
+  )
+  const filterFields = useMemo<FilterFieldDef[]>(
+    () => [
+      {
+        field: 'query',
+        label: 'Search',
+        type: 'input',
+        value: props.filters.query ?? null,
+        placeholder: 'Search account name or ID…',
+      },
+    ],
+    [props.filters.query],
+  )
+  const pageIndex = (props.filters.page ?? 1) - 1
+  const pageSize = props.filters.per_page ?? 15
+  const table = useMantineReactTable({
+    data: props.conversions,
+    columns,
+    getRowId: (row) => String(row.id),
+    manualPagination: true,
+    manualSorting: true,
+    rowCount: props.rowCount,
+    enableColumnFilters: false,
+    enableGlobalFilter: false,
+    enableColumnPinning: !isMobile,
+    enableFullScreenToggle: false,
+    initialState: { density: 'xs' },
+    state: {
+      pagination: { pageIndex, pageSize },
+      sorting,
+      showLoadingOverlay: props.loading,
+      columnVisibility,
+    },
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: (updater) => {
+      const current = { pageIndex, pageSize }
+      const next = typeof updater === 'function' ? updater(current) : updater
+      props.onFilterChange({ page: next.pageIndex + 1, per_page: next.pageSize })
+    },
+    onSortingChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(sorting) : updater
+      props.onFilterChange({
+        order_by: (next[0]?.id as GoogleConversionFilterParams['order_by']) ?? null,
+        order: next[0] ? (next[0].desc ? 'desc' : 'asc') : null,
+        page: 1,
+      })
+    },
+    paginationDisplayMode: 'pages',
+    localization: { rowsPerPage: 'Per Page' },
+    renderTopToolbar: ({ table: currentTable }) => (
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <Repeat className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold">Google Conversions</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {props.rowCount.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {props.canUpdate ? (
+              <Button
+                size="sm"
+                className="h-7 gap-1.5 px-2.5 text-xs"
+                disabled={props.saving || props.dirtyCount === 0}
+                onClick={props.onSaveChanges}
+              >
+                {props.saving ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Save className="h-3.5 w-3.5" />
+                )}
+                Save{props.dirtyCount > 0 ? ` (${props.dirtyCount})` : ''}
+              </Button>
+            ) : null}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 gap-1.5 px-2.5 text-xs"
+              disabled={props.loading}
+              onClick={props.onReload}
+            >
+              <RefreshCw className={cn('h-3.5 w-3.5', props.loading && 'animate-spin')} />
+              Reload
+            </Button>
+            {props.canCreate ? (
+              <Button
+                size="sm"
+                className="h-7 gap-1.5 px-2.5 text-xs"
+                onClick={props.onImportClick}
+              >
+                <FileUp className="h-3.5 w-3.5" />
+                Import
+              </Button>
+            ) : null}
+            <div className="h-4 w-px bg-border" />
+            <MRT_ShowHideColumnsButton table={currentTable} />
+          </div>
+        </div>
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            applyMode
+            onApply={(values) => {
+              const query = typeof values.query === 'string' ? values.query.trim() : ''
+              props.onFilterChange({ query: query || null, page: 1 })
+            }}
+            onReset={() => props.onFilterChange({ query: null, page: 1 })}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={
+            props.filters.query
+              ? [{ key: 'query', label: 'Search', displayValue: `“${props.filters.query}”` }]
+              : []
+          }
+          onRemove={() => props.onFilterChange({ query: null, page: 1 })}
+          onClearAll={() => props.onFilterChange({ query: null, page: 1 })}
+        />
+      </div>
+    ),
+    renderEmptyRowsFallback: () => (
+      <div className="flex flex-col items-center gap-2 py-16 text-center">
+        <Repeat className="h-8 w-8 text-muted-foreground/30" />
+        <p className="text-sm font-medium">No conversion records found</p>
+      </div>
+    ),
+  })
+  return <MantineReactTable table={table} />
 }
+
+export const GoogleConversionsTableCard = memo(GoogleConversionsTableCardInner)

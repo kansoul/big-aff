@@ -3,7 +3,7 @@
 namespace App\Actions\Pixel;
 
 use App\Models\Pixel;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\PixelOwnerResource;
 use Illuminate\Support\Collection;
 
 class ListPixelOptionsAction
@@ -12,11 +12,12 @@ class ListPixelOptionsAction
     public function execute(): Collection
     {
         $query = Pixel::query()
-            ->select(['id', 'pixel_id', 'name'])
+            ->select(['id', 'pixel_id', 'name', 'platform', 'business_center_id', 'status'])
+            ->where('status', 'active')
             ->orderBy('name')
             ->orderBy('pixel_id');
 
-        OwnershipFilter::forAuthUser()->applyTo($query);
+        (new PixelOwnerResource)->applyTo($query);
 
         return $query->get();
     }

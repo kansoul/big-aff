@@ -1,26 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { PixelFormDialog } from '@/features/pixels/components/PixelFormDialog'
+
+import { PermissionSlugs, hasPermission } from '@/constants/permissions'
+import { businessCentersApi } from '@/features/business-centers/api'
 import { pixelsApi } from '@/features/pixels/api'
-import type { Pixel, PixelFormValues } from '@/features/pixels/types'
-import { useAuthStore } from '@/hooks/useAuthStore'
-import { hasPermission, PermissionSlugs } from '@/constants/permissions'
+import { DeletePixelDialog } from '@/features/pixels/components/DeletePixelDialog'
+import { PixelFormDialog } from '@/features/pixels/components/PixelFormDialog'
+import { PixelsTableCard } from '@/features/pixels/components/PixelsTableCard'
+import type {
+  Pixel,
+  PixelBusinessCenterOption,
+  PixelFormValues,
+  PixelPlatform,
+  PixelStatus,
+} from '@/features/pixels/types'
 import { formatApiError } from '@/features/settings/components'
+import { useAuthStore } from '@/hooks/useAuthStore'
+
+const DEFAULT_PAGE_SIZE = 15
 
 export function PixelsPage() {
-  const permissions = useAuthStore((s) => s.user?.permissions ?? [])
+  const permissions = useAuthStore((state) => state.user?.permissions ?? [])
   const canCreate = useMemo(
     () => hasPermission(permissions, PermissionSlugs.PixelsCreate),
     [permissions],
@@ -33,148 +33,137 @@ export function PixelsPage() {
     () => hasPermission(permissions, PermissionSlugs.PixelsDelete),
     [permissions],
   )
-  const [rows, setRows] = useState<Pixel[]>([])
-  const [query, setQuery] = useState('')
+  const [pixels, setPixels] = useState<Pixel[]>([])
+  const [rowCount, setRowCount] = useState(0)
+  const [keyword, setKeyword] = useState<string | null>(null)
+  const [platform, setPlatform] = useState<PixelPlatform | null>(null)
+  const [businessCenterId, setBusinessCenterId] = useState<number | null>(null)
+  const [status, setStatus] = useState<PixelStatus | null>(null)
+  const [businessCenters, setBusinessCenters] = useState<PixelBusinessCenterOption[]>([])
+  const [pageIndex, setPageIndex] = useState(0)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [open, setOpen] = useState(false)
+  const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Pixel | null>(null)
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await pixelsApi.list({ query, per_page: 100 })
-      setRows(result.data)
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setLoading(false)
-    }
-  }, [query])
+  const [deleting, setDeleting] = useState<Pixel | null>(null)
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const reload = useCallback(() => setRefreshSignal((value) => value + 1), [])
+
   useEffect(() => {
-    void load()
-  }, [load])
+    let ignore = false
+    async function loadPixels() {
+      setLoading(true)
+      try {
+        const result = await pixelsApi.list({
+          query: keyword ?? undefined,
+          platform: platform ?? undefined,
+          business_center_id: businessCenterId ?? undefined,
+          status: status ?? undefined,
+          page: pageIndex + 1,
+          per_page: pageSize,
+        })
+        if (!ignore) {
+          setPixels(result.data)
+          setRowCount(result.pagination.total)
+        }
+      } catch (error) {
+        if (!ignore) toast.error(formatApiError(error))
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    void loadPixels()
+    return () => {
+      ignore = true
+    }
+  }, [businessCenterId, keyword, pageIndex, pageSize, platform, refreshSignal, status])
+
+  useEffect(() => {
+    businessCentersApi
+      .listOptions()
+      .then((response) =>
+        setBusinessCenters(
+          response.data.data.filter(
+            (option): option is PixelBusinessCenterOption =>
+              option.ads_type === 'facebook' || option.ads_type === 'tiktok',
+          ),
+        ),
+      )
+      .catch((error) => toast.error(formatApiError(error)))
+  }, [])
+
+  const openCreateDialog = useCallback(() => {
+    setEditing(null)
+    setFormOpen(true)
+  }, [])
+  const openEditDialog = useCallback((pixel: Pixel) => {
+    setEditing(pixel)
+    setFormOpen(true)
+  }, [])
+  const handleFormOpenChange = useCallback((open: boolean) => {
+    setFormOpen(open)
+    if (!open) setEditing(null)
+  }, [])
   const submit = useCallback(
     async (values: PixelFormValues) => {
       setSaving(true)
       try {
         if (editing) await pixelsApi.update(editing.id, values)
         else await pixelsApi.create(values)
-        toast.success(editing ? 'Pixel updated' : 'Pixel created')
-        setOpen(false)
+        toast.success(editing ? 'Pixel Conversion updated' : 'Pixel Conversion created')
+        setFormOpen(false)
         setEditing(null)
-        await load()
-      } catch (e) {
-        toast.error(formatApiError(e))
+        reload()
+      } catch (error) {
+        toast.error(formatApiError(error))
       } finally {
         setSaving(false)
       }
     },
-    [editing, load],
+    [editing, reload],
   )
-  const remove = useCallback(
-    async (pixel: Pixel) => {
-      if (!window.confirm(`Delete pixel ${pixel.pixel_id}?`)) return
-      try {
-        await pixelsApi.delete(pixel.id)
-        toast.success('Pixel deleted')
-        await load()
-      } catch (e) {
-        toast.error(formatApiError(e))
-      }
-    },
-    [load],
-  )
+
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Input
-          className="max-w-sm"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search pixel ID or name…"
-        />
-        {canCreate ? (
-          <Button
-            onClick={() => {
-              setEditing(null)
-              setOpen(true)
-            }}
-          >
-            <Plus className="size-4" />
-            New Pixel
-          </Button>
-        ) : null}
-      </div>
-      <Card className="overflow-hidden py-0">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">ID</TableHead>
-                <TableHead>Pixel ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="w-28 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-32 text-center">
-                    <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
-                    <span className="sr-only">Loading pixels</span>
-                  </TableCell>
-                </TableRow>
-              ) : rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
-                    No pixels found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                rows.map((pixel) => (
-                  <TableRow key={pixel.id}>
-                    <TableCell className="text-muted-foreground">{pixel.id}</TableCell>
-                    <TableCell className="font-mono font-medium">{pixel.pixel_id}</TableCell>
-                    <TableCell>
-                      {pixel.name || <span className="text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end gap-1">
-                        {canUpdate ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setEditing(pixel)
-                              setOpen(true)
-                            }}
-                          >
-                            <Pencil className="size-4" />
-                            <span className="sr-only">Edit pixel {pixel.pixel_id}</span>
-                          </Button>
-                        ) : null}
-                        {canDelete ? (
-                          <Button variant="ghost" size="icon" onClick={() => void remove(pixel)}>
-                            <Trash2 className="size-4" />
-                            <span className="sr-only">Delete pixel {pixel.pixel_id}</span>
-                          </Button>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
+    <>
+      <PixelsTableCard
+        pixels={pixels}
+        rowCount={rowCount}
+        loading={loading}
+        keyword={keyword}
+        platform={platform}
+        businessCenterId={businessCenterId}
+        status={status}
+        businessCenters={businessCenters}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+        onFilterChange={(filters) => {
+          setKeyword(filters.keyword)
+          setPlatform(filters.platform)
+          setBusinessCenterId(filters.businessCenterId)
+          setStatus(filters.status)
+          setPageIndex(0)
+        }}
+        onPaginationChange={(nextPageIndex, nextPageSize) => {
+          setPageIndex(nextPageIndex)
+          setPageSize(nextPageSize)
+        }}
+        onAddClick={openCreateDialog}
+        onEditRow={openEditDialog}
+        onDeleteRow={setDeleting}
+      />
       <PixelFormDialog
-        open={open}
+        open={formOpen}
         pixel={editing}
         saving={saving}
-        onOpenChange={setOpen}
+        businessCenters={businessCenters}
+        onOpenChange={handleFormOpenChange}
         onSubmit={submit}
       />
-    </section>
+      <DeletePixelDialog pixel={deleting} onOpenChange={setDeleting} onSuccess={reload} />
+    </>
   )
 }

@@ -4,12 +4,12 @@ import {
   MantineReactTable,
   useMantineReactTable,
   type MRT_ColumnDef,
-  type MRT_RowSelectionState,
   type MRT_SortingState,
   MRT_ShowHideColumnsButton,
-  MRT_ToggleGlobalFilterButton,
 } from 'mantine-react-table'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2, UsersRound } from 'lucide-react'
+import { ActiveFilterChips, type ActiveFilterChip } from '@/components/common/ActiveFilterChips'
+import { FilterPanel, type FilterFieldDef } from '@/components/common/FilterPanel'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 import { Button } from '@/components/ui/button'
@@ -183,6 +183,9 @@ type SettingsUsersTableCardProps = {
   pagination: PaginationState
   onPaginationChange: Dispatch<SetStateAction<PaginationState>>
   filters: UserFilterParams
+  roles: { id: number; name: string }[]
+  onFilterChange: (patch: Partial<UserFilterParams>) => void
+  onFilterReset: () => void
   onSortingChange: (sorting: MRT_SortingState) => void
   currentUserId: number | undefined
   canCreate: boolean
@@ -191,9 +194,6 @@ type SettingsUsersTableCardProps = {
   onAddClick: () => void
   onEditRow: (row: ManagedUser) => void
   onDeleteRow: (row: ManagedUser) => void
-  selectedIds: Set<number>
-  onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
-  onBulkDeleteClick: () => void
 }
 
 function SettingsUsersTableCardInner({
@@ -203,6 +203,9 @@ function SettingsUsersTableCardInner({
   pagination,
   onPaginationChange,
   filters,
+  roles,
+  onFilterChange,
+  onFilterReset,
   onSortingChange,
   currentUserId,
   canCreate,
@@ -211,9 +214,6 @@ function SettingsUsersTableCardInner({
   onAddClick,
   onEditRow,
   onDeleteRow,
-  selectedIds,
-  onSelectionChange,
-  onBulkDeleteClick,
 }: SettingsUsersTableCardProps) {
   const isMobile = useIsMobile()
   const hasDeletableRows = canDelete && users.some((row) => row.id !== currentUserId)
@@ -230,10 +230,48 @@ function SettingsUsersTableCardInner({
     () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
     [filters.order_by, filters.order],
   )
-  const rowSelection = useMemo<MRT_RowSelectionState>(
-    () => Object.fromEntries(users.map((row) => [String(row.id), selectedIds.has(row.id)])),
-    [users, selectedIds],
+  const filterFields = useMemo<FilterFieldDef[]>(
+    () => [
+      {
+        field: 'keyword',
+        label: 'Search',
+        type: 'input',
+        value: filters.keyword ?? null,
+        placeholder: 'Search name or email…',
+      },
+      {
+        field: 'role_id',
+        label: 'Role',
+        type: 'select',
+        value: filters.role_id ? String(filters.role_id) : null,
+        placeholder: 'All roles',
+        options: roles.map((role) => ({ label: role.name, value: String(role.id) })),
+      },
+    ],
+    [filters.keyword, filters.role_id, roles],
   )
+  const activeChips = useMemo<ActiveFilterChip[]>(() => {
+    const chips: ActiveFilterChip[] = []
+    if (filters.keyword) {
+      chips.push({ key: 'keyword', label: 'Search', displayValue: `“${filters.keyword}”` })
+    }
+    if (filters.role_id) {
+      chips.push({
+        key: 'role_id',
+        label: 'Role',
+        displayValue:
+          roles.find((role) => role.id === filters.role_id)?.name ?? String(filters.role_id),
+      })
+    }
+    return chips
+  }, [filters.keyword, filters.role_id, roles])
+
+  const handleApply = (values: Record<string, unknown>) => {
+    onFilterChange({
+      keyword: typeof values.keyword === 'string' ? values.keyword : null,
+      role_id: values.role_id ? Number(values.role_id) : null,
+    })
+  }
 
   const table = useMantineReactTable({
     data: users,
@@ -247,40 +285,20 @@ function SettingsUsersTableCardInner({
       const next = typeof updater === 'function' ? updater(sorting) : updater
       onSortingChange(next)
     },
-    enableColumnFilters: true,
-    enableGlobalFilter: true,
-    positionGlobalFilter: 'left',
+    enableColumnFilters: false,
+    enableGlobalFilter: false,
     enableColumnPinning: !isMobile,
-    enableRowSelection: (row) => canDelete && row.original.id !== currentUserId,
-    mantineSearchTextInputProps: {
-      placeholder: 'Search…',
-      sx: { minWidth: 'clamp(120px, 40vw, 260px)' },
-    },
     initialState: {
-      showGlobalFilter: true,
-      density: 'md',
+      density: 'xs',
     },
     state: {
       pagination,
       sorting,
       showLoadingOverlay: loading,
-      rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
       columnVisibility,
     },
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: (updater) => {
-      const newPageSelection: MRT_RowSelectionState =
-        typeof updater === 'function' ? updater(rowSelection) : updater
-      onSelectionChange((prev) => {
-        const next = new Set(prev)
-        for (const row of users) next.delete(row.id)
-        for (const [idStr, checked] of Object.entries(newPageSelection)) {
-          if (checked) next.add(Number(idStr))
-        }
-        return next
-      })
-    },
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
@@ -304,31 +322,44 @@ function SettingsUsersTableCardInner({
     localization: {
       rowsPerPage: 'Per Page',
     },
-    renderToolbarInternalActions: ({ table: t }) => (
-      <div className="flex items-center gap-1">
-        {canDelete && selectedIds.size > 0 ? (
-          <>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
-              onClick={onBulkDeleteClick}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete {selectedIds.size} selected
-            </Button>
-            <div className="h-4 w-px bg-border" />
-          </>
-        ) : null}
-        {canCreate ? (
-          <Button size="sm" className="h-7 gap-1.5 px-2.5 text-xs font-medium" onClick={onAddClick}>
-            <Plus className="h-3.5 w-3.5" />
-            Add User
-          </Button>
-        ) : null}
-        {canCreate && <div className="h-4 w-px bg-border" />}
-        <MRT_ToggleGlobalFilterButton table={t} />
-        <MRT_ShowHideColumnsButton table={t} />
+    renderTopToolbar: ({ table: currentTable }) => (
+      <div className="flex w-full flex-col border-b border-border bg-card">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-1.5">
+            <UsersRound className="h-4 w-4 text-muted-foreground/60" />
+            <span className="text-sm font-semibold text-foreground">Users</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {rowCount.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {canCreate ? (
+              <Button
+                size="sm"
+                className="h-7 gap-1.5 px-2.5 text-xs font-medium"
+                onClick={onAddClick}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add User
+              </Button>
+            ) : null}
+            {canCreate ? <div className="h-4 w-px bg-border" /> : null}
+            <MRT_ShowHideColumnsButton table={currentTable} />
+          </div>
+        </div>
+        <div className="border-t border-border/60 px-4 py-3">
+          <FilterPanel
+            fields={filterFields}
+            applyMode
+            onApply={handleApply}
+            onReset={onFilterReset}
+          />
+        </div>
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={(key) => onFilterChange({ [key]: null })}
+          onClearAll={onFilterReset}
+        />
       </div>
     ),
   })

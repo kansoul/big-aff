@@ -2,6 +2,8 @@
 
 namespace App\Actions\Pixel;
 
+use App\Enums\PixelPlatform;
+use App\Enums\PixelStatus;
 use App\Models\Account;
 use App\Models\Pixel;
 use App\Support\OwnershipFilter\OwnershipFilter;
@@ -34,9 +36,20 @@ class SyncPixelsAction
 
             OwnershipFilter::forAuthUser()->authorizeAccount($account);
 
+            if ($account->business_center_id === null) {
+                throw ValidationException::withMessages([
+                    'tiktokid' => ["TikTok account {$advertiserId} is not assigned to a business center."],
+                ]);
+            }
+
             Pixel::query()->firstOrCreate(
-                ['pixel_id' => $pixelId],
-                ['created_by' => auth()->id(), 'updated_by' => auth()->id()],
+                ['platform' => PixelPlatform::TIKTOK->value, 'pixel_id' => $pixelId],
+                [
+                    'business_center_id' => $account->business_center_id,
+                    'status' => PixelStatus::ACTIVE->value,
+                    'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
+                ],
             );
         }
     }

@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { MRT_SortingState } from 'mantine-react-table'
 import { toast } from 'sonner'
 
-import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { rolesApi } from '@/features/settings/api/roles'
 import { formatApiError } from '@/features/settings/components'
 import { teamsApi } from '@/features/teams/api'
@@ -31,10 +30,17 @@ import { setPaginationInParams, type TablePaginationState } from '@/lib/utils'
 
 type RoleOption = { id: number; name: string }
 
-const DEFAULT_FILTERS: UserFilterParams = { order: null, order_by: null }
+const DEFAULT_FILTERS: UserFilterParams = {
+  keyword: null,
+  role_id: null,
+  order: null,
+  order_by: null,
+}
 
 function parseFilters(params: URLSearchParams): UserFilterParams {
   return {
+    keyword: params.get('keyword'),
+    role_id: params.get('role_id') ? Number(params.get('role_id')) : null,
     order_by: params.get('order_by') as UserFilterParams['order_by'],
     order: params.get('order') as UserFilterParams['order'],
   }
@@ -42,6 +48,8 @@ function parseFilters(params: URLSearchParams): UserFilterParams {
 
 function buildParams(filters: UserFilterParams, pagination: TablePaginationState): URLSearchParams {
   const params = new URLSearchParams()
+  if (filters.keyword) params.set('keyword', filters.keyword)
+  if (filters.role_id) params.set('role_id', String(filters.role_id))
   if (filters.order_by) params.set('order_by', filters.order_by)
   if (filters.order) params.set('order', filters.order)
   setPaginationInParams(params, pagination)
@@ -92,12 +100,9 @@ export function SettingsUsersPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editUser, setEditUser] = useState<ManagedUser | null>(null)
   const [deleteUserRow, setDeleteUserRow] = useState<ManagedUser | null>(null)
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   const createForm = useForm<UserCreateFormValues>({
     resolver: zodResolver(userCreateSchema),
@@ -314,47 +319,18 @@ export function SettingsUsersPage() {
     }
   }, [])
 
-  const onBulkDeleteClick = useCallback(() => {
-    setBulkDeleteOpen(true)
-  }, [])
+  const onFilterChange = useCallback(
+    (patch: Partial<UserFilterParams>) => {
+      setFilters((previous) => ({ ...previous, ...patch }))
+      setPagination((previous) => ({ ...previous, pageIndex: 0 }))
+    },
+    [setFilters, setPagination],
+  )
 
-  const onBulkDeleteOpenChange = useCallback((open: boolean) => {
-    setBulkDeleteOpen(open)
-  }, [])
-
-  const onConfirmBulkDelete = useCallback(async () => {
-    const ids = Array.from(selectedIds)
-    if (ids.length === 0) return
-
-    try {
-      setBulkDeleting(true)
-      setFormError(null)
-      const results = await Promise.allSettled(ids.map((id) => usersApi.remove(id)))
-      const failedIds = new Set<number>()
-      let firstError: unknown = null
-
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          failedIds.add(ids[index])
-          if (!firstError) firstError = result.reason
-        }
-      })
-
-      const deletedCount = ids.length - failedIds.size
-      if (deletedCount > 0) {
-        toast.success(`Deleted ${deletedCount} user${deletedCount > 1 ? 's' : ''} successfully`)
-      }
-      if (firstError) {
-        setFormError(formatApiError(firstError))
-      }
-
-      setSelectedIds(failedIds)
-      setBulkDeleteOpen(false)
-      loadData()
-    } finally {
-      setBulkDeleting(false)
-    }
-  }, [selectedIds, loadData])
+  const onFilterReset = useCallback(() => {
+    setFilters(DEFAULT_FILTERS)
+    setPagination((previous) => ({ ...previous, pageIndex: 0 }))
+  }, [setFilters, setPagination])
 
   return (
     <div className="flex flex-col gap-8">
@@ -365,6 +341,9 @@ export function SettingsUsersPage() {
         pagination={pagination}
         onPaginationChange={setPagination}
         filters={filters}
+        roles={roles}
+        onFilterChange={onFilterChange}
+        onFilterReset={onFilterReset}
         onSortingChange={onSortingChange}
         currentUserId={user?.id}
         canCreate={canCreate}
@@ -373,9 +352,6 @@ export function SettingsUsersPage() {
         onAddClick={onAddClick}
         onEditRow={onEditRow}
         onDeleteRow={onDeleteRow}
-        selectedIds={selectedIds}
-        onSelectionChange={setSelectedIds}
-        onBulkDeleteClick={onBulkDeleteClick}
       />
       <UserFormDialog
         open={createOpen}
@@ -404,14 +380,6 @@ export function SettingsUsersPage() {
         formError={formError}
         deleting={deleting}
         onConfirmDelete={onConfirmDelete}
-      />
-      <BulkDeleteDialog
-        open={bulkDeleteOpen}
-        onOpenChange={onBulkDeleteOpenChange}
-        count={selectedIds.size}
-        itemLabel="user"
-        deleting={bulkDeleting}
-        onConfirm={onConfirmBulkDelete}
       />
     </div>
   )

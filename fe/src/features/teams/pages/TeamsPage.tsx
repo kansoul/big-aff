@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import { BulkDeleteDialog } from '@/components/common/BulkDeleteDialog'
 import { teamsApi } from '@/features/teams/api'
 import {
   AssignMembersDialog,
@@ -72,9 +71,6 @@ export function TeamsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Team | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Team | null>(null)
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
-  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   // ── Member assignment state ───────────────────────────────────────────────
   const [teamOptions, setTeamOptions] = useState<Record<number, AssignChildOption[]>>({})
@@ -180,10 +176,6 @@ export function TeamsPage() {
     setDeleteTarget(row)
   }, [])
 
-  const onBulkDeleteClick = useCallback(() => {
-    setBulkDeleteOpen(true)
-  }, [])
-
   const onFormOpenChange = useCallback((open: boolean) => {
     setFormOpen(open)
     if (!open) setEditTarget(null)
@@ -192,37 +184,6 @@ export function TeamsPage() {
   const onDeleteOpenChange = useCallback((open: boolean) => {
     if (!open) setDeleteTarget(null)
   }, [])
-
-  const onBulkDeleteOpenChange = useCallback((open: boolean) => {
-    setBulkDeleteOpen(open)
-  }, [])
-
-  const onConfirmBulkDelete = useCallback(async () => {
-    const ids = Array.from(selectedIds)
-    if (ids.length === 0) return
-    try {
-      setBulkDeleting(true)
-      const results = await Promise.allSettled(ids.map((id) => teamsApi.remove(id)))
-      const failedIds = new Set<number>()
-      let firstError: unknown = null
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          failedIds.add(ids[index])
-          if (!firstError) firstError = result.reason
-        }
-      })
-      const deletedCount = ids.length - failedIds.size
-      if (deletedCount > 0) {
-        toast.success(`Deleted ${deletedCount} team${deletedCount > 1 ? 's' : ''} successfully`)
-      }
-      if (firstError) toast.error(formatApiError(firstError))
-      setSelectedIds(failedIds)
-      setBulkDeleteOpen(false)
-      loadData()
-    } finally {
-      setBulkDeleting(false)
-    }
-  }, [selectedIds, loadData])
 
   const onSuccess = useCallback(() => {
     loadData()
@@ -554,9 +515,6 @@ export function TeamsPage() {
         savedUserIdsByTeam={savedUserIdsByTeam}
         savedUserRolesByTeam={savedUserRolesByTeam}
         teamOptionsLoading={teamOptionsLoading}
-        selectedIds={selectedIds}
-        onSelectionChange={setSelectedIds}
-        onBulkDeleteClick={onBulkDeleteClick}
       />
 
       <TeamFormDialog
@@ -570,15 +528,6 @@ export function TeamsPage() {
         team={deleteTarget}
         onOpenChange={onDeleteOpenChange}
         onSuccess={onSuccess}
-      />
-
-      <BulkDeleteDialog
-        open={bulkDeleteOpen}
-        onOpenChange={onBulkDeleteOpenChange}
-        count={selectedIds.size}
-        itemLabel="team"
-        deleting={bulkDeleting}
-        onConfirm={onConfirmBulkDelete}
       />
 
       <AssignMembersDialog

@@ -63,6 +63,8 @@ export type UserOrderBy =
   | 'updated_at'
 
 export interface UserFilterParams {
+  keyword?: string | null
+  role_id?: number | null
   order: 'asc' | 'desc' | null
   order_by: UserOrderBy | null
 }

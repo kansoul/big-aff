@@ -214,16 +214,6 @@ export const router = createBrowserRouter([
                 handle: { title: 'Google Conversions' },
               },
               {
-                path: routeSegment(PATHS.gtags),
-                lazy: async () => {
-                  const { GtagsPage } = await import('@/features/gtags/pages/GtagsPage')
-                  return {
-                    Component: withPermission(GtagsPage, PermissionSlugs.GtagsView),
-                  }
-                },
-                handle: { title: 'Gtags' },
-              },
-              {
                 path: routeSegment(PATHS.pixels),
                 lazy: async () => {
                   const { PixelsPage } = await import('@/features/pixels/pages/PixelsPage')
@@ -231,7 +221,7 @@ export const router = createBrowserRouter([
                     Component: withPermission(PixelsPage, PermissionSlugs.PixelsView),
                   }
                 },
-                handle: { title: 'Pixels' },
+                handle: { title: 'Pixel Conversions' },
               },
               {
                 path: routeSegment(PATHS.campaignReport),

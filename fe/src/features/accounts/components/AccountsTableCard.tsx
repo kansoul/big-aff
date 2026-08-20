@@ -23,7 +23,7 @@ import { ACCOUNT_STATUS_OPTIONS } from '@/features/accounts/types'
 import type { SearchableSelectOption } from '@/components/common/SearchableSelect'
 import { AssignUserAccountsDialog } from './AssignUserAccountsDialog'
 
-type ToggleField = 'is_special' | 'sync_to_mcc' | 'roas_enabled' | 'gtag_enabled'
+type ToggleField = 'is_special' | 'sync_to_mcc' | 'roas_enabled'
 
 const ADS_TYPE_OPTIONS = [
   { value: 'google', label: 'Google' },
@@ -176,24 +176,6 @@ function getColumns(meta: ActionMeta): MRT_ColumnDef<Account>[] {
             aria-label={`Toggle ROAS upload for ${row.original.account_id}`}
             onCheckedChange={(checked) => {
               void onToggleField(row.original, 'roas_enabled', checked)
-            }}
-          />
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'gtag_enabled',
-      header: 'Gtag',
-      size: 100,
-      enableSorting: false,
-      Cell: ({ row }) => (
-        <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
-          <Switch
-            checked={row.original.gtag_enabled}
-            disabled={!canUpdate || isFieldUpdating(row.original.id, 'gtag_enabled')}
-            aria-label={`Toggle Gtag for ${row.original.account_id}`}
-            onCheckedChange={(checked) => {
-              void onToggleField(row.original, 'gtag_enabled', checked)
             }}
           />
         </div>
@@ -402,8 +384,7 @@ function AccountsTableCardInner({
       onFilterChange({
         query: typeof values.query === 'string' ? values.query : undefined,
         ads_type:
-          values.ads_type === 'google' ||
-          values.ads_type === 'tiktok'
+          values.ads_type === 'google' || values.ads_type === 'tiktok'
             ? values.ads_type
             : undefined,
         status: ACCOUNT_STATUS_OPTIONS.some((option) => option.value === values.status)

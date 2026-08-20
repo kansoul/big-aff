@@ -83,11 +83,6 @@ export const PermissionSlugs = {
   GoogleConversionsCreate: 'google-conversions.create',
   GoogleConversionsUpdate: 'google-conversions.update',
 
-  // Gtags
-  GtagsView: 'gtags.view',
-  GtagsCreate: 'gtags.create',
-  GtagsUpdate: 'gtags.update',
-
   // Pixels
   PixelsView: 'pixels.view',
   PixelsCreate: 'pixels.create',
@@ -498,27 +493,12 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
     ],
   },
   {
-    id: 'gtags',
-    label: 'Gtags',
-    screens: [
-      {
-        id: 'gtags',
-        label: 'Gtags',
-        permissions: [
-          { key: 'GtagsView', slug: PermissionSlugs.GtagsView, label: 'View' },
-          { key: 'GtagsCreate', slug: PermissionSlugs.GtagsCreate, label: 'Create' },
-          { key: 'GtagsUpdate', slug: PermissionSlugs.GtagsUpdate, label: 'Update' },
-        ],
-      },
-    ],
-  },
-  {
     id: 'pixels',
-    label: 'Pixels',
+    label: 'Pixel Conversions',
     screens: [
       {
         id: 'pixels',
-        label: 'Pixels',
+        label: 'Pixel Conversions',
         permissions: [
           { key: 'PixelsView', slug: PermissionSlugs.PixelsView, label: 'View' },
           { key: 'PixelsCreate', slug: PermissionSlugs.PixelsCreate, label: 'Create' },

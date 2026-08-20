@@ -30,6 +30,7 @@ const DEFAULT_STATUS_MAP: Record<
   ai: { variant: 'warning', label: 'AI' },
   wordpress: { variant: 'success', label: 'WordPress' },
   google: { variant: 'warning', label: 'Google' },
+  facebook: { variant: 'default', label: 'Facebook' },
   tiktok: { variant: 'secondary', label: 'TikTok' },
   unknown: { variant: 'default', label: 'Unknown' },
 }

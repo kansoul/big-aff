@@ -4,7 +4,6 @@ import {
   MantineReactTable,
   MRT_ShowHideColumnsButton,
   type MRT_ColumnDef,
-  type MRT_RowSelectionState,
   useMantineReactTable,
 } from 'mantine-react-table'
 import { Loader2, Network, Pencil, Plus, Trash2, UserPlus, UsersRound } from 'lucide-react'
@@ -271,9 +270,6 @@ type TeamsTableCardProps = {
   savedUserIdsByTeam: Record<number, number[]>
   savedUserRolesByTeam: Record<number, Record<number, TeamRole>>
   teamOptionsLoading: Record<number, boolean>
-  selectedIds: Set<number>
-  onSelectionChange: (updater: (prev: Set<number>) => Set<number>) => void
-  onBulkDeleteClick: () => void
 }
 
 function TeamsTableCardInner({
@@ -298,9 +294,6 @@ function TeamsTableCardInner({
   savedUserIdsByTeam,
   savedUserRolesByTeam,
   teamOptionsLoading,
-  selectedIds,
-  onSelectionChange,
-  onBulkDeleteClick,
 }: TeamsTableCardProps) {
   const isMobile = useIsMobile()
   const { columnVisibility, setColumnVisibility } = useColumnVisibilityStorage(
@@ -354,11 +347,6 @@ function TeamsTableCardInner({
     () => (filters.order_by ? [{ id: filters.order_by, desc: filters.order === 'desc' }] : []),
     [filters.order_by, filters.order],
   )
-  const rowSelection = useMemo<MRT_RowSelectionState>(
-    () => Object.fromEntries(data.map((row) => [String(row.id), selectedIds.has(row.id)])),
-    [data, selectedIds],
-  )
-
   const activeChips = useMemo<ActiveFilterChip[]>(
     () =>
       filters.query ? [{ key: 'query', label: 'Keyword', displayValue: `"${filters.query}"` }] : [],
@@ -375,9 +363,8 @@ function TeamsTableCardInner({
     enableColumnFilters: false,
     enableGlobalFilter: false,
     enableColumnPinning: !isMobile,
-    enableRowSelection: canDelete,
     initialState: {
-      density: 'md',
+      density: 'xs',
     },
     state: {
       showLoadingOverlay: loading,
@@ -386,23 +373,10 @@ function TeamsTableCardInner({
         pageSize: filters.per_page ?? 15,
       },
       sorting,
-      rowSelection,
       columnPinning: { right: isMobile ? [] : ['actions'] },
       columnVisibility,
     },
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: (updater) => {
-      const newPageSelection: MRT_RowSelectionState =
-        typeof updater === 'function' ? updater(rowSelection) : updater
-      onSelectionChange((prev) => {
-        const next = new Set(prev)
-        for (const row of data) next.delete(row.id)
-        for (const [idStr, checked] of Object.entries(newPageSelection)) {
-          if (checked) next.add(Number(idStr))
-        }
-        return next
-      })
-    },
     onPaginationChange: (updater) => {
       const current = {
         pageIndex: (filters.page ?? 1) - 1,
@@ -443,20 +417,6 @@ function TeamsTableCardInner({
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            {canDelete && selectedIds.size > 0 ? (
-              <>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="h-7 gap-1.5 px-2.5 text-xs font-semibold"
-                  onClick={onBulkDeleteClick}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Delete {selectedIds.size} selected
-                </Button>
-                <div className="h-4 w-px bg-border" />
-              </>
-            ) : null}
             {canCreate ? (
               <Button
                 size="sm"

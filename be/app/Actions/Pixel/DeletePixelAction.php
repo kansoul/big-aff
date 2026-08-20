@@ -3,13 +3,13 @@
 namespace App\Actions\Pixel;
 
 use App\Models\Pixel;
-use App\Support\OwnershipFilter\OwnershipFilter;
+use App\Support\OwnerResource\PixelOwnerResource;
 
 class DeletePixelAction
 {
     public function execute(Pixel $pixel): void
     {
-        OwnershipFilter::forAuthUser()->authorize($pixel->created_by);
+        (new PixelOwnerResource)->authorize($pixel);
         $pixel->delete();
     }
 }

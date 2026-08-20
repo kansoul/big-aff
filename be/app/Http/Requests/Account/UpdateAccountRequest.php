@@ -34,7 +34,6 @@ class UpdateAccountRequest extends FormRequest
             'is_special' => ['sometimes', 'boolean'],
             'sync_to_mcc' => ['sometimes', 'boolean'],
             'roas_enabled' => ['sometimes', 'boolean'],
-            'gtag_enabled' => ['sometimes', 'boolean'],
             'user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
         ];
     }

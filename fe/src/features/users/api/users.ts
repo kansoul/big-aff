@@ -14,6 +14,8 @@ export const usersApi = {
       params: {
         page,
         per_page: perPage,
+        ...(filters.keyword ? { keyword: filters.keyword } : {}),
+        ...(filters.role_id ? { role_id: filters.role_id } : {}),
         ...(filters.order ? { order: filters.order } : {}),
         ...(filters.order_by ? { order_by: filters.order_by } : {}),
       },

@@ -113,7 +113,7 @@ function SelectFieldRenderer({ field, onChange }: FieldRendererProps<SelectFilte
       onValueChange={(v) => onChange(v === '__all__' ? null : v)}
       options={options}
       placeholder={field.placeholder ?? 'Select...'}
-      className={cn('h-7 px-2 text-xs', field.className)}
+      className={cn('h-7 px-2 text-xs md:text-xs', field.className)}
     />
   )
 }
@@ -163,7 +163,7 @@ function MultiSelectFieldRenderer({ field, onChange }: FieldRendererProps<MultiS
           variant="outline"
           disabled={isDisabled}
           className={cn(
-            'h-7 w-full justify-between gap-1 px-2 text-xs font-normal',
+            'h-7 w-full justify-between gap-1 px-2 text-xs md:text-xs font-normal',
             field.value.length === 0 && 'text-muted-foreground',
             field.className,
           )}
@@ -226,7 +226,7 @@ function MultiSelectFieldRenderer({ field, onChange }: FieldRendererProps<MultiS
 function InputFieldRenderer({ field, onChange }: FieldRendererProps<InputFilterField>) {
   return (
     <Input
-      className={cn('h-7 w-full px-2 text-xs', field.className)}
+      className={cn('h-7 w-full px-2 text-xs md:text-xs placeholder:text-xs', field.className)}
       placeholder={field.placeholder ?? 'Search...'}
       value={field.value ?? ''}
       onChange={(e) => onChange(e.target.value || null)}
@@ -237,7 +237,7 @@ function InputFieldRenderer({ field, onChange }: FieldRendererProps<InputFilterF
 function DatePickerFieldRenderer({ field, onChange }: FieldRendererProps<DatePickerFilterField>) {
   return (
     <DatePicker
-      className={cn('h-7 w-full px-2 text-xs', field.className)}
+      className={cn('h-7 w-full px-2 text-xs md:text-xs', field.className)}
       value={field.value}
       onChange={(v) => onChange(v)}
       placeholder={field.placeholder}
@@ -248,7 +248,7 @@ function DatePickerFieldRenderer({ field, onChange }: FieldRendererProps<DatePic
 function DateRangeFieldRenderer({ field, onChange }: FieldRendererProps<DateRangeFilterField>) {
   return (
     <DateRangePickerPresets
-      className={cn('h-7 px-2 text-xs', field.className)}
+      className={cn('h-7 px-2 text-xs md:text-xs', field.className)}
       from={field.value?.from ?? null}
       to={field.value?.to ?? null}
       placeholder={field.placeholder ?? 'Select date range'}

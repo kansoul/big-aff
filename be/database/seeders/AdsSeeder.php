@@ -180,10 +180,19 @@ class AdsSeeder extends Seeder
         $missing = self::PIXEL_COUNT - Pixel::query()->count();
 
         if ($missing > 0) {
-            Pixel::factory()->count($missing)->create([
-                'created_by' => $admin->id,
-                'updated_by' => $admin->id,
-            ]);
+            $businessCenters = BusinessCenter::query()
+                ->whereIn('ads_type', ['facebook', 'tiktok'])
+                ->get();
+
+            foreach (range(1, $missing) as $_) {
+                $businessCenter = $businessCenters->random();
+                Pixel::factory()->create([
+                    'platform' => $businessCenter->ads_type,
+                    'business_center_id' => $businessCenter->id,
+                    'created_by' => $admin->id,
+                    'updated_by' => $admin->id,
+                ]);
+            }
         }
 
         return Pixel::query()->limit(self::PIXEL_COUNT)->get();

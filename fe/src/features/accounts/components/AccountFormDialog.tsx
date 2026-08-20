@@ -136,7 +136,6 @@ export function CreateAccountDialog({
       is_special: false,
       sync_to_mcc: false,
       roas_enabled: false,
-      gtag_enabled: false,
       lines: '',
     },
   })
@@ -153,7 +152,6 @@ export function CreateAccountDialog({
       is_special: false,
       sync_to_mcc: false,
       roas_enabled: false,
-      gtag_enabled: false,
       lines: '',
     })
   }, [open, form])
@@ -174,7 +172,6 @@ export function CreateAccountDialog({
         is_special: values.is_special,
         sync_to_mcc: values.sync_to_mcc,
         roas_enabled: values.roas_enabled,
-        gtag_enabled: values.gtag_enabled,
         lines: values.lines,
       })
       toast.success('Account created successfully')
@@ -385,25 +382,6 @@ export function CreateAccountDialog({
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="gtag_enabled"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-3 rounded-md border p-3">
-                    <FormControl>
-                      <Checkbox
-                        checked={!!field.value}
-                        onCheckedChange={(checked) => field.onChange(checked === true)}
-                        disabled={submitting}
-                      />
-                    </FormControl>
-                    <div className="space-y-0.5">
-                      <FormLabel>Gtag</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
             </div>
 
             <FormField
@@ -509,7 +487,6 @@ export function EditAccountDialog({
       is_special: false,
       sync_to_mcc: false,
       roas_enabled: false,
-      gtag_enabled: false,
     },
   })
 
@@ -517,9 +494,9 @@ export function EditAccountDialog({
     () => ({
       account_id: account?.account_id ?? '',
       account_name: account?.account_name ?? null,
-      ads_type: (account?.ads_type === 'unknown'
-        ? 'google'
-        : (account?.ads_type ?? 'google')) as 'google' | 'tiktok',
+      ads_type: (account?.ads_type === 'unknown' ? 'google' : (account?.ads_type ?? 'google')) as
+        | 'google'
+        | 'tiktok',
       business_center_id: account?.business_center_id ?? null,
       main_team_id: account?.main_team_id ?? null,
       user_id: account?.user_id ?? null,
@@ -527,7 +504,6 @@ export function EditAccountDialog({
       is_special: account?.is_special ?? false,
       sync_to_mcc: account?.sync_to_mcc ?? false,
       roas_enabled: account?.roas_enabled ?? false,
-      gtag_enabled: account?.gtag_enabled ?? false,
     }),
     [account],
   )
@@ -555,7 +531,6 @@ export function EditAccountDialog({
         is_special: values.is_special,
         sync_to_mcc: values.sync_to_mcc,
         roas_enabled: values.roas_enabled,
-        gtag_enabled: values.gtag_enabled,
       })
       toast.success('Account updated successfully')
       onOpenChange(false)
@@ -782,25 +757,6 @@ export function EditAccountDialog({
                     </FormControl>
                     <div className="space-y-0.5">
                       <FormLabel>ROAS Upload</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="gtag_enabled"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-3 rounded-md border p-3">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={(checked) => field.onChange(checked === true)}
-                        disabled={submitting}
-                      />
-                    </FormControl>
-                    <div className="space-y-0.5">
-                      <FormLabel>Gtag</FormLabel>
                     </div>
                   </FormItem>
                 )}

@@ -4,17 +4,12 @@ namespace App\Actions\Account;
 
 use App\Models\Account;
 use App\Support\Accounts\AccountsAccess;
-use App\Support\Gtag\GtagResolver;
 use App\Support\OwnerResource\AccountOwnerResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 
 class DeleteAccountAction
 {
-    public function __construct(
-        private readonly GtagResolver $gtagResolver = new GtagResolver,
-    ) {}
-
     /**
      * @throws AuthorizationException
      */
@@ -26,6 +21,5 @@ class DeleteAccountAction
 
         $account->delete();
 
-        $this->gtagResolver->forget($account->account_id);
     }
 }

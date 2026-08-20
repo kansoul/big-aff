@@ -3,6 +3,7 @@
 namespace App\Models\Traits\Relationship;
 
 use App\Models\Account;
+use App\Models\Pixel;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,12 @@ trait BusinessCenterRelationship
     public function accounts(): HasMany
     {
         return $this->hasMany(Account::class, 'business_center_id', 'id');
+    }
+
+    /** @return HasMany<Pixel, $this> */
+    public function pixels(): HasMany
+    {
+        return $this->hasMany(Pixel::class);
     }
 
     /**

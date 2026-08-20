@@ -39,5 +39,7 @@ export const businessCentersApi = {
   delete: (id: number) => axiosInstance.delete(`/business-centers/${id}`),
 
   listOptions: () =>
-    axiosInstance.get<{ data: { id: number; name: string }[] }>('/options/business-centers'),
+    axiosInstance.get<{
+      data: { id: number; bc_id: string; name: string; ads_type: string }[]
+    }>('/options/business-centers'),
 }

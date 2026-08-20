@@ -44,8 +44,14 @@ export type NavItem = {
 export const NAVIGATION_ITEMS: NavItem[] = [
   { name: 'Dashboard', href: PATHS.dashboard, icon: LayoutDashboard },
   {
-    name: 'Content',
+    name: 'Landing Page',
     items: [
+      {
+        name: 'Links',
+        href: PATHS.links,
+        icon: Link2,
+        requiredPermission: PermissionSlugs.LinksView,
+      },
       {
         name: 'Media',
         href: PATHS.media,
@@ -55,19 +61,14 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     ],
   },
   {
-    name: 'Marketing',
+    name: 'Reports',
     items: [
       {
-        name: 'Links',
-        href: PATHS.links,
-        icon: Link2,
-        requiredPermission: PermissionSlugs.LinksView,
+        name: 'Campaign Report',
+        href: PATHS.campaignReport,
+        icon: Megaphone,
+        requiredPermission: PermissionSlugs.CampaignReportsView,
       },
-    ],
-  },
-  {
-    name: 'Report',
-    items: [
       {
         name: 'Spend Report',
         href: PATHS.adsReport,
@@ -86,16 +87,10 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         icon: CircleDollarSign,
         requiredPermission: PermissionSlugs.RevenueStatsView,
       },
-      {
-        name: 'Campaign Report',
-        href: PATHS.campaignReport,
-        icon: Megaphone,
-        requiredPermission: PermissionSlugs.CampaignReportsView,
-      },
     ],
   },
   {
-    name: 'Ads',
+    name: 'Ads Setup',
     items: [
       {
         name: 'Business Centers',
@@ -110,24 +105,6 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         requiredPermission: PermissionSlugs.AccountsView,
       },
       {
-        name: 'Google Conversions',
-        href: PATHS.googleConversions,
-        icon: Repeat,
-        requiredPermission: PermissionSlugs.GoogleConversionsView,
-      },
-      {
-        name: 'Gtags',
-        href: PATHS.gtags,
-        icon: Tag,
-        requiredPermission: PermissionSlugs.GtagsView,
-      },
-      {
-        name: 'Pixels',
-        href: PATHS.pixels,
-        icon: Tag,
-        requiredPermission: PermissionSlugs.PixelsView,
-      },
-      {
         name: 'Campaign Rules',
         href: PATHS.campaignRuleSettings,
         icon: SlidersHorizontal,
@@ -136,15 +113,25 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     ],
   },
   {
-    name: 'Organization',
+    name: 'Tracking & Conversion',
     items: [
       {
-        name: 'Users',
-        href: PATHS.settingsUsers,
-        icon: Users,
-        requiredPermission: PermissionSlugs.SettingsUsersView,
+        name: 'Pixel Conversions',
+        href: PATHS.pixels,
+        icon: Tag,
+        requiredPermission: PermissionSlugs.PixelsView,
       },
-
+      {
+        name: 'Google Conversions',
+        href: PATHS.googleConversions,
+        icon: Repeat,
+        requiredPermission: PermissionSlugs.GoogleConversionsView,
+      },
+    ],
+  },
+  {
+    name: 'Organization',
+    items: [
       {
         name: 'Teams',
         href: PATHS.teams,
@@ -152,17 +139,23 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         requiredPermission: PermissionSlugs.TeamsView,
       },
       {
-        name: 'Main Teams',
-        href: PATHS.mainTeams,
-        icon: Network,
-        adminOnly: true,
-        mainSystemOnly: true,
+        name: 'Users',
+        href: PATHS.settingsUsers,
+        icon: Users,
+        requiredPermission: PermissionSlugs.SettingsUsersView,
       },
       {
         name: 'Roles',
         href: PATHS.settingsRoles,
         icon: UserCog,
         requiredPermission: PermissionSlugs.SettingsRolesView,
+      },
+      {
+        name: 'Main Teams',
+        href: PATHS.mainTeams,
+        icon: Network,
+        adminOnly: true,
+        mainSystemOnly: true,
       },
     ],
   },
