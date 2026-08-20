@@ -88,7 +88,8 @@ shadcn **`components.json`** aliases: `@/components`, `@/components/ui`, `@/lib/
 | Build | **Vite 8**, **TypeScript 5.9**, `@tailwindcss/vite`, **Tailwind 4** |
 | UI core | **React 19**, **react-router-dom 7** (`createBrowserRouter`, `RouterProvider`) |
 | Styling & primitives | **shadcn** (radix-nova), **Radix** slots/primitives, **CVA**, **tailwind-merge**, **clsx**, **lucide-react** (primary icons) |
-| Optional UI | **@mantine/core**, **@mantine/hooks**, **@mantine/dates**, **mantine-react-table**, **@tabler/icons-react** — use when an existing screen already does, or for data tables / date UX that matches Mantine; otherwise prefer shadcn + existing patterns |
+| Optional UI | **@mantine/core**, **@mantine/hooks**, **@mantine/dates**, **@tabler/icons-react** — use when an existing screen already does or for date UX that matches Mantine; otherwise prefer shadcn + existing patterns |
+| Data tables | **mantine-react-table** — required for all tabular data views; do not build data tables from raw `<table>` elements or the shadcn `Table` primitive |
 | Charts | **recharts** |
 | Forms | **react-hook-form**, **zod**, **@hookform/resolvers** |
 | HTTP | **axios** via **`@/shared/api/axios`** (`axiosInstance`), **`@/config`** `apiURL` |
@@ -136,12 +137,29 @@ The logged-in user receives **`permissions: string[]`** from the API — see **`
 
 - Pattern: **react-hook-form** + **zod** schema + **zodResolver**; use shadcn **`Form`** / **`FormField`** components under **`@/components/ui/form`** (see **`LoginPage`**).
 
+## Filters and search
+
+- Use **`@/components/common/FilterPanel`** for page/table filtering and search controls. Define fields with **`FilterFieldDef[]`** instead of building standalone search inputs, selects, date pickers, or reset buttons.
+- Prefer `applyMode` for filters that trigger API requests so typing and draft changes do not refetch immediately. Reset pagination to page 1 when filters are applied or cleared.
+- In an MRT table card, follow `MediaTableCard`: put create/upload/export actions in the top toolbar beside the title/count and column controls, then render `FilterPanel` in its own bordered row directly below. Keep toolbar buttons compact (`size="sm"`, `h-7`, `text-xs`). Use `FilterPanel.actions` only when a screen intentionally has no MRT top toolbar.
+- Keep `FilterPanel`, active-filter chips, and the table inside the same MRT table-card surface so they read as one unit.
+- Only bypass `FilterPanel` when the input is not a data filter/search control or the existing component cannot represent the required interaction; document that exception in the implementation.
+
+## Data tables
+
+- Use **`mantine-react-table`** for every data table. Define typed, memoized `MRT_ColumnDef<T>[]` columns and create the table with `useMantineReactTable`; render it with `MantineReactTable`.
+- Follow the code structure in **`features/media/components/MediaTableCard.tsx`**: pages own API/query state and dialogs; a memoized feature `*TableCard` owns typed columns, MRT configuration, top-toolbar actions, `FilterPanel`, active-filter chips, pagination/sorting wiring, row actions, loading, and empty states. Pass stable callbacks from the page instead of implementing the table inline in `*Page.tsx`.
+- Keep tables compact and scannable: use explicit column sizes, `density: 'xs'` or `'md'`, concise headers, consistent alignment, truncated long text with an accessible full-value affordance, and compact row actions (`h-7`, small icons, tooltips for icon-only actions).
+- Put the actions column last, disable sorting/hiding where inappropriate, right-align it, and pin it on wider screens when horizontal scrolling is possible. Keep destructive actions visually distinct.
+- Use manual pagination/sorting/filtering when the API owns those concerns. Drive MRT state from validated API params and reset the page to 1 when filters change.
+- Disable MRT controls that duplicate `FilterPanel` or are not useful for the screen. Provide clear loading and empty states, horizontal overflow handling, and avoid nested/double borders when the table shares a card with `FilterPanel`.
+
 ## UI implementation order
 
 1. Reuse **`@/components/ui/*`** and **`@/components/common/*`**.
 2. Compose with Tailwind semantic tokens from **`index.css`** (`bg-background`, `text-foreground`, `border-border`, etc.).
 3. Add new shadcn blocks with **`cd fe && npx shadcn@latest add <component>`** (see **`shadcn-tailwind`** skill).
-4. Introduce Mantine/MRT only when it matches existing feature patterns or clear UX need for tables/dates.
+4. Use Mantine React Table for tabular data; introduce other Mantine components only when they match existing patterns or a clear date/UI need.
 
 ## Re-render optimization (React + Zustand)
 

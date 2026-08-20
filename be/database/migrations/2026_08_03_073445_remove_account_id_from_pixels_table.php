@@ -25,7 +25,6 @@ return new class extends Migration
                     ->pluck('id');
                 $canonicalId = $pixelIds->shift();
 
-                DB::table('ads_links')->whereIn('pixel_id', $pixelIds)->update(['pixel_id' => $canonicalId]);
                 DB::table('pixels')->whereIn('id', $pixelIds)->delete();
             });
 

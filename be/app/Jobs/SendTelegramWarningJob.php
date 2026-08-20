@@ -27,7 +27,7 @@ class SendTelegramWarningJob implements ShouldBeUnique, ShouldQueue
     public function __construct(
         protected string $message,
         protected string $campaignId,
-        protected string $adsLinkId = '',
+        protected string $linkId = '',
         protected ?string $chatIdOverride = null,
         protected string $parseMode = 'Markdown',
     ) {
@@ -39,7 +39,7 @@ class SendTelegramWarningJob implements ShouldBeUnique, ShouldQueue
      */
     public function uniqueId(): string
     {
-        return $this->campaignId.'-'.$this->adsLinkId;
+        return $this->campaignId.'-'.$this->linkId;
     }
 
     /**

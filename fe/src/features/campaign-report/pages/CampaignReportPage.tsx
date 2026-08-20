@@ -414,7 +414,7 @@ export function CampaignReportPage() {
         label: 'Search',
         type: 'input',
         value: filters.keyword ?? null,
-        placeholder: 'Campaign, account, or Ads Link...',
+        placeholder: 'Campaign, account, or link...',
       },
       {
         field: 'user_ids',

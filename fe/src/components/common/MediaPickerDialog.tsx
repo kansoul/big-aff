@@ -133,7 +133,7 @@ type RecentMediaTableProps = {
   open: boolean
   selected: MediaFile | null
   onSelect: (media: MediaFile | null) => void
-  directory: 'media' | 'media/site'
+  directory: 'media'
 }
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
@@ -385,7 +385,7 @@ type MediaPickerDialogProps = {
   onSelect: (media: MediaFile) => void
   title?: string
   accept?: string
-  directory: 'media' | 'media/site'
+  directory: 'media'
 }
 
 export function MediaPickerDialog({
@@ -617,7 +617,7 @@ type MediaPickerInputProps = {
   accept?: string
   placeholder?: string
   disabled?: boolean
-  directory: 'media' | 'media/site'
+  directory: 'media'
 }
 
 export function MediaPickerInput({
@@ -741,7 +741,7 @@ type MediaPickerFieldProps<T extends FieldValues> = {
   label?: string
   accept?: string
   placeholder?: string
-  directory: 'media' | 'media/site'
+  directory: 'media'
 }
 
 export function MediaPickerField<T extends FieldValues>({

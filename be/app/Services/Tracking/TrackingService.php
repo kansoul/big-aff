@@ -2,7 +2,7 @@
 
 namespace App\Services\Tracking;
 
-use App\Actions\Tracking\GetAdsLinkTrackingConfigAction;
+use App\Actions\Tracking\GetLinkTrackingConfigAction;
 use App\Actions\Tracking\StoreAdsConversionAction;
 use App\Actions\Tracking\StoreTrackingLogAction;
 
@@ -11,7 +11,7 @@ class TrackingService
     public function __construct(
         protected StoreTrackingLogAction $storeTrackingLogAction,
         protected StoreAdsConversionAction $storeAdsConversionAction,
-        protected GetAdsLinkTrackingConfigAction $getAdsLinkTrackingConfigAction,
+        protected GetLinkTrackingConfigAction $getLinkTrackingConfigAction,
     ) {}
 
     /**
@@ -34,6 +34,6 @@ class TrackingService
     /** @return array<string, mixed> */
     public function config(string $trackingCode): array
     {
-        return $this->getAdsLinkTrackingConfigAction->execute($trackingCode);
+        return $this->getLinkTrackingConfigAction->execute($trackingCode);
     }
 }

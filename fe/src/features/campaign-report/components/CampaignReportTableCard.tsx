@@ -9,7 +9,7 @@ import {
 } from 'mantine-react-table'
 import { BarChart3, CalendarClock, BookOpen, ExternalLink, SlidersHorizontal } from 'lucide-react'
 
-import { buildCopyLink } from '@/lib/ads-link'
+import { buildTrackingLink } from '@/lib/link'
 import { useIsMobile } from '@/hooks/useMobile'
 import { useColumnVisibilityStorage } from '@/hooks/useColumnVisibilityStorage'
 
@@ -123,11 +123,12 @@ function getRowAdsManagerLink(row: TableRow): string | null {
 
 function getRowArticleLink(row: TableRow): string | null {
   if (isGroupRow(row)) return null
-  const { site_url, slug, tracking_code, ads_type } = row
-  if (!site_url || !slug || !tracking_code) return null
+  const { link_url, tracking_code, ads_type } = row
+  if (!link_url || !tracking_code) return null
   const adsTypeLower = (ads_type ?? '').toLowerCase()
-  if (adsTypeLower === 'google') return buildCopyLink(site_url, slug, tracking_code, 'google')
-  if (adsTypeLower === 'tiktok') return buildCopyLink(site_url, slug, tracking_code, 'tiktok')
+  if (adsTypeLower === 'facebook') return buildTrackingLink(link_url, tracking_code, 'facebook')
+  if (adsTypeLower === 'google') return buildTrackingLink(link_url, tracking_code, 'google')
+  if (adsTypeLower === 'tiktok') return buildTrackingLink(link_url, tracking_code, 'tiktok')
   return null
 }
 
@@ -1387,7 +1388,7 @@ function CampaignReportTableCardInner({
           onOpenChange={onTrackingDialogOpenChange}
           initialDate={trackingDialogTarget.date_start ?? undefined}
           initialCampaignId={trackingDialogTarget.campaign_id ?? undefined}
-          initialAdsLinkId={trackingDialogTarget.realtime_report?.ads_link_id ?? null}
+          initialLinkId={trackingDialogTarget.realtime_report?.link_id ?? null}
         />
       )}
 

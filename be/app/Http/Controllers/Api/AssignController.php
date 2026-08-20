@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Account\AssignAccountRequest;
 use App\Http\Requests\Account\ListUsersWithAccountsRequest;
-use App\Http\Requests\Site\AssignSiteRequest;
 use App\Http\Requests\Team\AssignTeamRequest;
-use App\Models\Site;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\Assign\AssignService;
@@ -79,43 +77,6 @@ class AssignController extends BaseController
         $result = $this->assignService->assignAccountsToUser($user, $request->validated('account_ids', []));
 
         return $this->sendResponse(['skipped_account_ids' => $result['skipped_account_ids']]);
-    }
-
-    /**
-     * Site user options
-     *
-     * Return users available to assign to a site.
-     *
-     * @urlParam site integer required The site ID. Example: 1
-     *
-     * @response 200 {"data": [{"id": 1, "name": "John Doe", "email": "john@example.com"}], "assigned_user_ids": [2]}
-     */
-    public function siteUserOptions(Site $site): JsonResponse
-    {
-        $result = $this->assignService->siteUserOptions($site);
-
-        return $this->sendResponse([
-            'data' => $result['options'],
-            'assigned_user_ids' => $result['assigned_user_ids'],
-        ]);
-    }
-
-    /**
-     * Assign users to site
-     *
-     * Assign one or more users to a site.
-     *
-     * @urlParam site integer required The site ID. Example: 1
-     *
-     * @bodyParam user_ids integer[] required Array of user IDs to assign. Example: [1, 2, 3]
-     *
-     * @response 200 {"message": "Users assigned successfully."}
-     */
-    public function assignUsersToSite(AssignSiteRequest $request, Site $site): JsonResponse
-    {
-        $this->assignService->assignUsersToSite($site, $request->validated()['user_ids']);
-
-        return $this->sendResponse(['message' => 'Users assigned successfully.']);
     }
 
     /**

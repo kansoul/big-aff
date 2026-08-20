@@ -71,7 +71,7 @@ class TikTokAdsService
      * Verify that a campaign exists on TikTok and return its data so the caller
      * can persist it locally. Mirrors GoogleAdsService::verifyCampaign: because
      * the TikTok API requires an advertiser_id, we probe each candidate
-     * advertiser (from the ads link's tracking ids) until the campaign is found.
+     * advertiser accounts until the campaign is found.
      * The owning advertiser account is created locally if missing. Returns null
      * when the campaign is not found on any advertiser.
      *

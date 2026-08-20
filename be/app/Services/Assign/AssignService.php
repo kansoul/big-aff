@@ -5,11 +5,8 @@ namespace App\Services\Assign;
 use App\Actions\Account\AssignAccountAction;
 use App\Actions\Account\GetAccountAssignOptionsAction;
 use App\Actions\Account\ListUsersWithAccountsAction;
-use App\Actions\Site\AssignSiteAction;
-use App\Actions\Site\GetSiteUserOptionsAction;
 use App\Actions\Team\AssignTeamAction;
 use App\Actions\Team\GetTeamUserOptionsAction;
-use App\Models\Site;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -21,8 +18,6 @@ class AssignService
         private readonly ListUsersWithAccountsAction $listUsersWithAccountsAction,
         private readonly GetAccountAssignOptionsAction $getAccountAssignOptionsAction,
         private readonly AssignAccountAction $assignAccountAction,
-        private readonly GetSiteUserOptionsAction $getSiteUserOptionsAction,
-        private readonly AssignSiteAction $assignSiteAction,
         private readonly GetTeamUserOptionsAction $getTeamUserOptionsAction,
         private readonly AssignTeamAction $assignTeamAction,
     ) {}
@@ -42,17 +37,6 @@ class AssignService
     public function assignAccountsToUser(User $user, array $accountIds): array
     {
         return $this->assignAccountAction->execute($user, $accountIds);
-    }
-
-    /** @return array{options: Collection<int, array{id: int, name: string, email: string}>, assigned_user_ids: array<int>} */
-    public function siteUserOptions(Site $site): array
-    {
-        return $this->getSiteUserOptionsAction->execute($site);
-    }
-
-    public function assignUsersToSite(Site $site, array $userIds): void
-    {
-        $this->assignSiteAction->execute($site, $userIds);
     }
 
     /** @return Collection<int, array{id: int, name: string, email: string}> */

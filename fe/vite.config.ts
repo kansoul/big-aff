@@ -19,6 +19,6 @@ export default defineConfig({
   },
   server: {
     host: true,
-    allowedHosts: ['aff-ticollab.test'],
+    allowedHosts: ['aff-ticollab.test', 'aff.test'],
   },
 })

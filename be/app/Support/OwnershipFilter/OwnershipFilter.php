@@ -5,7 +5,6 @@ namespace App\Support\OwnershipFilter;
 use App\Enums\TeamRole;
 use App\Models\Account;
 use App\Models\BusinessCenter;
-use App\Models\Site;
 use App\Models\Team;
 use App\Models\TeamUser;
 use App\Models\User;
@@ -109,11 +108,6 @@ final readonly class OwnershipFilter
     /**
      * Apply ownership via a subquery when the model does not have a direct owner column.
      * No-op for admin users.
-     *
-     * Example — filter follows through their site's created_by:
-     *   $ownership->applyThrough($query, 'site_id', fn(array $ids) =>
-     *       Site::whereIn('created_by', $ids)->select('id')
-     *   );
      *
      * @template TModel of \Illuminate\Database\Eloquent\Model
      *
@@ -267,27 +261,6 @@ final readonly class OwnershipFilter
         }
 
         return $this->allowedUserIds;
-    }
-
-    /**
-     * Guard create / update / delete on a Site.
-     * Allowed if the site was created by an allowed user, or if any allowed user
-     * has been explicitly assigned to the site via the `users` pivot.
-     *
-     * @throws AuthorizationException
-     */
-    public function authorizeSite(Site $site): void
-    {
-        if ($this->isAdmin) {
-            return;
-        }
-
-        $accessible = in_array($site->created_by, $this->allowedUserIds, true)
-            || $site->users()->whereIn('users.id', $this->allowedUserIds)->exists();
-
-        if (! $accessible) {
-            throw new AuthorizationException;
-        }
     }
 
     /**

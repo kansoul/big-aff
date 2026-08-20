@@ -3,7 +3,6 @@
 use App\Enums\Permission;
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AdsDeliveryEntitiesController;
-use App\Http\Controllers\Api\AdsLinkController;
 use App\Http\Controllers\Api\AdsReportController;
 use App\Http\Controllers\Api\AnalyticsTrackingController;
 use App\Http\Controllers\Api\AssignController;
@@ -16,10 +15,10 @@ use App\Http\Controllers\Api\CampaignRuleSettingController;
 use App\Http\Controllers\Api\CampaignScheduleController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FileController;
-use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\GoogleConversionController;
 use App\Http\Controllers\Api\GtagController;
 use App\Http\Controllers\Api\KeywordSetController;
+use App\Http\Controllers\Api\LinkController;
 use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\MainSystemSyncController;
 use App\Http\Controllers\Api\MainTeamController;
@@ -30,7 +29,6 @@ use App\Http\Controllers\Api\RevenueReportController;
 use App\Http\Controllers\Api\RevenueReportRangeController;
 use App\Http\Controllers\Api\RevenueStatsController;
 use App\Http\Controllers\Api\RoleController;
-use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Api\UserController;
@@ -42,11 +40,6 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/switch', [AuthController::class, 'switch']);
 
 Route::middleware('check.whitelist')->group(function () {
-    Route::prefix('follow')->group(function (): void {
-        Route::post('/subscribe', [FollowController::class, 'store']);
-        Route::post('/unsubscribe', [FollowController::class, 'unsubscribe']);
-    });
-    Route::get('/site/config', [SiteController::class, 'config']);
     Route::post('/tracking/log', [TrackingController::class, 'storeLog']);
     Route::get('/tracking/config/{trackingCode}', [TrackingController::class, 'config'])
         ->whereAlphaNumeric('trackingCode');
@@ -67,20 +60,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('{mainTeam}', [MainTeamController::class, 'destroy']);
     });
 
-    Route::prefix('follows')->group(function () {
-        Route::get('/', [FollowController::class, 'index'])
-            ->middleware('permission.scope:'.Permission::FollowsView->value);
-        Route::delete('/{follow}', [FollowController::class, 'destroy'])
-            ->middleware('permission.scope:'.Permission::FollowsDelete->value);
-    });
-
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::post('/auth/avatar', [AuthController::class, 'uploadAvatar']);
 
     Route::prefix('options')->group(function () {
         Route::get('users', [OptionController::class, 'users']);
-        Route::get('sites', [OptionController::class, 'sites']);
         Route::get('accounts', [OptionController::class, 'accounts']);
         Route::get('pixels', [OptionController::class, 'pixels']);
         Route::get('teams', [OptionController::class, 'teams']);
@@ -122,32 +107,12 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('permission.scope:'.Permission::FilesView->value);
     });
 
-    Route::prefix('sites')->group(function () {
-        Route::get('/', [SiteController::class, 'index'])
-            ->middleware('permission.scope:'.Permission::SettingsSitesView->value);
-        Route::post('/', [SiteController::class, 'store'])
-            ->middleware('permission.scope:'.Permission::SettingsSitesCreate->value);
-        Route::get('{site}', [SiteController::class, 'show'])
-            ->middleware('permission.scope:'.Permission::SettingsSitesView->value);
-        Route::match(['put', 'patch'], '{site}', [SiteController::class, 'update'])
-            ->middleware('permission.scope:'.Permission::SettingsSitesUpdate->value);
-        Route::delete('{site}', [SiteController::class, 'destroy'])
-            ->middleware('permission.scope:'.Permission::SettingsSitesDelete->value);
-        Route::post('{site}/assign-users', [AssignController::class, 'assignUsersToSite'])
-            ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
-        Route::get('{site}/user-options', [AssignController::class, 'siteUserOptions'])
-            ->middleware('permission.scope:'.Permission::SettingsSitesAssign->value);
-    });
-
-    Route::prefix('ads-links')->group(function () {
-        Route::get('/', [AdsLinkController::class, 'index'])
-            ->middleware('permission.scope:'.Permission::AdsLinksView->value);
-        Route::post('/', [AdsLinkController::class, 'store'])
-            ->middleware('permission.scope:'.Permission::AdsLinksCreate->value);
-        Route::match(['put', 'patch'], '{ads_link}', [AdsLinkController::class, 'update'])
-            ->middleware('permission.scope:'.Permission::AdsLinksUpdate->value);
-        Route::post('{ads_link}/toggle-hide', [AdsLinkController::class, 'toggleHide'])
-            ->middleware('permission.scope:'.Permission::AdsLinksView->value);
+    Route::prefix('links')->group(function () {
+        Route::get('/', [LinkController::class, 'index'])->middleware('permission.scope:'.Permission::LinksView->value);
+        Route::post('/', [LinkController::class, 'store'])->middleware('permission.scope:'.Permission::LinksCreate->value);
+        Route::get('{link}', [LinkController::class, 'show'])->middleware('permission.scope:'.Permission::LinksView->value);
+        Route::match(['put', 'patch'], '{link}', [LinkController::class, 'update'])->middleware('permission.scope:'.Permission::LinksUpdate->value);
+        Route::delete('{link}', [LinkController::class, 'destroy'])->middleware('permission.scope:'.Permission::LinksDelete->value);
     });
 
     Route::prefix('roles')->group(function () {

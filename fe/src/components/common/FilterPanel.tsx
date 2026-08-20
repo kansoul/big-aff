@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo, useState, type ReactNode } from 'react'
 import { ChevronDown, ChevronUp, Filter, RotateCcw, Search, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -90,6 +90,8 @@ export type FilterPanelProps = (AutoModeProps | ApplyModeProps) & {
   defaultOpen?: boolean
   title?: string
   className?: string
+  actions?: ReactNode
+  embedded?: boolean
 }
 
 // ─── Field renderers (module-scope, no inline components) ─────────────────────
@@ -292,7 +294,15 @@ function fieldsToRecord(fields: FilterFieldDef[]): Record<string, unknown> {
 }
 
 function FilterPanelInner(props: FilterPanelProps) {
-  const { fields, onReset, defaultOpen = true, title = 'Filters', className } = props
+  const {
+    fields,
+    onReset,
+    defaultOpen = true,
+    title = 'Filters',
+    className,
+    actions,
+    embedded = false,
+  } = props
   const [open, setOpen] = useState(defaultOpen)
 
   const [draft, setDraft] = useState<Record<string, unknown>>(() => fieldsToRecord(fields))
@@ -328,7 +338,12 @@ function FilterPanelInner(props: FilterPanelProps) {
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className={cn('w-full', className)}>
-      <div className="filter-panel flex flex-col gap-3 rounded-lg border bg-background/60 p-3 shadow-sm">
+      <div
+        className={cn(
+          'filter-panel flex flex-col gap-3 bg-background/60 p-3',
+          embedded ? 'bg-transparent' : 'rounded-lg border shadow-sm',
+        )}
+      >
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
           <CollapsibleTrigger asChild>
@@ -367,6 +382,7 @@ function FilterPanelInner(props: FilterPanelProps) {
               <RotateCcw className="h-3 w-3" />
               Reset
             </Button>
+            {actions}
           </div>
         </div>
 

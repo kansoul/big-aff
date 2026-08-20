@@ -89,7 +89,6 @@ return [
         'allowed' => ['public'],
         'directories' => [
             'media' => 'media',
-            'site' => 'media/site',
         ],
     ],
 

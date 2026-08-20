@@ -32,7 +32,7 @@ export type CampaignReportGroupBy = '' | 'account_id' | 'user_id' | 'campaign_id
 export interface CampaignReportRealtime {
   id: number
   campaign_id: string
-  ads_link_id: number | null
+  link_id: number | null
   view_count: number
   redirect_count: number
   next_step_count: number
@@ -56,8 +56,7 @@ export interface CampaignReportRow {
   campaign_status: string | null
   has_rule?: boolean | null
   ads_type: string | null
-  site_url?: string | null
-  slug?: string | null
+  link_url?: string | null
   tracking_code?: string | null
   ads_manager_link?: string | null
 
@@ -239,7 +238,7 @@ export interface RevenueReportRangeQueryResponse {
 // ─── Tracking Analytics ───────────────────────────────────────────────────────
 
 export interface TrackingAnalyticsFilterParams {
-  ads_link_id?: number | null
+  link_id?: number | null
   campaign_id?: string | null
   date_from?: string | null
   date_to?: string | null
@@ -262,13 +261,13 @@ export interface TrackingAnalyticsResponse {
   }
 }
 
-export interface AdsLinkOption {
+export interface LinkOption {
   id: number
-  slug: string
+  name: string
 }
 
 export interface AnalyticsTrackingFilterOptions {
-  ads_links: AdsLinkOption[]
+  links: LinkOption[]
   campaigns: string[]
 }
 
@@ -281,7 +280,7 @@ export interface AnalyticsTrackingFilterOptionsResponse {
 export type KeywordTrackingOrderBy = 'keyword' | 'click_count' | 'redirect_count'
 
 export interface KeywordTrackingFilterParams {
-  ads_link_id?: number | null
+  link_id?: number | null
   campaign_id?: string | null
   date_from?: string | null
   date_to?: string | null

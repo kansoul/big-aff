@@ -5,7 +5,6 @@ namespace App\Models\Traits\Relationship;
 use App\Models\Account;
 use App\Models\File;
 use App\Models\Role;
-use App\Models\Site;
 use App\Models\Team;
 use App\Models\TeamUser;
 use App\Models\User;
@@ -61,18 +60,6 @@ trait UserRelationship
     public function assignedParentLink(): HasOne
     {
         return $this->hasOne(UserParentChild::class, 'child_user_id');
-    }
-
-    /**
-     * Sites assigned to this user.
-     *
-     * @return BelongsToMany<Site, $this>
-     */
-    public function sites(): BelongsToMany
-    {
-        return $this->belongsToMany(Site::class, 'user_sites')
-            ->withTimestamps()
-            ->withPivot('deleted_at');
     }
 
     /**

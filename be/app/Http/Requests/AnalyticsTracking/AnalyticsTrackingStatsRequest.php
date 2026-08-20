@@ -11,7 +11,7 @@ class AnalyticsTrackingStatsRequest extends FormRequest
         return [
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
-            'ads_link_id' => ['nullable', 'integer', 'exists:ads_links,id'],
+            'link_id' => ['nullable', 'integer', 'exists:links,id'],
             'campaign_id' => ['nullable', 'string'],
         ];
     }

@@ -111,7 +111,7 @@ class ListCampaignReportsAction
             ->withExists(['campaign as has_rule' => fn ($q) => $q->whereHas('campaignRules', fn ($q) => $q->where('is_active', true))])
             ->with([
                 'realtimeReport',
-                'campaign.adsLink.site',
+                'campaign.link',
             ]);
 
         $sort = SortInput::fromValidatedArray(
@@ -207,11 +207,8 @@ class ListCampaignReportsAction
                     ->orWhere('campaign_reports.account_name', 'like', "%{$keyword}%")
                     ->orWhere('campaign_reports.campaign_id', 'like', "%{$keyword}%")
                     ->orWhere('campaign_reports.campaign_name', 'like', "%{$keyword}%")
-                    ->orWhereHas('campaign.adsLink', function (Builder $adsLink) use ($keyword): void {
-                        $adsLink->where('slug', 'like', "%{$keyword}%");
-                    })
-                    ->orWhereHas('campaign.adsLink.site', function (Builder $site) use ($keyword): void {
-                        $site->where('url', 'like', "%{$keyword}%")
+                    ->orWhereHas('campaign.link', function (Builder $link) use ($keyword): void {
+                        $link->where('url', 'like', "%{$keyword}%")
                             ->orWhere('name', 'like', "%{$keyword}%");
                     });
             });

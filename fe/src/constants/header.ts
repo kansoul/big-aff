@@ -5,7 +5,6 @@ import { PermissionSlugs } from '@/constants/permissions'
 import {
   Building2,
   CircleDollarSign,
-  Globe,
   Images,
   LayoutDashboard,
   Link2,
@@ -15,7 +14,6 @@ import {
   SlidersHorizontal,
   Tag,
   Target,
-  UserCheck,
   UserCog,
   Users,
   UsersRound,
@@ -54,28 +52,16 @@ export const NAVIGATION_ITEMS: NavItem[] = [
         icon: Images,
         requiredPermission: PermissionSlugs.FilesView,
       },
-      {
-        name: 'Sites',
-        href: PATHS.settingsSites,
-        icon: Globe,
-        requiredPermission: PermissionSlugs.SettingsSitesView,
-      },
-      {
-        name: 'Follows',
-        href: PATHS.follows,
-        icon: UserCheck,
-        requiredPermission: PermissionSlugs.FollowsView,
-      },
     ],
   },
   {
     name: 'Marketing',
     items: [
       {
-        name: 'Ads Links',
-        href: PATHS.adsLinks,
+        name: 'Links',
+        href: PATHS.links,
         icon: Link2,
-        requiredPermission: PermissionSlugs.AdsLinksView,
+        requiredPermission: PermissionSlugs.LinksView,
       },
     ],
   },

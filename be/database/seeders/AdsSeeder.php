@@ -3,14 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\Account;
-use App\Models\AdsLink;
 use App\Models\BusinessCenter;
 use App\Models\Campaign;
-use App\Models\Follow;
 use App\Models\KeywordSet;
+use App\Models\Link;
 use App\Models\MainTeam;
 use App\Models\Pixel;
-use App\Models\Site;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -19,7 +17,7 @@ use Illuminate\Support\Collection;
 /**
  * Seeds the advertising domain. All cross-table IDs are guaranteed to be consistent:
  *   - `campaigns.account_id`          → `accounts.account_id` (business string)
- *   - `campaigns.ads_link_id`         → `ads_links.id`
+ *   - `campaigns.link_id`             → `links.id`
  */
 class AdsSeeder extends Seeder
 {
@@ -29,8 +27,6 @@ class AdsSeeder extends Seeder
     private const ACCOUNT_COUNT = 3;
 
     private const CAMPAIGNS_PER_ACCOUNT = 1;
-
-    private const FOLLOW_COUNT = 2;
 
     private const PIXEL_COUNT = 2;
 
@@ -55,9 +51,7 @@ class AdsSeeder extends Seeder
         $pixels = $this->seedPixels($admin);
         $this->seedKeywordSets($admin);
 
-        $this->seedAdsLinks($campaigns, $admin, $pixels);
-
-        $this->seedFollows();
+        $this->assignLinks($campaigns);
 
     }
 
@@ -241,57 +235,15 @@ class AdsSeeder extends Seeder
         return Campaign::query()->with('account')->limit(20)->get();
     }
 
-    /**
-     * Creates one AdsLink per campaign, attached to a seeded site (and, for TikTok, a pixel).
-     *
-     * @param  Collection<int, Campaign>  $campaigns
-     * @param  Collection<int, Pixel>  $pixels
-     */
-    private function seedAdsLinks(
-        Collection $campaigns,
-        User $admin,
-        Collection $pixels,
-    ): void {
-        $sites = Site::query()->get();
-
+    /** @param Collection<int, Campaign> $campaigns */
+    private function assignLinks(Collection $campaigns): void
+    {
+        $links = Link::query()->get();
         foreach ($campaigns as $campaign) {
-            if ($campaign->ads_link_id !== null) {
+            if ($campaign->link_id !== null || $links->isEmpty()) {
                 continue;
             }
-
-            $isTikTok = $campaign->ads_type === 'tiktok';
-
-            $adsLink = AdsLink::factory()->create([
-                'site_id' => $sites->isNotEmpty() ? $sites->random()->id : null,
-                'pixel_id' => $isTikTok && $pixels->isNotEmpty() ? $pixels->random()->id : null,
-                'rac' => 'https://example.com/redirect/'.$campaign->campaign_id,
-                'note' => 'Seed link for '.$campaign->campaign_name,
-                'tracking_ids' => $isTikTok
-                    ? [
-                        'tiktokid' => [fake()->numerify('###################')],
-                        'tiktok_pixel_id' => [fake()->bothify('C??????????????????')],
-                    ]
-                    : [
-                        'googleid' => [fake()->numerify('##########')],
-                    ],
-                'created_by' => $campaign->created_by ?? $admin->id,
-                'updated_by' => $campaign->updated_by ?? $admin->id,
-            ]);
-
-            $campaign->update(['ads_link_id' => $adsLink->id]);
+            $campaign->update(['link_id' => $links->random()->id]);
         }
-    }
-
-    private function seedFollows(): void
-    {
-        if (Follow::query()->count() >= self::FOLLOW_COUNT) {
-            return;
-        }
-
-        $missing = self::FOLLOW_COUNT - Follow::query()->count();
-
-        Follow::factory()
-            ->count($missing)
-            ->create();
     }
 }

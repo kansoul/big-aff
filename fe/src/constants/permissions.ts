@@ -16,20 +16,11 @@ export const PermissionSlugs = {
   SettingsRolesUpdate: 'settings.roles.update',
   SettingsRolesDelete: 'settings.roles.delete',
   SettingsRolesAssign: 'settings.roles.assign',
-  SettingsSitesView: 'settings.sites.view',
-  SettingsSitesCreate: 'settings.sites.create',
-  SettingsSitesUpdate: 'settings.sites.update',
-  SettingsSitesDelete: 'settings.sites.delete',
-  SettingsSitesAssign: 'settings.sites.assign',
-
-  // Follows
-  FollowsView: 'follows.view',
-  FollowsDelete: 'follows.delete',
-
-  // Ads Links
-  AdsLinksView: 'ads-links.view',
-  AdsLinksCreate: 'ads-links.create',
-  AdsLinksUpdate: 'ads-links.update',
+  // Links
+  LinksView: 'links.view',
+  LinksCreate: 'links.create',
+  LinksUpdate: 'links.update',
+  LinksDelete: 'links.delete',
 
   // Keyword Sets
   KeywordSetsView: 'keyword-sets.view',
@@ -228,60 +219,20 @@ export const PERMISSION_CATALOG: PermissionCluster[] = [
           },
         ],
       },
-      {
-        id: 'sites',
-        label: 'Sites',
-        permissions: [
-          { key: 'SettingsSitesView', slug: PermissionSlugs.SettingsSitesView, label: 'View' },
-          {
-            key: 'SettingsSitesCreate',
-            slug: PermissionSlugs.SettingsSitesCreate,
-            label: 'Create',
-          },
-          {
-            key: 'SettingsSitesUpdate',
-            slug: PermissionSlugs.SettingsSitesUpdate,
-            label: 'Update',
-          },
-          {
-            key: 'SettingsSitesDelete',
-            slug: PermissionSlugs.SettingsSitesDelete,
-            label: 'Delete',
-          },
-          {
-            key: 'SettingsSitesAssign',
-            slug: PermissionSlugs.SettingsSitesAssign,
-            label: 'Assign users',
-          },
-        ],
-      },
     ],
   },
   {
-    id: 'follows',
-    label: 'Follows',
+    id: 'links',
+    label: 'Links',
     screens: [
       {
-        id: 'follows',
-        label: 'Follows',
+        id: 'links',
+        label: 'Links',
         permissions: [
-          { key: 'FollowsView', slug: PermissionSlugs.FollowsView, label: 'View' },
-          { key: 'FollowsDelete', slug: PermissionSlugs.FollowsDelete, label: 'Delete' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'ads-links',
-    label: 'Ads Links',
-    screens: [
-      {
-        id: 'ads-links',
-        label: 'Ads Links',
-        permissions: [
-          { key: 'AdsLinksView', slug: PermissionSlugs.AdsLinksView, label: 'View' },
-          { key: 'AdsLinksCreate', slug: PermissionSlugs.AdsLinksCreate, label: 'Create' },
-          { key: 'AdsLinksUpdate', slug: PermissionSlugs.AdsLinksUpdate, label: 'Update' },
+          { key: 'LinksView', slug: PermissionSlugs.LinksView, label: 'View' },
+          { key: 'LinksCreate', slug: PermissionSlugs.LinksCreate, label: 'Create' },
+          { key: 'LinksUpdate', slug: PermissionSlugs.LinksUpdate, label: 'Update' },
+          { key: 'LinksDelete', slug: PermissionSlugs.LinksDelete, label: 'Delete' },
         ],
       },
     ],

@@ -5,7 +5,6 @@ namespace App\Services\Option;
 use App\Actions\Account\GetAccountOptionsAction;
 use App\Actions\BusinessCenter\GetBusinessCenterOptionsAction;
 use App\Actions\Option\GetAdsReportOptionsAction;
-use App\Actions\Option\GetSiteOptionsAction;
 use App\Actions\Option\GetTeamOptionsAction;
 use App\Actions\Option\GetUserOptionsAction;
 use App\Actions\Pixel\ListPixelOptionsAction;
@@ -15,7 +14,6 @@ class OptionService
 {
     public function __construct(
         private readonly GetUserOptionsAction $getUserOptions,
-        private readonly GetSiteOptionsAction $getSiteOptions,
         private readonly GetAccountOptionsAction $getAccountOptions,
         private readonly GetTeamOptionsAction $getTeamOptions,
         private readonly GetBusinessCenterOptionsAction $getBusinessCenterOptions,
@@ -27,12 +25,6 @@ class OptionService
     public function users(): Collection
     {
         return $this->getUserOptions->execute();
-    }
-
-    /** @return Collection<int, array{id: int, name: string}> */
-    public function sites(): Collection
-    {
-        return $this->getSiteOptions->execute();
     }
 
     /** @return Collection<int, array{id: int, account_id: string, account_name: string|null, team_id: int|null}> */

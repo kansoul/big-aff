@@ -241,7 +241,7 @@ class CampaignReportSyncService
 
             if (! Redis::get($cacheKey)) {
                 $message = self::buildAlertMessageTrashCampaign($campaign, $date);
-                SendTelegramWarningJob::dispatch(message: $message, campaignId: (string) $insightReport->campaign_id, adsLinkId: (string) Str::uuid());
+                SendTelegramWarningJob::dispatch(message: $message, campaignId: (string) $insightReport->campaign_id, linkId: (string) Str::uuid());
                 Redis::setex($cacheKey, self::TRASH_CAMPAIGN_ALERT_CACHE_TTL, 1);
             }
         }
@@ -301,12 +301,12 @@ class CampaignReportSyncService
         $cacheKey = self::highCtrAlertCacheKey($date, (string) $campaign->campaign_id);
         $alreadyAlerted = Redis::get($cacheKey) === $alertTierKey;
 
-        $campaign->loadMissing('adsLink.site', 'adsLink.creator.campaignRuleSetting');
+        $campaign->loadMissing('link', 'createdBy.campaignRuleSetting');
 
         $campaignId = $insightReport->campaign_id ?? 'N/A';
         $campaignName = $campaign->campaign_name ?? 'N/A';
-        $adsLinkUrl = self::adsLinkUrl($campaign);
-        $owner = $campaign->adsLink?->creator;
+        $linkUrl = self::linkUrl($campaign);
+        $owner = $campaign->createdBy;
         $ownerName = $owner?->name ?? 'N/A';
         $telegramChatId = $owner?->campaignRuleSetting?->telegram_chat_id;
 
@@ -317,7 +317,7 @@ class CampaignReportSyncService
             $message = "⚠️ *High CTR Alert*\n\n"
                 ."Campaign ID: `{$campaignId}`\n"
                 ."Campaign Name: *{$campaignName}*\n"
-                ."Ads Link: {$adsLinkUrl}\n"
+                ."Link: {$linkUrl}\n"
                 ."Owner: *{$ownerName}*\n"
                 ."View: *{$viewCount}*\n"
                 ."Lead: *{$realtimeLeadCount}*\n"
@@ -329,7 +329,7 @@ class CampaignReportSyncService
             SendTelegramWarningJob::dispatch(
                 message: $message,
                 campaignId: (string) $campaignId,
-                adsLinkId: (string) ($campaign->ads_link_id ?? ''),
+                linkId: (string) ($campaign->link_id ?? ''),
                 chatIdOverride: $telegramChatId,
             );
 
@@ -341,7 +341,7 @@ class CampaignReportSyncService
             insightReport: $insightReport,
             telegramChatId: $telegramChatId,
             ownerName: $ownerName,
-            adsLinkUrl: $adsLinkUrl,
+            linkUrl: $linkUrl,
             leadCount: $realtimeLeadCount,
             ctr: $ctr,
         );
@@ -352,7 +352,7 @@ class CampaignReportSyncService
         InsightReport $insightReport,
         ?string $telegramChatId,
         string $ownerName,
-        string $adsLinkUrl,
+        string $linkUrl,
         int $leadCount,
         float $ctr,
     ): void {
@@ -396,7 +396,7 @@ class CampaignReportSyncService
             $message = "🛑 *Campaign Auto-Paused*\n\n"
                 ."Campaign ID: `{$campaignId}`\n"
                 ."Campaign Name: *{$campaignName}*\n"
-                ."Ads Link: {$adsLinkUrl}\n"
+                ."Link: {$linkUrl}\n"
                 ."Owner: *{$ownerName}*\n"
                 ."CTR (15m): *{$ctrPercent}%* (> ".round(self::HIGH_CTR_AUTO_PAUSE_MIN_CTR * 100)."%) \n"
                 ."Lead (15m): *{$leadCount}* (> ".self::HIGH_CTR_AUTO_PAUSE_MIN_CLICKS.')';
@@ -404,7 +404,7 @@ class CampaignReportSyncService
             SendTelegramWarningJob::dispatch(
                 message: $message,
                 campaignId: $campaignId,
-                adsLinkId: (string) ($campaign->ads_link_id ?? ''),
+                linkId: (string) ($campaign->link_id ?? ''),
                 chatIdOverride: $telegramChatId,
             );
         } catch (\Throwable $e) {
@@ -433,19 +433,9 @@ class CampaignReportSyncService
         return "campaign_report:trash_campaign_alert:{$date}:campaign:{$campaignId}";
     }
 
-    private static function adsLinkUrl(Campaign $campaign): string
+    private static function linkUrl(Campaign $campaign): string
     {
-        $adsLink = $campaign->adsLink;
-
-        if (! $adsLink?->slug) {
-            return 'N/A';
-        }
-
-        $siteUrl = rtrim((string) ($adsLink->site?->url ?? ''), '/');
-
-        return $siteUrl !== ''
-            ? "{$siteUrl}/articles/{$adsLink->slug}?tracking_code={$adsLink->tracking_code}"
-            : $adsLink->slug;
+        return $campaign->link?->url ?? 'N/A';
     }
 
     /**

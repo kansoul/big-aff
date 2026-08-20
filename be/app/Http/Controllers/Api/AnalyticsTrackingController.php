@@ -20,9 +20,9 @@ class AnalyticsTrackingController extends BaseController
     /**
      * Get analytics tracking filter options
      *
-     * Returns available ads_links and campaign IDs for filter dropdowns.
+     * Returns available links and campaign IDs for filter dropdowns.
      *
-     * @response 200 {"data": {"ads_links": [...], "campaigns": [...]}}
+     * @response 200 {"data": {"links": [...], "campaigns": [...]}}
      */
     public function filterOptions(): JsonResponse
     {
@@ -36,7 +36,7 @@ class AnalyticsTrackingController extends BaseController
      *
      * @queryParam date_from string Start date (Y-m-d). Example: 2026-04-01
      * @queryParam date_to string End date (Y-m-d). Example: 2026-04-30
-     * @queryParam ads_link_id integer Filter by AdsLink ID.
+     * @queryParam link_id integer Filter by Link ID.
      * @queryParam campaign_id string Filter by campaign ID.
      *
      * @response 200 {"data": {"views": {...}, "clicks": {...}, "loads": {...}}}
@@ -56,7 +56,7 @@ class AnalyticsTrackingController extends BaseController
      * @queryParam keyword string Search by keyword text.
      * @queryParam date_from string Start date (Y-m-d).
      * @queryParam date_to string End date (Y-m-d).
-     * @queryParam ads_link_id integer Filter by AdsLink ID.
+     * @queryParam link_id integer Filter by Link ID.
      * @queryParam campaign_id string Filter by campaign ID.
      * @queryParam sort_by string Column to sort by. Example: click_count
      * @queryParam sort_direction string asc or desc. Example: desc

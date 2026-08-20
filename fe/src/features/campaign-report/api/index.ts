@@ -76,7 +76,7 @@ export const campaignReportApi = {
   trackingAnalyticsStats: (filters: TrackingAnalyticsFilterParams) =>
     axiosInstance.get<TrackingAnalyticsResponse>('/analytics-tracking/stats', {
       params: {
-        ...(filters.ads_link_id ? { ads_link_id: filters.ads_link_id } : {}),
+        ...(filters.link_id ? { link_id: filters.link_id } : {}),
         ...(filters.campaign_id ? { campaign_id: filters.campaign_id } : {}),
         ...(filters.date_from ? { date_from: filters.date_from } : {}),
         ...(filters.date_to ? { date_to: filters.date_to } : {}),
@@ -88,7 +88,7 @@ export const campaignReportApi = {
       params: {
         page: filters.page ?? 1,
         per_page: filters.per_page ?? 30,
-        ...(filters.ads_link_id ? { ads_link_id: filters.ads_link_id } : {}),
+        ...(filters.link_id ? { link_id: filters.link_id } : {}),
         ...(filters.campaign_id ? { campaign_id: filters.campaign_id } : {}),
         ...(filters.date_from ? { date_from: filters.date_from } : {}),
         ...(filters.date_to ? { date_to: filters.date_to } : {}),

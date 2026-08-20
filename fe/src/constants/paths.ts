@@ -9,14 +9,9 @@ export const PATHS = {
   media: '/media',
   settingsUsers: '/users',
   settingsRoles: '/roles',
-  settingsSites: '/sites',
-  settingsSitesCreate: '/sites/create',
-  settingsSitesView: '/sites/:id',
-  settingsSitesEdit: '/sites/:id/edit',
-  follows: '/follows',
+  links: '/links',
   teams: '/teams',
   mainTeams: '/main-teams',
-  adsLinks: '/ads-links',
   businessCenters: '/business-centers',
   accounts: '/accounts',
   adsReport: '/ads-report',
@@ -29,9 +24,6 @@ export const PATHS = {
   revenueReport: '/revenue-report',
   logs: '/logs',
 } as const
-
-export const siteViewPath = (id: number | string) => `/sites/${id}`
-export const siteEditPath = (id: number | string) => `/sites/${id}/edit`
 
 /** Identifies a top-level nav group; set on route `handle.navSection` and optional `NavItem.navSection`. */
 export const NAV_SECTIONS = {

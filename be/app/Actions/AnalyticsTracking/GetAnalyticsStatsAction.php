@@ -18,11 +18,11 @@ class GetAnalyticsStatsAction
     {
         $dateFrom = $filters['date_from'] ?? null;
         $dateTo = $filters['date_to'] ?? null;
-        $adsLinkId = $filters['ads_link_id'] ?? null;
+        $linkId = $filters['link_id'] ?? null;
         $campaignId = $filters['campaign_id'] ?? null;
 
         $ownership = OwnershipFilter::forAuthUser();
-        $campaignIds = $this->buildCampaignSubquery($ownership, $adsLinkId);
+        $campaignIds = $this->buildCampaignSubquery($ownership, $linkId);
 
         $viewTotals = EventView::query()
             ->selectRaw('
@@ -100,11 +100,11 @@ class GetAnalyticsStatsAction
         ];
     }
 
-    private function buildCampaignSubquery(OwnershipFilter $ownership, ?int $adsLinkId): ?Builder
+    private function buildCampaignSubquery(OwnershipFilter $ownership, ?int $linkId): ?Builder
     {
-        // Only needed when filtering by ads_link_id or restricting to non-admin ownership.
+        // Only needed when filtering by link_id or restricting to non-admin ownership.
         // campaign_id is filtered directly on the event tables (they carry the column natively).
-        if ($ownership->isAdmin() && ! $adsLinkId) {
+        if ($ownership->isAdmin() && ! $linkId) {
             return null;
         }
 
@@ -114,7 +114,7 @@ class GetAnalyticsStatsAction
             $ownership->applyThroughAccount($query);
         }
 
-        $query->when($adsLinkId, fn ($q) => $q->where('ads_link_id', $adsLinkId));
+        $query->when($linkId, fn ($q) => $q->where('link_id', $linkId));
 
         return $query->select('campaign_id');
     }

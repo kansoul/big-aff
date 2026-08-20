@@ -26,18 +26,6 @@ class OptionController extends BaseController
     }
 
     /**
-     * Site options
-     *
-     * Return sites accessible to the authenticated user for select/dropdown inputs.
-     *
-     * @response 200 {"data": [{"id": 1, "name": "My Site"}]}
-     */
-    public function sites(): JsonResponse
-    {
-        return $this->sendResponse(['data' => $this->optionService->sites()]);
-    }
-
-    /**
      * Account options
      *
      * Return accounts accessible to the authenticated user for select/dropdown inputs.

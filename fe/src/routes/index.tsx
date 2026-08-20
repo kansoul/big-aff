@@ -119,24 +119,14 @@ export const router = createBrowserRouter([
                 handle: { title: 'Main Teams' },
               },
               {
-                path: routeSegment(PATHS.adsLinks),
+                path: routeSegment(PATHS.links),
                 lazy: async () => {
-                  const { AdsLinksPage } = await import('@/features/ads-links/pages/AdsLinksPage')
+                  const { LinksPage } = await import('@/features/links/pages/LinksPage')
                   return {
-                    Component: withPermission(AdsLinksPage, PermissionSlugs.AdsLinksView),
+                    Component: withPermission(LinksPage, PermissionSlugs.LinksView),
                   }
                 },
-                handle: { title: 'Ads Links' },
-              },
-              {
-                path: routeSegment(PATHS.follows),
-                lazy: async () => {
-                  const { FollowsPage } = await import('@/features/follows/pages/FollowsPage')
-                  return {
-                    Component: withPermission(FollowsPage, PermissionSlugs.FollowsView),
-                  }
-                },
-                handle: { title: 'Follows' },
+                handle: { title: 'Links' },
               },
               {
                 path: routeSegment(PATHS.settingsRoles),
@@ -149,18 +139,6 @@ export const router = createBrowserRouter([
                 },
                 handle: { title: 'Roles', navSection: NAV_SECTIONS.settings },
               },
-              {
-                path: routeSegment(PATHS.settingsSites),
-                lazy: async () => {
-                  const { SettingsSitesPage } =
-                    await import('@/features/sites/pages/SettingsSitesPage')
-                  return {
-                    Component: withPermission(SettingsSitesPage, PermissionSlugs.SettingsSitesView),
-                  }
-                },
-                handle: { title: 'Sites', navSection: NAV_SECTIONS.settings },
-              },
-
               {
                 path: routeSegment(PATHS.businessCenters),
                 lazy: async () => {

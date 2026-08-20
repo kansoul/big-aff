@@ -19,10 +19,10 @@ class DatabaseSeeder extends Seeder
             CreateRoleAdminSeeder::class,
             CoreSeeder::class,
 
-            // 2. Sites graph: files, sites, user_sites — ads_links point at a site.
-            SitesSeeder::class,
+            // 2. Third-party landing links.
+            LinksSeeder::class,
 
-            // 3. Ads graph: accounts, campaigns, pixels, keyword sets, and ads_links.
+            // 3. Ads graph: accounts, campaigns, pixels, keyword sets, and links.
             //    Must run before reports/tracking which reference campaign identifiers.
             AdsSeeder::class,
 

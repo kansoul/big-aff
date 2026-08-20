@@ -20,11 +20,11 @@ class ListKeywordTrackingAction
     {
         $dateFrom = $filters['date_from'] ?? null;
         $dateTo = $filters['date_to'] ?? null;
-        $adsLinkId = $filters['ads_link_id'] ?? null;
+        $linkId = $filters['link_id'] ?? null;
         $campaignId = $filters['campaign_id'] ?? null;
 
         $ownership = OwnershipFilter::forAuthUser();
-        $campaignIds = $this->buildCampaignSubquery($ownership, $adsLinkId);
+        $campaignIds = $this->buildCampaignSubquery($ownership, $linkId);
 
         /** @var Builder<EventClick> $query */
         $query = EventClick::query()
@@ -55,9 +55,9 @@ class ListKeywordTrackingAction
         return PaginationInput::fromValidatedArray($filters)->paginateQuery($query);
     }
 
-    private function buildCampaignSubquery(OwnershipFilter $ownership, ?int $adsLinkId): ?Builder
+    private function buildCampaignSubquery(OwnershipFilter $ownership, ?int $linkId): ?Builder
     {
-        if ($ownership->isAdmin() && ! $adsLinkId) {
+        if ($ownership->isAdmin() && ! $linkId) {
             return null;
         }
 
@@ -67,7 +67,7 @@ class ListKeywordTrackingAction
             $ownership->applyThroughAccount($query);
         }
 
-        $query->when($adsLinkId, fn ($q) => $q->where('ads_link_id', $adsLinkId));
+        $query->when($linkId, fn ($q) => $q->where('link_id', $linkId));
 
         return $query->select('campaign_id');
     }

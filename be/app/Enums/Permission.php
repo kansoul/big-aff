@@ -25,21 +25,11 @@ enum Permission: string
     case SettingsRolesDelete = 'settings.roles.delete';
     case SettingsRolesAssign = 'settings.roles.assign';
 
-    // —— Settings → Sites ——
-    case SettingsSitesView = 'settings.sites.view';
-    case SettingsSitesCreate = 'settings.sites.create';
-    case SettingsSitesUpdate = 'settings.sites.update';
-    case SettingsSitesDelete = 'settings.sites.delete';
-    case SettingsSitesAssign = 'settings.sites.assign';
-
-    // —— Follows ——
-    case FollowsView = 'follows.view';
-    case FollowsDelete = 'follows.delete';
-
-    // —— Ads Links ——
-    case AdsLinksView = 'ads-links.view';
-    case AdsLinksCreate = 'ads-links.create';
-    case AdsLinksUpdate = 'ads-links.update';
+    // —— Links ——
+    case LinksView = 'links.view';
+    case LinksCreate = 'links.create';
+    case LinksUpdate = 'links.update';
+    case LinksDelete = 'links.delete';
 
     // —— Keyword Sets ——
     case KeywordSetsView = 'keyword-sets.view';

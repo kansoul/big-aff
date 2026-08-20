@@ -31,7 +31,7 @@ class CampaignReportController extends BaseController
      *
      * @queryParam date_from string Filter records on or after this date (Y-m-d). Example: 2026-04-01
      * @queryParam date_to string Filter records on or before this date (Y-m-d). Example: 2026-04-30
-     * @queryParam keyword string Search campaign, account, or Ads Link fields. Example: summer
+     * @queryParam keyword string Search campaign, account, or link fields. Example: summer
      * @queryParam user_ids integer[] Filter by users assigned to the account.
      * @queryParam account_ids integer[] Filter by `accounts.id`.
      * @queryParam ads_type string Filter by ads type. Enum: google, tiktok. Example: google

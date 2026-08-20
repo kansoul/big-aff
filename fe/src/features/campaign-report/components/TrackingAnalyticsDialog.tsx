@@ -325,7 +325,7 @@ type TrackingAnalyticsDialogProps = {
   trigger?: React.ReactNode
   initialDate?: string | null
   initialCampaignId?: string | null
-  initialAdsLinkId?: number | null
+  initialLinkId?: number | null
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }
@@ -334,7 +334,7 @@ function TrackingAnalyticsDialogInner({
   trigger,
   initialDate,
   initialCampaignId,
-  initialAdsLinkId,
+  initialLinkId,
   open: controlledOpen,
   onOpenChange,
 }: TrackingAnalyticsDialogProps) {
@@ -358,7 +358,7 @@ function TrackingAnalyticsDialogInner({
   const [filters, setFilters] = useState<TrackingAnalyticsFilterParams>(() => ({
     date_from: initialDate ?? null,
     date_to: initialDate ?? null,
-    ads_link_id: initialAdsLinkId ?? null,
+    link_id: initialLinkId ?? null,
     campaign_id: initialCampaignId ?? null,
   }))
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null)
@@ -457,7 +457,7 @@ function TrackingAnalyticsDialogInner({
         setFilters({
           date_from: initialDate ?? null,
           date_to: initialDate ?? null,
-          ads_link_id: initialAdsLinkId ?? null,
+          link_id: initialLinkId ?? null,
           campaign_id: initialCampaignId ?? null,
         })
         setStatsData(null)
@@ -468,7 +468,7 @@ function TrackingAnalyticsDialogInner({
         fetchedOptionsRef.current = false
       }
     },
-    [initialDate, initialCampaignId, initialAdsLinkId, setDialogOpen],
+    [initialDate, initialCampaignId, initialLinkId, setDialogOpen],
   )
 
   const onApplyFilters = useCallback((values: Record<string, unknown>) => {
@@ -476,8 +476,7 @@ function TrackingAnalyticsDialogInner({
     setFilters({
       date_from: dateRange?.from ?? null,
       date_to: dateRange?.to ?? null,
-      ads_link_id:
-        values.ads_link_id != null && values.ads_link_id !== '' ? Number(values.ads_link_id) : null,
+      link_id: values.link_id != null && values.link_id !== '' ? Number(values.link_id) : null,
       campaign_id: (values.campaign_id as string) || null,
     })
     setKeywordState((prev) => ({ ...prev, page: 1 }))
@@ -487,12 +486,12 @@ function TrackingAnalyticsDialogInner({
     setFilters({
       date_from: initialDate ?? null,
       date_to: initialDate ?? null,
-      ads_link_id: initialAdsLinkId ?? null,
+      link_id: initialLinkId ?? null,
       campaign_id: initialCampaignId ?? null,
     })
     setKeywordState(DEFAULT_KEYWORD_STATE)
     setKeywordSearch('')
-  }, [initialDate, initialCampaignId, initialAdsLinkId])
+  }, [initialDate, initialCampaignId, initialLinkId])
 
   const onKeywordSort = useCallback(
     (orderBy: KeywordTrackingOrderBy | null, order: 'asc' | 'desc' | null) => {
@@ -505,11 +504,11 @@ function TrackingAnalyticsDialogInner({
     setKeywordState((prev) => ({ ...prev, page, per_page: perPage }))
   }, [])
 
-  const adsLinkOptions = useMemo(
+  const linkOptions = useMemo(
     () =>
-      (filterOptions?.ads_links ?? []).map((l) => ({
-        label: l.slug,
-        value: String(l.id),
+      (filterOptions?.links ?? []).map((link) => ({
+        label: link.name,
+        value: String(link.id),
       })),
     [filterOptions],
   )
@@ -535,11 +534,11 @@ function TrackingAnalyticsDialogInner({
             : null,
       },
       {
-        field: 'ads_link_id',
+        field: 'link_id',
         label: 'Link Tracking',
         type: 'select',
-        value: filters.ads_link_id != null ? String(filters.ads_link_id) : null,
-        options: adsLinkOptions,
+        value: filters.link_id != null ? String(filters.link_id) : null,
+        options: linkOptions,
       },
       {
         field: 'campaign_id',
@@ -552,9 +551,9 @@ function TrackingAnalyticsDialogInner({
     [
       filters.date_from,
       filters.date_to,
-      filters.ads_link_id,
+      filters.link_id,
       filters.campaign_id,
-      adsLinkOptions,
+      linkOptions,
       campaignOptions,
     ],
   )

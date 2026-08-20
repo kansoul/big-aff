@@ -57,9 +57,10 @@ class CampaignReportResource extends JsonResource
             'campaign_status' => $this->campaign_status,
             'has_rule' => (bool) ($this->has_rule ?? false),
             'ads_type' => $this->ads_type,
-            'site_url' => $this->campaign?->adsLink?->site?->url,
-            'slug' => $this->campaign?->adsLink?->slug,
-            'tracking_code' => $this->campaign?->adsLink?->tracking_code,
+            'link_id' => $this->campaign?->link_id,
+            'link_name' => $this->campaign?->link?->name,
+            'link_url' => $this->campaign?->link?->url,
+            'tracking_code' => $this->campaign?->link?->tracking_code,
             // Ads manager link (previous behavior)
             'ads_manager_link' => $this->buildAdsManagerLink(),
 
@@ -97,7 +98,7 @@ class CampaignReportResource extends JsonResource
                 return [
                     'id' => $rt->id,
                     'campaign_id' => $rt->campaign_id,
-                    'ads_link_id' => $this->campaign?->ads_link_id,
+                    'link_id' => $this->campaign?->link_id,
                     'view_count' => $rt->view_count,
                     'redirect_count' => $rt->redirect_count,
                     'next_step_count' => $rt->next_step_count,
