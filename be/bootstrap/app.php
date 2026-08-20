@@ -27,6 +27,12 @@ return Application::configure(basePath: dirname(__DIR__))
             PruneExpiredToken::class,
         ]);
 
+        // Public landing-page endpoints: called from the LP with no session, so
+        // the stateful Sanctum path must not demand a CSRF token (419).
+        $middleware->validateCsrfTokens(except: [
+            'api/tracking/*',
+        ]);
+
         $middleware->alias([
             'verified' => EnsureEmailIsVerified::class,
             'ensure.admin' => EnsureAdmin::class,

@@ -5,6 +5,7 @@ namespace App\Actions\Tracking;
 use App\Actions\LoanApplication\CreateLoanApplicationAction;
 use App\Actions\LoanApplication\UpdateLoanApplicationAction;
 use App\Jobs\SaveTrackingLogJob;
+use App\Models\EventView;
 use App\Models\LoanApplication;
 use App\Models\TrackingSession;
 use Illuminate\Database\QueryException;
@@ -17,67 +18,109 @@ class StoreTrackingLogAction
         protected UpdateLoanApplicationAction $updateLoanApplicationAction,
     ) {}
 
+    /** Events that carry the applicant's answers. */
+    private const APPLICATION_TYPES = ['redirect', 'next_step', 'lead'];
+
+    /** Ad params stored next to the answers, for reports that read the row. */
+    private const ATTRIBUTION_FIELDS = ['campaign_id', 'adset_id', 'ad_id', 'utm_source', 'aff_click_id'];
+
     /**
-     * Save a tracking log entry.
+     * Save a tracking log entry. Everything hangs off the session id the
+     * snippet sends: the session row, the event row and the loan application.
      *
      * @param  array<string, mixed>  $data
-     * @return array{session_id: string, public_id: ?string}
      */
-    public function execute(array $data): array
+    public function execute(array $data): string
     {
-        $sessionId = $this->findOrCreateSession($data);
-        $data['created_at'] = now();
+        [$sessionId, $isNewSession] = $this->findOrCreateSession($data);
 
-        // next_step only writes the loan application, inline so the caller gets
-        // its public id back; there is no event row for it.
-        if (($data['type'] ?? null) === 'next_step') {
-            return [
-                'session_id' => $sessionId,
-                'public_id' => $this->saveLoanApplication($data)->public_id,
-            ];
+        $data['created_at'] = now();
+        $type = $data['type'] ?? null;
+
+        // redirect (email + loan amount), next_step (one wizard step) and lead
+        // (final confirmation) all write into the same application row.
+        if (in_array($type, self::APPLICATION_TYPES, true)) {
+            $this->saveLoanApplication($data, $sessionId);
         }
 
-        SaveTrackingLogJob::dispatch($sessionId, $data);
+        // next_step is form progress only; it produces no event row.
+        if ($type !== 'next_step') {
+            SaveTrackingLogJob::dispatch($sessionId, $data, $isNewSession);
+        }
 
-        return [
-            'session_id' => $sessionId,
-            'public_id' => null,
-        ];
+        return $sessionId;
     }
 
     /**
-     * Persist the submitted wizard step, creating the application on first step.
+     * Write the answers this event carried onto the session's application,
+     * creating it on the first event that brings any. Only the submitted
+     * fields are touched, so every step adds onto the same row.
      *
      * @param  array<string, mixed>  $data
      */
-    protected function saveLoanApplication(array $data): LoanApplication
+    protected function saveLoanApplication(array $data, string $sessionId): void
     {
-        $fields = array_intersect_key(
-            $data,
-            array_flip([...LoanApplication::applicationFields(), 'campaign_id', 'utm_source', 'aff_click_id']),
+        $answers = array_intersect_key($data, array_flip(LoanApplication::applicationFields()));
+        $application = LoanApplication::where('session_id', $sessionId)->latest('id')->first();
+
+        // Nothing submitted and no row to close: this event stores no answers.
+        if ($answers === [] && $application === null) {
+            return;
+        }
+
+        $attribution = array_filter(
+            array_intersect_key($data, array_flip(self::ATTRIBUTION_FIELDS)),
+            fn ($value): bool => filled($value),
         );
 
-        if (! empty($data['completed'])) {
+        // The session that produced this step, so reports can join tracking data.
+        $fields = [...$answers, ...$attribution, 'session_id' => $sessionId];
+
+        // The lead is the final confirmation, so it closes the application.
+        if (($data['type'] ?? null) === 'lead' || ! empty($data['completed'])) {
             $fields['completed_at'] = now();
         }
 
-        $publicId = $data['public_id'] ?? null;
+        if ($application) {
+            $this->updateLoanApplicationAction->execute($application, $fields);
 
-        if (! empty($publicId)) {
-            $application = LoanApplication::where('public_id', $publicId)->first();
-
-            if ($application) {
-                return $this->updateLoanApplicationAction->execute($application, $fields);
-            }
+            return;
         }
 
-        return $this->createLoanApplicationAction->execute($fields);
+        // Wizard steps travel without the ad params, so a row opened by one
+        // takes them from the landing hit of the same session.
+        $this->createLoanApplicationAction->execute([
+            ...$this->sessionAttribution($sessionId),
+            ...$fields,
+        ]);
     }
 
     /**
-     * Find or create tracking session
+     * The ad params of the session, as its landing hit recorded them.
+     *
+     * @return array<string, string>
      */
-    protected function findOrCreateSession(array $data): string
+    protected function sessionAttribution(string $sessionId): array
+    {
+        $landing = EventView::where('session_id', $sessionId)
+            ->orderBy('id')
+            ->first(['campaign_id', 'adset_id', 'ad_id', 'utm_source']);
+
+        return $landing
+            ? array_filter($landing->only(['campaign_id', 'adset_id', 'ad_id', 'utm_source']), fn ($value): bool => filled($value))
+            : [];
+    }
+
+    /**
+     * Reuse the session the snippet replays; the snippet decides when a visit
+     * ends (a `lead`, or the landing params changing), so any id arriving here
+     * is taken as-is. The flag tells the caller whether this request is the
+     * one that opened the session.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{0: string, 1: bool}
+     */
+    protected function findOrCreateSession(array $data): array
     {
         $sessionId = $data['session_id'] ?? null;
 
@@ -85,7 +128,7 @@ class StoreTrackingLogAction
             $session = TrackingSession::where('session_id', $sessionId)->first();
 
             if ($session) {
-                return $session->session_id;
+                return [$session->session_id, false];
             }
         } else {
             $sessionId = (string) Str::uuid();
@@ -105,13 +148,14 @@ class StoreTrackingLogAction
         try {
             TrackingSession::create($sessionData);
 
-            return $sessionId;
+            return [$sessionId, true];
         } catch (QueryException $e) {
-            if ($e->getCode() === '23000' && ! empty($data['session_id'])) {
-                $session = TrackingSession::where('session_id', $data['session_id'])->first();
+            // Two events of the same brand-new session racing each other.
+            if ($e->getCode() === '23000') {
+                $session = TrackingSession::where('session_id', $sessionId)->first();
 
                 if ($session) {
-                    return $session->session_id;
+                    return [$session->session_id, false];
                 }
             }
             throw $e;

@@ -16,11 +16,12 @@ class LoanApplication extends Model
 
     /** Attribution/bookkeeping columns, not applicant answers. */
     public const NON_APPLICATION_FIELDS = [
-        'public_id', 'campaign_id', 'utm_source', 'aff_click_id', 'completed_at',
+        'public_id', 'session_id', 'campaign_id', 'adset_id', 'ad_id', 'utm_source',
+        'aff_click_id', 'completed_at',
     ];
 
     protected $fillable = [
-        'public_id', 'campaign_id', 'utm_source', 'aff_click_id', 'loan_amount',
+        'public_id', 'session_id', 'campaign_id', 'adset_id', 'ad_id', 'utm_source', 'aff_click_id', 'loan_amount',
         'loan_purpose', 'email', 'phone', 'best_call_time', 'consent_marketing',
         'first_name', 'last_name', 'date_of_birth', 'zip_code', 'street_address',
         'city', 'state', 'residence_length', 'residence_status', 'income_source', 'employed_time',

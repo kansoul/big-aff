@@ -9,6 +9,7 @@ use App\Models\Campaign;
 use App\Models\EventClick;
 use App\Models\EventView;
 use App\Models\RevenueReport;
+use App\Models\TrackingSession;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -30,10 +31,19 @@ class SaveTrackingLogJob implements ShouldQueue
 
     public int $backoff = 5;
 
+    /** The session row was opened by this very event. Declared, not promoted,
+     * so jobs queued before it existed still unserialize. */
+    public bool $isNewSession = false;
+
+    /**
+     * @param  array<string, mixed>  $logData
+     */
     public function __construct(
         public string $sessionId,
         public array $logData,
+        bool $isNewSession = false,
     ) {
+        $this->isNewSession = $isNewSession;
         $this->onQueue('tracking');
     }
 
@@ -76,7 +86,12 @@ class SaveTrackingLogJob implements ShouldQueue
             'ad_id' => $this->logData['ad_id'] ?? null,
             'type' => $eventType,
             'page' => $this->resolvePage(),
+            'utm_source' => $this->logData['utm_source'] ?? null,
+            'placement' => $this->logData['placement'] ?? null,
+            'cpid' => $this->logData['cpid'] ?? null,
+            'lpid' => $this->logData['lpid'] ?? null,
             'query' => $this->logData['query'] ?? null,
+            'keyword_clicked' => $this->logData['keyword_clicked'] ?? null,
             'traffic' => $this->logData['test'] ?? null,
             'event_time' => $this->logData['event_time'] ?? $now,
             'created_at' => $this->logData['created_at'] ?? $now,
@@ -85,15 +100,20 @@ class SaveTrackingLogJob implements ShouldQueue
         $this->saveRevenueReport();
         $this->saveAdsConversion();
 
-        $this->bufferDailyCount($dateOnly, (string) $this->logData['campaign_id'], $eventType);
+        $this->bufferDailyCount($dateOnly, (string) ($this->logData['campaign_id'] ?? ''), $eventType);
     }
 
     /**
-     * Open the revenue row for this session. session_id is unique, so a second
-     * page view on the same session leaves the existing row untouched.
+     * Open the revenue row for the visit. Only the event that opened the
+     * session does it, so a returning visitor on the same session never adds a
+     * second row; firstOrCreate keeps it safe if two events race.
      */
     private function saveRevenueReport(): void
     {
+        if (! $this->isNewSession || blank($this->logData['campaign_id'] ?? null)) {
+            return;
+        }
+
         RevenueReport::firstOrCreate(
             ['session_id' => $this->sessionId],
             [
@@ -106,12 +126,16 @@ class SaveTrackingLogJob implements ShouldQueue
     }
 
     /**
-     * Store the ads click identifiers that came in with the landing page view,
-     * so the conversion can be attributed later. Nothing to store when the
-     * visitor did not arrive from an ad.
+     * Store the ads click identifiers the landing hit carried, so the
+     * conversion can be attributed later. Only written once per session, and
+     * never when the visitor did not arrive from an ad.
      */
     private function saveAdsConversion(): void
     {
+        if (! $this->isNewSession) {
+            return;
+        }
+
         $clickIds = array_filter([
             'gclid' => $this->logData['gclid'] ?? null,
             'wbraid' => $this->logData['wbraid'] ?? null,
@@ -123,6 +147,7 @@ class SaveTrackingLogJob implements ShouldQueue
             return;
         }
 
+        $session = TrackingSession::find($this->sessionId);
         $campaignId = $this->logData['campaign_id'] ?? null;
         $type = isset($clickIds['ttclid'])
             ? AdsConversionType::TIKTOK->value
@@ -137,6 +162,8 @@ class SaveTrackingLogJob implements ShouldQueue
                 ...$clickIds,
                 'account_id' => Campaign::where('campaign_id', $campaignId)->value('account_id'),
                 'campaign_id' => $campaignId,
+                'ip_address' => $session?->ip_address,
+                'user_agent' => $session?->user_agent,
                 'conversion_date_time' => now()->format('Y-m-d H:i:sP'),
             ],
         );
@@ -156,13 +183,21 @@ class SaveTrackingLogJob implements ShouldQueue
             'ad_id' => $this->logData['ad_id'] ?? null,
             'type' => $eventType,
             'page' => $this->resolvePage(),
+            'utm_source' => $this->logData['utm_source'] ?? null,
+            'placement' => $this->logData['placement'] ?? null,
+            'cpid' => $this->logData['cpid'] ?? null,
+            'lpid' => $this->logData['lpid'] ?? null,
+            'query' => $this->logData['query'] ?? null,
             'keyword_clicked' => $this->logData['keyword_clicked'] ?? null,
             'traffic' => $this->logData['test'] ?? null,
             'event_time' => $this->logData['event_time'] ?? $now,
             'created_at' => $this->logData['created_at'] ?? $now,
         ]);
 
-        $this->bufferDailyCount($dateOnly, (string) $this->logData['campaign_id'], $eventType);
+        $this->saveRevenueReport();
+        $this->saveAdsConversion();
+
+        $this->bufferDailyCount($dateOnly, (string) ($this->logData['campaign_id'] ?? ''), $eventType);
     }
 
     /**
@@ -189,6 +224,10 @@ class SaveTrackingLogJob implements ShouldQueue
         };
 
         if (! $column) {
+            return;
+        }
+
+        if ($campaignId === '') {
             return;
         }
 
