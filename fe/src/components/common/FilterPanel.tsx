@@ -111,7 +111,7 @@ function SelectFieldRenderer({ field, onChange }: FieldRendererProps<SelectFilte
       onValueChange={(v) => onChange(v === '__all__' ? null : v)}
       options={options}
       placeholder={field.placeholder ?? 'Select...'}
-      className={cn('h-8 text-xs', field.className)}
+      className={cn('h-7 px-2 text-xs', field.className)}
     />
   )
 }
@@ -161,7 +161,7 @@ function MultiSelectFieldRenderer({ field, onChange }: FieldRendererProps<MultiS
           variant="outline"
           disabled={isDisabled}
           className={cn(
-            'h-8 w-full justify-between gap-1.5 px-2.5 text-xs font-normal',
+            'h-7 w-full justify-between gap-1 px-2 text-xs font-normal',
             field.value.length === 0 && 'text-muted-foreground',
             field.className,
           )}
@@ -224,7 +224,7 @@ function MultiSelectFieldRenderer({ field, onChange }: FieldRendererProps<MultiS
 function InputFieldRenderer({ field, onChange }: FieldRendererProps<InputFilterField>) {
   return (
     <Input
-      className={cn('h-8 w-full text-xs', field.className)}
+      className={cn('h-7 w-full px-2 text-xs', field.className)}
       placeholder={field.placeholder ?? 'Search...'}
       value={field.value ?? ''}
       onChange={(e) => onChange(e.target.value || null)}
@@ -235,7 +235,7 @@ function InputFieldRenderer({ field, onChange }: FieldRendererProps<InputFilterF
 function DatePickerFieldRenderer({ field, onChange }: FieldRendererProps<DatePickerFilterField>) {
   return (
     <DatePicker
-      className={cn('w-full', field.className)}
+      className={cn('h-7 w-full px-2 text-xs', field.className)}
       value={field.value}
       onChange={(v) => onChange(v)}
       placeholder={field.placeholder}
@@ -246,7 +246,7 @@ function DatePickerFieldRenderer({ field, onChange }: FieldRendererProps<DatePic
 function DateRangeFieldRenderer({ field, onChange }: FieldRendererProps<DateRangeFilterField>) {
   return (
     <DateRangePickerPresets
-      className={field.className}
+      className={cn('h-7 px-2 text-xs', field.className)}
       from={field.value?.from ?? null}
       to={field.value?.to ?? null}
       placeholder={field.placeholder ?? 'Select date range'}
@@ -328,7 +328,7 @@ function FilterPanelInner(props: FilterPanelProps) {
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className={cn('w-full', className)}>
-      <div className="flex flex-col gap-4 rounded-lg border bg-background/60 p-4 shadow-sm">
+      <div className="filter-panel flex flex-col gap-3 rounded-lg border bg-background/60 p-3 shadow-sm">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
           <CollapsibleTrigger asChild>
@@ -372,16 +372,18 @@ function FilterPanelInner(props: FilterPanelProps) {
 
         {/* Fields grid */}
         <CollapsibleContent>
-          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
             {displayFields.map((field) => {
               if (field.hidden) return null
 
               return (
                 <div
                   key={field.field}
-                  className={cn('flex flex-col gap-1.5', field.type === 'toggle' && 'justify-end')}
+                  className={cn('flex flex-col gap-1', field.type === 'toggle' && 'justify-end')}
                 >
-                  <label className="text-xs font-medium text-muted-foreground">{field.label}</label>
+                  <label className="text-[11px] font-medium text-muted-foreground">
+                    {field.label}
+                  </label>
                   {renderField(field, (value) => handleChange(field.field, value))}
                 </div>
               )

@@ -7,7 +7,7 @@ import {
   type MRT_ColumnDef,
   useMantineReactTable,
 } from 'mantine-react-table'
-import { BarChart3, CalendarClock, BookOpen, SlidersHorizontal } from 'lucide-react'
+import { BarChart3, CalendarClock, BookOpen, ExternalLink, SlidersHorizontal } from 'lucide-react'
 
 import { buildCopyLink } from '@/lib/ads-link'
 import { useIsMobile } from '@/hooks/useMobile'
@@ -75,28 +75,6 @@ function HeaderLabel({
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
 
-function formatUsd(v: number): string {
-  return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-function formatDecimal(v: number, digits = 2): string {
-  return v.toLocaleString(undefined, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  })
-}
-
-function formatRoi(v: number): string {
-  return `${v.toFixed(2)}%`
-}
-
-function formatDate(date: string | null | undefined): string {
-  if (!date) return '—'
-  const [y, m, d] = date.split('-')
-  if (!y || !m || !d) return date
-  return `${d}/${m}/${y}`
-}
-
 function toNumber(v: unknown): number {
   if (v === null || v === undefined) return 0
   if (typeof v === 'number') return Number.isFinite(v) ? v : 0
@@ -105,6 +83,31 @@ function toNumber(v: unknown): number {
     return Number.isFinite(n) ? n : 0
   }
   return 0
+}
+
+function formatUsd(v: unknown): string {
+  const num = toNumber(v)
+  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function formatDecimal(v: unknown, digits = 2): string {
+  const num = toNumber(v)
+  return num.toLocaleString(undefined, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  })
+}
+
+function formatRoi(v: unknown): string {
+  const num = toNumber(v)
+  return `${num.toFixed(2)}%`
+}
+
+function formatDate(date: string | null | undefined): string {
+  if (!date) return '—'
+  const [y, m, d] = date.split('-')
+  if (!y || !m || !d) return date
+  return `${d}/${m}/${y}`
 }
 
 // ─── Row helpers ─────────────────────────────────────────────────────────────
@@ -180,7 +183,7 @@ function makeCountCol(
   summary: CampaignReportSummary | null,
   icon?: 'yellow' | 'blue' | 'green',
 ): MRT_ColumnDef<TableRow> {
-  const footerText = summary ? String(summary[key]) : null
+  const footerText = summary ? String(toNumber(summary[key])) : null
   return {
     accessorKey: key as string,
     header,
@@ -308,11 +311,13 @@ function getColumns(
   groupBy: CampaignReportGroupBy,
   toggling: Record<string, boolean>,
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void,
+  onOpenCampaign: (campaign: CampaignReportRow) => void,
   onOpenTrackingAnalytics: (row: CampaignReportRow) => void,
   onOpenAdsAdsetReport: (row: CampaignReportRow, tab?: 'adsets' | 'ads' | 'clicks') => void,
   canViewDeliveryReports: boolean,
   dateFrom?: string | null,
   dateTo?: string | null,
+  campaignIds?: string[],
   onOpenRevenueRange?: (target: RevenueDialogTarget) => void,
   onOpenRevenueChart?: (target: RevenueDialogTarget) => void,
   onOpenInsightChart?: (target: InsightChartDialogTarget) => void,
@@ -436,37 +441,47 @@ function getColumns(
     enableSorting: isSortable('campaign_name'),
     Cell: ({ row }) => {
       if (isGroupRow(row.original)) return null
-      const link = getRowAdsManagerLink(row.original)
-      const name = row.original.campaign_name ?? '—'
-      const hasRule = row.original.has_rule
-      if (link) {
-        return (
-          <span className="whitespace-normal wrap-break-word text-[10px] font-medium leading-tight">
-            <a
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline underline-offset-2"
-              onClick={(e) => e.stopPropagation()}
-              title={name}
-            >
-              {name}
-            </a>
-            {hasRule && (
-              <span className="inline-flex items-center rounded px-1 py-0.5 text-[9px] font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/60 dark:text-violet-300 leading-none ml-1 align-middle">
-                Rule
-              </span>
-            )}
-          </span>
-        )
-      }
+      const campaign = row.original
+      const link = getRowAdsManagerLink(campaign)
+      const name = campaign.campaign_name ?? '—'
+      const hasRule = campaign.has_rule
+      const isViewingThisCampaign =
+        campaignIds?.length === 1 && campaignIds[0] === campaign.campaign_id
       return (
-        <span className="whitespace-normal wrap-break-word text-[10px] font-medium text-foreground leading-tight">
-          {name}
+        <span className="inline-flex max-w-full items-center gap-1 whitespace-normal wrap-break-word text-[10px] font-medium leading-tight">
+          <span className="text-foreground">{name}</span>
           {hasRule && (
             <span className="inline-flex items-center rounded px-1 py-0.5 text-[9px] font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/60 dark:text-violet-300 leading-none ml-1 align-middle">
               Rule
             </span>
+          )}
+          {!isViewingThisCampaign && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-5 shrink-0 rounded border border-border/70 bg-background px-1.5 text-[9px] font-medium text-muted-foreground shadow-xs hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenCampaign(campaign)
+              }}
+              title="Open campaign report in a new tab"
+            >
+              Open tab
+            </Button>
+          )}
+          {link && (
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={(e) => e.stopPropagation()}
+              title="Open in Ads Manager"
+              aria-label={`Open ${name} in Ads Manager`}
+            >
+              <ExternalLink className="size-3" aria-hidden />
+            </a>
           )}
         </span>
       )
@@ -685,7 +700,7 @@ function getColumns(
 
   // ── ROI Realtime column ──
   const colRoiRealtime: MRT_ColumnDef<TableRow> = (() => {
-    const footerText = summary ? formatRoi(toNumber(summary.roi_realtime)) : null
+    const footerText = summary ? formatRoi(summary.roi_realtime) : null
     return {
       accessorKey: 'roi_realtime',
       header: 'R. ROI',
@@ -694,8 +709,8 @@ function getColumns(
       enableSorting: isSortable('roi_realtime'),
       Cell: ({ row }) => {
         const v = isGroupRow(row.original)
-          ? row.original.group_summary.roi_realtime
-          : row.original.roi_realtime
+          ? toNumber(row.original.group_summary?.roi_realtime)
+          : toNumber(row.original.roi_realtime)
         const vFormatted = formatRoi(v)
         return (
           <span
@@ -714,7 +729,7 @@ function getColumns(
           <span
             className={cn(
               'tabular-nums text-[10px] font-semibold whitespace-nowrap',
-              summary!.roi_realtime >= 0 ? 'text-emerald-500' : 'text-rose-500',
+              toNumber(summary?.roi_realtime) >= 0 ? 'text-emerald-500' : 'text-rose-500',
             )}
           >
             {footerText}
@@ -725,7 +740,7 @@ function getColumns(
 
   // ── Real-time computed columns (calculated by BE, display-only) ──
   const colRtCpa: MRT_ColumnDef<TableRow> = (() => {
-    const footerText = summary ? formatUsd(summary.rt_cpa) : null
+    const footerText = summary && summary.rt_cpa != null ? formatUsd(summary.rt_cpa) : null
     return {
       accessorKey: 'rt_cpa',
       header: 'R. CPA',
@@ -733,8 +748,11 @@ function getColumns(
       size: autoSize(70, footerText),
       enableSorting: false,
       Cell: ({ row }) => {
-        const v = isGroupRow(row.original) ? row.original.group_summary.rt_cpa : row.original.rt_cpa
-        if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
+        const v = isGroupRow(row.original)
+          ? row.original.group_summary?.rt_cpa
+          : row.original.rt_cpa
+        if (v === null || v === undefined || v === 0)
+          return <span className="text-foreground/50 text-[10px]">—</span>
         const vFormatted = formatUsd(v)
         return (
           <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
@@ -752,7 +770,8 @@ function getColumns(
   })()
 
   const colRtCtr: MRT_ColumnDef<TableRow> = (() => {
-    const footerText = summary ? `${formatDecimal(summary.rt_ctr)}%` : null
+    const footerText =
+      summary && summary.rt_ctr != null ? `${formatDecimal(summary.rt_ctr)}%` : null
     return {
       accessorKey: 'rt_ctr',
       header: 'R. CTR',
@@ -761,9 +780,10 @@ function getColumns(
       enableSorting: false,
       Cell: ({ row }) => {
         const v = isGroupRow(row.original)
-          ? row.original.group_summary.rt_ctr
+          ? row.original.group_summary?.rt_ctr
           : row.original.rt_ctr
-        if (v === null || v === 0) return <span className="text-foreground/50 text-[10px]">—</span>
+        if (v === null || v === undefined || v === 0)
+          return <span className="text-foreground/50 text-[10px]">—</span>
         const vFormatted = `${formatDecimal(v)}%`
         return (
           <span className="tabular-nums text-[10px] text-foreground truncate" title={vFormatted}>
@@ -782,14 +802,16 @@ function getColumns(
 
   // ── Profit / ROI columns ──
   const colProfit: MRT_ColumnDef<TableRow> = (() => {
-    const footerText = summary ? formatUsd(toNumber(summary.profit)) : null
+    const footerText = summary ? formatUsd(summary.profit) : null
     return {
       accessorKey: 'profit',
       header: 'Profit',
       Header: <HeaderLabel>Profit</HeaderLabel>,
       size: autoSize(70, footerText),
       Cell: ({ row }) => {
-        const v = isGroupRow(row.original) ? row.original.group_summary.profit : row.original.profit
+        const v = isGroupRow(row.original)
+          ? toNumber(row.original.group_summary?.profit)
+          : toNumber(row.original.profit)
         const vFormatted = formatUsd(v)
         return (
           <span
@@ -808,7 +830,7 @@ function getColumns(
           <span
             className={cn(
               'tabular-nums text-[10px] font-semibold whitespace-nowrap',
-              summary!.profit >= 0 ? 'text-emerald-500' : 'text-rose-500',
+              toNumber(summary?.profit) >= 0 ? 'text-emerald-500' : 'text-rose-500',
             )}
           >
             {footerText}
@@ -818,7 +840,7 @@ function getColumns(
   })()
 
   const colRoi: MRT_ColumnDef<TableRow> = (() => {
-    const footerText = summary ? formatRoi(toNumber(summary.roi)) : null
+    const footerText = summary ? formatRoi(summary.roi) : null
     return {
       accessorKey: 'roi',
       header: 'ROI',
@@ -826,7 +848,9 @@ function getColumns(
       size: autoSize(58, footerText),
       enableSorting: isSortable('roi'),
       Cell: ({ row }) => {
-        const v = isGroupRow(row.original) ? row.original.group_summary.roi : row.original.roi
+        const v = isGroupRow(row.original)
+          ? toNumber(row.original.group_summary?.roi)
+          : toNumber(row.original.roi)
         const vFormatted = formatRoi(v)
         return (
           <span
@@ -845,7 +869,7 @@ function getColumns(
           <span
             className={cn(
               'tabular-nums text-[10px] font-semibold whitespace-nowrap',
-              summary!.roi >= 0 ? 'text-emerald-500' : 'text-rose-500',
+              toNumber(summary?.roi) >= 0 ? 'text-emerald-500' : 'text-rose-500',
             )}
           >
             {footerText}
@@ -918,6 +942,7 @@ type Props = {
   onPaginationChange: (page: number, perPage: number) => void
   onSortingChange: (orderBy: CampaignReportOrderBy | null, order: 'asc' | 'desc' | null) => void
   onToggleCampaignStatus: (campaignId: string, checked: boolean) => void
+  onOpenCampaign: (campaign: CampaignReportRow) => void
   role: RBACRole
 }
 
@@ -938,6 +963,7 @@ function CampaignReportTableCardInner({
   onPaginationChange,
   onSortingChange,
   onToggleCampaignStatus,
+  onOpenCampaign,
   role,
 }: Props) {
   const grouped = Boolean(filters.group_by)
@@ -1065,11 +1091,13 @@ function CampaignReportTableCardInner({
         filters.group_by ?? '',
         toggling,
         onToggleCampaignStatus,
+        onOpenCampaign,
         openTrackingAnalytics,
         openDeliveryReport,
         canViewDeliveryReports,
         filters.date_from,
         filters.date_to,
+        filters.campaign_ids,
         openRevenueRange,
         openRevenueChart,
         openInsightChart,
@@ -1078,8 +1106,10 @@ function CampaignReportTableCardInner({
       filters.group_by,
       filters.date_from,
       filters.date_to,
+      filters.campaign_ids,
       grouped,
       onToggleCampaignStatus,
+      onOpenCampaign,
       openTrackingAnalytics,
       openDeliveryReport,
       canViewDeliveryReports,
@@ -1144,6 +1174,9 @@ function CampaignReportTableCardInner({
         }
       },
     },
+    mantineTableFooterProps: {
+      style: data.length === 0 ? { display: 'none' } : undefined,
+    },
     enableColumnActions: false,
     enableHiding: true,
     enableColumnFilters: false,
@@ -1176,16 +1209,6 @@ function CampaignReportTableCardInner({
     },
     enableRowSelection: false,
     positionToolbarAlertBanner: 'none',
-    mantinePaginationProps: {
-      rowsPerPageOptions: [
-        '30',
-        '50',
-        '100',
-        '300',
-        '500',
-        { value: '1000000', label: 'All' },
-      ] as unknown as string[],
-    },
     initialState: { density: 'xs' },
     state: {
       showLoadingOverlay: loading,
@@ -1231,6 +1254,9 @@ function CampaignReportTableCardInner({
     enablePagination: true,
     paginationDisplayMode: 'pages',
     enableFullScreenToggle: false,
+    mantinePaperProps: {
+      className: 'campaign-report-table-paper',
+    },
     mantineLoadingOverlayProps: {
       sx: { transform: 'translateX(var(--mrt-scroll-left, 0px))' },
     },
@@ -1242,7 +1268,7 @@ function CampaignReportTableCardInner({
       sx: {
         overflowX: 'auto',
         WebkitOverflowScrolling: 'touch',
-        maxHeight: 'calc(100vh - 182px)',
+        minHeight: 0,
       },
     },
     mantineTableBodyRowProps: ({ row }) => {
@@ -1286,7 +1312,7 @@ function CampaignReportTableCardInner({
     localization: { rowsPerPage: 'Per Page' },
     renderTopToolbar: ({ table: t }) => (
       <div className="flex w-full flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-3 py-2">
-        <h3 className="text-sm font-semibold text-foreground">Daily Campaign Reports</h3>
+        <h3 className="mr-auto text-sm font-semibold text-foreground">Daily Campaign Reports</h3>
         <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
           <CampaignSchedulesDialog
             trigger={
@@ -1344,16 +1370,16 @@ function CampaignReportTableCardInner({
       </div>
     ),
     renderEmptyRowsFallback: () => (
-      <div className="flex flex-col items-center gap-2 py-10 text-center">
+      <div className="flex flex-col items-center gap-2 py-12 text-center ">
         <BarChart3 className="h-8 w-8 text-foreground/30" />
-        <p className="text-sm text-foreground">No campaign report data found.</p>
+        <p className="text-sm text-muted-foreground">No campaign report data found.</p>
       </div>
     ),
   })
 
   return (
     <>
-      <MantineReactTable table={table} />
+      <MantineReactTable key={isMobile ? 'compact' : 'default'} table={table} />
 
       {trackingDialogTarget && (
         <TrackingAnalyticsDialog

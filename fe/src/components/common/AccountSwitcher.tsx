@@ -1,8 +1,9 @@
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, Check, ImagePlus, Loader2, LogOut, Plus } from 'lucide-react'
+import { Camera, Check, ImagePlus, Loader2, LogOut, Repeat } from 'lucide-react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -25,9 +26,16 @@ import { useSessionStore } from '@/hooks/useSessionStore'
 import { PATHS } from '@/constants/paths'
 import type { User } from '@/shared/types'
 
-export const AccountSwitcher = React.memo(function AccountSwitcher() {
+type AccountSwitcherProps = {
+  align?: 'start' | 'end'
+  collapsed?: boolean
+}
+
+export const AccountSwitcher = React.memo(function AccountSwitcher({
+  align = 'end',
+  collapsed = false,
+}: AccountSwitcherProps) {
   const navigate = useNavigate()
-  const [addOpen, setAddOpen] = React.useState(false)
   const [avatarOpen, setAvatarOpen] = React.useState(false)
   const [avatarUploading, setAvatarUploading] = React.useState(false)
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
@@ -37,38 +45,9 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
   const setUser = useAuthStore((s) => s.setUser)
   const logout = useAuthStore((s) => s.logout)
 
-  const sessions = useSessionStore((s) => s.sessions)
   const activeUserId = useSessionStore((s) => s.activeUserId)
-  const addSession = useSessionStore((s) => s.addSession)
   const removeSession = useSessionStore((s) => s.removeSession)
-  const switchTo = useSessionStore((s) => s.switchTo)
   const updateSessionUser = useSessionStore((s) => s.updateSessionUser)
-
-  const sessionList = Object.values(sessions)
-
-  const handleSwitch = React.useCallback(
-    async (userId: number) => {
-      if (userId === activeUserId) return
-      const session = sessions[userId]
-      if (!session) return
-      try {
-        // Call BE to swap the session cookie to the target user.
-        // After this the browser's laravel_session cookie points to userId.
-        const user = await loginApi.switchAccount(session.token)
-        switchTo(userId)
-        setUser(user)
-        window.dispatchEvent(new Event('account-switched'))
-        void navigate(PATHS.dashboard)
-        window.location.reload()
-      } catch (err: unknown) {
-        const status = (err as { response?: { status?: number } })?.response?.status
-        if (status === 401 || status === 403) {
-          removeSession(userId)
-        }
-      }
-    },
-    [activeUserId, sessions, switchTo, setUser, navigate, removeSession],
-  )
 
   const handleLogout = React.useCallback(async () => {
     try {
@@ -128,30 +107,39 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
     [previewUrl],
   )
 
-  const handleAddSuccess = React.useCallback(
-    (newUser: User, token: string) => {
-      // Always upsert — if the account already existed, this refreshes its token.
-      addSession(newUser, token)
-      setUser(newUser)
-      setAddOpen(false)
-      void navigate(PATHS.dashboard)
-    },
-    [addSession, setUser, navigate],
-  )
-
   const avatarInputRef = React.useRef<HTMLInputElement>(null)
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Avatar className="h-8 w-8 cursor-pointer ring-2 ring-transparent hover:ring-primary/30 transition-all">
-            {user?.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
-            <AvatarFallback>{user?.name?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
-          </Avatar>
+          {collapsed ? (
+            <button type="button" className="flex w-full items-center justify-center py-1">
+              <Avatar className="h-8 w-8 cursor-pointer ring-2 ring-transparent transition-all hover:ring-primary/30">
+                {user?.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
+                <AvatarFallback>{user?.name?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="flex w-full items-center gap-2.5 rounded-lg p-1.5 text-left transition-colors hover:bg-muted"
+            >
+              <Avatar className="h-9 w-9 shrink-0 cursor-pointer ring-2 ring-transparent transition-all hover:ring-primary/30">
+                {user?.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
+                <AvatarFallback>{user?.name?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm font-semibold leading-tight">{user?.name}</span>
+                <span className="truncate text-xs text-muted-foreground leading-tight">
+                  {user?.email}
+                </span>
+              </div>
+            </button>
+          )}
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end" className="w-72 p-0 overflow-hidden">
+        <DropdownMenuContent align={align} className="w-72 p-0 overflow-hidden">
           {/* Profile header */}
           <div className="bg-muted/40 px-4 py-4">
             <div className="flex items-center gap-3">
@@ -174,61 +162,6 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
 
           <DropdownMenuSeparator className="my-0" />
 
-          {/* Other sessions */}
-          {sessionList.length > 1 && (
-            <>
-              <p className="px-3 pt-2.5 pb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                Switch account
-              </p>
-              <div className="px-1 pb-1 gap-1 grid">
-                {sessionList.map((session) => {
-                  const isActive = session.user.id === activeUserId
-                  return (
-                    <DropdownMenuItem
-                      key={session.user.id}
-                      onClick={() => void handleSwitch(session.user.id)}
-                      className={`flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2${isActive ? ' bg-accent' : ''}`}
-                    >
-                      <Avatar className="h-8 w-8 shrink-0 ring-1 ring-border">
-                        {session.user.avatar_url && (
-                          <AvatarImage src={session.user.avatar_url} alt={session.user.name} />
-                        )}
-                        <AvatarFallback className="text-xs font-medium">
-                          {session.user.name?.charAt(0)?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <span className={`truncate text-sm${isActive ? ' font-semibold' : ''}`}>
-                          {session.user.name}
-                        </span>
-                        <span className="truncate text-xs text-muted-foreground">
-                          {session.user.email}
-                        </span>
-                      </div>
-                      {isActive && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
-                    </DropdownMenuItem>
-                  )
-                })}
-              </div>
-              <DropdownMenuSeparator className="my-0" />
-            </>
-          )}
-
-          {/* Add account */}
-          <div className="px-1 py-1">
-            <DropdownMenuItem
-              onClick={() => setAddOpen(true)}
-              className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2"
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/40">
-                <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-              </div>
-              <span className="text-sm">Add account</span>
-            </DropdownMenuItem>
-          </div>
-
-          <DropdownMenuSeparator className="my-0" />
-
           {/* Log out */}
           <div className="px-1 py-1">
             <DropdownMenuItem
@@ -241,20 +174,6 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add account</DialogTitle>
-            <DialogDescription>
-              Login with another account to switch between them without re-entering credentials.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="pt-2">
-            <LoginForm onSuccess={handleAddSuccess} submitLabel="Add account" />
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={avatarOpen} onOpenChange={handleAvatarDialogChange}>
         <DialogContent className="sm:max-w-sm">
@@ -334,5 +253,129 @@ export const AccountSwitcher = React.memo(function AccountSwitcher() {
         </DialogContent>
       </Dialog>
     </>
+  )
+})
+
+export const AddAccountButton = React.memo(function AddAccountButton() {
+  const navigate = useNavigate()
+  const [open, setOpen] = React.useState(false)
+  const setUser = useAuthStore((state) => state.setUser)
+  const addSession = useSessionStore((state) => state.addSession)
+
+  const handleAddSuccess = React.useCallback(
+    (newUser: User, token: string) => {
+      addSession(newUser, token)
+      setUser(newUser)
+      setOpen(false)
+      void navigate(PATHS.dashboard)
+    },
+    [addSession, navigate, setUser],
+  )
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        className="h-9 flex-1 justify-start gap-2 rounded-lg text-sm font-medium"
+        onClick={() => setOpen(true)}
+      >
+        <span className="text-base leading-none">+</span>
+        Add account
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add account</DialogTitle>
+            <DialogDescription>
+              Login with another account to switch between them without re-entering credentials.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="pt-2">
+            <LoginForm onSuccess={handleAddSuccess} submitLabel="Add account" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+})
+
+export const SwitchAccountMenu = React.memo(function SwitchAccountMenu() {
+  const navigate = useNavigate()
+  const setUser = useAuthStore((state) => state.setUser)
+  const sessions = useSessionStore((state) => state.sessions)
+  const activeUserId = useSessionStore((state) => state.activeUserId)
+  const removeSession = useSessionStore((state) => state.removeSession)
+  const switchTo = useSessionStore((state) => state.switchTo)
+  const sessionList = Object.values(sessions)
+
+  const handleSwitch = React.useCallback(
+    async (userId: number) => {
+      if (userId === activeUserId) return
+      const session = sessions[userId]
+      if (!session) return
+      try {
+        const user = await loginApi.switchAccount(session.token)
+        switchTo(userId)
+        setUser(user)
+        window.dispatchEvent(new Event('account-switched'))
+        void navigate(PATHS.dashboard)
+        window.location.reload()
+      } catch (error: unknown) {
+        const status = (error as { response?: { status?: number } })?.response?.status
+        if (status === 401 || status === 403) removeSession(userId)
+      }
+    },
+    [activeUserId, navigate, removeSession, sessions, setUser, switchTo],
+  )
+
+  if (sessionList.length < 2) return null
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="size-9 shrink-0 rounded-lg"
+          aria-label="Switch account"
+          title="Switch account"
+        >
+          <Repeat className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-64 p-1">
+        <p className="px-2 pt-1 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Switch account
+        </p>
+        {sessionList.map((session) => {
+          const isActive = session.user.id === activeUserId
+          return (
+            <DropdownMenuItem
+              key={session.user.id}
+              onClick={() => void handleSwitch(session.user.id)}
+              className={`flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2${isActive ? ' bg-accent' : ''}`}
+            >
+              <Avatar className="h-8 w-8 shrink-0 ring-1 ring-border">
+                {session.user.avatar_url && (
+                  <AvatarImage src={session.user.avatar_url} alt={session.user.name} />
+                )}
+                <AvatarFallback className="text-xs font-medium">
+                  {session.user.name?.charAt(0)?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className={`truncate text-sm${isActive ? ' font-semibold' : ''}`}>
+                  {session.user.name}
+                </span>
+                <span className="truncate text-xs text-muted-foreground">{session.user.email}</span>
+              </div>
+              {isActive && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+            </DropdownMenuItem>
+          )
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 })
