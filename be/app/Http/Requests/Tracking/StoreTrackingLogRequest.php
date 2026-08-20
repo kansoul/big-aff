@@ -33,7 +33,8 @@ class StoreTrackingLogRequest extends FormRequest
             // Public key the landing snippet carries; gates the whole endpoint.
             'key' => $this->trackingKeyRules(),
 
-            // Everything is keyed on the session the snippet owns.
+            // The id this endpoint issued earlier and the snippet stored; the
+            // snippet never mints one itself.
             'session_id' => 'nullable|string|uuid',
 
             // Link tracking lookup. The wizard steps run after the landing page,
