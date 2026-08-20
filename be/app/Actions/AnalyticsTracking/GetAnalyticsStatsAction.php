@@ -42,7 +42,7 @@ class GetAnalyticsStatsAction
             ->selectRaw('
                 COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS ad_clicks,
                 COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) AS keyword_clicks
-            ', [EventClickType::Lead->value, EventClickType::Redirect->value])
+            ', [EventClickType::SubmitForm->value, EventClickType::Redirect->value])
             ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
             ->when($campaignId, fn ($q) => $q->where('campaign_id', $campaignId))

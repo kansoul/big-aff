@@ -64,7 +64,7 @@ trait AdsInsightsReportRelationship
         return EventClick::query()
             ->selectRaw('COUNT(*)')
             ->whereColumn('event_clicks.ad_id', 'ads_insights_reports.ad_id')
-            ->where('event_clicks.type', EventClickType::Lead->value)
+            ->where('event_clicks.type', EventClickType::SubmitForm->value)
             ->whereColumn('event_clicks.created_at', '>=', 'ads_insights_reports.date_start')
             ->whereRaw('event_clicks.created_at < DATE_ADD(ads_insights_reports.date_start, INTERVAL 1 DAY)');
     }

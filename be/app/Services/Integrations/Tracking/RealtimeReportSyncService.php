@@ -4,7 +4,6 @@ namespace App\Services\Integrations\Tracking;
 
 use App\Models\EventClick;
 use App\Models\EventView;
-use App\Models\LoanApplication;
 use App\Models\RealtimeReport;
 use Carbon\Carbon;
 use Exception;
@@ -136,15 +135,9 @@ class RealtimeReportSyncService
             ->where('created_at', '<=', $endOfDay)
             ->selectRaw("
                 COALESCE(SUM(CASE WHEN type='redirect' THEN 1 ELSE 0 END), 0) AS redirect_count,
-                COALESCE(SUM(CASE WHEN type='lead' THEN 1 ELSE 0 END), 0) AS lead_count
+                COALESCE(SUM(CASE WHEN type='submit_form' THEN 1 ELSE 0 END), 0) AS submit_form_count
             ")
             ->first();
-
-        // next_step has no event row; the applications touched today are the count.
-        $nextStepCount = LoanApplication::where('campaign_id', $campaignId)
-            ->where('updated_at', '>=', $startOfDay)
-            ->where('updated_at', '<=', $endOfDay)
-            ->count();
 
         $now = now();
 
@@ -154,8 +147,7 @@ class RealtimeReportSyncService
                 'campaign_id' => $campaignId,
                 'view_count' => $views->view_count,
                 'redirect_count' => $clicks->redirect_count,
-                'next_step_count' => $nextStepCount,
-                'lead_count' => $clicks->lead_count,
+                'submit_form_count' => $clicks->submit_form_count,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]],
@@ -163,8 +155,7 @@ class RealtimeReportSyncService
             [
                 'view_count',
                 'redirect_count',
-                'next_step_count',
-                'lead_count',
+                'submit_form_count',
                 'updated_at',
             ],
         );

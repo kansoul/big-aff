@@ -111,8 +111,7 @@ class FlushRealtimeReportCommand extends Command
                 'campaign_id' => $campaignId,
                 'view_count' => (int) ($counts['view_count'] ?? 0),
                 'redirect_count' => (int) ($counts['redirect_count'] ?? 0),
-                'next_step_count' => (int) ($counts['next_step_count'] ?? 0),
-                'lead_count' => (int) ($counts['lead_count'] ?? 0),
+                'submit_form_count' => (int) ($counts['submit_form_count'] ?? 0),
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -136,8 +135,7 @@ class FlushRealtimeReportCommand extends Command
                 update: [
                     'view_count' => DB::raw('view_count + VALUES(view_count)'),
                     'redirect_count' => DB::raw('redirect_count + VALUES(redirect_count)'),
-                    'next_step_count' => DB::raw('next_step_count + VALUES(next_step_count)'),
-                    'lead_count' => DB::raw('lead_count + VALUES(lead_count)'),
+                    'submit_form_count' => DB::raw('submit_form_count + VALUES(submit_form_count)'),
                     'updated_at' => DB::raw('NOW()'),
                 ],
             );

@@ -186,8 +186,7 @@ class TrackingSeeder extends Seeder
                     'campaign_id' => $campaign->campaign_id,
                     'view_count' => fake()->numberBetween(0, 500),
                     'redirect_count' => fake()->numberBetween(0, 500),
-                    'next_step_count' => fake()->numberBetween(0, 150),
-                    'lead_count' => fake()->numberBetween(0, 150),
+                    'submit_form_count' => fake()->numberBetween(0, 150),
                 ]);
             }
         }

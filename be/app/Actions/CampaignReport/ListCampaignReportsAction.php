@@ -97,8 +97,8 @@ class ListCampaignReportsAction
                 DB::raw('0 as r_cpa'),
                 DB::raw('COALESCE(revenue_totals.revenue, 0) - COALESCE(ir.spend, 0) as profit'),
                 DB::raw('IF(COALESCE(ir.spend, 0) > 0, (COALESCE(revenue_totals.revenue, 0) - COALESCE(ir.spend, 0)) / COALESCE(ir.spend, 0) * 100, 0) as roi'),
-                DB::raw('IF(COALESCE(rt.lead_count, 0) > 0, COALESCE(ir.spend, 0) / rt.lead_count, NULL) as rt_cpa'),
-                DB::raw('IF(COALESCE(rt.view_count, 0) > 0, COALESCE(rt.lead_count, 0) / rt.view_count * 100, NULL) as rt_ctr'),
+                DB::raw('IF(COALESCE(rt.submit_form_count, 0) > 0, COALESCE(ir.spend, 0) / rt.submit_form_count, NULL) as rt_cpa'),
+                DB::raw('IF(COALESCE(rt.view_count, 0) > 0, COALESCE(rt.submit_form_count, 0) / rt.view_count * 100, NULL) as rt_ctr'),
             )
             ->withExists(['campaign as has_rule' => fn ($q) => $q->whereHas('campaignRules', fn ($q) => $q->where('is_active', true))])
             ->with([

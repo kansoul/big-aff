@@ -24,8 +24,7 @@ class RealtimeReportFactory extends Factory
             'campaign_id' => fake()->numerify('##############'),
             'view_count' => fake()->numberBetween(0, 1000),
             'redirect_count' => fake()->numberBetween(0, 1000),
-            'next_step_count' => fake()->numberBetween(0, 300),
-            'lead_count' => fake()->numberBetween(0, 300),
+            'submit_form_count' => fake()->numberBetween(0, 300),
         ];
     }
 }

@@ -64,8 +64,8 @@ class CampaignReportService
                 0 AS r_funnel_clicks,
                 0 AS r_funnel_impressions,
                 COALESCE(SUM(ir_summary.spend), 0) AS a_spend,
-                COALESCE(SUM(rt_summary.lead_count), 0) AS rt_lead_count,
-                COALESCE(SUM(rt_summary.next_step_count), 0) AS rt_next_step_count,
+                COALESCE(SUM(rt_summary.submit_form_count), 0) AS rt_lead_count,
+                0 AS rt_next_step_count,
                 COALESCE(SUM(rt_summary.redirect_count), 0) AS rt_redirect_count,
                 COALESCE(SUM(rt_summary.view_count), 0) AS rt_view_count
             ')

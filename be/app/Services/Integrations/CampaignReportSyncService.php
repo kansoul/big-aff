@@ -277,7 +277,7 @@ class CampaignReportSyncService
             return;
         }
 
-        $realtimeLeadCount = (int) ($realtimeReport->lead_count ?? 0);
+        $realtimeLeadCount = (int) ($realtimeReport->submit_form_count ?? 0);
         $tier = self::matchAlertTier($realtimeLeadCount);
 
         if (! $tier || ! $realtimeReport) {
@@ -453,12 +453,12 @@ class CampaignReportSyncService
     }
 
     /**
-     * Sum lead_count from realtime reports for the given date.
+     * Sum submitted forms from realtime reports for the given date.
      */
     private static function sumRealtimeLeadCount(string $date): int
     {
         return (int) RealtimeReport::whereDate('event_time', $date)
-            ->sum('lead_count');
+            ->sum('submit_form_count');
     }
 
     /**

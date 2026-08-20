@@ -291,8 +291,7 @@ class ReportsSeeder extends Seeder
                     'event_time' => $date,
                     'view_count' => random_int(50, 800),
                     'redirect_count' => random_int(30, 700),
-                    'next_step_count' => random_int(5, 200),
-                    'lead_count' => random_int(2, 150),
+                    'submit_form_count' => random_int(2, 150),
                 ];
             }
         }

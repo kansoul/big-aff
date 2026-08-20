@@ -61,7 +61,7 @@ class SaveTrackingLogJob implements ShouldQueue
 
             match (true) {
                 $eventType === 'page_view' => $this->saveEventView($eventType, $dateOnly),
-                in_array($eventType, ['redirect', 'lead'], true) => $this->saveEventClick($eventType, $dateOnly),
+                in_array($eventType, ['redirect', 'submit_form'], true) => $this->saveEventClick($eventType, $dateOnly),
                 default => throw new InvalidArgumentException("Unknown event type: {$eventType}"),
             };
         } catch (InvalidArgumentException $e) {
@@ -220,7 +220,7 @@ class SaveTrackingLogJob implements ShouldQueue
         $column = match ($eventType) {
             'page_view' => 'view_count',
             'redirect' => 'redirect_count',
-            'lead' => 'lead_count',
+            'submit_form' => 'submit_form_count',
             default => null,
         };
 

@@ -2,11 +2,14 @@
 
 namespace App\Models\Traits\Relationship;
 
+use App\Models\AdsConversion;
 use App\Models\EventAdLoad;
 use App\Models\EventClick;
 use App\Models\EventView;
+use App\Models\Lead;
 use App\Models\RevenueReport;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 trait TrackingSessionRelationship
 {
@@ -34,8 +37,18 @@ trait TrackingSessionRelationship
         return $this->hasMany(EventAdLoad::class, 'session_id', 'session_id');
     }
 
-    public function revenueReports(): HasMany
+    public function revenueReport(): HasOne
     {
-        return $this->hasMany(RevenueReport::class, 'session_id', 'session_id');
+        return $this->hasOne(RevenueReport::class, 'session_id', 'session_id');
+    }
+
+    public function adsConversions(): HasMany
+    {
+        return $this->hasMany(AdsConversion::class, 'session_id', 'session_id');
+    }
+
+    public function lead(): HasOne
+    {
+        return $this->hasOne(Lead::class, 'session_id', 'session_id');
     }
 }

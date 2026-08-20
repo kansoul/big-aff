@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Tracking;
 
-use App\Http\Requests\LoanApplication\UpdateLoanApplicationRequest;
+use App\Http\Requests\Lead\StoreLeadRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -20,22 +20,15 @@ class StoreTrackingLogRequest extends FormRequest
     public const TYPES = [
         'page_view',
         'redirect',
-        'next_step',
-        'lead',
+        'submit_form',
     ];
-
-    /** Events that may carry loan application answers. */
-    private const APPLICATION_TYPES = ['redirect', 'next_step', 'lead'];
 
     public function rules(): array
     {
         $type = (string) $this->input('type');
-        $isApplication = in_array($type, self::APPLICATION_TYPES, true);
 
         return [
-            // redirect carries email + loan amount, next_step one wizard step,
-            // lead the final confirmation — all optional, all partial.
-            ...($isApplication ? UpdateLoanApplicationRequest::fieldRules() : []),
+            ...($type === 'submit_form' ? StoreLeadRequest::fieldRules() : []),
 
             // Public key the landing snippet carries; gates the whole endpoint.
             'key' => $this->trackingKeyRules(),

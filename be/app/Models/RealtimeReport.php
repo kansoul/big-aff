@@ -17,8 +17,7 @@ class RealtimeReport extends Model
         'campaign_id',
         'view_count',
         'redirect_count',
-        'next_step_count',
-        'lead_count',
+        'submit_form_count',
     ];
 
     protected function casts(): array
@@ -27,8 +26,7 @@ class RealtimeReport extends Model
             'event_time' => 'date',
             'view_count' => 'integer',
             'redirect_count' => 'integer',
-            'next_step_count' => 'integer',
-            'lead_count' => 'integer',
+            'submit_form_count' => 'integer',
         ];
     }
 }

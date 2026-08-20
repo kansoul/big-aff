@@ -5,5 +5,5 @@ namespace App\Enums;
 enum EventClickType: string
 {
     case Redirect = 'redirect';
-    case Lead = 'lead';
+    case SubmitForm = 'submit_form';
 }

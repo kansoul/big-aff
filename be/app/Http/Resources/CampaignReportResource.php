@@ -37,7 +37,7 @@ class CampaignReportResource extends JsonResource
         $profit = (float) ($this->profit ?? $estimateEarning - $spend);
         $roi = (float) ($this->roi ?? ($spend > 0 ? ($profit / $spend) * 100 : 0.0));
 
-        $rtLeadCount = (float) ($this->realtimeReport?->lead_count ?? 0);
+        $rtLeadCount = (float) ($this->realtimeReport?->submit_form_count ?? 0);
         $rtViewCount = (float) ($this->realtimeReport?->view_count ?? 0);
 
         return [
@@ -82,7 +82,7 @@ class CampaignReportResource extends JsonResource
             'roi' => round($roi, 2),
             'roi_realtime' => round($roi, 2),
             'rt_lead_count' => (int) $rtLeadCount,
-            'rt_next_step_count' => (int) ($this->realtimeReport?->next_step_count ?? 0),
+            'rt_next_step_count' => 0,
             'rt_redirect_count' => (int) ($this->realtimeReport?->redirect_count ?? 0),
             'rt_view_count' => (int) $rtViewCount,
             'rt_cpa' => $rtLeadCount > 0 ? round($spend / $rtLeadCount, 4) : null,
@@ -101,8 +101,7 @@ class CampaignReportResource extends JsonResource
                     'link_id' => $this->campaign?->link_id,
                     'view_count' => $rt->view_count,
                     'redirect_count' => $rt->redirect_count,
-                    'next_step_count' => $rt->next_step_count,
-                    'lead_count' => $rt->lead_count,
+                    'submit_form_count' => $rt->submit_form_count,
                 ];
             }),
         ];
