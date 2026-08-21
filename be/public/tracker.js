@@ -4,20 +4,25 @@
  *
  * - Only activates when the landing URL carries `key=<public key>`. Without it
  *   nothing is ever sent; organic / direct traffic never calls the API.
- * - Creates one session_id per visit (survives F5 / client-side nav); it only
- *   rotates when the landing params change or after the visit sent its `lead`.
- * - Captures every URL param on the first landing and replays it on each event.
- * - Sends each answer once per session: fields the session already stored are
- *   stripped from later payloads, and next_step carries no ad params at all.
- * - Everything is keyed on session_id: the session, the events and the loan
- *   application the funnel fills in step by step.
- * - Exposes window.QpTracker: track / pageView / redirect / nextStep / lead.
+ * - Never mints a session_id: the backend derives it from the ad params plus
+ *   the caller IP and returns it; the snippet only stores that id and replays
+ *   it on every later event of the visit.
+ * - Captures every URL param on the first landing and replays it on each event
+ *   — that replay is what lets the backend land on the same session even when
+ *   the stored id is gone.
+ * - Only `submit_form` carries lead fields — it is what writes the lead row —
+ *   and answers the session already stored are stripped from a retry.
+ * - Everything is keyed on session_id server-side: the session, the events and
+ *   the lead the funnel fills in step by step.
+ * - The lead closes its session: a later landing hit from the same link and IP
+ *   is issued the next id in the series instead of reopening it.
+ * - Exposes window.QpTracker: track / pageView / redirect / lead.
  */
 (function (w, d) {
   if (w.QpTracker) return;
 
   // Bump when the snippet changes, and bump ?v= on the embedding <script> too.
-  var VERSION = '2026-08-19.4';
+  var VERSION = '2026-08-20.7';
 
   var script = d.currentScript;
   function attr(name, fallback) {
@@ -29,10 +34,10 @@
   // Tracking stays off until `?key=<public key>` shows up on the landing URL.
   var KEY_PARAM = 'key';
   var PUBLIC_KEY = attr('data-key', w.__QP_PUBLIC_KEY__ || null);
-  var SID_KEY = 'qp_session_id';
+  var SID_KEY = 'qp_session_id';     // id the API issued for this visit
   var CTX_KEY = 'qp_landing_ctx';
   var FP_KEY = 'qp_attr_fp';         // fingerprint of the attribution params
-  var LEAD_KEY = 'qp_lead_done';     // set once the session produced a lead
+  var LEAD_KEY = 'qp_lead_done';     // set once the session sent its lead
   var SENT_KEY = 'qp_sent_fields';   // answers already stored for this session
   var TTL_MIN = 60 * 24;             // sliding session window, in minutes (same as Voluum: 24h)
 
@@ -68,18 +73,11 @@
     try { localStorage.removeItem(key); localStorage.removeItem(key + '_exp'); } catch (e) {}
   }
 
-  function uuid() {
-    if (w.crypto && w.crypto.randomUUID) return w.crypto.randomUUID();
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = (Math.random() * 16) | 0;
-      return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-    });
-  }
-
   /**
-   * Attribution params identify the visit; while they stay the same the
-   * visitor keeps one session, no matter how often the landing page is
-   * re-opened.
+   * The params the backend hashes into the session id. While they stay the
+   * same the visitor keeps one session, no matter how often the landing page
+   * is re-opened; once they change the backend derives a different session,
+   * whose application row starts out empty again.
    */
   var FP_FIELDS = [
     'campaign_id', 'adset_id', 'ad_id', 'placement', 'cpid', 'lpid',
@@ -91,29 +89,52 @@
   }
 
   /**
-   * Session: reused on reload and on client-side nav (sliding window). A new
-   * one is only minted when the attribution params changed, or when the
-   * previous session was closed by its `lead` — so re-opening the very same
-   * link after converting starts a fresh session.
+   * The id the API issued for this visit, refreshed on read so the sliding
+   * window keeps it alive across reloads and client-side nav. Null until the
+   * landing hit came back with one — the snippet never makes one up.
    */
   function sessionId() {
-    var fp = fingerprint(context());
     var sid = read(SID_KEY);
+    if (sid) store(SID_KEY, sid, TTL_MIN);
+    return sid || null;
+  }
 
-    if (sid && (read(FP_KEY) !== fp || read(LEAD_KEY) === '1')) sid = null;
+  /**
+   * Attribution changed → the backend will hash a different session id, so the
+   * answers the previous one had already stored no longer apply and have to
+   * travel again.
+   */
+  function syncAttribution() {
+    var fp = fingerprint(context());
 
-    if (!sid) {
-      sid = uuid();
-      forget(LEAD_KEY);
+    if (read(FP_KEY) !== fp) {
+      forget(SID_KEY);
       forget(SENT_KEY);
     }
 
-    store(SID_KEY, sid, TTL_MIN);
     store(FP_KEY, fp, TTL_MIN);
-    return sid;
   }
 
-  // ── landing context: all URL params, captured once and kept for the session
+  /**
+   * A landing hit after the visit sent its lead starts a new visit: drop the
+   * closed session so the payload goes up without an id. The backend then
+   * walks past the closed one and issues the next id for these very same
+   * params and IP.
+   */
+  function startVisit() {
+    if (read(LEAD_KEY) !== '1') return;
+
+    forget(SID_KEY);
+    forget(SENT_KEY);
+    forget(LEAD_KEY);
+  }
+
+  /**
+   * Landing params, captured once and kept for the session. Every field here is
+   * one the backend stores — `event_views` / `event_clicks` take the ad params,
+   * `ads_conversions` the click ids — plus `key`, which gates the endpoint.
+   * Anything the API does not keep has no business travelling on every event.
+   */
   var PARAM_MAP = {
     campaign_id: ['campaign_id', 'campaignid', 'gad_campaignid', 'utm_campaign'],
     adset_id: ['adset_id', 'ad_set_id', 'adsetid', 'utm_adset'],
@@ -128,6 +149,7 @@
     placement: ['placement'],
     cpid: ['cpid'],
     lpid: ['lpid'],
+    // Stored as `traffic` on the event row.
     test: ['test', 'traffic'],
     key: [KEY_PARAM],
   };
@@ -163,8 +185,11 @@
     return ctx;
   }
 
-  /** Events whose fields land on the session's loan application. */
-  var APPLICATION_TYPES = ['redirect', 'next_step', 'lead'];
+  /** The event that converts the visit and closes its session. */
+  var LEAD_TYPE = 'submit_form';
+
+  /** Events whose fields land on the session's lead. */
+  var APPLICATION_TYPES = [LEAD_TYPE];
 
   function sentFields() {
     try { return JSON.parse(read(SENT_KEY) || '{}'); } catch (e) { return {}; }
@@ -187,7 +212,7 @@
     return fresh;
   }
 
-  /** Only called once the backend confirmed the event, so a failed send is retried. */
+  /** Only called once the backend stored the event, so a failed send is retried. */
   function rememberFields(fields) {
     var stored = sentFields();
     Object.keys(fields).forEach(function (k) { stored[k] = fields[k]; });
@@ -223,7 +248,8 @@
       .then(function (r) { return r.json(); })
       .then(function (res) {
         var data = (res && res.data) || res || {};
-        // Never revive a session the `lead` already closed.
+        // The id the API issued; every later event of the visit replays it.
+        // Never revive a session the lead already closed.
         if (data.session_id && read(LEAD_KEY) !== '1') store(SID_KEY, data.session_id, TTL_MIN);
         return data;
       })
@@ -232,6 +258,7 @@
 
   var QpTracker = {
     version: VERSION,
+    /** The API-issued id of this visit, or null before the landing hit. */
     sessionId: sessionId,
     /** Landing params captured on the first hit, replayed on every event. */
     context: context,
@@ -240,13 +267,16 @@
     isActive: isActive,
 
     /**
-     * track('page_view' | 'redirect' | 'next_step' | 'lead', extraFields)
-     * redirect / next_step / lead may carry loan application fields; the
-     * backend stores them on the application of this session_id.
+     * track('page_view' | 'redirect' | 'submit_form', extraFields)
+     * redirect / submit_form may carry lead fields; the backend stores them on
+     * the lead of this session_id.
      */
 
     track: function (type, data, opts) {
       if (!isActive()) return Promise.resolve(null);
+
+      syncAttribution();
+      if (type === 'page_view') startVisit();
 
       var isApplication = APPLICATION_TYPES.indexOf(type) >= 0;
       // Callers pass the whole step patch; only what this session has not
@@ -254,20 +284,18 @@
       var fields = isApplication ? newFields(data) : data || {};
       var hasFields = Object.keys(fields).length > 0;
 
-      // next_step exists only to store answers, so one without any is dropped.
-      if (type === 'next_step' && !hasFields) return Promise.resolve(null);
-
       var ctx = context();
       var payload = {};
 
-      // next_step writes no event row, so it needs no ad params: the session id
-      // already points at the application row they were stored on. Only the
-      // activation key travels, because the backend re-checks it on every event.
-      if (type === 'next_step') payload.key = ctx.key;
-      else Object.keys(ctx).forEach(function (k) { if (ctx[k] != null) payload[k] = ctx[k]; });
+      // Every event replays the landing params: they are what the backend
+      // hashes the session id from when the payload carries none.
+      Object.keys(ctx).forEach(function (k) { if (ctx[k] != null) payload[k] = ctx[k]; });
 
       payload.type = type;
-      payload.session_id = sessionId();
+      // Only ever the id the API handed back; when there is none yet the
+      // backend derives it from the params above and returns it.
+      var sid = sessionId();
+      if (sid) payload.session_id = sid;
       payload.page = 'quickpayly';
       payload.event_time = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
@@ -276,35 +304,39 @@
       // The lead is the last event of the visit, so close the session right
       // here — synchronously, because the final confirmation usually navigates
       // away before any response comes back.
-      if (type === 'lead') store(LEAD_KEY, '1', TTL_MIN);
+      if (type === LEAD_TYPE) store(LEAD_KEY, '1', TTL_MIN);
 
       return send(payload, opts && opts.beacon).then(function (res) {
-        if (res && isApplication && hasFields) rememberFields(fields);
+        // success:false means the backend refused the payload — those fields
+        // have to travel again on the next attempt.
+        if (res && res.success !== false && isApplication && hasFields) rememberFields(fields);
         return res;
       });
     },
 
     pageView: function (fields) { return QpTracker.track('page_view', fields); },
-    nextStep: function (fields) { return QpTracker.track('next_step', fields); },
-    /** Converts and closes the session; the next hit starts a new one. */
-    lead: function (fields) { return QpTracker.track('lead', fields); },
-    redirect: function (fields, opts) {
+    /**
+     * The lead of this visit: pass the whole lead (email, name, phone,
+     * address…) — this is the only event whose fields are stored. It closes
+     * the session, so the next landing hit is issued a new one.
+     */
+    lead: function (fields) { return QpTracker.track(LEAD_TYPE, fields); },
+    /** Leaving the landing page. Logs the click only; it stores no fields. */
+    redirect: function (opts) {
       // fetch keepalive survives the unload too, and stays visible in DevTools.
-      return QpTracker.track('redirect', fields, opts);
+      return QpTracker.track('redirect', null, opts);
     },
 
     /**
-     * Submitting the landing form: log the redirect together with whatever the
-     * page collected (email, loan amount) — the backend stores those on the
-     * session's loan application — and only navigate once it is saved.
+     * Leaving the landing page: log the redirect, then navigate once it is
+     * saved. The answers collected here travel later, with the lead.
      *
-     *   QpTracker.advance({ loan_amount: 3, email: 'a@b.com' }, '/apply')
+     *   QpTracker.advance('/apply')
      *
-     * @param {Object} [fields]  answers collected on this page, backend names
-     * @param {string} [url]     where to go afterwards
+     * @param {string} [url]  where to go afterwards
      */
-    advance: function (fields, url) {
-      return QpTracker.redirect(fields).then(function (res) {
+    advance: function (url) {
+      return QpTracker.redirect().then(function (res) {
         if (url) w.location.assign(url);
         return res;
       });
@@ -313,8 +345,8 @@
 
   w.QpTracker = QpTracker;
 
-  // First hit of an activated session → page_view (also opens the revenue row
-  // server-side). Without the activation param nothing is ever sent.
+  // First hit of an activated session → page_view (opens the session and the
+  // revenue row server-side). Without the activation param nothing is sent.
   if (d.readyState === 'loading') {
     d.addEventListener('DOMContentLoaded', function () { QpTracker.track('page_view'); });
   } else {
